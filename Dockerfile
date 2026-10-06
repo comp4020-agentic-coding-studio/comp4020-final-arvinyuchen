@@ -1,18 +1,30 @@
 # syntax = docker/dockerfile:1
 
-# A placeholder, and yours to replace: it serves one page, plus README.md
-# verbatim at /readme/, which is enough to prove the deploy path end to end.
-# Whatever your app is built with, the image that replaces this one must serve
-# HTTP on 0.0.0.0:$PORT (fly.toml sets PORT) and publish README.md at /readme/
-# (spec/README.md says what's checked).
+# Spots: an Astro server (Node adapter) over one SQLite file on the /data
+# volume. Install and build, then keep only the built server and its
+# production dependencies. Serves HTTP on 0.0.0.0:$PORT (fly.toml sets 8080).
 
-FROM docker.io/library/busybox:1.38.0
-COPY placeholder/ /src/
-COPY README.md /src/
-# README.md goes into the page as-is, HTML-escaped, in place of @README@;
-# rendering it properly is your app's job
-RUN mkdir -p /site/readme \
-    && cp /src/index.html /site/ \
-    && sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' /src/README.md > /src/body \
-    && sed -e '/@README@/{r /src/body' -e 'd}' /src/readme.html > /site/readme/index.html
-CMD ["sh", "-c", "exec httpd -f -p 0.0.0.0:${PORT:-8080} -h /site"]
+ARG NODE_VERSION=24
+FROM node:${NODE_VERSION}-slim AS base
+WORKDIR /app
+ENV NODE_ENV=production
+RUN npm install -g pnpm@11.9.0
+
+FROM base AS build
+# toolchain for better-sqlite3, in case no prebuilt binary matches
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y build-essential pkg-config python-is-python3
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile --prod=false
+COPY . .
+RUN pnpm run build
+RUN pnpm prune --prod
+
+FROM base
+COPY --from=build /app/node_modules /app/node_modules
+COPY --from=build /app/dist /app/dist
+ENV HOST=0.0.0.0
+ENV PORT=8080
+ENV DATABASE_PATH=/data/spots.db
+EXPOSE 8080
+CMD ["node", "./dist/server/entry.mjs"]

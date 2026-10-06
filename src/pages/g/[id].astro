@@ -1,0 +1,188 @@
+---
+import Base from "../../layouts/Base.astro";
+import { CATALOGUE, KIND_LABEL, type Kind } from "../../lib/catalogue";
+import { getGroup, listMembers, listPicks } from "../../lib/db";
+import { me } from "../../lib/me";
+
+const group = getGroup(Astro.params.id ?? "");
+if (!group) return Astro.redirect("/", 303);
+
+const member = me(Astro.cookies, group.id);
+const members = listMembers(group.id);
+const picks = listPicks(group.id);
+const onList = new Set(picks.map((p) => p.catalogueKey).filter(Boolean));
+const kinds = Object.keys(KIND_LABEL) as Kind[];
+const shareUrl = new URL(`/g/${group.id}`, Astro.url).href;
+const isNew = Astro.url.searchParams.has("new");
+const error = Astro.url.searchParams.get("error");
+---
+
+<Base title={`${group.name} · Spots`}>
+  <section class="group-head">
+    <p class="eyebrow">Group</p>
+    <h1>{group.name}</h1>
+    <p class="members">
+      {members.length} {members.length === 1 ? "person" : "people"}: {members.map((m) => m.name).join(", ")}
+    </p>
+    <div class={`share card${isNew ? " share--new" : ""}`}>
+      <label for="share-link">{isNew ? "Your group is ready. Send this link to everyone coming:" : "Invite link"}</label>
+      <div class="share__row">
+        <input id="share-link" value={shareUrl} readonly />
+        <button type="button" class="btn" data-copy="#share-link">Copy</button>
+      </div>
+    </div>
+  </section>
+
+  {!member ? (
+    <section class="card join" aria-labelledby="join-title">
+      <h2 id="join-title">Join {group.name}</h2>
+      {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
+      <form method="post" action={`/api/groups/${group.id}/join`} class="stack">
+        <label>
+          <span>Your name</span>
+          <input name="name" required maxlength="40" autocomplete="nickname" />
+        </label>
+        <button class="btn btn--primary">Join the group</button>
+      </form>
+    </section>
+  ) : (
+    <p class="you">You're in as <strong>{member.name}</strong>.</p>
+  )}
+
+  <section id="list" aria-labelledby="list-title">
+    <h2 id="list-title">Our list</h2>
+    {picks.length === 0 ? (
+      <p class="empty">Nothing on the list yet. Add something from Explore below.</p>
+    ) : (
+      <ol class="picks">
+        {picks.map((p, i) => {
+          const mine = member ? p.keen.includes(member.name) : false;
+          return (
+            <li id={`pick-${p.id}`} class={`pick spot--${p.kind}${i === 0 && p.keen.length > 0 ? " pick--top" : ""}`}>
+              <div class="pick__main">
+                <span class="tag">{KIND_LABEL[p.kind]}</span>
+                <h3>{p.name}</h3>
+                <p class="area">
+                  {p.area && `${p.area} · `}added by {p.addedBy}
+                </p>
+                {p.note && <p class="note">“{p.note}”</p>}
+                <p class="keen-who">{p.keen.length > 0 ? `Keen: ${p.keen.join(", ")}` : "No one's keen yet"}</p>
+              </div>
+              {member && (
+                <form method="post" action={`/api/groups/${group.id}/keen`}>
+                  <input type="hidden" name="pick" value={p.id} />
+                  <button class={`keen${mine ? " keen--on" : ""}`} aria-pressed={mine ? "true" : "false"}>
+                    <span class="keen__count">{p.keen.length}</span>
+                    <span>{mine ? "Keen!" : "I'm keen"}</span>
+                  </button>
+                </form>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    )}
+  </section>
+
+  <section id="explore" aria-labelledby="explore-title">
+    <h2 id="explore-title">Explore</h2>
+    {kinds.map((kind) => (
+      <div class="explore-kind">
+        <h3>{KIND_LABEL[kind]}</h3>
+        <ul class="spots">
+          {CATALOGUE.filter((s) => s.kind === kind).map((s) => (
+            <li class={`spot spot--${s.kind}`}>
+              <h4>{s.name}</h4>
+              <p class="area">{s.area}</p>
+              <p>{s.blurb}</p>
+              {member &&
+                (onList.has(s.key) ? (
+                  <p class="added">On the list</p>
+                ) : (
+                  <form method="post" action={`/api/groups/${group.id}/picks`}>
+                    <input type="hidden" name="key" value={s.key} />
+                    <button class="btn btn--small">Add to our list</button>
+                  </form>
+                ))}
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </section>
+
+  {member && (
+    <section id="add" class="card" aria-labelledby="add-title">
+      <h2 id="add-title">Add your own find</h2>
+      {error === "spot" && <p class="notice" role="alert">A spot needs a name and a kind.</p>}
+      <form method="post" action={`/api/groups/${group.id}/picks`} class="grid-form">
+        <label>
+          <span>Name</span>
+          <input name="name" required maxlength="80" placeholder="That dumpling place" />
+        </label>
+        <label>
+          <span>Kind</span>
+          <select name="kind" required>
+            {kinds.map((k) => <option value={k}>{KIND_LABEL[k]}</option>)}
+          </select>
+        </label>
+        <label>
+          <span>Area</span>
+          <input name="area" maxlength="40" placeholder="Civic" />
+        </label>
+        <label class="wide">
+          <span>Why it's good</span>
+          <input name="note" maxlength="140" placeholder="Best chilli oil in Canberra" />
+        </label>
+        <button class="btn btn--primary wide">Add to our list</button>
+      </form>
+    </section>
+  )}
+
+  <script is:inline define:vars={{ groupId: group.id }}>
+    // Live: anyone joining, adding or voting in this group reaches every open
+    // page of it within a moment, with no reload by the viewer. The page asks
+    // the server for itself again and swaps in the changed parts, keeping the
+    // scroll position and anything typed in the forms.
+    const regions = [".group-head .members", "#list", "#explore"];
+    let pending = false;
+    async function refresh() {
+      if (pending) return;
+      pending = true;
+      try {
+        const html = await (await fetch(location.pathname, { cache: "no-store" })).text();
+        const fresh = new DOMParser().parseFromString(html, "text/html");
+        for (const selector of regions) {
+          const now = document.querySelector(selector);
+          const next = fresh.querySelector(selector);
+          if (now && next && now.innerHTML !== next.innerHTML) now.innerHTML = next.innerHTML;
+        }
+      } catch {
+        location.reload();
+      } finally {
+        pending = false;
+      }
+    }
+    const source = new EventSource(`/api/events?group=${encodeURIComponent(groupId)}`);
+    source.addEventListener("change", refresh);
+    let opened = false;
+    source.addEventListener("open", () => {
+      if (opened) refresh();
+      opened = true;
+    });
+    document.addEventListener("submit", () => source.close(), true);
+
+    for (const button of document.querySelectorAll("[data-copy]")) {
+      button.addEventListener("click", async () => {
+        const input = document.querySelector(button.dataset.copy);
+        try {
+          await navigator.clipboard.writeText(input.value);
+          button.textContent = "Copied";
+        } catch {
+          input.select();
+        }
+        setTimeout(() => (button.textContent = "Copy"), 1500);
+      });
+    }
+  </script>
+</Base>

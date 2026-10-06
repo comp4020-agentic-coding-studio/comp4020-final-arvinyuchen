@@ -1,0 +1,32 @@
+---
+import "../styles.css";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+const { title, description = "Spots: a shared list of places for one group of friends to explore and vote on." } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='14' r='9' fill='%23e8573a'/><circle cx='16' cy='14' r='3.5' fill='%23fff8ef'/><path d='M16 31 9 20h14z' fill='%23e8573a'/></svg>" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="/"><span class="brand__pin" aria-hidden="true"></span>Spots</a>
+      <nav aria-label="site">
+        <a href="/">Start a group</a>
+        <a href="/readme/">About</a>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>

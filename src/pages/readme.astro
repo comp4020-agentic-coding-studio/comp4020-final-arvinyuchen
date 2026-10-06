@@ -1,0 +1,12 @@
+---
+// README.md, rendered: what Spots is and what good means for it, published
+// with the app so a visitor reads it before using it.
+import Base from "../layouts/Base.astro";
+import * as readme from "../../README.md";
+
+const html = await readme.compiledContent();
+---
+
+<Base title="About Spots">
+  <article class="readme" set:html={html} />
+</Base>

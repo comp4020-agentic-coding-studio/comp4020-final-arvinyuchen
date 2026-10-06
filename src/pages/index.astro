@@ -1,0 +1,58 @@
+---
+import Base from "../layouts/Base.astro";
+import { CATALOGUE, KIND_LABEL } from "../lib/catalogue";
+
+const error = Astro.url.searchParams.get("error");
+const sample = CATALOGUE.filter((_, i) => i % 3 === 0).slice(0, 4);
+---
+
+<Base title="Spots: places to go, picked together">
+  <section class="hero">
+    <p class="eyebrow">For one group of friends</p>
+    <h1>Where are we going?</h1>
+    <p class="lede">
+      Start a group, share the link, and everyone adds the food spots, fun places and things to do they're keen on.
+      Vote together, live, and the list remembers everything for next time.
+    </p>
+  </section>
+
+  <section id="start" class="card start" aria-labelledby="start-title">
+    <h2 id="start-title">Start a group</h2>
+    {error && <p class="notice" role="alert">Give the group a name, and tell everyone yours.</p>}
+    <form method="post" action="/api/groups" class="stack">
+      <label>
+        <span>Group name</span>
+        <input name="group" required maxlength="60" placeholder="Saturday crew" autocomplete="off" />
+      </label>
+      <label>
+        <span>Your name</span>
+        <input name="name" required maxlength="40" placeholder="What your friends call you" autocomplete="nickname" />
+      </label>
+      <button class="btn btn--primary">Start and get the link</button>
+    </form>
+    <p class="fine">No accounts. Anyone with your group's link can join by typing a name.</p>
+  </section>
+
+  <section class="how" aria-labelledby="how-title">
+    <h2 id="how-title">How it works</h2>
+    <ol class="steps">
+      <li><strong>Share the link</strong> in the group chat. Friends join with just a name.</li>
+      <li><strong>Explore and add</strong> places from the starter list, or your own finds.</li>
+      <li><strong>Vote "keen"</strong> and watch the list re-rank as everyone votes, live.</li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="sample-title">
+    <h2 id="sample-title">A few places to start from</h2>
+    <ul class="spots">
+      {sample.map((s) => (
+        <li class={`spot spot--${s.kind}`}>
+          <span class="tag">{KIND_LABEL[s.kind]}</span>
+          <h3>{s.name}</h3>
+          <p class="area">{s.area}</p>
+          <p>{s.blurb}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+</Base>
