@@ -1,10 +1,32 @@
-# Your harness
+# Spots: rules for the agent
 
-This file is yours, and it arrives empty on purpose. The rules you hold the
-agent to are part of what gets marked, so they should be rules you decided on.
+What good means for Spots is argued in `README.md`. These are the rules that
+follow from it; every change has to hold to them.
 
-Nothing about the template is recorded here. What the repo ships is explained
-where it lives --- `fly.toml`, the `Dockerfile`, the CI workflow and
-`spec/README.md` each say what they fix --- and the course website publishes the
-[final project brief](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/assessments/final-project/).
-What the agent needs to carry from any of it is your call.
+## The app
+
+- **One group is the whole world.** A page only ever shows one group's
+  members, list and votes. Nothing from one group may appear in another.
+- **One person, one keen.** A member can vote "keen" on a spot once; voting
+  again takes it back. Never let a vote be cast for someone else: identity is
+  the per-group cookie (`src/lib/me.ts`), never a name typed into a form.
+- **Joining stays a link and a name.** Don't add accounts, passwords, email or
+  sign-up steps.
+- **Live means live.** Any join, add or vote must reach every other open page
+  of that group within about a second, without the viewer reloading
+  (`src/pages/api/events.ts` + the page's refresh script). A new kind of
+  change has to call `changed(groupId)`.
+- **Nothing is lost.** All state lives in the one SQLite file on `/data`.
+  Schema changes are additive only; never drop or rewrite data a group made.
+- **It works without JavaScript**, as plain forms posting and redirecting. The
+  live layer is an addition on top, not the only way to act.
+- **Phones first.** Every page works at 375px wide with no sideways scroll.
+
+## The work
+
+- `pnpm check` must be green before a commit: start the app
+  (`pnpm build && pnpm start`) and run it against `APP_URL`.
+- A claim in `README.md` about how the app behaves gets checked in a real
+  browser before it ships.
+- Don't invent places: anything added to the starter list in
+  `src/lib/catalogue.ts` has to be a real place in Canberra, checked.

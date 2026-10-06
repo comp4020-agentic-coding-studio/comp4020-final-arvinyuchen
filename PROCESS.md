@@ -1,20 +1,42 @@
 # Process overview
 
-<!-- TEMPLATE: replace everything in this file with your own account, this
-     comment included --- `pnpm check:evidence` fails while it's still here. -->
+## The idea
 
-How you got from the brief to the harness, agentic workflow and stack behind
-this app, told however suits the work. The
-[final project brief](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/assessments/final-project/#what-you-submit)
-says what it covers and how long it runs.
+The brief fixes three things: multi-user, real-time, persistent. I started
+from a trip-itinerary idea, then narrowed it to **Spots**: one group of
+friends exploring places and voting on where to go. What changed my mind was
+asking what a group actually struggles with. It isn't listing places, it's
+deciding together, which is where multi-user and real-time stop being
+requirements and become the point.
 
-Markers follow the links you give them; they don't trawl the repo for evidence
-you didn't point at. A link to the record is one whose text is the commit hash,
-and it can sit anywhere in a sentence:
-[`a1b2c3d`](https://github.com/YOUR-ORG/YOUR-REPO/commit/a1b2c3d) for one
-commit, or
-[`a1b2c3d...e4f5a6b`](https://github.com/YOUR-ORG/YOUR-REPO/compare/a1b2c3d...e4f5a6b)
-for a range.
+## Stack decision
 
-`pnpm check:evidence` checks that this comment is gone and that every commit you
-link exists in this repo. Whether the account is any good is the marker's call.
+**Context.** One Fly machine with 256 MB and one volume at `/data`; the app
+must be live by the crit 8 cutoff, with two hours to build.
+
+**Decision.** Astro (server output, Node adapter) + SQLite (`better-sqlite3`)
+on the volume + server-sent events for the live layer.
+
+**Why.**
+- Server-rendered pages with plain HTML forms work with no JavaScript, and are
+  easy to test over HTTP, which is how `spec/` checks the running app.
+- SQLite is one file on the volume: it persists across restarts and redeploys
+  with no separate database server, which the course setup doesn't allow.
+- SSE is one-way (server to browser) over plain HTTP, which is all Spots
+  needs: browsers act through forms and only need to hear "something changed".
+  WebSockets would add a second channel for no gain.
+- I used the same shape for my crit 7 prototype, so its failure modes (CSRF
+  behind Fly's proxy, the volume path) were already known.
+
+**Trade-offs.** One process holds the SSE bus in memory, so the app can only
+ever run on one machine; that's what `fly.toml` fixes anyway. A page re-fetches
+itself on each change rather than receiving a diff, which is simple but heavier
+with a big group.
+
+## How I worked with the agent
+
+- I chose the idea and the audience; the agent offered options and pushed
+  back on the generic version (a city guide is the "median answer").
+- I set the rules in `CLAUDE.md` from the definition of good in `README.md`.
+- The agent built the first version; I checked it in a browser and against
+  `spec/`.
