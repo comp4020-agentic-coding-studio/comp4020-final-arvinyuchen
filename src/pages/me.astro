@@ -18,6 +18,11 @@ const day = (sqlite: string) =>
   <section class="group-head">
     <p class="eyebrow">Signed in</p>
     <h1>{account.name}'s groups</h1>
+    {account.isAdmin && (
+      <p class="fine">
+        You're a site admin: <a href="/admin">open Admin</a> to archive test groups and hide shared places.
+      </p>
+    )}
   </section>
 
   {groups.length === 0 ? (

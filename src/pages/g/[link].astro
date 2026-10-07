@@ -10,6 +10,7 @@ import { search } from "../../lib/search";
 // brings members back (to the new link), but lets nobody new in.
 const byLink = groupByLink(Astro.params.link ?? "");
 if (!byLink) return Astro.redirect("/", 303);
+if (byLink === "closed") return Astro.rewrite("/group-closed");
 const { group } = byLink;
 const member = me(Astro.cookies, group.id);
 if (!byLink.current) return member ? Astro.redirect(`/g/${group.link}`, 303) : Astro.rewrite("/link-reset");
