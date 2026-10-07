@@ -39,6 +39,11 @@ follow from it; every change has to hold to them.
   calls `placesChanged()` so every group's Explore catches up.
 - **Nothing is lost.** All state lives in the one SQLite file on `/data`.
   Schema changes are additive only; never drop or rewrite data a group made.
+  The one exception is the site admin (`src/lib/admin.ts`): a group is
+  archived first (closed, restorable), and only an archived group can be
+  deleted for good, by an admin, after a confirm. Shared places are hidden,
+  never deleted. An admin is a passkey account that once entered
+  `ADMIN_CODE` (a Fly secret); never add another way to become one.
 - **It works without JavaScript**, as plain forms posting and redirecting. The
   live layer, the map and the place finder are additions on top, not the only
   way to act.

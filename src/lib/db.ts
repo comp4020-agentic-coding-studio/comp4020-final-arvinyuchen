@@ -130,6 +130,11 @@ addColumn("members", "account_id", "INTEGER REFERENCES accounts(id)");
 // they were merged into.
 addColumn("members", "removed_at", "TEXT");
 addColumn("members", "merged_into", "INTEGER REFERENCES members(id)");
+// Site admin (src/pages/admin.astro): an archived group is closed to
+// everyone but can be restored; a hidden place leaves Explore and the map.
+addColumn("accounts", "is_admin", "INTEGER NOT NULL DEFAULT 0");
+addColumn("groups", "archived_at", "TEXT");
+addColumn("places", "hidden_at", "TEXT");
 // Groups from before owners and invite links: whoever started the group
 // (its first member) owns it, and its link is the one already shared.
 db.exec(`
@@ -231,14 +236,19 @@ export function createGroup(
 
 /** A group by its own id (what forms and cookies use). */
 export function getGroup(id: string): Group | undefined {
-  return db.prepare(`SELECT ${GROUP_COLUMNS} FROM groups g WHERE g.id = ?`).get(id) as Group | undefined;
+  return db.prepare(`SELECT ${GROUP_COLUMNS} FROM groups g WHERE g.id = ? AND g.archived_at IS NULL`).get(id) as
+    | Group
+    | undefined;
 }
 
-/** A group by an invite link, current or reset. */
-export function groupByLink(slug: string): { group: Group; current: boolean } | undefined {
-  const row = db.prepare("SELECT group_id, retired_at FROM group_links WHERE slug = ?").get(slug) as
-    | { group_id: string; retired_at: string | null }
-    | undefined;
+/** A group by an invite link, current or reset; "closed" if an admin archived it. */
+export function groupByLink(slug: string): { group: Group; current: boolean } | "closed" | undefined {
+  const row = db
+    .prepare(
+      `SELECT l.group_id, l.retired_at, g.archived_at FROM group_links l JOIN groups g ON g.id = l.group_id WHERE l.slug = ?`,
+    )
+    .get(slug) as { group_id: string; retired_at: string | null; archived_at: string | null } | undefined;
+  if (row?.archived_at) return "closed";
   const group = row && getGroup(row.group_id);
   return group ? { group, current: row.retired_at === null } : undefined;
 }
@@ -320,7 +330,7 @@ export function groupsOfAccount(accountId: number): AccountGroup[] {
               (SELECT slug FROM group_links l WHERE l.group_id = g.id AND l.retired_at IS NULL) AS link,
               (SELECT COUNT(*) FROM members x WHERE x.group_id = g.id AND x.removed_at IS NULL) AS people
          FROM members m JOIN groups g ON g.id = m.group_id
-        WHERE m.account_id = ? AND m.removed_at IS NULL
+        WHERE m.account_id = ? AND m.removed_at IS NULL AND g.archived_at IS NULL
         ORDER BY m.id DESC`,
     )
     .all(accountId)
@@ -403,12 +413,13 @@ const toPlace = ({ added_by, photo_src, photo_page, photo_credit, photo_license,
 });
 const PLACE_COLUMNS = `p.id, p.name, p.kind, p.area, p.why, p.lat, p.lon, p.source, p.photo_src, p.photo_page,
   p.photo_credit, p.photo_license, p.added_by,
-  (SELECT COUNT(DISTINCT k.group_id) FROM picks k WHERE k.place_id = p.id) AS groups`;
+  (SELECT COUNT(DISTINCT k.group_id) FROM picks k JOIN groups kg ON kg.id = k.group_id
+    WHERE k.place_id = p.id AND kg.archived_at IS NULL) AS groups`;
 
-/** Every shared place: the most-picked first, then the newest. */
+/** Every shared place not hidden by an admin: the most-picked first, then the newest. */
 export function listPlaces(): Place[] {
   return (
-    db.prepare(`SELECT ${PLACE_COLUMNS} FROM places p ORDER BY groups DESC, p.created_at DESC, p.id DESC`).all() as PlaceRow[]
+    db.prepare(`SELECT ${PLACE_COLUMNS} FROM places p WHERE p.hidden_at IS NULL ORDER BY groups DESC, p.created_at DESC, p.id DESC`).all() as PlaceRow[]
   ).map(toPlace);
 }
 
@@ -435,7 +446,7 @@ export function listPicks(groupId: string): Pick[] {
 
 /** Puts a shared place on a group's list (once). False if there's no such place. */
 export function addPick(groupId: string, placeId: number, member: Member): boolean {
-  const place = db.prepare("SELECT id, name, kind, area FROM places WHERE id = ?").get(placeId) as
+  const place = db.prepare("SELECT id, name, kind, area FROM places WHERE id = ? AND hidden_at IS NULL").get(placeId) as
     | { id: number; name: string; kind: string; area: string }
     | undefined;
   if (!place) return false;

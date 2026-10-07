@@ -9,6 +9,8 @@ export interface Account {
   /** The WebAuthn user handle: random, never shown. */
   handle: string;
   name: string;
+  /** May use /admin (see src/lib/admin.ts). */
+  isAdmin: boolean;
 }
 
 export interface StoredPasskey {
@@ -26,11 +28,14 @@ export const newHandle = () => randomBytes(16).toString("base64url");
 
 export function createAccount(handle: string, name: string): Account {
   const { lastInsertRowid } = db.prepare("INSERT INTO accounts (handle, name) VALUES (?, ?)").run(handle, name);
-  return { id: Number(lastInsertRowid), handle, name };
+  return { id: Number(lastInsertRowid), handle, name, isAdmin: false };
 }
 
+type AccountRow = Omit<Account, "isAdmin"> & { isAdmin: number };
+const toAccount = (row: AccountRow | undefined): Account | undefined => row && { ...row, isAdmin: row.isAdmin === 1 };
+
 export const getAccount = (id: number): Account | undefined =>
-  db.prepare("SELECT id, handle, name FROM accounts WHERE id = ?").get(id) as Account | undefined;
+  toAccount(db.prepare("SELECT id, handle, name, is_admin AS isAdmin FROM accounts WHERE id = ?").get(id) as AccountRow);
 
 // ---- passkeys -------------------------------------------------------------------
 
@@ -102,12 +107,14 @@ export function startSession(accountId: number): string {
 
 export function accountForSession(token: string | undefined): Account | undefined {
   if (!token) return undefined;
-  return db
-    .prepare(
-      `SELECT a.id, a.handle, a.name FROM sessions s JOIN accounts a ON a.id = s.account_id
-        WHERE s.token_hash = ? AND s.expires_at > datetime('now')`,
-    )
-    .get(hash(token)) as Account | undefined;
+  return toAccount(
+    db
+      .prepare(
+        `SELECT a.id, a.handle, a.name, a.is_admin AS isAdmin FROM sessions s JOIN accounts a ON a.id = s.account_id
+          WHERE s.token_hash = ? AND s.expires_at > datetime('now')`,
+      )
+      .get(hash(token)) as AccountRow,
+  );
 }
 
 export function endSession(token: string | undefined): void {

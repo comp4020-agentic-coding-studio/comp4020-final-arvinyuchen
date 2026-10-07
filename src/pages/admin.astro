@@ -1,0 +1,205 @@
+---
+import Base from "../layouts/Base.astro";
+import { adminGroups, adminPlaces, canClaimAdmin } from "../lib/admin";
+import { signedIn } from "../lib/me";
+
+// Looking after Spots as a whole (src/lib/admin.ts). Signed in with a
+// passkey and made admin once with ADMIN_CODE; everyone else gets the claim
+// form or a pointer to sign in.
+const account = signedIn(Astro.cookies);
+if (!account) return Astro.redirect("/signin", 303);
+
+const params = Astro.url.searchParams;
+const claim = params.get("claim");
+const done = params.get("done");
+const n = Number(params.get("n") ?? 0);
+const groups = account.isAdmin ? adminGroups() : [];
+const active = groups.filter((g) => !g.archivedAt);
+const archived = groups.filter((g) => g.archivedAt);
+const places = account.isAdmin ? adminPlaces() : [];
+
+const DONE: Record<string, (n: number) => string> = {
+  archive: (n) => `Archived ${n} ${n === 1 ? "group" : "groups"}. Their links now say the group is closed.`,
+  restore: (n) => `Restored ${n} ${n === 1 ? "group" : "groups"}.`,
+  purge: (n) => `Deleted ${n} ${n === 1 ? "group" : "groups"} for good.`,
+  hide: (n) => `Hid ${n} ${n === 1 ? "place" : "places"} from Explore.`,
+  unhide: (n) => `${n} ${n === 1 ? "place is" : "places are"} back in Explore.`,
+};
+const CLAIM: Record<string, string> = {
+  wrong: "That's not the admin code.",
+  "slow-down": "Too many tries. Wait an hour.",
+  closed: "Admin isn't set up on this server.",
+};
+const day = (sqlite: string) =>
+  new Date(`${sqlite.replace(" ", "T")}Z`).toLocaleDateString("en-AU", { day: "numeric", month: "short" });
+---
+
+<Base title="Admin · Spots">
+  <section class="group-head">
+    <p class="eyebrow">Admin</p>
+    <h1>Looking after Spots</h1>
+  </section>
+
+  {!account.isAdmin ? (
+    <section class="card notice-page">
+      {canClaimAdmin() ? (
+        <>
+          <p>Enter the admin code once to make <strong>{account.name}</strong> an admin. After that, your passkey is enough.</p>
+          {claim && CLAIM[claim] && <p class="notice" role="alert">{CLAIM[claim]}</p>}
+          <form method="post" action="/api/admin/claim" class="settings__row">
+            <label class="grow">
+              <span>Admin code</span>
+              <input name="code" type="password" required autocomplete="off" />
+            </label>
+            <button class="btn btn--primary">Become admin</button>
+          </form>
+        </>
+      ) : (
+        <p>Admin isn't set up on this server.</p>
+      )}
+    </section>
+  ) : (
+    <>
+      {claim === "ok" && <p class="notice notice--ok" role="status">You're an admin now.</p>}
+      {done && DONE[done] && <p class="notice notice--ok" role="status">{DONE[done](n)}</p>}
+      <p class="fine">
+        {active.length} open {active.length === 1 ? "group" : "groups"} · {archived.length} archived ·{" "}
+        {places.filter((p) => !p.hiddenAt).length} shared places in Explore
+      </p>
+
+      <section id="groups" class="card admin-block" aria-labelledby="groups-title">
+        <h2 id="groups-title">Groups</h2>
+        <p class="fine">Archiving closes a group: its link stops working and it leaves everyone's My groups. You can restore it below.</p>
+        {active.length === 0 ? (
+          <p class="empty">No open groups.</p>
+        ) : (
+          <form method="post" action="/api/admin/groups">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" data-select-all aria-label="Select all open groups" /></th>
+                  <th>Group</th>
+                  <th>Owner</th>
+                  <th>People</th>
+                  <th>On list</th>
+                  <th>Last active</th>
+                </tr>
+              </thead>
+              <tbody>
+                {active.map((g) => (
+                  <tr>
+                    <td><input type="checkbox" name="group" value={g.id} aria-label={`Select ${g.name}`} /></td>
+                    <td><a href={`/g/${g.link}`}>{g.name}</a> <span class="fine">since {day(g.createdAt)}</span></td>
+                    <td>{g.owner ?? "–"}</td>
+                    <td>{g.people}</td>
+                    <td>{g.picks}</td>
+                    <td>{day(g.lastActive)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button class="btn" name="action" value="archive">Archive selected</button>
+          </form>
+        )}
+
+        {archived.length > 0 && (
+          <>
+            <h3>Archived</h3>
+            <form method="post" action="/api/admin/groups">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" data-select-all aria-label="Select all archived groups" /></th>
+                    <th>Group</th>
+                    <th>People</th>
+                    <th>Archived</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {archived.map((g) => (
+                    <tr>
+                      <td><input type="checkbox" name="group" value={g.id} aria-label={`Select ${g.name}`} /></td>
+                      <td>{g.name}</td>
+                      <td>{g.people}</td>
+                      <td>{day(g.archivedAt!)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div class="settings__row">
+                <button class="btn" name="action" value="restore">Restore selected</button>
+                <button
+                  class="btn btn--danger"
+                  name="action"
+                  value="purge"
+                  data-confirm="Delete the selected groups for good? Their members, lists and votes can't be brought back."
+                >
+                  Delete selected for good
+                </button>
+              </div>
+            </form>
+          </>
+        )}
+      </section>
+
+      <section id="places" class="card admin-block" aria-labelledby="places-title">
+        <h2 id="places-title">Shared places</h2>
+        <p class="fine">
+          Places people added to Explore. Hiding one takes it off Explore, the map and search for every group; lists that
+          already have it keep it. The checked starter places aren't listed.
+        </p>
+        {places.length === 0 ? (
+          <p class="empty">Nobody has shared a place yet.</p>
+        ) : (
+          <form method="post" action="/api/admin/places">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" data-select-all aria-label="Select all places" /></th>
+                  <th>Place</th>
+                  <th>Why, and who</th>
+                  <th>Lists</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {places.map((p) => (
+                  <tr class={p.hiddenAt ? "is-hidden" : undefined}>
+                    <td><input type="checkbox" name="place" value={p.id} aria-label={`Select ${p.name}`} /></td>
+                    <td>{p.name} <span class="fine">{p.area}</span></td>
+                    <td class="fine">“{p.why}” — {p.addedBy || "?"}, {day(p.createdAt)}</td>
+                    <td>{p.lists}</td>
+                    <td>{p.hiddenAt ? "Hidden" : "In Explore"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div class="settings__row">
+              <button class="btn" name="action" value="hide">Hide selected</button>
+              <button class="btn btn--ghost" name="action" value="unhide">Show selected again</button>
+            </div>
+          </form>
+        )}
+      </section>
+    </>
+  )}
+
+  <script is:inline>
+    // Select-all boxes, and a last check before anything that can't be undone.
+    document.addEventListener("change", (event) => {
+      if (!event.target.matches("[data-select-all]")) return;
+      const table = event.target.closest("table");
+      for (const box of table.querySelectorAll('tbody input[type="checkbox"]')) box.checked = event.target.checked;
+    });
+    document.addEventListener("submit", (event) => {
+      const button = event.submitter;
+      const picked = event.target.querySelectorAll('tbody input[type="checkbox"]:checked').length;
+      if (picked === 0) {
+        event.preventDefault();
+        window.alert("Select at least one first.");
+        return;
+      }
+      if (button?.dataset.confirm && !window.confirm(button.dataset.confirm)) event.preventDefault();
+    });
+  </script>
+</Base>

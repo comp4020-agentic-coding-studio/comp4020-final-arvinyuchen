@@ -1,48 +1,10 @@
-import { JSDOM } from "jsdom";
-import { describe, expect, inject, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { Authenticator, Jar } from "./authenticator";
+import { baseUrl, join, origin, page, request, savePasskey, signInWith, startGroup, you } from "./browser";
 
 // Accounts by passkey, and the owner's tools. Joining stays a link and a
 // name; a passkey is optional and lets a member be themselves on any device.
 // Each Jar is one browser; one Authenticator is one person's synced passkey.
-const baseUrl = inject("baseUrl");
-const origin = new URL(baseUrl).origin;
-
-const request = async (jar: Jar, path: string, init: { form?: Record<string, string>; json?: unknown } = {}) =>
-  jar.take(
-    await fetch(new URL(path, baseUrl), {
-      method: init.form || init.json !== undefined ? "POST" : "GET",
-      headers: {
-        origin,
-        cookie: jar.header,
-        ...(init.json !== undefined ? { "content-type": "application/json" } : {}),
-      },
-      body: init.form ? new URLSearchParams(init.form) : init.json !== undefined ? JSON.stringify(init.json) : undefined,
-      redirect: "manual",
-    }),
-  );
-const page = async (jar: Jar, path: string) =>
-  new JSDOM(await (await request(jar, path)).text()).window.document;
-
-/** Starts a group from this browser; returns its id (also its first link). */
-async function startGroup(jar: Jar, group: string, name: string): Promise<string> {
-  const res = await request(jar, "/api/groups", { form: { group, name } });
-  return (res.headers.get("location") ?? "").split("?")[0].replace("/g/", "");
-}
-const join = (jar: Jar, id: string, link: string, name: string) =>
-  request(jar, `/api/groups/${id}/join`, { form: { name, link } });
-
-async function savePasskey(jar: Jar, passkey: Authenticator, group?: string) {
-  const options = await (await request(jar, "/api/passkeys/register/options", { json: { group } })).json();
-  return request(jar, "/api/passkeys/register/verify", { json: passkey.create(options, origin) });
-}
-async function signInWith(jar: Jar, passkey: Authenticator, group?: string) {
-  const options = await (await request(jar, "/api/passkeys/signin/options", { json: {} })).json();
-  const response = passkey.get(options, origin);
-  return { res: await request(jar, "/api/passkeys/signin/verify", { json: { response, group } }), response };
-}
-const you = async (jar: Jar, link: string) => (await page(jar, `/g/${link}`)).querySelector(".you")?.textContent ?? "";
-
 describe("accounts by passkey", () => {
   it("saves a passkey from a group, then signs in on another device with no username", async () => {
     const phone = new Jar();
