@@ -2,22 +2,35 @@
 import SpotPhoto from "../../components/SpotPhoto.astro";
 import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
-import { getGroup, listMembers, listPicks, listPlaces } from "../../lib/db";
-import { clean, me } from "../../lib/me";
+import { groupByLink, listMembers, listPicks, listPlaces } from "../../lib/db";
+import { clean, me, signedIn } from "../../lib/me";
 import { search } from "../../lib/search";
 
-const group = getGroup(Astro.params.id ?? "");
-if (!group) return Astro.redirect("/", 303);
-
+// The link is the invite. After the owner resets it, the old one still
+// brings members back (to the new link), but lets nobody new in.
+const byLink = groupByLink(Astro.params.link ?? "");
+if (!byLink) return Astro.redirect("/", 303);
+const { group } = byLink;
 const member = me(Astro.cookies, group.id);
+if (!byLink.current) return member ? Astro.redirect(`/g/${group.link}`, 303) : Astro.rewrite("/link-reset");
+
+const account = signedIn(Astro.cookies);
+const isOwner = member !== undefined && member.id === group.ownerId;
 const members = listMembers(group.id);
 const picks = listPicks(group.id);
 const places = listPlaces();
 const onList = new Set(picks.map((p) => p.place.id));
 const kinds = Object.keys(KIND_LABEL) as Kind[];
-const shareUrl = new URL(`/g/${group.id}`, Astro.url).href;
+const shareUrl = new URL(`/g/${group.link}`, Astro.url).href;
 const isNew = Astro.url.searchParams.has("new");
 const error = Astro.url.searchParams.get("error");
+const done = Astro.url.searchParams.get("done");
+const DONE: Record<string, string> = {
+  renamed: "Renamed.",
+  removed: "Removed from the group.",
+  merged: "Merged: their keens and places are now one person's.",
+  reset: "New invite link made. The old one no longer lets anyone join; send this one instead.",
+};
 
 // A search answers with cards only: Explore shows the matching places, best
 // first, and the map shows just their pins.
@@ -54,15 +67,55 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
       <h2 id="join-title">Join {group.name}</h2>
       {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
       <form method="post" action={`/api/groups/${group.id}/join`} class="stack">
+        <input type="hidden" name="link" value={group.link} />
         <label>
           <span>Your name</span>
-          <input name="name" required maxlength="40" autocomplete="nickname" />
+          <input name="name" required maxlength="40" autocomplete="nickname" value={account?.name} />
         </label>
         <button class="btn btn--primary">Join the group</button>
       </form>
+      {!account && (
+        <p class="fine passkey-alt" data-passkey-only hidden>
+          Been here before on another device?{" "}
+          <button type="button" class="linkish" data-passkey="signin" data-group={group.id}>
+            Sign in with your passkey
+          </button>
+          <span class="passkey-msg" aria-live="polite"></span>
+        </p>
+      )}
     </section>
   ) : (
-    <p class="you">You're in as <strong>{member.name}</strong>.</p>
+    <div class="you">
+      <p>
+        You're in as <strong>{member.name}</strong>
+        {isOwner && <span class="owner-tag">owner</span>}.
+        {account && member.accountId === account.id && (
+          <>
+            {" "}Signed in with a passkey · <a href="/me">My groups</a>
+          </>
+        )}
+      </p>
+      {member.accountId === null && (
+        <div class="keep card" data-passkey-only hidden>
+          <div>
+            <strong>Be {member.name} on every device</strong>
+            <p class="fine">
+              Save a passkey (your face, fingerprint or phone PIN) and you can sign in anywhere and find all your
+              groups. No password, no email.
+            </p>
+          </div>
+          <div class="keep__actions">
+            <button type="button" class="btn btn--primary" data-passkey="register" data-group={group.id}>
+              Save a passkey
+            </button>
+            <button type="button" class="linkish" data-passkey="signin" data-group={group.id}>
+              I already have one
+            </button>
+            <span class="passkey-msg" aria-live="polite"></span>
+          </div>
+        </div>
+      )}
+    </div>
   )}
 
   <section id="list" aria-labelledby="list-title">
@@ -108,7 +161,7 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
     <div class="explore-head">
       <h2 id="explore-title">Explore</h2>
       <p class="fine">Places every group on Spots has shared, each with a reason it's good.</p>
-      <form class="ask" method="get" action={`/g/${group.id}#explore`} role="search" data-search>
+      <form class="ask" method="get" action={`/g/${group.link}#explore`} role="search" data-search>
         <label for="ask-q" class="sr-only">Describe what you're after</label>
         <input
           id="ask-q"
@@ -137,7 +190,7 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
             {found.places.length > 0 ? "Best matches first" : "Nothing shared fits that yet"}
             {found.near && ` · near ${found.near}`}
             {" · "}
-            <a href={`/g/${group.id}#explore`} data-clear-search>Show every place</a>
+            <a href={`/g/${group.link}#explore`} data-clear-search>Show every place</a>
           </p>
         )}
         <ul class="spots spots--explore">
@@ -227,13 +280,83 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
     </section>
   )}
 
+  {isOwner && (
+    <section id="settings" class="card settings" aria-labelledby="settings-title">
+      <h2 id="settings-title">Group settings</h2>
+      <p class="fine">Only you see this: you started {group.name}.</p>
+      {done && DONE[done] && <p class="notice notice--ok" role="status">{DONE[done]}</p>}
+
+      <form method="post" action={`/api/groups/${group.id}/owner`} class="settings__row">
+        <input type="hidden" name="action" value="rename" />
+        <label class="grow">
+          <span>Group name</span>
+          <input name="name" required maxlength="60" value={group.name} />
+        </label>
+        <button class="btn">Rename</button>
+      </form>
+
+      <h3>People</h3>
+      <ul class="people">
+        {members.map((m) => (
+          <li>
+            <span class="people__name">
+              {m.name}
+              {m.id === group.ownerId && <span class="owner-tag">owner</span>}
+              {m.accountId !== null && <span class="fine"> · passkey</span>}
+            </span>
+            {m.id !== group.ownerId && (
+              <form method="post" action={`/api/groups/${group.id}/owner`} data-confirm={`Remove ${m.name}? Their keens go too.`}>
+                <input type="hidden" name="action" value="remove" />
+                <input type="hidden" name="member" value={m.id} />
+                <button class="btn btn--small btn--ghost">Remove</button>
+              </form>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      {members.length > 1 && (
+        <form method="post" action={`/api/groups/${group.id}/owner`} class="settings__row merge">
+          <input type="hidden" name="action" value="merge" />
+          <label>
+            <span>Same person twice? Merge</span>
+            <select name="member" required>
+              {members.map((m) => <option value={m.id}>{m.name} (#{m.id})</option>)}
+            </select>
+          </label>
+          <label>
+            <span>into</span>
+            <select name="into" required>
+              {members.map((m, i) => <option value={m.id} selected={i === 0}>{m.name} (#{m.id})</option>)}
+            </select>
+          </label>
+          <button class="btn">Merge</button>
+        </form>
+      )}
+
+      <h3>Invite link</h3>
+      <form
+        method="post"
+        action={`/api/groups/${group.id}/owner`}
+        class="settings__row"
+        data-confirm="Make a new invite link? The old one will stop letting anyone new join."
+      >
+        <input type="hidden" name="action" value="reset" />
+        <p class="fine grow">
+          If the link got passed around further than you meant, make a new one. Everyone already in stays in.
+        </p>
+        <button class="btn">Reset invite link</button>
+      </form>
+    </section>
+  )}
+
   <script is:inline define:vars={{ groupId: group.id }}>
     // Live: anyone joining, picking or voting in this group, or any group
     // sharing a new place, reaches every open page within a moment, with no
     // reload by the viewer. The page asks the server for itself again and
     // swaps in the changed parts, keeping the scroll position, the map and
     // anything typed in the forms.
-    const regions = [".group-head .members", "#list", "#explore"];
+    const regions = [".group-head h1", ".group-head .members", ".share__row", "#list", "#explore", "#settings .people"];
     // The page as it is now, search included, without one-off notices.
     const current = () => {
       const q = new URLSearchParams(location.search).get("q");
@@ -244,7 +367,11 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
       if (pending) return;
       pending = true;
       try {
-        const html = await (await fetch(current(), { cache: "no-store" })).text();
+        const res = await fetch(current(), { cache: "no-store" });
+        // A reset invite link sends members on to the new one: follow it.
+        const landed = new URL(res.url);
+        if (landed.pathname !== location.pathname) history.replaceState(null, "", landed.pathname + location.search + location.hash);
+        const html = await res.text();
         const fresh = new DOMParser().parseFromString(html, "text/html");
         for (const selector of regions) {
           const now = document.querySelector(selector);
@@ -266,6 +393,18 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
       if (opened) refresh();
       opened = true;
     });
+    // Owner actions that can't be undone ask first.
+    document.addEventListener(
+      "submit",
+      (event) => {
+        const ask = event.target.dataset.confirm;
+        if (ask && !window.confirm(ask)) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      },
+      true,
+    );
     // A form that posts leaves the page, so the stream closes with it. Search
     // stays on the page: it asks for Explore with the prompt and swaps the
     // answer in, and the map fits itself to the cards that came back.
@@ -332,5 +471,6 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
   </script>
   <script>
     import "../../scripts/map";
+    import "../../scripts/passkeys";
   </script>
 </Base>

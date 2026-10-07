@@ -885,3 +885,165 @@ main {
     min-height: 16rem;
   }
 }
+
+/* ---- Accounts: passkeys, My groups, owner settings ------------------------- */
+
+.linkish {
+  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.passkey-msg {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.passkey-msg:empty {
+  display: none;
+}
+
+.owner-tag {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.you p {
+  margin: 0.8rem 0 0;
+}
+
+.keep {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem 1.5rem;
+  margin-top: 0.9rem;
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+
+.keep > div:first-child {
+  flex: 1 1 18rem;
+}
+
+.keep .fine {
+  margin: 0.25rem 0 0;
+}
+
+.keep__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+.settings {
+  margin-top: 2.2rem;
+}
+
+.settings h2 {
+  margin-top: 0;
+}
+
+.settings h3 {
+  margin: 1.4rem 0 0.5rem;
+  font-size: 1rem;
+}
+
+.settings__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.6rem;
+}
+
+.settings__row .grow {
+  flex: 1 1 14rem;
+  margin: 0;
+}
+
+.merge {
+  margin-top: 0.8rem;
+}
+
+.merge label {
+  flex: 1 1 10rem;
+}
+
+.people {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.people li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.notice--ok {
+  background: color-mix(in srgb, var(--outdoors) 14%, white);
+}
+
+.notice-page {
+  max-width: 34rem;
+  margin: 2.5rem auto;
+}
+
+.notice-page h1 {
+  margin: 0.3rem 0 0.8rem;
+}
+
+.stack-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 1rem 0;
+}
+
+.my-groups {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.9rem;
+}
+
+.my-group {
+  display: grid;
+  gap: 0.3rem;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.my-group:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px -24px rgb(36 28 21 / 55%);
+}
+
+.account {
+  margin-top: 2rem;
+  max-width: 40rem;
+}
+
+.keys {
+  padding-left: 1.1rem;
+}

@@ -34,8 +34,15 @@ other's taste.
   walk with a view" should find places, and the answer should be places: cards
   and pins, not a paragraph. Places are matched on meaning, using the reasons
   people wrote, so the better the reasons, the better the search.
-- **Joining costs nothing.** A link and a name. No account, no app to install,
-  no sign-up wall between the group chat and the decision.
+- **Joining costs nothing.** A link and a name. No app to install, no sign-up
+  wall between the group chat and the decision.
+- **You stay you, without a password.** Anyone who wants to be themselves on
+  their phone and their laptop can save a passkey (face, fingerprint or PIN)
+  and find all their groups in one place. It's optional, there's no
+  password or email, and it never stands between someone and joining.
+- **Whoever starts a group can look after it.** Rename it, take someone out,
+  merge someone who joined twice, and reset the invite link if it spread too
+  far, without losing anything the group made.
 - **It remembers.** What the group added and voted for stays, across visits,
   restarts and redeploys, so next weekend starts from the list, not from
   scratch.
@@ -63,8 +70,10 @@ other's taste.
 
 ## What I chose not to build
 
-- **Accounts and profiles.** A name inside one group is enough to tell friends
-  apart; logging in would be the biggest barrier between the chat and the app.
+- **Passwords, email sign-up and profiles.** An account is a passkey and a
+  name, nothing more, and only for people who want one. I first left accounts
+  out entirely, then found the cost: a friend on a second device became a
+  second person. Passkeys fix that without a sign-up wall.
 - **Public reviews and star ratings.** Spots is about what this group thinks.
 - **A directory of every place in Canberra.** A short checked starter list,
   plus the places people share with a reason. Nothing is imported in bulk.
@@ -81,5 +90,7 @@ click a card and the map flies to it. Add a place to your group's list, or
 share a new one by looking it up on OpenStreetMap and saying why it's good; it
 appears in every group's Explore. Vote "keen" and the list re-ranks live in
 every open page. Search Explore by describing what you're after: the answer is
-the matching cards, best first, and the map frames their pins. Next: deciding a
-date and time, and a "who's coming" for the chosen spot.
+the matching cards, best first, and the map frames their pins. Save a passkey
+to be yourself on any device and see all your groups; the person who started a
+group can rename it, remove or merge members, and reset its invite link. Next:
+deciding a date and time, and a "who's coming" for the chosen spot.

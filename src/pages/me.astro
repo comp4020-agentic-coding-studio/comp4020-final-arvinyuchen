@@ -1,0 +1,67 @@
+---
+import Base from "../layouts/Base.astro";
+import { listPasskeys } from "../lib/accounts";
+import { groupsOfAccount } from "../lib/db";
+import { signedIn } from "../lib/me";
+
+// Your account: every group you're in, on any device, and the passkeys that
+// can sign in as you.
+const account = signedIn(Astro.cookies);
+if (!account) return Astro.redirect("/signin", 303);
+const groups = groupsOfAccount(account.id);
+const passkeys = listPasskeys(account.id);
+const day = (sqlite: string) =>
+  new Date(`${sqlite.replace(" ", "T")}Z`).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+---
+
+<Base title="My groups · Spots">
+  <section class="group-head">
+    <p class="eyebrow">Signed in</p>
+    <h1>{account.name}'s groups</h1>
+  </section>
+
+  {groups.length === 0 ? (
+    <p class="empty">You're not in any groups right now. <a href="/">Start one</a>, or open a friend's invite link.</p>
+  ) : (
+    <ul class="my-groups">
+      {groups.map((g) => (
+        <li>
+          <a class="card my-group" href={`/g/${g.link}`}>
+            <strong>{g.name}</strong>
+            <span class="fine">
+              {g.people} {g.people === 1 ? "person" : "people"} · you're {g.as}
+              {g.owner && " · owner"}
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )}
+
+  <section class="card account" aria-labelledby="keys-title">
+    <h2 id="keys-title">Your passkeys</h2>
+    <ul class="keys">
+      {passkeys.map((p) => (
+        <li>
+          Added {day(p.createdAt)}
+          {p.synced ? " · syncs to your other devices" : " · this device only"}
+          {p.lastUsedAt && ` · last used ${day(p.lastUsedAt)}`}
+        </li>
+      ))}
+    </ul>
+    <p class="fine">
+      Using a device that doesn't share passkeys with this one, like an iPhone and a Windows laptop? Sign in there once
+      (your phone can scan a QR code), then add a passkey for it here.
+    </p>
+    <div data-passkey-only hidden class="stack-row">
+      <button type="button" class="btn" data-passkey="register">Add a passkey on this device</button>
+      <span class="passkey-msg" aria-live="polite"></span>
+    </div>
+    <form method="post" action="/api/signout">
+      <button class="btn btn--ghost">Sign out</button>
+    </form>
+  </section>
+  <script>
+    import "../scripts/passkeys";
+  </script>
+</Base>

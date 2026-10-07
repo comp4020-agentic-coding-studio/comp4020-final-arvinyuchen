@@ -1,0 +1,20 @@
+---
+import Base from "../layouts/Base.astro";
+
+// Shown at an invite link the group's owner has replaced (src/pages/g/[link].astro
+// renders this in its place for anyone who isn't already in the group).
+---
+
+<Base title="Link reset · Spots">
+  <section class="card notice-page">
+    <p class="eyebrow">Invite link</p>
+    <h1>This link has been reset</h1>
+    <p>
+      Whoever runs this group made a new invite link, so this one doesn't let anyone join any more. Ask someone in the
+      group to send you the new one.
+    </p>
+    <p class="fine">
+      Already in the group on another device? <a href="/signin">Sign in with your passkey</a> and it'll be in My groups.
+    </p>
+  </section>
+</Base>
