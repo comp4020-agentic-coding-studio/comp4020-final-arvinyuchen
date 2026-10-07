@@ -171,6 +171,28 @@ if (container) {
     if (active !== null) document.querySelectorAll(`[data-place="${active}"]`).forEach((el) => el.classList.add("spot--active"));
   });
 
+  // A search's answer is its cards; the map frames just their pins. One
+  // match flies in like a click on it; clearing the search pulls back out.
+  function frameSearch() {
+    const searching = Boolean(document.getElementById("explore")?.dataset.q);
+    const pins = [...markers.values()].map(({ pin }) => pin);
+    const move = reducedMotion.matches ? { duration: 0 } : { duration: 1400 };
+    if (!searching || pins.length === 0) {
+      active = null;
+      map.easeTo({ center: CANBERRA, zoom: 11.3, pitch: 0, bearing: 0, ...move });
+      return;
+    }
+    if (pins.length === 1) {
+      fly(pins[0].id);
+      return;
+    }
+    const bounds = new maplibregl.LngLatBounds();
+    for (const pin of pins) bounds.extend([pin.lon, pin.lat]);
+    map.fitBounds(bounds, { padding: 64, maxZoom: 15, pitch: 30, bearing: 0, ...move });
+  }
+  document.addEventListener("spots:searched", frameSearch);
+  if (document.getElementById("explore")?.dataset.q) frameSearch();
+
   // ---- sharing a place: find it on OpenStreetMap, then pick the match ------
   const finder = document.querySelector<HTMLElement>(".finder");
   const form = document.querySelector<HTMLFormElement>("#add-form");

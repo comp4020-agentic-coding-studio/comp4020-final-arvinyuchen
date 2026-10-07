@@ -3,6 +3,7 @@ import { KIND_LABEL, type Kind } from "../../../../lib/catalogue";
 import { addPick, addPlace, getGroup } from "../../../../lib/db";
 import { changed, placesChanged } from "../../../../lib/events";
 import { clean, me } from "../../../../lib/me";
+import { indexPlaces } from "../../../../lib/search";
 
 // Share a new place with every group, and put it on this group's list. A
 // place only gets in with a reason it's good: that line is what Spots keeps
@@ -43,5 +44,7 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   addPick(group.id, placeId, member);
   changed(group.id);
   placesChanged();
+  // Its vector is made now, so the next search can already find it.
+  void indexPlaces();
   return redirect(`/g/${group.id}?added=${placeId}#list`, 303);
 };

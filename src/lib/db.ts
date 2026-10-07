@@ -72,6 +72,18 @@ if (!pickColumns.some((c) => c.name === "place_id")) {
 }
 db.exec("CREATE UNIQUE INDEX IF NOT EXISTS picks_group_place ON picks (group_id, place_id)");
 
+// Each place's card as a vector, for search by meaning (src/lib/search.ts).
+// It keeps the exact text and model it was made from, so a changed card or
+// a new model gets a fresh vector instead of a stale one.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS place_vectors (
+    place_id INTEGER PRIMARY KEY REFERENCES places(id),
+    model TEXT NOT NULL,
+    text TEXT NOT NULL,
+    vec BLOB NOT NULL
+  );
+`);
+
 // The checked starter places, upserted by key so a corrected coordinate,
 // blurb or photo reaches the live database on the next deploy.
 const seed = db.prepare(`
@@ -269,4 +281,27 @@ export function toggleKeen(pickId: number, member: Member, groupId: string): boo
   const removed = db.prepare("DELETE FROM votes WHERE pick_id = ? AND member_id = ?").run(pickId, member.id);
   if (removed.changes === 0) db.prepare("INSERT INTO votes (pick_id, member_id) VALUES (?, ?)").run(pickId, member.id);
   return true;
+}
+
+export interface PlaceVector {
+  text: string;
+  vec: Float32Array;
+}
+
+/** Every stored card vector made by `model`, by place id. */
+export function listVectors(model: string): Map<number, PlaceVector> {
+  const rows = db.prepare("SELECT place_id, text, vec FROM place_vectors WHERE model = ?").all(model) as {
+    place_id: number;
+    text: string;
+    vec: Buffer;
+  }[];
+  // Copied into a fresh buffer: a Float32Array needs 4-byte alignment.
+  return new Map(rows.map((r) => [r.place_id, { text: r.text, vec: new Float32Array(new Uint8Array(r.vec).buffer) }]));
+}
+
+export function saveVector(placeId: number, model: string, text: string, vec: Float32Array): void {
+  db.prepare(
+    `INSERT INTO place_vectors (place_id, model, text, vec) VALUES (?, ?, ?, ?)
+     ON CONFLICT(place_id) DO UPDATE SET model = excluded.model, text = excluded.text, vec = excluded.vec`,
+  ).run(placeId, model, text, Buffer.from(vec.buffer, vec.byteOffset, vec.byteLength));
 }

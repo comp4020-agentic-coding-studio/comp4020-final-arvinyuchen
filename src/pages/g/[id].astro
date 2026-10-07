@@ -3,7 +3,8 @@ import SpotPhoto from "../../components/SpotPhoto.astro";
 import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
 import { getGroup, listMembers, listPicks, listPlaces } from "../../lib/db";
-import { me } from "../../lib/me";
+import { clean, me } from "../../lib/me";
+import { search } from "../../lib/search";
 
 const group = getGroup(Astro.params.id ?? "");
 if (!group) return Astro.redirect("/", 303);
@@ -18,9 +19,15 @@ const shareUrl = new URL(`/g/${group.id}`, Astro.url).href;
 const isNew = Astro.url.searchParams.has("new");
 const error = Astro.url.searchParams.get("error");
 
-// What the map draws: every shared place that has a location. Carried as
+// A search answers with cards only: Explore shows the matching places, best
+// first, and the map shows just their pins.
+const q = clean(Astro.url.searchParams.get("q"), 200);
+const found = q ? await search(q, places) : null;
+const shown = found ? found.places : places;
+
+// What the map draws: every place in Explore that has a location. Carried as
 // JSON inside #explore, so a live refresh of Explore refreshes the pins too.
-const pins = places
+const pins = shown
   .filter((p) => p.lat !== null && p.lon !== null)
   .map(({ id, name, kind, area, lat, lon }) => ({ id, name, kind, area, lat, lon }));
 const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
@@ -101,6 +108,18 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
     <div class="explore-head">
       <h2 id="explore-title">Explore</h2>
       <p class="fine">Places every group on Spots has shared, each with a reason it's good.</p>
+      <form class="ask" method="get" action={`/g/${group.id}#explore`} role="search" data-search>
+        <label for="ask-q" class="sr-only">Describe what you're after</label>
+        <input
+          id="ask-q"
+          name="q"
+          value={q}
+          maxlength="200"
+          autocomplete="off"
+          placeholder="Describe it: “cheap dumplings near Dickson”, “a walk with a view”"
+        />
+        <button class="btn btn--primary">Find</button>
+      </form>
       <div class="filters" role="group" aria-label="Show" hidden>
         <button type="button" class="chip chip--on" data-filter="all" aria-pressed="true">All</button>
         {kinds.map((k) => (
@@ -111,10 +130,18 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
       </div>
     </div>
     <div class="explore-grid">
-      <div id="explore">
+      <div id="explore" data-q={q || undefined}>
         <script type="application/json" id="pins" is:inline set:html={pinsJson} />
+        {found && (
+          <p class="ask-meta">
+            {found.places.length > 0 ? "Best matches first" : "Nothing shared fits that yet"}
+            {found.near && ` · near ${found.near}`}
+            {" · "}
+            <a href={`/g/${group.id}#explore`} data-clear-search>Show every place</a>
+          </p>
+        )}
         <ul class="spots spots--explore">
-          {places.map((p) => (
+          {shown.map((p) => (
             <li class={`spot spot--${p.kind}`} data-kind={p.kind} data-place={p.lat !== null ? p.id : undefined}>
               <SpotPhoto photo={p.photo} name={p.name} kind={p.kind} />
               <div class="spot__meta">
@@ -207,12 +234,17 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
     // swaps in the changed parts, keeping the scroll position, the map and
     // anything typed in the forms.
     const regions = [".group-head .members", "#list", "#explore"];
+    // The page as it is now, search included, without one-off notices.
+    const current = () => {
+      const q = new URLSearchParams(location.search).get("q");
+      return location.pathname + (q ? `?q=${encodeURIComponent(q)}` : "");
+    };
     let pending = false;
     async function refresh() {
       if (pending) return;
       pending = true;
       try {
-        const html = await (await fetch(location.pathname, { cache: "no-store" })).text();
+        const html = await (await fetch(current(), { cache: "no-store" })).text();
         const fresh = new DOMParser().parseFromString(html, "text/html");
         for (const selector of regions) {
           const now = document.querySelector(selector);
@@ -234,7 +266,56 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
       if (opened) refresh();
       opened = true;
     });
-    document.addEventListener("submit", () => source.close(), true);
+    // A form that posts leaves the page, so the stream closes with it. Search
+    // stays on the page: it asks for Explore with the prompt and swaps the
+    // answer in, and the map fits itself to the cards that came back.
+    document.addEventListener(
+      "submit",
+      (event) => {
+        if (!event.target.matches("[data-search]")) source.close();
+      },
+      true,
+    );
+    const ask = document.querySelector("[data-search]");
+    const askInput = ask?.querySelector("input[name=q]");
+    async function showSearch(q, push) {
+      const url = location.pathname + (q ? `?q=${encodeURIComponent(q)}` : "") + "#explore";
+      if (push) history.pushState(null, "", url);
+      const button = ask.querySelector("button");
+      const explore = document.querySelector("#explore");
+      button.disabled = true;
+      explore.classList.add("is-asking");
+      try {
+        const html = await (await fetch(current(), { cache: "no-store" })).text();
+        const next = new DOMParser().parseFromString(html, "text/html").querySelector("#explore");
+        if (next) {
+          explore.innerHTML = next.innerHTML;
+          if (next.dataset.q) explore.dataset.q = next.dataset.q;
+          else delete explore.dataset.q;
+        }
+        document.dispatchEvent(new Event("spots:refreshed"));
+        document.dispatchEvent(new Event("spots:searched"));
+      } catch {
+        location.href = url;
+      } finally {
+        button.disabled = false;
+        explore.classList.remove("is-asking");
+      }
+    }
+    ask?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      showSearch(askInput.value.trim(), true);
+    });
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest("[data-clear-search]")) return;
+      event.preventDefault();
+      askInput.value = "";
+      showSearch("", true);
+    });
+    window.addEventListener("popstate", () => {
+      askInput.value = new URLSearchParams(location.search).get("q") ?? "";
+      showSearch(askInput.value, false);
+    });
 
     for (const button of document.querySelectorAll("[data-copy]")) {
       button.addEventListener("click", async () => {
