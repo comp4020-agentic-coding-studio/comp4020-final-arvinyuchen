@@ -5,6 +5,12 @@
 // didn't back up was cut. A group's own finds go alongside these (see
 // addCustomPick in db.ts), and those are the ones that make a list theirs.
 //
+// Coordinates come from each Wikipedia article, or, where it has none (the
+// two streets, the markets, Questacon), from OpenStreetMap's Nominatim.
+//
+// These are only the seed: on boot they're upserted into the shared `places`
+// table (src/lib/db.ts), where every place any group adds joins them.
+//
 // Photos are from Wikimedia Commons under the licence named, hotlinked as
 // 800px thumbnails, and credited on the card with a link to the file page,
 // which is what CC BY and CC BY-SA ask for.
@@ -19,6 +25,8 @@ export interface Photo {
 
 export interface CatalogueSpot {
   key: string;
+  lat: number;
+  lon: number;
   name: string;
   kind: Kind;
   area: string;
@@ -36,6 +44,8 @@ export const KIND_LABEL: Record<Kind, string> = {
 export const CATALOGUE: CatalogueSpot[] = [
   {
     key: "lonsdale-st",
+    lat: -35.2759125,
+    lon: 149.1324111,
     name: "Lonsdale Street",
     kind: "food",
     area: "Braddon",
@@ -45,6 +55,8 @@ export const CATALOGUE: CatalogueSpot[] = [
   },
   {
     key: "woolley-st",
+    lat: -35.2502783,
+    lon: 149.1366687,
     name: "Woolley Street",
     kind: "food",
     area: "Dickson",
@@ -54,6 +66,8 @@ export const CATALOGUE: CatalogueSpot[] = [
   },
   {
     key: "bus-depot-markets",
+    lat: -35.312704,
+    lon: 149.144205,
     name: "Old Bus Depot Markets",
     kind: "food",
     area: "Kingston",
@@ -63,6 +77,8 @@ export const CATALOGUE: CatalogueSpot[] = [
   },
   {
     key: "questacon",
+    lat: -35.2985062,
+    lon: 149.1312548,
     name: "Questacon",
     kind: "fun",
     area: "Parkes",
@@ -72,6 +88,8 @@ export const CATALOGUE: CatalogueSpot[] = [
   },
   {
     key: "nga",
+    lat: -35.3003,
+    lon: 149.1364,
     name: "National Gallery of Australia",
     kind: "fun",
     area: "Parkes",
@@ -81,6 +99,8 @@ export const CATALOGUE: CatalogueSpot[] = [
   },
   {
     key: "nma",
+    lat: -35.293056,
+    lon: 149.120833,
     name: "National Museum of Australia",
     kind: "fun",
     area: "Acton",
@@ -90,6 +110,8 @@ export const CATALOGUE: CatalogueSpot[] = [
   },
   {
     key: "awm",
+    lat: -35.2805,
+    lon: 149.1491,
     name: "Australian War Memorial",
     kind: "fun",
     area: "Campbell",
@@ -99,6 +121,8 @@ export const CATALOGUE: CatalogueSpot[] = [
   },
   {
     key: "glassworks",
+    lat: -35.3115975,
+    lon: 149.1436952,
     name: "Canberra Glassworks",
     kind: "fun",
     area: "Kingston",
@@ -108,6 +132,8 @@ export const CATALOGUE: CatalogueSpot[] = [
   },
   {
     key: "mt-ainslie",
+    lat: -35.27,
+    lon: 149.15833333,
     name: "Mount Ainslie",
     kind: "outdoors",
     area: "Campbell",
@@ -117,6 +143,8 @@ export const CATALOGUE: CatalogueSpot[] = [
   },
   {
     key: "lake-loop",
+    lat: -35.29333333,
+    lon: 149.11388889,
     name: "Lake Burley Griffin",
     kind: "outdoors",
     area: "Central",
@@ -126,6 +154,8 @@ export const CATALOGUE: CatalogueSpot[] = [
   },
   {
     key: "arboretum",
+    lat: -35.29,
+    lon: 149.07,
     name: "National Arboretum",
     kind: "outdoors",
     area: "Molonglo",
@@ -135,6 +165,8 @@ export const CATALOGUE: CatalogueSpot[] = [
   },
   {
     key: "botanic-gardens",
+    lat: -35.27888889,
+    lon: 149.10916667,
     name: "Australian National Botanic Gardens",
     kind: "outdoors",
     area: "Acton",
@@ -144,6 +176,8 @@ export const CATALOGUE: CatalogueSpot[] = [
   },
   {
     key: "haig-park",
+    lat: -35.269729,
+    lon: 149.130471,
     name: "Haig Park",
     kind: "outdoors",
     area: "Braddon",
@@ -153,6 +187,8 @@ export const CATALOGUE: CatalogueSpot[] = [
   },
   {
     key: "tidbinbilla",
+    lat: -35.46305556,
+    lon: 148.91333333,
     name: "Tidbinbilla Nature Reserve",
     kind: "outdoors",
     area: "Paddys River",
@@ -162,4 +198,3 @@ export const CATALOGUE: CatalogueSpot[] = [
   },
 ];
 
-export const catalogueSpot = (key: string | null) => CATALOGUE.find((s) => s.key === key);

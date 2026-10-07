@@ -1,8 +1,8 @@
 ---
 import SpotPhoto from "../../components/SpotPhoto.astro";
 import Base from "../../layouts/Base.astro";
-import { CATALOGUE, KIND_LABEL, type Kind, catalogueSpot } from "../../lib/catalogue";
-import { getGroup, listMembers, listPicks } from "../../lib/db";
+import { KIND_LABEL, type Kind } from "../../lib/catalogue";
+import { getGroup, listMembers, listPicks, listPlaces } from "../../lib/db";
 import { me } from "../../lib/me";
 
 const group = getGroup(Astro.params.id ?? "");
@@ -11,11 +11,19 @@ if (!group) return Astro.redirect("/", 303);
 const member = me(Astro.cookies, group.id);
 const members = listMembers(group.id);
 const picks = listPicks(group.id);
-const onList = new Set(picks.map((p) => p.catalogueKey).filter(Boolean));
+const places = listPlaces();
+const onList = new Set(picks.map((p) => p.place.id));
 const kinds = Object.keys(KIND_LABEL) as Kind[];
 const shareUrl = new URL(`/g/${group.id}`, Astro.url).href;
 const isNew = Astro.url.searchParams.has("new");
 const error = Astro.url.searchParams.get("error");
+
+// What the map draws: every shared place that has a location. Carried as
+// JSON inside #explore, so a live refresh of Explore refreshes the pins too.
+const pins = places
+  .filter((p) => p.lat !== null && p.lon !== null)
+  .map(({ id, name, kind, area, lat, lon }) => ({ id, name, kind, area, lat, lon }));
+const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
 ---
 
 <Base title={`${group.name} · Spots`}>
@@ -56,25 +64,28 @@ const error = Astro.url.searchParams.get("error");
       <p class="empty">Nothing on the list yet. Add something from Explore below.</p>
     ) : (
       <ol class="picks">
-        {picks.map((p, i) => {
-          const mine = member ? p.keen.includes(member.name) : false;
+        {picks.map(({ id, place, addedBy, keen }, i) => {
+          const mine = member ? keen.includes(member.name) : false;
           return (
-            <li id={`pick-${p.id}`} class={`pick spot--${p.kind}${i === 0 && p.keen.length > 0 ? " pick--top" : ""}`}>
-              <SpotPhoto photo={catalogueSpot(p.catalogueKey)?.photo} name={p.name} kind={p.kind} small />
+            <li
+              id={`pick-${id}`}
+              class={`pick spot--${place.kind}${i === 0 && keen.length > 0 ? " pick--top" : ""}`}
+              data-place={place.lat !== null ? place.id : undefined}
+            >
+              <SpotPhoto photo={place.photo} name={place.name} kind={place.kind} small />
               <div class="pick__main">
-                <span class="tag">{KIND_LABEL[p.kind]}</span>
-                <h3>{p.name}</h3>
+                <span class="tag">{KIND_LABEL[place.kind]}</span>
+                <h3>{place.name}</h3>
                 <p class="area">
-                  {p.area && `${p.area} · `}added by {p.addedBy}
+                  {place.area && `${place.area} · `}added by {addedBy}
                 </p>
-                {p.note && <p class="note">“{p.note}”</p>}
-                <p class="keen-who">{p.keen.length > 0 ? `Keen: ${p.keen.join(", ")}` : "No one's keen yet"}</p>
+                <p class="keen-who">{keen.length > 0 ? `Keen: ${keen.join(", ")}` : "No one's keen yet"}</p>
               </div>
               {member && (
                 <form method="post" action={`/api/groups/${group.id}/keen`}>
-                  <input type="hidden" name="pick" value={p.id} />
+                  <input type="hidden" name="pick" value={id} />
                   <button class={`keen${mine ? " keen--on" : ""}`} aria-pressed={mine ? "true" : "false"}>
-                    <span class="keen__count">{p.keen.length}</span>
+                    <span class="keen__count">{keen.length}</span>
                     <span>{mine ? "Keen!" : "I'm keen"}</span>
                   </button>
                 </form>
@@ -86,39 +97,85 @@ const error = Astro.url.searchParams.get("error");
     )}
   </section>
 
-  <section id="explore" aria-labelledby="explore-title">
-    <h2 id="explore-title">Explore</h2>
-    {kinds.map((kind) => (
-      <div class="explore-kind">
-        <h3>{KIND_LABEL[kind]}</h3>
-        <ul class="spots">
-          {CATALOGUE.filter((s) => s.kind === kind).map((s) => (
-            <li class={`spot spot--${s.kind}`}>
-              <SpotPhoto photo={s.photo} name={s.name} kind={s.kind} />
-              <h4>{s.name}</h4>
-              <p class="area">{s.area}</p>
-              <p>{s.blurb}</p>
-              {member &&
-                (onList.has(s.key) ? (
-                  <p class="added">On the list</p>
-                ) : (
-                  <form method="post" action={`/api/groups/${group.id}/picks`}>
-                    <input type="hidden" name="key" value={s.key} />
-                    <button class="btn btn--small">Add to our list</button>
-                  </form>
-                ))}
+  <section class="explore-wrap" aria-labelledby="explore-title">
+    <div class="explore-head">
+      <h2 id="explore-title">Explore</h2>
+      <p class="fine">Places every group on Spots has shared, each with a reason it's good.</p>
+      <div class="filters" role="group" aria-label="Show" hidden>
+        <button type="button" class="chip chip--on" data-filter="all" aria-pressed="true">All</button>
+        {kinds.map((k) => (
+          <button type="button" class={`chip chip--${k}`} data-filter={k} aria-pressed="false">
+            {KIND_LABEL[k]}
+          </button>
+        ))}
+      </div>
+    </div>
+    <div class="explore-grid">
+      <div id="explore">
+        <script type="application/json" id="pins" is:inline set:html={pinsJson} />
+        <ul class="spots spots--explore">
+          {places.map((p) => (
+            <li class={`spot spot--${p.kind}`} data-kind={p.kind} data-place={p.lat !== null ? p.id : undefined}>
+              <SpotPhoto photo={p.photo} name={p.name} kind={p.kind} />
+              <div class="spot__meta">
+                <span class="tag">{KIND_LABEL[p.kind]}</span>
+                {p.groups > 0 && (
+                  <span class="groups">
+                    On {p.groups} {p.groups === 1 ? "list" : "lists"}
+                  </span>
+                )}
+              </div>
+              <h3>{p.name}</h3>
+              <p class="area">{p.area}</p>
+              <p class="why">{p.addedBy === "Spots" ? p.why : `“${p.why}” — ${p.addedBy}`}</p>
+              <div class="spot__actions">
+                {p.lat !== null && (
+                  <button type="button" class="btn btn--small btn--ghost" data-fly={p.id}>
+                    Show on map
+                  </button>
+                )}
+                {member &&
+                  (onList.has(p.id) ? (
+                    <span class="added">On our list</span>
+                  ) : (
+                    <form method="post" action={`/api/groups/${group.id}/picks`}>
+                      <input type="hidden" name="place" value={p.id} />
+                      <button class="btn btn--small">Add to our list</button>
+                    </form>
+                  ))}
+              </div>
             </li>
           ))}
         </ul>
       </div>
-    ))}
+      <div class="map-wrap">
+        <div id="map" role="region" aria-label="Map of the places in Explore"></div>
+        <p class="map-credit">
+          Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, tiles by <a href="https://openfreemap.org">OpenFreeMap</a>
+        </p>
+      </div>
+    </div>
   </section>
 
   {member && (
-    <section id="add" class="card" aria-labelledby="add-title">
-      <h2 id="add-title">Add your own find</h2>
-      {error === "spot" && <p class="notice" role="alert">A spot needs a name and a kind.</p>}
-      <form method="post" action={`/api/groups/${group.id}/picks`} class="grid-form">
+    <section id="add" class="card add" aria-labelledby="add-title">
+      <h2 id="add-title">Share a good place</h2>
+      <p class="fine">
+        It goes into Explore for every group, so only add somewhere you'd actually send a friend, and say why.
+      </p>
+      {error === "place" && <p class="notice" role="alert">A place needs a name, a kind and a reason it's good.</p>}
+      <div class="finder" hidden>
+        <label for="find-q"><span>Find it on the map</span></label>
+        <div class="finder__row">
+          <input id="find-q" placeholder="e.g. Morning Glory Dickson" autocomplete="off" />
+          <button type="button" class="btn" id="find-go">Find</button>
+        </div>
+        <ul class="finder__results" aria-live="polite"></ul>
+      </div>
+      <form method="post" action={`/api/groups/${group.id}/places`} class="grid-form" id="add-form">
+        <input type="hidden" name="osm" />
+        <input type="hidden" name="lat" />
+        <input type="hidden" name="lon" />
         <label>
           <span>Name</span>
           <input name="name" required maxlength="80" placeholder="That dumpling place" />
@@ -130,23 +187,25 @@ const error = Astro.url.searchParams.get("error");
           </select>
         </label>
         <label>
-          <span>Area</span>
-          <input name="area" maxlength="40" placeholder="Civic" />
+          <span>Suburb</span>
+          <input name="area" maxlength="40" placeholder="Dickson" />
         </label>
         <label class="wide">
-          <span>Why it's good</span>
-          <input name="note" maxlength="140" placeholder="Best chilli oil in Canberra" />
+          <span>Why it's good (required)</span>
+          <input name="why" required maxlength="160" placeholder="Best chilli oil in Canberra, and open late" />
         </label>
-        <button class="btn btn--primary wide">Add to our list</button>
+        <p class="located wide" hidden></p>
+        <button class="btn btn--primary wide">Share it and add to our list</button>
       </form>
     </section>
   )}
 
   <script is:inline define:vars={{ groupId: group.id }}>
-    // Live: anyone joining, adding or voting in this group reaches every open
-    // page of it within a moment, with no reload by the viewer. The page asks
-    // the server for itself again and swaps in the changed parts, keeping the
-    // scroll position and anything typed in the forms.
+    // Live: anyone joining, picking or voting in this group, or any group
+    // sharing a new place, reaches every open page within a moment, with no
+    // reload by the viewer. The page asks the server for itself again and
+    // swaps in the changed parts, keeping the scroll position, the map and
+    // anything typed in the forms.
     const regions = [".group-head .members", "#list", "#explore"];
     let pending = false;
     async function refresh() {
@@ -160,6 +219,7 @@ const error = Astro.url.searchParams.get("error");
           const next = fresh.querySelector(selector);
           if (now && next && now.innerHTML !== next.innerHTML) now.innerHTML = next.innerHTML;
         }
+        document.dispatchEvent(new Event("spots:refreshed"));
       } catch {
         location.reload();
       } finally {
@@ -168,6 +228,7 @@ const error = Astro.url.searchParams.get("error");
     }
     const source = new EventSource(`/api/events?group=${encodeURIComponent(groupId)}`);
     source.addEventListener("change", refresh);
+    source.addEventListener("places", refresh);
     let opened = false;
     source.addEventListener("open", () => {
       if (opened) refresh();
@@ -187,5 +248,8 @@ const error = Astro.url.searchParams.get("error");
         setTimeout(() => (button.textContent = "Copy"), 1500);
       });
     }
+  </script>
+  <script>
+    import "../../scripts/map";
   </script>
 </Base>
