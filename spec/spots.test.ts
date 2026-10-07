@@ -127,3 +127,46 @@ describe("a group", () => {
     expect(got).toContain("event: change");
   }, 10_000);
 });
+
+// Searching Explore by describing what you're after. The answer is cards
+// and pins only. These hold whether the app is matching on meaning (with a
+// Voyage key) or falling back to words (without one, as in CI).
+describe("search", () => {
+  const ask = async (q: string) => {
+    const start = await post("/api/groups", { group: "Search crew", name: "Ana" });
+    const path = (start.headers.get("location") ?? "").split("?")[0];
+    const doc = await page(`${path}?q=${encodeURIComponent(q)}`, cookieOf(start));
+    return {
+      doc,
+      cards: [...doc.querySelectorAll("#explore .spots--explore > li h3")].map((h) => h.textContent?.trim()),
+      pins: JSON.parse(doc.querySelector("#pins")?.textContent ?? "[]") as { name: string }[],
+    };
+  };
+
+  it("is a plain GET form, so it works without JavaScript", async () => {
+    const { doc } = await ask("");
+    const form = doc.querySelector<HTMLFormElement>("form[data-search]");
+    expect(form?.getAttribute("method")).toBe("get");
+    expect(form?.querySelector('input[name="q"]')).toBeTruthy();
+  });
+
+  it("puts the place a prompt names first, and the map shows only the answers", async () => {
+    const { cards, pins } = await ask("Questacon");
+    expect(cards[0]).toBe("Questacon");
+    expect(pins.map((p) => p.name).sort()).toEqual([...cards].filter(Boolean).sort());
+  });
+
+  it("takes 'near' literally: only places within a few kilometres", async () => {
+    const { cards } = await ask("somewhere near Braddon");
+    expect(cards).toContain("Lonsdale Street");
+    expect(cards).toContain("Haig Park");
+    expect(cards).not.toContain("Tidbinbilla Nature Reserve");
+    expect(cards).not.toContain("National Arboretum");
+  });
+
+  it("answers nothing, rather than anything, when nothing fits", async () => {
+    const { cards, doc } = await ask("xqzv blorfnik");
+    expect(cards).toEqual([]);
+    expect(doc.querySelector(".ask-meta")?.textContent).toContain("Nothing shared fits");
+  });
+});
