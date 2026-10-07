@@ -61,6 +61,37 @@ words, so it degrades rather than breaks. Embeddings are weak at "not" ("not
 too loud" sits near "loud"), and the search is only as good as the reasons
 people write.
 
+## Accounts, by passkey only
+
+**Context.** Group links persist (they're rows in SQLite on the volume), but
+who you are in a group was only a cookie in one browser. On a second device,
+or after clearing cookies, a friend joined again and became a second person,
+with none of their keens. And whoever started a group had no way to look
+after it.
+
+**Decision.** Optional accounts whose only credential is a passkey
+(WebAuthn, via SimpleWebAuthn): no password, no email, no third-party sign-in.
+An account starts from a member already in a group, so joining is still a
+link and a name. Passkeys are discoverable, so signing in needs no username;
+they sync through iCloud Keychain or Google Password Manager, and a QR code
+covers a phone signing in on someone else's laptop. The group's first member
+is its owner, with four tools: rename, remove, merge duplicates, reset the
+invite link. A reset retires the old link instead of changing the group's
+id, so members following an old link are sent to the new one.
+
+**Why not the alternatives.** A magic link by email needs a mail service, a
+key and people's email addresses, and lands in spam. "Sign in with Google"
+needs app registration, client secrets and a consent screen, and makes
+Spots depend on someone else's account.
+
+**Trade-offs.** Passkeys need JavaScript and a device that has them; without
+both the buttons don't appear and everything else still works. Lose every
+device holding the passkey and the account is gone (the groups aren't); a
+second passkey on another device is the only recovery. Real Face ID can't be
+driven from the test suite, so `spec/authenticator.ts` is a software
+passkey that signs exactly as a device does, and the server's real
+verification runs against it.
+
 ## How I worked with the agent
 
 - I chose the idea and the audience; the agent offered options and pushed

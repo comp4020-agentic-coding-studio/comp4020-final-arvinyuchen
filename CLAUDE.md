@@ -21,8 +21,17 @@ follow from it; every change has to hold to them.
 - **One person, one keen.** A member can vote "keen" on a spot once; voting
   again takes it back. Never let a vote be cast for someone else: identity is
   the per-group cookie (`src/lib/me.ts`), never a name typed into a form.
-- **Joining stays a link and a name.** Don't add accounts, passwords, email or
-  sign-up steps.
+- **Joining stays a link and a name.** An account is optional and never stands
+  between someone and joining or voting.
+- **Accounts are passkeys only.** No passwords, no email, no "sign in with"
+  providers. An account starts from a member who's already in a group
+  (`src/pages/api/passkeys/`), its sessions store only a hash of their token,
+  and `me()` in `src/lib/me.ts` is the one place that decides who someone is:
+  their account's member first, then the group cookie.
+- **The owner's tools keep what the group made.** Removing or merging a member
+  marks them, never deletes them: what they added keeps their name. Only a
+  removed member's keens go. Resetting the invite link retires the old one;
+  members who follow it land on the new one, nobody new gets in.
 - **Live means live.** Any join, add or vote must reach every other open page
   of that group within about a second, without the viewer reloading
   (`src/pages/api/events.ts` + the page's refresh script). A new kind of
