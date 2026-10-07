@@ -4,7 +4,7 @@ import type { Kind, Photo } from "../lib/catalogue";
 // A spot's photo with its credit, or, for a group's own finds (which have no
 // photo), a plain panel in the spot's kind colour with its initial.
 interface Props {
-  photo?: Photo;
+  photo?: Photo | null;
   name: string;
   kind: Kind;
   small?: boolean;

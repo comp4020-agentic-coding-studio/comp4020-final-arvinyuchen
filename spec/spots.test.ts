@@ -3,8 +3,9 @@ import { describe, expect, inject, it } from "vitest";
 
 // Spots' own promises, against the running app: a stranger can start a
 // group, a friend can join by its link, a spot added and voted for is still
-// there when they come back, one person counts once, and the group's page
-// streams changes live.
+// there when they come back, one person counts once, a place shared by one
+// group reaches every group's Explore (but never another group's list), no
+// place gets in without a reason, and the group's page streams changes live.
 const baseUrl = inject("baseUrl");
 
 const post = (path: string, body: Record<string, string>, cookie = "") =>
@@ -61,6 +62,50 @@ describe("a group", () => {
     await post(`${groupPath.replace("/g/", "/api/groups/")}/picks`, { key: "nga" });
     const doc = await page(groupPath, cookieOf(start));
     expect(doc.querySelector("#list")?.textContent).not.toContain("National Gallery");
+  });
+
+  it("shares a new place with every group, with its reason, and keeps it on the sharer's list", async () => {
+    const ours = await post("/api/groups", { group: "Sharers", name: "Ana" });
+    const ana = cookieOf(ours);
+    const ourPath = (ours.headers.get("location") ?? "").split("?")[0];
+    const name = `Spec Dumplings ${Date.now()}`;
+    const res = await post(
+      `${ourPath.replace("/g/", "/api/groups/")}/places`,
+      { name, kind: "food", area: "Dickson", why: "Chilli oil worth the trip" },
+      ana,
+    );
+    expect(res.status).toBe(303);
+    expect((await page(ourPath, ana)).querySelector("#list")?.textContent).toContain(name);
+
+    const theirs = await post("/api/groups", { group: "Another crew", name: "Ben" });
+    const theirPath = (theirs.headers.get("location") ?? "").split("?")[0];
+    const explore = (await page(theirPath, cookieOf(theirs))).querySelector("#explore")?.textContent ?? "";
+    expect(explore).toContain(name);
+    expect(explore).toContain("Chilli oil worth the trip");
+    // the other group's members and list stay their own
+    expect((await page(theirPath)).querySelector("#list")?.textContent).not.toContain(name);
+  });
+
+  it("refuses a place with no reason it's good", async () => {
+    const start = await post("/api/groups", { group: "No reason crew", name: "Ana" });
+    const groupPath = (start.headers.get("location") ?? "").split("?")[0];
+    const name = `Unexplained ${Date.now()}`;
+    const res = await post(
+      `${groupPath.replace("/g/", "/api/groups/")}/places`,
+      { name, kind: "fun", area: "Civic", why: "" },
+      cookieOf(start),
+    );
+    expect(res.headers.get("location")).toContain("error=place");
+    expect((await page(groupPath)).querySelector("#explore")?.textContent).not.toContain(name);
+  });
+
+  it("puts every located place on the map", async () => {
+    const start = await post("/api/groups", { group: "Map crew", name: "Ana" });
+    const doc = await page((start.headers.get("location") ?? "").split("?")[0], cookieOf(start));
+    const pins = JSON.parse(doc.querySelector("#pins")?.textContent ?? "[]") as { name: string; lat: number }[];
+    expect(pins.map((p) => p.name)).toContain("Questacon");
+    expect(pins.every((p) => p.lat < -35 && p.lat > -36)).toBe(true);
+    expect(doc.querySelector("#map")).toBeTruthy();
   });
 
   it("streams changes to the group's open pages", async () => {

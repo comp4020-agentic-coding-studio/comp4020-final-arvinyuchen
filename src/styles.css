@@ -538,3 +538,283 @@ select:focus-visible {
     width: 4.25rem;
   }
 }
+
+/* ---- Explore + map --------------------------------------------------------- */
+
+main {
+  max-width: 76rem;
+}
+
+.explore-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  margin-top: 2.2rem;
+}
+
+.explore-head h2 {
+  margin: 0;
+}
+
+.explore-head .fine {
+  flex: 1 1 18rem;
+  margin: 0;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.chip--on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.explore-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 1.25rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+.spots--explore {
+  grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+}
+
+.spots--explore .spot,
+.pick[data-place] {
+  cursor: pointer;
+}
+
+.spot__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.groups {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.why {
+  font-size: 0.92rem;
+}
+
+.spot__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding-top: 0.6rem;
+}
+
+.spot__actions form,
+.spot__actions .added {
+  margin: 0;
+  padding: 0;
+}
+
+.btn--ghost {
+  background: transparent;
+}
+
+.spot--active {
+  outline: 3px solid var(--kind, var(--accent));
+  outline-offset: 2px;
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px -22px rgb(36 28 21 / 65%);
+}
+
+.map-wrap {
+  position: sticky;
+  top: 4.25rem;
+}
+
+#map {
+  height: calc(100vh - 7rem);
+  min-height: 24rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  box-shadow: 0 18px 40px -28px rgb(36 28 21 / 55%);
+  background: #eef0e8;
+}
+
+.map-credit {
+  margin: 0.3rem 0 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.pin {
+  --kind: var(--accent);
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: var(--kind);
+  transform: rotate(-45deg);
+  box-shadow: 0 4px 10px rgb(0 0 0 / 30%);
+  cursor: pointer;
+  transition: width 0.2s, height 0.2s;
+}
+
+.pin--food {
+  --kind: var(--food);
+}
+
+.pin--fun {
+  --kind: var(--fun);
+}
+
+.pin--outdoors {
+  --kind: var(--outdoors);
+}
+
+.pin--active {
+  width: 36px;
+  height: 36px;
+  animation: pin-drop 0.9s cubic-bezier(0.3, 1.6, 0.5, 1) 1;
+  z-index: 3;
+}
+
+.pin--preview {
+  --kind: var(--ink);
+  border-style: dashed;
+}
+
+@keyframes pin-drop {
+  0% {
+    translate: 0 -28px;
+  }
+  60% {
+    translate: 0 4px;
+  }
+  100% {
+    translate: 0 0;
+  }
+}
+
+.map-pop {
+  display: grid;
+  gap: 0.15rem;
+  font-family: var(--font);
+}
+
+.map-pop .tag {
+  --kind: var(--food);
+}
+
+.map-pop .spot--fun {
+  --kind: var(--fun);
+}
+
+.map-pop .spot--outdoors {
+  --kind: var(--outdoors);
+}
+
+.maplibregl-popup-content {
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  box-shadow: 0 12px 28px -12px rgb(0 0 0 / 40%);
+}
+
+/* ---- sharing a place --------------------------------------------------------- */
+
+.add {
+  margin-top: 2.2rem;
+  max-width: 44rem;
+}
+
+.finder {
+  margin-bottom: 1rem;
+}
+
+.finder__row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.finder__results {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.finder__hit {
+  display: grid;
+  width: 100%;
+  gap: 0.1rem;
+  padding: 0.55rem 0.8rem;
+  font: inherit;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.finder__hit:hover,
+.finder__hit:focus-visible {
+  border-color: var(--accent);
+}
+
+.finder__hit span {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.located {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--outdoors) 12%, white);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 860px) {
+  .explore-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .map-wrap {
+    order: -1;
+    position: sticky;
+    top: 3.6rem;
+    z-index: 4;
+    /* cards scroll under the stuck map, so the band it sits in is opaque */
+    background: var(--bg);
+    padding: 0.4rem 0 0.5rem;
+    box-shadow: 0 10px 12px -12px rgb(36 28 21 / 35%);
+  }
+
+  #map {
+    height: 38vh;
+    min-height: 16rem;
+  }
+}
