@@ -1,0 +1,28 @@
+---
+import type { Kind, Photo } from "../lib/catalogue";
+
+// A spot's photo with its credit, or, for a group's own finds (which have no
+// photo), a plain panel in the spot's kind colour with its initial.
+interface Props {
+  photo?: Photo;
+  name: string;
+  kind: Kind;
+  small?: boolean;
+}
+const { photo, name, kind, small = false } = Astro.props;
+---
+
+<figure class:list={["photo", `photo--${kind}`, { "photo--small": small }]}>
+  {photo ? (
+    <>
+      <img src={photo.src} alt={`${name}`} loading="lazy" decoding="async" width="800" height="533" />
+      {!small && (
+        <figcaption>
+          <a href={photo.page} rel="noopener">Photo: {photo.credit}, {photo.license}</a>
+        </figcaption>
+      )}
+    </>
+  ) : (
+    <div class="photo__none" aria-hidden="true">{name.charAt(0).toUpperCase()}</div>
+  )}
+</figure>

@@ -1,6 +1,7 @@
 ---
+import SpotPhoto from "../../components/SpotPhoto.astro";
 import Base from "../../layouts/Base.astro";
-import { CATALOGUE, KIND_LABEL, type Kind } from "../../lib/catalogue";
+import { CATALOGUE, KIND_LABEL, type Kind, catalogueSpot } from "../../lib/catalogue";
 import { getGroup, listMembers, listPicks } from "../../lib/db";
 import { me } from "../../lib/me";
 
@@ -59,6 +60,7 @@ const error = Astro.url.searchParams.get("error");
           const mine = member ? p.keen.includes(member.name) : false;
           return (
             <li id={`pick-${p.id}`} class={`pick spot--${p.kind}${i === 0 && p.keen.length > 0 ? " pick--top" : ""}`}>
+              <SpotPhoto photo={catalogueSpot(p.catalogueKey)?.photo} name={p.name} kind={p.kind} small />
               <div class="pick__main">
                 <span class="tag">{KIND_LABEL[p.kind]}</span>
                 <h3>{p.name}</h3>
@@ -92,6 +94,7 @@ const error = Astro.url.searchParams.get("error");
         <ul class="spots">
           {CATALOGUE.filter((s) => s.kind === kind).map((s) => (
             <li class={`spot spot--${s.kind}`}>
+              <SpotPhoto photo={s.photo} name={s.name} kind={s.kind} />
               <h4>{s.name}</h4>
               <p class="area">{s.area}</p>
               <p>{s.blurb}</p>

@@ -448,3 +448,93 @@ select:focus-visible {
     transition: none !important;
   }
 }
+
+/* ---- photos ---------------------------------------------------------------- */
+
+.spot {
+  overflow: hidden;
+}
+
+.photo {
+  position: relative;
+  margin: -1rem -1rem 0.6rem;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--kind) 14%, white);
+}
+
+.photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.spot:hover .photo img {
+  transform: scale(1.04);
+}
+
+.photo figcaption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  max-width: 100%;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.65rem;
+  background: rgb(0 0 0 / 50%);
+  border-top-left-radius: 6px;
+}
+
+.photo figcaption a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.photo figcaption a:hover {
+  text-decoration: underline;
+}
+
+.photo__none {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--kind);
+}
+
+.photo--small {
+  flex: none;
+  width: 5.5rem;
+  margin: 0;
+  border-radius: 12px;
+  aspect-ratio: 1;
+}
+
+.photo--small .photo__none {
+  font-size: 1.6rem;
+}
+
+.photo--fun {
+  --kind: var(--fun);
+}
+
+.photo--outdoors {
+  --kind: var(--outdoors);
+}
+
+.photo--food {
+  --kind: var(--food);
+}
+
+@media (max-width: 480px) {
+  .pick {
+    flex-wrap: wrap;
+  }
+
+  .photo--small {
+    width: 4.25rem;
+  }
+}

@@ -1,4 +1,5 @@
 ---
+import SpotPhoto from "../components/SpotPhoto.astro";
 import Base from "../layouts/Base.astro";
 import { CATALOGUE, KIND_LABEL } from "../lib/catalogue";
 
@@ -47,6 +48,7 @@ const sample = CATALOGUE.filter((_, i) => i % 3 === 0).slice(0, 4);
     <ul class="spots">
       {sample.map((s) => (
         <li class={`spot spot--${s.kind}`}>
+          <SpotPhoto photo={s.photo} name={s.name} kind={s.kind} />
           <span class="tag">{KIND_LABEL[s.kind]}</span>
           <h3>{s.name}</h3>
           <p class="area">{s.area}</p>
