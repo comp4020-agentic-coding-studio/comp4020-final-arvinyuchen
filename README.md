@@ -30,6 +30,10 @@ other's taste.
   each group's list, members and votes stay theirs alone.
 - **You can see where it is.** Picking a place should answer "is that near
   us?" straight away, so every card can fly the map to its spot.
+- **Ask the way you'd ask a friend.** "Cheap dumplings near Dickson" or "a
+  walk with a view" should find places, and the answer should be places: cards
+  and pins, not a paragraph. Places are matched on meaning, using the reasons
+  people wrote, so the better the reasons, the better the search.
 - **Joining costs nothing.** A link and a name. No account, no app to install,
   no sign-up wall between the group chat and the decision.
 - **It remembers.** What the group added and voted for stays, across visits,
@@ -53,6 +57,9 @@ other's taste.
   when asked), and OpenFreeMap serves its map tiles. The starter places were
   checked against Wikipedia, with photos from Wikimedia Commons credited on
   each card.
+- Voyage AI's embeddings turn each card and each search prompt into a
+  vector; cards are ranked by how close they are in meaning (cosine
+  similarity). Only card text and prompts are sent, nothing about a group.
 
 ## What I chose not to build
 
@@ -61,6 +68,9 @@ other's taste.
 - **Public reviews and star ratings.** Spots is about what this group thinks.
 - **A directory of every place in Canberra.** A short checked starter list,
   plus the places people share with a reason. Nothing is imported in bulk.
+- **A chatbot that writes recommendations.** Generated text would say things
+  about places that nobody here vouched for. Search hands back people's own
+  cards, in the words they wrote.
 - **Booking and directions.** The map shows where a place is; getting there
   and booking a table are for the apps that already do them well.
 
@@ -70,5 +80,6 @@ Start a group, join by link, and explore the shared places on cards and a map:
 click a card and the map flies to it. Add a place to your group's list, or
 share a new one by looking it up on OpenStreetMap and saying why it's good; it
 appears in every group's Explore. Vote "keen" and the list re-ranks live in
-every open page. Next: searching the places by describing what you're after,
-deciding a date and time, and a "who's coming" for the chosen spot.
+every open page. Search Explore by describing what you're after: the answer is
+the matching cards, best first, and the map frames their pins. Next: deciding a
+date and time, and a "who's coming" for the chosen spot.

@@ -33,6 +33,17 @@ follow from it; every change has to hold to them.
 - **It works without JavaScript**, as plain forms posting and redirecting. The
   live layer, the map and the place finder are additions on top, not the only
   way to act.
+- **Search answers with cards, never prose.** A prompt comes back as the
+  matching places, best first, and their pins: no generated text, nothing
+  said about a place that its card doesn't say. Ranking is cosine similarity
+  between Voyage embeddings of the prompt and each card (`src/lib/search.ts`);
+  "near X" is a hard distance filter, never left to the vectors. When nothing
+  is close enough, say so; don't pad with the least-bad matches.
+- **The embeddings key stays on the server.** `VOYAGE_API_KEY` is a Fly secret
+  (and lives in `mise.local.toml` locally); it never goes to the browser or
+  into git. Without it, or with Voyage down, search falls back to matching
+  words and still works. Only card text and prompts go to Voyage, never
+  names of members or anything about a group.
 - **Motion is a guide, not a show.** The map flies to a place so you can see
   where it is; under `prefers-reduced-motion` it jumps instead.
 - **Phones first.** Every page works at 375px wide with no sideways scroll.
