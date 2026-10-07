@@ -12,11 +12,14 @@ import { anchorsFrom, cosine, distanceKm, keywords, NEAR_KM, parseQuery } from "
 // vector only knows that a card *mentions* Dickson. A kind the prompt asks
 // for nudges the ranking but never hides a card.
 
-/** Below this, a card isn't an answer, however it ranks. */
-const MIN_SCORE = 0.3;
-/** Cards this far below the best match are noise next to it. */
-const SPREAD = 0.15;
-const KIND_NUDGE = 0.04;
+// Tuned on voyage-4-lite with real prompts (see PROCESS.md): its scores are
+// low and bunched, and each prompt has its own baseline, so a card is judged
+// against the prompt's own spread, from its median card up to its best.
+/** If even the best card scores below this, nothing fits the prompt. */
+const FLOOR = 0.18;
+/** How far up from the median towards the best a card must reach. */
+const REACH = 0.6;
+const KIND_NUDGE = 0.02;
 const MAX_RESULTS = 8;
 
 export interface SearchResult {
@@ -93,16 +96,24 @@ export async function search(prompt: string, places: Place[]): Promise<SearchRes
   const ready = await indexPlaces(places);
   const asked = ready ? await queryVector(parsed.rest || prompt) : null;
   if (asked && vectors) {
-    const scored = pool
-      .map((p) => {
+    // Scored across every place, so the baseline doesn't shift with "near".
+    const scores = new Map(
+      places.map((p) => {
         const v = vectors!.get(p.id);
-        const score = v ? cosine(asked, v.vec) : 0;
-        return { p, score, rank: score + (parsed.kind === p.kind ? KIND_NUDGE : 0) };
-      })
-      .filter((s) => s.score >= MIN_SCORE)
-      .sort((a, b) => b.rank - a.rank);
-    const best = scored[0]?.rank ?? 0;
-    const ranked = scored.filter((s) => s.rank >= best - SPREAD).slice(0, MAX_RESULTS).map((s) => s.p);
+        return [p.id, (v ? cosine(asked, v.vec) : 0) + (parsed.kind === p.kind ? KIND_NUDGE : 0)];
+      }),
+    );
+    const all = [...scores.values()].sort((a, b) => b - a);
+    const median = all[Math.floor(all.length / 2)] ?? 0;
+    const best = Math.max(0, ...pool.map((p) => scores.get(p.id)!));
+    const bar = Math.max(FLOOR, median + REACH * (all[0] - median));
+    const ranked =
+      best < FLOOR
+        ? []
+        : pool
+            .filter((p) => scores.get(p.id)! >= Math.min(bar, best))
+            .sort((a, b) => scores.get(b.id)! - scores.get(a.id)!)
+            .slice(0, MAX_RESULTS);
     return { places: ranked, by: "meaning", near: nearLabel };
   }
   return { places: byWords(parsed.rest || prompt, pool, parsed.kind), by: "words", near: nearLabel };
