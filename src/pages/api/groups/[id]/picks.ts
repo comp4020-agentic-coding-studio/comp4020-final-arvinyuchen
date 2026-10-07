@@ -9,7 +9,7 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   const group = getGroup(params.id ?? "");
   if (!group) return redirect("/", 303);
   const member = me(cookies, group.id);
-  if (!member) return redirect(`/g/${group.id}`, 303);
+  if (!member) return redirect(`/g/${group.link}`, 303);
   const form = await request.formData();
   const key = clean(form.get("key"), 40);
   const placeId = key ? placeIdForSeed(key) : Number(form.get("place"));
@@ -17,5 +17,5 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
     changed(group.id);
     placesChanged(); // its "on N groups' lists" count moved
   }
-  return redirect(`/g/${group.id}#list`, 303);
+  return redirect(`/g/${group.link}#list`, 303);
 };

@@ -35,7 +35,7 @@ describe("a group", () => {
     const ana = cookieOf(start);
     const groupPath = (start.headers.get("location") ?? "").split("?")[0];
 
-    const join = await post(`${groupPath.replace("/g/", "/api/groups/")}/join`, { name: "Ben" });
+    const join = await post(`${groupPath.replace("/g/", "/api/groups/")}/join`, { name: "Ben", link: groupPath.replace("/g/", "") });
     const ben = cookieOf(join);
 
     await post(`${groupPath.replace("/g/", "/api/groups/")}/picks`, { key: "questacon" }, ana);

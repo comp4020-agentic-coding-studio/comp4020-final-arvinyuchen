@@ -10,7 +10,7 @@ import { CATALOGUE, KIND_LABEL, type Kind, type Photo } from "./catalogue";
 const path =
   process.env.DATABASE_PATH ?? (process.env.NODE_ENV === "production" ? "/data/spots.db" : "./.data/spots.db");
 mkdirSync(dirname(path), { recursive: true });
-const db = new Database(path);
+export const db = new Database(path);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
@@ -84,6 +84,62 @@ db.exec(`
   );
 `);
 
+// Accounts are optional: joining is still a link and a name. Someone who
+// wants to be themselves on every device saves a passkey, which makes an
+// account and ties their members (one per group) to it. No passwords, no
+// email: a passkey is the only way in. Sessions keep a hash of their token,
+// so the database alone can't be used to sign in.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    handle TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS passkeys (
+    id TEXT PRIMARY KEY,
+    account_id INTEGER NOT NULL REFERENCES accounts(id),
+    public_key BLOB NOT NULL,
+    counter INTEGER NOT NULL DEFAULT 0,
+    transports TEXT NOT NULL DEFAULT '[]',
+    synced INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    last_used_at TEXT
+  );
+  CREATE TABLE IF NOT EXISTS sessions (
+    token_hash TEXT PRIMARY KEY,
+    account_id INTEGER NOT NULL REFERENCES accounts(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    expires_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS group_links (
+    slug TEXT PRIMARY KEY,
+    group_id TEXT NOT NULL REFERENCES groups(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    retired_at TEXT
+  );
+`);
+const addColumn = (table: string, column: string, type: string) => {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (!columns.some((c) => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+};
+addColumn("groups", "owner_member_id", "INTEGER REFERENCES members(id)");
+addColumn("members", "account_id", "INTEGER REFERENCES accounts(id)");
+// A removed or merged member stays, so what they added keeps its name; they
+// just can't act any more, and a merged one's browser becomes the member
+// they were merged into.
+addColumn("members", "removed_at", "TEXT");
+addColumn("members", "merged_into", "INTEGER REFERENCES members(id)");
+// Groups from before owners and invite links: whoever started the group
+// (its first member) owns it, and its link is the one already shared.
+db.exec(`
+  UPDATE groups SET owner_member_id = (SELECT MIN(id) FROM members WHERE group_id = groups.id)
+   WHERE owner_member_id IS NULL;
+  INSERT INTO group_links (slug, group_id)
+    SELECT id, id FROM groups g
+     WHERE NOT EXISTS (SELECT 1 FROM group_links l WHERE l.group_id = g.id AND l.retired_at IS NULL);
+`);
+
 // The checked starter places, upserted by key so a corrected coordinate,
 // blurb or photo reaches the live database on the next deploy.
 const seed = db.prepare(`
@@ -123,10 +179,14 @@ for (const pick of db.prepare("SELECT * FROM picks WHERE place_id IS NULL").all(
 export interface Group {
   id: string;
   name: string;
+  /** The current invite link, the part after /g/. */
+  link: string;
+  ownerId: number | null;
 }
 export interface Member {
   id: number;
   name: string;
+  accountId: number | null;
 }
 export interface Place {
   id: number;
@@ -151,36 +211,179 @@ export interface Pick {
 
 const token = (bytes: number) => randomBytes(bytes).toString("base64url");
 
-export function createGroup(groupName: string, memberName: string): { group: Group; member: Member; secret: string } {
+const GROUP_COLUMNS = `g.id, g.name, g.owner_member_id AS ownerId,
+  (SELECT slug FROM group_links l WHERE l.group_id = g.id AND l.retired_at IS NULL) AS link`;
+
+export function createGroup(
+  groupName: string,
+  memberName: string,
+  accountId: number | null = null,
+): { group: Group; member: Member; secret: string } {
   const id = token(6);
-  db.prepare("INSERT INTO groups (id, name) VALUES (?, ?)").run(id, groupName);
-  const { member, secret } = joinGroup(id, memberName);
-  return { group: { id, name: groupName }, member, secret };
+  return db.transaction(() => {
+    db.prepare("INSERT INTO groups (id, name) VALUES (?, ?)").run(id, groupName);
+    db.prepare("INSERT INTO group_links (slug, group_id) VALUES (?, ?)").run(id, id);
+    const { member, secret } = joinGroup(id, memberName, accountId);
+    db.prepare("UPDATE groups SET owner_member_id = ? WHERE id = ?").run(member.id, id);
+    return { group: getGroup(id)!, member, secret };
+  })();
 }
 
+/** A group by its own id (what forms and cookies use). */
 export function getGroup(id: string): Group | undefined {
-  return db.prepare("SELECT id, name FROM groups WHERE id = ?").get(id) as Group | undefined;
+  return db.prepare(`SELECT ${GROUP_COLUMNS} FROM groups g WHERE g.id = ?`).get(id) as Group | undefined;
 }
 
-export function joinGroup(groupId: string, name: string): { member: Member; secret: string } {
+/** A group by an invite link, current or reset. */
+export function groupByLink(slug: string): { group: Group; current: boolean } | undefined {
+  const row = db.prepare("SELECT group_id, retired_at FROM group_links WHERE slug = ?").get(slug) as
+    | { group_id: string; retired_at: string | null }
+    | undefined;
+  const group = row && getGroup(row.group_id);
+  return group ? { group, current: row.retired_at === null } : undefined;
+}
+
+export function joinGroup(
+  groupId: string,
+  name: string,
+  accountId: number | null = null,
+): { member: Member; secret: string } {
   const secret = token(18);
   const { lastInsertRowid } = db
-    .prepare("INSERT INTO members (group_id, name, secret) VALUES (?, ?, ?)")
-    .run(groupId, name, secret);
-  return { member: { id: Number(lastInsertRowid), name }, secret };
+    .prepare("INSERT INTO members (group_id, name, secret, account_id) VALUES (?, ?, ?, ?)")
+    .run(groupId, name, secret, accountId);
+  return { member: { id: Number(lastInsertRowid), name, accountId }, secret };
 }
 
-/** The member a browser's cookie value ("<id>.<secret>") proves it is. */
+const MEMBER_COLUMNS = "id, name, account_id AS accountId";
+
+/**
+ * The member a browser's cookie value ("<id>.<secret>") proves it is. A
+ * member merged into another is now that one; a removed member is no one.
+ */
 export function memberFor(groupId: string, cookie: string | undefined): Member | undefined {
   const [id, secret] = (cookie ?? "").split(".");
   if (!id || !secret) return undefined;
-  return db
-    .prepare("SELECT id, name FROM members WHERE id = ? AND group_id = ? AND secret = ?")
-    .get(Number(id), groupId, secret) as Member | undefined;
+  const row = db
+    .prepare("SELECT id, merged_into, removed_at FROM members WHERE id = ? AND group_id = ? AND secret = ?")
+    .get(Number(id), groupId, secret) as { id: number; merged_into: number | null; removed_at: string | null } | undefined;
+  if (!row) return undefined;
+  let memberId: number | null = row.removed_at ? row.merged_into : row.id;
+  // Merges can chain (A into B, then B into C); follow them to the end.
+  for (let hops = 0; memberId !== null && hops < 10; hops++) {
+    const next = db.prepare("SELECT merged_into, removed_at FROM members WHERE id = ?").get(memberId) as
+      | { merged_into: number | null; removed_at: string | null }
+      | undefined;
+    if (!next?.removed_at) break;
+    memberId = next.merged_into;
+  }
+  if (memberId === null) return undefined;
+  return db.prepare(`SELECT ${MEMBER_COLUMNS} FROM members WHERE id = ? AND removed_at IS NULL`).get(memberId) as
+    | Member
+    | undefined;
 }
 
 export function listMembers(groupId: string): Member[] {
-  return db.prepare("SELECT id, name FROM members WHERE group_id = ? ORDER BY id").all(groupId) as Member[];
+  return db
+    .prepare(`SELECT ${MEMBER_COLUMNS} FROM members WHERE group_id = ? AND removed_at IS NULL ORDER BY id`)
+    .all(groupId) as Member[];
+}
+
+/** The account's member in a group, if it has one there. */
+export function memberOfAccount(groupId: string, accountId: number): Member | undefined {
+  return db
+    .prepare(`SELECT ${MEMBER_COLUMNS} FROM members WHERE group_id = ? AND account_id = ? AND removed_at IS NULL ORDER BY id LIMIT 1`)
+    .get(groupId, accountId) as Member | undefined;
+}
+
+/** Ties a member to an account, unless that account is already someone in the group. */
+export function linkMember(member: Member, groupId: string, accountId: number): boolean {
+  if (member.accountId !== null || memberOfAccount(groupId, accountId)) return false;
+  db.prepare("UPDATE members SET account_id = ? WHERE id = ?").run(accountId, member.id);
+  return true;
+}
+
+export interface AccountGroup {
+  id: string;
+  name: string;
+  link: string;
+  as: string;
+  owner: boolean;
+  people: number;
+}
+
+/** Every group an account is someone in, most recently joined first. */
+export function groupsOfAccount(accountId: number): AccountGroup[] {
+  return db
+    .prepare(
+      `SELECT g.id, g.name, m.name AS "as", (g.owner_member_id = m.id) AS owner,
+              (SELECT slug FROM group_links l WHERE l.group_id = g.id AND l.retired_at IS NULL) AS link,
+              (SELECT COUNT(*) FROM members x WHERE x.group_id = g.id AND x.removed_at IS NULL) AS people
+         FROM members m JOIN groups g ON g.id = m.group_id
+        WHERE m.account_id = ? AND m.removed_at IS NULL
+        ORDER BY m.id DESC`,
+    )
+    .all(accountId)
+    .map((row) => ({ ...(row as AccountGroup), owner: Boolean((row as { owner: number }).owner) }));
+}
+
+// ---- owner tools ---------------------------------------------------------------
+// Only a group's owner may call these (the route checks); each keeps what
+// the group made, and says whether it did anything.
+
+export function renameGroup(groupId: string, name: string): void {
+  db.prepare("UPDATE groups SET name = ? WHERE id = ?").run(name, groupId);
+}
+
+/** Takes someone out of the group: they can't act any more, and their keens go. */
+export function removeMember(group: Group, memberId: number): boolean {
+  if (memberId === group.ownerId) return false;
+  return db.transaction(() => {
+    const { changes } = db
+      .prepare("UPDATE members SET removed_at = datetime('now') WHERE id = ? AND group_id = ? AND removed_at IS NULL")
+      .run(memberId, group.id);
+    if (changes) db.prepare("DELETE FROM votes WHERE member_id = ?").run(memberId);
+    return changes > 0;
+  })();
+}
+
+/**
+ * Folds a duplicate into the member they really are: their keens and the
+ * places they added move over, and their browser becomes that member.
+ */
+export function mergeMembers(group: Group, fromId: number, intoId: number): boolean {
+  if (fromId === intoId) return false;
+  const live = db.prepare("SELECT id, account_id FROM members WHERE id = ? AND group_id = ? AND removed_at IS NULL");
+  const from = live.get(fromId, group.id) as { id: number; account_id: number | null } | undefined;
+  const into = live.get(intoId, group.id) as { id: number; account_id: number | null } | undefined;
+  if (!from || !into) return false;
+  db.transaction(() => {
+    db.prepare("INSERT OR IGNORE INTO votes (pick_id, member_id) SELECT pick_id, ? FROM votes WHERE member_id = ?").run(
+      intoId,
+      fromId,
+    );
+    db.prepare("DELETE FROM votes WHERE member_id = ?").run(fromId);
+    db.prepare("UPDATE picks SET added_by = ? WHERE added_by = ?").run(intoId, fromId);
+    if (into.account_id === null && from.account_id !== null) {
+      db.prepare("UPDATE members SET account_id = ? WHERE id = ?").run(from.account_id, intoId);
+    }
+    db.prepare("UPDATE members SET removed_at = datetime('now'), merged_into = ?, account_id = NULL WHERE id = ?").run(
+      intoId,
+      fromId,
+    );
+    if (group.ownerId === fromId) db.prepare("UPDATE groups SET owner_member_id = ? WHERE id = ?").run(intoId, group.id);
+  })();
+  return true;
+}
+
+/** A new invite link; the old one stops letting anyone new in. */
+export function resetLink(groupId: string): string {
+  const slug = token(6);
+  db.transaction(() => {
+    db.prepare("UPDATE group_links SET retired_at = datetime('now') WHERE group_id = ? AND retired_at IS NULL").run(groupId);
+    db.prepare("INSERT INTO group_links (slug, group_id) VALUES (?, ?)").run(slug, groupId);
+  })();
+  return slug;
 }
 
 type PlaceRow = Omit<Place, "photo" | "addedBy"> & {

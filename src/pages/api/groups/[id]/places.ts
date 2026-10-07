@@ -16,12 +16,12 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   const group = getGroup(params.id ?? "");
   if (!group) return redirect("/", 303);
   const member = me(cookies, group.id);
-  if (!member) return redirect(`/g/${group.id}`, 303);
+  if (!member) return redirect(`/g/${group.link}`, 303);
   const form = await request.formData();
   const name = clean(form.get("name"), 80);
   const kind = clean(form.get("kind"), 10) as Kind;
   const why = clean(form.get("why"), 160);
-  if (!name || !(kind in KIND_LABEL) || !why) return redirect(`/g/${group.id}?error=place#add`, 303);
+  if (!name || !(kind in KIND_LABEL) || !why) return redirect(`/g/${group.link}?error=place#add`, 303);
 
   const osmId = /^(node|way|relation)\/\d+$/.test(clean(form.get("osm"), 40)) ? clean(form.get("osm"), 40) : null;
   const lat = Number(form.get("lat"));
@@ -46,5 +46,5 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   placesChanged();
   // Its vector is made now, so the next search can already find it.
   void indexPlaces();
-  return redirect(`/g/${group.id}?added=${placeId}#list`, 303);
+  return redirect(`/g/${group.link}?added=${placeId}#list`, 303);
 };
