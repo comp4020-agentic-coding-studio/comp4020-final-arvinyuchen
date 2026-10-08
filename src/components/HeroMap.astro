@@ -48,6 +48,7 @@ const peaks = PEAKS.filter((p) => LANDMARKS.has(p.name));
   <div class="hero-map__frame" aria-hidden="true">
     <div class="hero-map__ask">
       <span class="hero-map__glass"></span>
+      <span class="hero-map__hint">Describe what you're after</span>
       {featured.map((f, i) => (
         <span class:list={["hero-map__q", { "is-first": i === 0 }]} style={`--i: ${i}`}>{f.ask}</span>
       ))}
