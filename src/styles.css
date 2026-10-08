@@ -130,6 +130,18 @@ h2 {
   background: var(--accent-soft);
 }
 
+/* the one action in the header, so it's the one filled button */
+.top nav a.top__cta {
+  margin-left: 0.3rem;
+  background: var(--accent-strong);
+  color: #fff;
+  font-weight: 650;
+}
+
+.top nav a.top__cta:hover {
+  background: var(--accent-ink);
+}
+
 .eyebrow {
   margin: 0;
   font-size: 0.8rem;
@@ -2431,6 +2443,50 @@ main {
   width: 0.6rem;
   height: 0.6rem;
   margin-right: 0.3rem;
+}
+
+.foot p {
+  margin: 0;
+}
+
+.foot__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem 1.5rem;
+}
+
+.foot__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.1rem;
+}
+
+.foot__links a {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.foot__links a:hover {
+  color: var(--accent-ink);
+  text-decoration: underline;
+}
+
+/* Everyone whose work the site shows, in one place; the map and each photo
+   still carry their own credit where they appear. */
+.foot .foot__credits {
+  max-width: 52rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--line);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.foot__credits a {
+  color: inherit;
 }
 
 /* the home page's handful of sample places fill the row, whatever its width */

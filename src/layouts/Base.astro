@@ -23,18 +23,33 @@ const account = signedIn(Astro.cookies);
     <header class="top">
       <a class="brand" href="/"><span class="brand__pin" aria-hidden="true"></span>Spots</a>
       <nav aria-label="site">
-        <a href="/#start">New group</a>
         <a href="/readme/">About</a>
         {account ? <a href="/me">My groups</a> : <a href="/signin">Sign in</a>}
+        <a class="top__cta" href="/#start">New group</a>
       </nav>
     </header>
     <main>
       <slot />
     </main>
     <footer class="foot">
-      <p>
-        <span class="brand__pin" aria-hidden="true"></span> Spots: places to go in Canberra, picked together by one group of
-        friends. <a href="/readme/">How it works and why</a>
+      <div class="foot__main">
+        <p>
+          <span class="brand__pin" aria-hidden="true"></span> Spots: places to go in Canberra, picked together by one group
+          of friends.
+        </p>
+        <nav class="foot__links" aria-label="footer">
+          <a href="/readme/">How it works and why</a>
+          <a href="/#start">Start a group</a>
+          {account ? <a href="/me">My groups</a> : <a href="/signin">Sign in</a>}
+        </nav>
+      </div>
+      <p class="foot__credits">
+        Map data ©{" "}<a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>; map tiles
+        by{" "}<a href="https://openfreemap.org">OpenFreeMap</a>; place lookup by{" "}
+        <a href="https://nominatim.org">Nominatim</a>. Photos from{" "}
+        <a href="https://commons.wikimedia.org">Wikimedia Commons</a>, credited on each card. Headings in Nunito,{" "}
+        <a href="/fonts/Nunito-OFL.txt">SIL Open Font License</a>. Search by meaning with{" "}
+        <a href="https://www.voyageai.com">Voyage AI</a> embeddings.
       </p>
     </footer>
   </body>
