@@ -61,7 +61,11 @@ other's taste.
   are good, which is the one thing Spots is for.
 - OpenStreetMap: its Nominatim search finds a real place's name and location
   when someone shares it (under its usage policy: one request at a time, only
-  when asked), and OpenFreeMap serves its map tiles. The starter places were
+  when asked), and OpenFreeMap serves its map tiles. The home page's moving
+  map is OpenStreetMap too: its lake, reserves, parks, rivers, main roads and
+  suburb names come from one Overpass query, built into the page by
+  `scripts/build-hero-map.ts`, so nothing on it is drawn by hand and the
+  site never queries OpenStreetMap for it. The starter places were
   checked against Wikipedia, with photos from Wikimedia Commons credited on
   each card.
 - Voyage AI's embeddings turn each card and each search prompt into a

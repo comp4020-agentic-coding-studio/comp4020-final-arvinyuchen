@@ -1269,6 +1269,70 @@ main {
   stroke-width: 1.5;
 }
 
+/* the geography under the pins: quiet enough that the pins and cards stay the
+   loudest thing in the frame */
+.hero-map__reserve {
+  fill: #dcebd2;
+  stroke: #c6dcb9;
+  stroke-width: 1;
+}
+
+.hero-map__park {
+  fill: #e3efd9;
+}
+
+.hero-map__campus {
+  fill: rgb(232 87 58 / 0.07);
+  stroke: rgb(232 87 58 / 0.25);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.hero-map__road {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hero-map__road--major {
+  stroke: #f3d9a6;
+  stroke-width: 3.2;
+}
+
+.hero-map__water {
+  fill: none;
+  stroke: #a5cbe0;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hero-map__suburb {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-anchor: middle;
+  fill: rgb(120 100 70 / 0.45);
+}
+
+.hero-map__peak path {
+  fill: rgb(80 110 70 / 0.55);
+}
+
+.hero-map__peak text {
+  font-size: 9px;
+  font-style: italic;
+  text-anchor: middle;
+  fill: rgb(70 95 60 / 0.75);
+}
+
+.hero-map__credit a {
+  color: inherit;
+}
+
 .hero-map__axis {
   stroke: rgb(120 100 70 / 0.22);
   stroke-width: 2;
