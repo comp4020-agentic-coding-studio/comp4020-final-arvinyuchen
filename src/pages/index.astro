@@ -6,9 +6,19 @@ import { CATALOGUE, KIND_LABEL } from "../lib/catalogue";
 
 const error = Astro.url.searchParams.get("error");
 const sample = CATALOGUE.filter((_, i) => i % 3 === 0).slice(0, 4);
+
+// "How it works", drawn with small copies of the app's own pieces: an invite
+// link and the faces of who joined, a search answered by a real starter card,
+// and that card overtaking another on the list when someone votes keen.
+const FRIENDS = ["Sam", "Mia", "Priya", "Jo"];
+const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
+const byKey = (key: string) => CATALOGUE.find((s) => s.key === key)!;
+const found = byKey("woolley-st");
+const other = byKey("mt-ainslie");
 ---
 
 <Base title="Spots: places to go, picked together">
+  <div class="home">
   <div class="hero">
   <section class="hero__intro">
     <p class="eyebrow">
@@ -17,8 +27,12 @@ const sample = CATALOGUE.filter((_, i) => i % 3 === 0).slice(0, 4);
     </p>
     <h1>Where are we going?</h1>
     <p class="lede">
-      Explore food spots, fun places and things to do around Canberra, each with a reason it's good. Describe what
-      you're after, find it on the map, then pick together with your friends.
+      Start a group, share the link, and add the places you'd actually go, each with a reason why. Everyone
+      votes, and the list re-ranks live.
+    </p>
+    <p class="hero__cta">
+      <a class="btn btn--primary" href="#start">Start a group</a>
+      <span class="fine">Free, and no sign-up</span>
     </p>
   </section>
 
@@ -42,17 +56,71 @@ const sample = CATALOGUE.filter((_, i) => i % 3 === 0).slice(0, 4);
   </section>
   </div>
 
-  <section class="how" aria-labelledby="how-title">
+  <section class="how band" aria-labelledby="how-title">
+    <p class="eyebrow">Three steps</p>
     <h2 id="how-title">How it works</h2>
-    <ol class="steps">
-      <li><span><strong>Explore</strong> places shared by everyone on Spots, or describe what you're after.</span></li>
-      <li><span><strong>Share the link</strong> in the group chat. Friends join with just a name.</span></li>
-      <li><span><strong>Add and vote "keen"</strong>, and watch your list re-rank as everyone votes, live.</span></li>
+    <ol class="steps steps--art">
+      <li>
+        <div class="step-art" aria-hidden="true">
+          <div class="mini-share">
+            <span class="mini-share__link">…/g/k7Qm2xVb</span>
+            <span class="mini-share__copy">Copy</span>
+          </div>
+          <div class="mini-faces">
+            <span class="faces">
+              {FRIENDS.map((n) => <span class="face" style={`--hue: ${hue(n)}`}>{n[0]}</span>)}
+            </span>
+            <span>Saturday crew · {FRIENDS.length} people</span>
+          </div>
+        </div>
+        <p><strong>Start a group</strong> and share its link in the group chat. Friends join with just a name.</p>
+      </li>
+      <li>
+        <div class="step-art" aria-hidden="true">
+          <div class="mini-ask"><span class="mini-ask__glass"></span>cheap dumplings</div>
+          <div class={`mini-card spot--${found.kind}`}>
+            <span class="tag">{KIND_LABEL[found.kind]}</span>
+            <strong>{found.name}</strong>
+            <span class="mini-card__area">{found.area}</span>
+            <span class="mini-card__add">On our list ✓</span>
+          </div>
+        </div>
+        <p><strong>Explore</strong> places shared by everyone on Spots, or describe what you're after, and add the ones you'd go to.</p>
+      </li>
+      <li>
+        <div class="step-art" aria-hidden="true">
+          <span class="mini-live">Live</span>
+          <ol class="mini-list">
+            {[found, other].map((s, i) => (
+              <li class:list={["mini-pick", `spot--${s.kind}`, i === 0 ? "mini-pick--rises" : "mini-pick--drops"]}>
+                <strong>{s.name}</strong>
+                <span class:list={["mini-keen", { "mini-keen--mine": i === 0 }]}>
+                  {i === 0 ? (
+                    <>
+                      <span class="mini-keen__was">2</span>
+                      <span class="mini-keen__now">3</span>
+                    </>
+                  ) : (
+                    <span>2</span>
+                  )}
+                  <small>keen</small>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <p><strong>Vote "keen"</strong> and watch your list re-rank as everyone votes, live.</p>
+      </li>
     </ol>
   </section>
 
-  <section aria-labelledby="sample-title">
+  <section class="home-sample" aria-labelledby="sample-title">
+    <p class="eyebrow">Already on Spots</p>
     <h2 id="sample-title">A few places to start from</h2>
+    <p class="section-lede">
+      Every group explores the same pool of places, and each one got in with a reason it's good. Your group adds its
+      own, and they join the pool too.
+    </p>
     <ul class="spots spots--sample">
       {sample.map((s) => (
         <li class={`spot spot--${s.kind}`}>
@@ -64,5 +132,7 @@ const sample = CATALOGUE.filter((_, i) => i % 3 === 0).slice(0, 4);
         </li>
       ))}
     </ul>
+    <p class="home-sample__more"><a href="#start">Start a group to explore them all</a></p>
   </section>
+  </div>
 </Base>

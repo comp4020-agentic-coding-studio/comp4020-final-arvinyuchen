@@ -130,6 +130,18 @@ h2 {
   background: var(--accent-soft);
 }
 
+/* the one action in the header, so it's the one filled button */
+.top nav a.top__cta {
+  margin-left: 0.3rem;
+  background: var(--accent-strong);
+  color: #fff;
+  font-weight: 650;
+}
+
+.top nav a.top__cta:hover {
+  background: var(--accent-ink);
+}
+
 .eyebrow {
   margin: 0;
   font-size: 0.8rem;
@@ -209,6 +221,7 @@ select:focus-visible {
   border: 1px solid var(--line);
   background: #fff;
   color: var(--ink);
+  text-decoration: none;
   cursor: pointer;
   transition: transform 0.12s, box-shadow 0.15s, background 0.15s;
 }
@@ -270,7 +283,7 @@ select:focus-visible {
   counter-reset: step;
 }
 
-.steps li {
+.steps > li {
   counter-increment: step;
   padding: 1rem;
   border-radius: var(--radius);
@@ -278,7 +291,7 @@ select:focus-visible {
   border: 1px solid var(--line);
 }
 
-.steps li::before {
+.steps > li::before {
   content: counter(step);
   display: inline-grid;
   place-items: center;
@@ -350,6 +363,7 @@ select:focus-visible {
 
 .tag {
   align-self: flex-start;
+  justify-self: start;
   padding: 0.1rem 0.55rem;
   border-radius: 999px;
   font-size: 0.72rem;
@@ -1166,6 +1180,13 @@ main {
 
 /* ---- Layout: home ------------------------------------------------------------ */
 
+/* The home page sits a little narrower than a group page, so the intro, the
+   form and the map read as one picture rather than two far-apart columns. */
+.home {
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
 /* Intro and form on the left, the moving map on the right; on a phone the map
    comes between the intro and the form. */
 .hero {
@@ -1223,21 +1244,478 @@ main {
   background: var(--outdoors);
 }
 
-.how .steps li {
-  display: flex;
-  align-items: baseline;
-  gap: 0.2rem;
+/* ---- How it works, drawn (src/pages/index.astro) -------------------------------- */
+
+/* Each step is a tile: its number sits on the tile's top edge, a small
+   picture made of the app's own pieces, then the sentence. Side by side, a
+   dashed line runs behind the tiles and shows through the gaps, joining the
+   numbers into one path. */
+.how .steps--art {
+  position: relative;
+  gap: 1.75rem 1.25rem;
+  margin: 2rem 0 0;
 }
 
-.how .steps li::before {
-  flex: none;
-  transform: translateY(-0.1rem);
+.how .steps--art > li {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-content: start;
+  gap: 0.9rem;
+  padding: 1.5rem 1rem 1.1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.how .steps--art > li::before {
+  position: absolute;
+  top: -0.95rem;
+  left: 1rem;
+  width: 1.9rem;
+  height: 1.9rem;
+  margin: 0;
+  box-shadow: 0 0 0 4px var(--bg-deep);
+  font-family: var(--font-display);
+}
+
+.how .steps--art p {
+  margin: 0;
+}
+
+@media (min-width: 760px) {
+  .how .steps--art {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .how .steps--art::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 1.5rem;
+    right: 1.5rem;
+    border-top: 2px dashed var(--line-strong);
+  }
+}
+
+/* The picture's ground: the home map's paper and dots, so the steps read as
+   part of the same place. */
+.step-art {
+  position: relative;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 0.6rem;
+  min-height: 9.5rem;
+  padding: 0.9rem;
+  border-radius: 12px;
+  background:
+    radial-gradient(rgb(120 100 70 / 0.16) 1px, transparent 1.2px) 0 0 / 14px 14px,
+    #f8f0e2;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* food unless the card says otherwise: :where() keeps this default weaker
+   than .spot--fun and .spot--outdoors, which come earlier in the file */
+:where(.mini-card, .mini-pick) {
+  --kind: var(--food);
+}
+
+/* 1: the invite link, and who's come in on it */
+.mini-share {
+  display: flex;
+  width: 100%;
+  max-width: 15rem;
+  padding: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.mini-share__link {
+  flex: 1;
+  min-width: 0;
+  padding: 0.3rem 0.45rem;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-share__copy {
+  padding: 0.3rem 0.65rem;
+  border-radius: 7px;
+  background: var(--accent-strong);
+  color: #fff;
+  font-weight: 700;
+}
+
+.mini-faces {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding-left: 0.3rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.mini-faces .face {
+  border-color: #f8f0e2;
+}
+
+/* 2: a search, answered with a card */
+.mini-ask {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.8rem 0.35rem 0.6rem;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+
+.mini-ask__glass {
+  position: relative;
+  width: 0.65rem;
+  height: 0.65rem;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+}
+
+.mini-ask__glass::after {
+  content: "";
+  position: absolute;
+  right: -0.28rem;
+  bottom: -0.25rem;
+  width: 0.3rem;
+  height: 2px;
+  background: var(--muted);
+  transform: rotate(45deg);
+}
+
+.mini-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.1rem 0.6rem;
+  width: 100%;
+  max-width: 15rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border-left: 4px solid var(--kind);
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.mini-card .tag {
+  grid-column: 1;
+  font-size: 0.62rem;
+}
+
+.mini-card strong {
+  grid-column: 1;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+}
+
+.mini-card__area {
+  grid-column: 1;
+  color: var(--muted);
+}
+
+.mini-card__add {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--outdoors) 14%, white);
+  color: color-mix(in srgb, var(--outdoors) 70%, black);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 3: a keen vote, and the list re-ranking on it. The resting state is the
+   end of the story (the voted place on top, its keen on), so that's the still
+   picture under reduced motion; the animation starts each loop from before
+   the vote. */
+.mini-live {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: color-mix(in srgb, var(--outdoors) 70%, black);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.mini-live::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--outdoors);
+  animation: mini-blink 2s ease-in-out infinite;
+}
+
+.mini-list {
+  --row: 2.6rem;
+  --gap: 0.4rem;
+  display: grid;
+  gap: var(--gap);
+  width: 100%;
+  max-width: 15rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+  animation: mini-list 7s linear infinite;
+}
+
+.mini-pick {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  height: var(--row);
+  padding: 0 0.3rem 0 0.7rem;
+  border-radius: 10px;
+  border-left: 4px solid var(--kind);
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.mini-pick strong {
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-pick--rises {
+  position: relative;
+  z-index: 1;
+  animation: mini-rise 7s ease-in-out infinite;
+}
+
+.mini-pick--drops {
+  animation: mini-drop 7s ease-in-out infinite;
+}
+
+.mini-keen {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  gap: 0.25rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 8px;
+  border: 2px solid var(--line);
+  background: #fff;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.mini-keen small {
+  font-family: var(--font);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.mini-keen--mine {
+  border-color: var(--accent-strong);
+  background: var(--accent-strong);
+  color: #fff;
+  animation: mini-press 7s ease-in-out infinite;
+}
+
+.mini-keen__was,
+.mini-keen__now {
+  grid-area: 1 / 1;
+}
+
+.mini-keen__was {
+  opacity: 0;
+  animation: mini-was 7s steps(1) infinite;
+}
+
+.mini-keen__now {
+  animation: mini-now 7s steps(1) infinite;
+}
+
+/* One 7s loop: fade in before the vote (the voted place second, at 2 keen),
+   the keen goes on at 40%, the two swap at 48 to 58%, hold, fade out. */
+@keyframes mini-list {
+  0% {
+    opacity: 0;
+  }
+  5%,
+  92% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes mini-rise {
+  0%,
+  48% {
+    transform: translateY(calc(var(--row) + var(--gap)));
+  }
+  53% {
+    transform: translateY(calc((var(--row) + var(--gap)) / 2)) scale(1.05);
+    box-shadow: var(--shadow-md);
+  }
+  58%,
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes mini-drop {
+  0%,
+  48% {
+    transform: translateY(calc(-1 * (var(--row) + var(--gap))));
+  }
+  58%,
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes mini-press {
+  0%,
+  39.9% {
+    border-color: var(--line);
+    background: #fff;
+    color: var(--ink);
+    transform: none;
+  }
+  40% {
+    border-color: var(--accent-strong);
+    background: var(--accent-strong);
+    color: #fff;
+    transform: scale(0.9);
+  }
+  44%,
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes mini-was {
+  0% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0;
+  }
+}
+
+@keyframes mini-now {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+@keyframes mini-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* On a phone the form is below the map, so the intro carries a button down
+   to it; side by side, the form is already in view. */
+.hero__cta {
+  display: none;
 }
 
 @media (max-width: 860px) {
   .hero {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: "intro" "map" "start";
+  }
+
+  .hero__cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.9rem;
+    margin: 1.1rem 0 0;
+  }
+
+  .hero__cta .fine {
+    margin: 0;
+  }
+}
+
+/* A full-width band of the deeper cream behind a section, without widening
+   the page: the shadow paints the sides, the clip keeps it to the band's own
+   height, and neither can cause a sideways scroll. */
+.band {
+  margin-block: 4rem;
+  padding-block: 2.75rem 3rem;
+  background: var(--bg-deep);
+  box-shadow: 0 0 0 100vmax var(--bg-deep);
+  clip-path: inset(0 -100vmax);
+}
+
+.home .band h2,
+.home-sample h2 {
+  margin: 0.3rem 0 1.1rem;
+  font-size: clamp(1.6rem, 3.2vw, 2rem);
+}
+
+.home-sample {
+  margin-top: 4rem;
+}
+
+.band + .home-sample {
+  margin-top: 0;
+}
+
+.section-lede {
+  max-width: 40rem;
+  margin: -0.35rem 0 1.4rem;
+  color: var(--muted);
+}
+
+.home-sample__more {
+  margin: 1.25rem 0 0;
+  font-weight: 600;
+}
+
+.spots--sample {
+  gap: 1rem;
+}
+
+.spots--sample .spot h3 {
+  font-size: 1.15rem;
+}
+
+@media (max-width: 860px) {
+  .band {
+    margin-block: 3rem;
+    padding-block: 2.25rem 2.5rem;
+  }
+
+  .home-sample {
+    margin-top: 3rem;
   }
 }
 
@@ -1440,6 +1918,22 @@ main {
   animation: hm-type calc(var(--n) * var(--slot)) linear calc(var(--start) + var(--i) * var(--slot)) infinite both;
 }
 
+/* Until the first prompt is typed, the box says what it's for, so it never
+   sits empty like a field that didn't load. */
+.hero-map__hint {
+  grid-area: 1 / 2;
+  white-space: nowrap;
+  color: var(--muted);
+  font-weight: 500;
+  animation: hm-hint 0.2s linear var(--start) both;
+}
+
+@keyframes hm-hint {
+  to {
+    opacity: 0;
+  }
+}
+
 .hero-map__pin--featured .hero-map__ring {
   animation: hm-ring calc(var(--n) * var(--slot)) ease-out calc(var(--start) + var(--i) * var(--slot)) infinite both;
 }
@@ -1609,6 +2103,10 @@ main {
     opacity: 1;
     clip-path: none;
     transform: none;
+  }
+
+  .hero-map__hint {
+    display: none;
   }
 }
 
@@ -1831,15 +2329,17 @@ main {
   margin: 0 0 0.3rem;
 }
 
-/* On a phone an Explore card is a row, photo beside the words, so the list
-   of places doesn't run to a screen per card. */
+/* On a phone an Explore card (and a home page sample) is a row, photo beside
+   the words, so the list of places doesn't run to a screen per card. */
 @media (max-width: 600px) {
-  .spots--explore {
+  .spots--explore,
+  .spots--sample {
     grid-template-columns: 1fr;
     gap: 0.6rem;
   }
 
-  .spots--explore .spot {
+  .spots--explore .spot,
+  .spots--sample .spot {
     display: grid;
     grid-template-columns: 6.5rem minmax(0, 1fr);
     column-gap: 0.85rem;
@@ -1849,11 +2349,13 @@ main {
     border-left: 4px solid var(--kind);
   }
 
-  .spots--explore .spot > * {
+  .spots--explore .spot > *,
+  .spots--sample .spot > * {
     grid-column: 2;
   }
 
-  .spots--explore .spot > .photo {
+  .spots--explore .spot > .photo,
+  .spots--sample .spot > .photo {
     grid-column: 1;
     grid-row: 1 / span 6;
     margin: 0;
@@ -1863,15 +2365,21 @@ main {
     min-height: 6.5rem;
   }
 
-  .spots--explore .photo figcaption {
+  .spots--explore .photo figcaption,
+  .spots--sample .photo figcaption {
     left: 0;
     border-radius: 0;
     font-size: 0.55rem;
     line-height: 1.3;
   }
 
-  .spots--explore .spot h3 {
+  .spots--explore .spot h3,
+  .spots--sample .spot h3 {
     font-size: 1rem;
+  }
+
+  .spots--sample .spot p:last-child {
+    font-size: 0.88rem;
   }
 
   .spots--explore .why {
@@ -1935,6 +2443,50 @@ main {
   width: 0.6rem;
   height: 0.6rem;
   margin-right: 0.3rem;
+}
+
+.foot p {
+  margin: 0;
+}
+
+.foot__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem 1.5rem;
+}
+
+.foot__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.1rem;
+}
+
+.foot__links a {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.foot__links a:hover {
+  color: var(--accent-ink);
+  text-decoration: underline;
+}
+
+/* Everyone whose work the site shows, in one place; the map and each photo
+   still carry their own credit where they appear. */
+.foot .foot__credits {
+  max-width: 52rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--line);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.foot__credits a {
+  color: inherit;
 }
 
 /* the home page's handful of sample places fill the row, whatever its width */
