@@ -23,7 +23,7 @@ const account = signedIn(Astro.cookies);
     <header class="top">
       <a class="brand" href="/"><span class="brand__pin" aria-hidden="true"></span>Spots</a>
       <nav aria-label="site">
-        <a href="/">Start a group</a>
+        <a href="/#start">New group</a>
         <a href="/readme/">About</a>
         {account ? <a href="/me">My groups</a> : <a href="/signin">Sign in</a>}
       </nav>
@@ -31,5 +31,11 @@ const account = signedIn(Astro.cookies);
     <main>
       <slot />
     </main>
+    <footer class="foot">
+      <p>
+        <span class="brand__pin" aria-hidden="true"></span> Spots: places to go in Canberra, picked together by one group of
+        friends. <a href="/readme/">How it works and why</a>
+      </p>
+    </footer>
   </body>
 </html>

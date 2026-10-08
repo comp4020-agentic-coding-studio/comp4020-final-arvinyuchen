@@ -1,4 +1,5 @@
 ---
+import HeroMap from "../components/HeroMap.astro";
 import SpotPhoto from "../components/SpotPhoto.astro";
 import Base from "../layouts/Base.astro";
 import { CATALOGUE, KIND_LABEL } from "../lib/catalogue";
@@ -8,14 +9,20 @@ const sample = CATALOGUE.filter((_, i) => i % 3 === 0).slice(0, 4);
 ---
 
 <Base title="Spots: places to go, picked together">
-  <section class="hero">
-    <p class="eyebrow">For one group of friends</p>
+  <div class="hero">
+  <section class="hero__intro">
+    <p class="eyebrow">
+      <span class="pins" aria-hidden="true"><span class="pin-dot pin-dot--food"></span><span class="pin-dot pin-dot--fun"></span><span class="pin-dot pin-dot--outdoors"></span></span>
+      Places to go in Canberra
+    </p>
     <h1>Where are we going?</h1>
     <p class="lede">
-      Start a group, share the link, and everyone adds the food spots, fun places and things to do they're keen on.
-      Vote together, live, and the list remembers everything for next time.
+      Explore food spots, fun places and things to do around Canberra, each with a reason it's good. Describe what
+      you're after, find it on the map, then pick together with your friends.
     </p>
   </section>
+
+  <HeroMap />
 
   <section id="start" class="card start" aria-labelledby="start-title">
     <h2 id="start-title">Start a group</h2>
@@ -31,21 +38,22 @@ const sample = CATALOGUE.filter((_, i) => i % 3 === 0).slice(0, 4);
       </label>
       <button class="btn btn--primary">Start and get the link</button>
     </form>
-    <p class="fine">No accounts. Anyone with your group's link can join by typing a name.</p>
+    <p class="fine">No sign-up. Anyone with your group's link joins by typing a name.</p>
   </section>
+  </div>
 
   <section class="how" aria-labelledby="how-title">
     <h2 id="how-title">How it works</h2>
     <ol class="steps">
-      <li><strong>Share the link</strong> in the group chat. Friends join with just a name.</li>
-      <li><strong>Explore and add</strong> places from the starter list, or your own finds.</li>
-      <li><strong>Vote "keen"</strong> and watch the list re-rank as everyone votes, live.</li>
+      <li><span><strong>Explore</strong> places shared by everyone on Spots, or describe what you're after.</span></li>
+      <li><span><strong>Share the link</strong> in the group chat. Friends join with just a name.</span></li>
+      <li><span><strong>Add and vote "keen"</strong>, and watch your list re-rank as everyone votes, live.</span></li>
     </ol>
   </section>
 
   <section aria-labelledby="sample-title">
     <h2 id="sample-title">A few places to start from</h2>
-    <ul class="spots">
+    <ul class="spots spots--sample">
       {sample.map((s) => (
         <li class={`spot spot--${s.kind}`}>
           <SpotPhoto photo={s.photo} name={s.name} kind={s.kind} />
