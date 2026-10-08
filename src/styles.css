@@ -1,11 +1,34 @@
+/* Nunito, Latin subset, weights 600 to 900 in one variable file (39 KB).
+   Licence: public/fonts/Nunito-OFL.txt. Self-hosted, so no visitor is sent to
+   a font CDN. */
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 600 900;
+  font-display: swap;
+  src: url("/fonts/nunito-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 :root {
   --bg: #fff8ef;
+  --bg-deep: #fbeedd;
   --card: #ffffff;
   --ink: #241c15;
   --muted: #6f6257;
   --line: #eadfce;
+  --line-strong: #dccbb3;
+  /* coral: --accent for pins and borders; the two darker ones for text and
+     filled buttons, so both read clearly (WCAG AA) on cream and white */
   --accent: #e8573a;
+  --accent-strong: #cf4527;
+  --accent-ink: #b83c20;
   --accent-soft: #fde4da;
+  --shadow-sm: 0 1px 2px rgb(36 28 21 / 6%), 0 8px 20px -14px rgb(36 28 21 / 30%);
+  --shadow-md: 0 1px 2px rgb(36 28 21 / 6%), 0 22px 44px -28px rgb(36 28 21 / 55%);
+  /* headings: Nunito, served from the app (public/fonts, SIL Open Font License) */
+  --font-display: "Nunito", ui-rounded, var(--font);
   --food: #e8573a;
   --fun: #6c5ce7;
   --outdoors: #2f9e6e;
@@ -20,7 +43,7 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: linear-gradient(var(--bg-deep), var(--bg) 22rem) no-repeat, var(--bg);
   color: var(--ink);
   font-family: var(--font);
   line-height: 1.55;
@@ -33,47 +56,49 @@ main {
 }
 
 a {
-  color: var(--accent);
+  color: var(--accent-ink);
+  text-underline-offset: 2px;
 }
 
 h1,
 h2,
 h3,
 h4 {
-  line-height: 1.2;
+  font-family: var(--font-display);
+  line-height: 1.15;
   letter-spacing: -0.01em;
 }
 
 h1 {
-  font-size: clamp(2rem, 6vw, 3.2rem);
+  font-size: clamp(2.1rem, 6vw, 3.4rem);
+  font-weight: 800;
   margin: 0.2rem 0 0.6rem;
 }
 
 h2 {
-  font-size: 1.4rem;
+  font-size: 1.45rem;
+  font-weight: 800;
   margin: 2.2rem 0 0.9rem;
 }
 
+/* The site header scrolls away; on a group page its section links stick instead. */
 .top {
-  position: sticky;
-  top: 0;
-  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.8rem 1.25rem;
-  background: color-mix(in srgb, var(--bg) 85%, transparent);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--line);
+  max-width: 84rem;
+  margin: 0 auto;
+  padding: 0.85rem 1.25rem;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 0.45rem;
+  font-family: var(--font-display);
   font-weight: 800;
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   color: var(--ink);
   text-decoration: none;
 }
@@ -88,15 +113,17 @@ h2 {
 
 .top nav {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.25rem;
 }
 
 .top nav a {
-  padding: 0.35rem 0.8rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 999px;
   color: var(--ink);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  font-weight: 550;
+  white-space: nowrap;
 }
 
 .top nav a:hover {
@@ -109,7 +136,7 @@ h2 {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .lede {
@@ -122,8 +149,8 @@ h2 {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 1.25rem;
-  box-shadow: 0 14px 34px -26px rgb(36 28 21 / 45%);
+  padding: 1.35rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .card h2 {
@@ -133,6 +160,10 @@ h2 {
 .start {
   max-width: 30rem;
   margin-top: 1.5rem;
+}
+
+.start h2 {
+  margin-bottom: 0.7rem;
 }
 
 .stack {
@@ -191,9 +222,23 @@ select:focus-visible {
 }
 
 .btn--primary {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
   color: #fff;
+}
+
+.btn--primary:hover {
+  background: var(--accent-ink);
+  border-color: var(--accent-ink);
+}
+
+.btn:focus-visible,
+.chip:focus-visible,
+.keen:focus-visible,
+.top nav a:focus-visible,
+.section-nav a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
 }
 
 .btn--small {
@@ -311,12 +356,11 @@ select:focus-visible {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--kind);
+  color: color-mix(in srgb, var(--kind) 72%, black);
   background: color-mix(in srgb, var(--kind) 12%, white);
 }
 
 .share {
-  margin-top: 1rem;
   max-width: 34rem;
 }
 
@@ -360,6 +404,15 @@ select:focus-visible {
   border: 1px solid var(--line);
   border-left: 5px solid var(--kind);
   animation: rise 0.3s ease-out backwards;
+}
+
+/* .pick sets the food colour above, so the other kinds say theirs again */
+.pick.spot--fun {
+  --kind: var(--fun);
+}
+
+.pick.spot--outdoors {
+  --kind: var(--outdoors);
 }
 
 .pick--top {
@@ -414,9 +467,14 @@ select:focus-visible {
   transform: scale(0.94);
 }
 
-.keen--on {
-  background: var(--accent);
-  border-color: var(--accent);
+.keen:hover {
+  border-color: var(--line-strong);
+}
+
+.keen--on,
+.keen--on:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
   color: #fff;
 }
 
@@ -433,6 +491,17 @@ select:focus-visible {
 
 .readme {
   max-width: 44rem;
+  margin: 0 auto;
+  padding-top: 1rem;
+  font-size: 1.04rem;
+}
+
+.readme h2 {
+  margin-top: 2.6rem;
+}
+
+.readme li + li {
+  margin-top: 0.45rem;
 }
 
 @keyframes rise {
@@ -542,7 +611,7 @@ select:focus-visible {
 /* ---- Explore + map --------------------------------------------------------- */
 
 main {
-  max-width: 76rem;
+  max-width: 84rem;
 }
 
 .explore-head {
@@ -656,7 +725,7 @@ main {
 
 .explore-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
   gap: 1.25rem;
   align-items: start;
   margin-top: 1rem;
@@ -716,11 +785,11 @@ main {
 
 .map-wrap {
   position: sticky;
-  top: 4.25rem;
+  top: calc(var(--nav-h) + 0.75rem);
 }
 
 #map {
-  height: calc(100vh - 7rem);
+  height: calc(100vh - var(--nav-h) - 3rem);
   min-height: 24rem;
   border-radius: var(--radius);
   border: 1px solid var(--line);
@@ -812,8 +881,7 @@ main {
 /* ---- sharing a place --------------------------------------------------------- */
 
 .add {
-  margin-top: 2.2rem;
-  max-width: 44rem;
+  margin: 0;
 }
 
 .finder {
@@ -872,7 +940,7 @@ main {
   .map-wrap {
     order: -1;
     position: sticky;
-    top: 3.6rem;
+    top: var(--nav-h);
     z-index: 4;
     /* cards scroll under the stuck map, so the band it sits in is opaque */
     background: var(--bg);
@@ -881,8 +949,8 @@ main {
   }
 
   #map {
-    height: 38vh;
-    min-height: 16rem;
+    height: 30vh;
+    min-height: 13rem;
   }
 }
 
@@ -893,7 +961,7 @@ main {
   padding: 0;
   border: 0;
   background: none;
-  color: var(--accent);
+  color: var(--accent-ink);
   text-decoration: underline;
   text-underline-offset: 2px;
   cursor: pointer;
@@ -915,7 +983,7 @@ main {
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-ink);
   background: var(--accent-soft);
 }
 
@@ -950,7 +1018,7 @@ main {
 }
 
 .settings {
-  margin-top: 2.2rem;
+  margin: 0;
 }
 
 .settings h2 {
@@ -1094,4 +1162,718 @@ main {
   background: #b3261e;
   border-color: #b3261e;
   color: #fff;
+}
+
+/* ---- Layout: home ------------------------------------------------------------ */
+
+/* Intro and form on the left, the moving map on the right; on a phone the map
+   comes between the intro and the form. */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  grid-template-areas:
+    "intro map"
+    "start map";
+  gap: 1.25rem 3rem;
+  align-items: start;
+  padding-block: 1.25rem 0.5rem;
+}
+
+.hero__intro {
+  grid-area: intro;
+}
+
+.hero .hero-map {
+  grid-area: map;
+  align-self: center;
+}
+
+.hero .start {
+  grid-area: start;
+  max-width: 30rem;
+  margin: 0;
+  box-shadow: var(--shadow-md);
+}
+
+.hero h1 {
+  font-size: clamp(2.4rem, 6.5vw, 4.2rem);
+  line-height: 1.02;
+}
+
+.eyebrow .pins {
+  display: inline-flex;
+  gap: 0.2rem;
+  margin-right: 0.35rem;
+  vertical-align: -0.05em;
+}
+
+.pin-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--food);
+}
+
+.pin-dot--fun {
+  background: var(--fun);
+}
+
+.pin-dot--outdoors {
+  background: var(--outdoors);
+}
+
+.how .steps li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+}
+
+.how .steps li::before {
+  flex: none;
+  transform: translateY(-0.1rem);
+}
+
+@media (max-width: 860px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "intro" "map" "start";
+  }
+}
+
+/* ---- The moving map (src/components/HeroMap.astro) ------------------------------ */
+
+.hero-map {
+  margin: 0;
+}
+
+.hero-map__frame {
+  position: relative;
+  aspect-ratio: 560 / 493;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: #f8f0e2;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.hero-map svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-map__lake {
+  fill: #bfdcec;
+  stroke: #a5cbe0;
+  stroke-width: 1.5;
+}
+
+.hero-map__axis {
+  stroke: rgb(120 100 70 / 0.22);
+  stroke-width: 2;
+  stroke-dasharray: 2 7;
+  stroke-linecap: round;
+}
+
+.hero-map__label {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  fill: rgb(120 100 70 / 0.35);
+  letter-spacing: 0.04em;
+}
+
+.hero-map__credit {
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* Pins drop in one after another, the way the real map drops them. */
+.hero-map__pin {
+  animation: hm-drop 0.75s cubic-bezier(0.3, 1.5, 0.5, 1) var(--d) both;
+}
+
+.hero-map__pin path {
+  fill: var(--kind);
+  stroke: #fff;
+  stroke-width: 2.5;
+}
+
+.hero-map__shadow {
+  fill: rgb(36 28 21 / 0.2);
+}
+
+.hero-map__ring {
+  fill: none;
+  stroke: var(--kind);
+  stroke-width: 3;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes hm-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-70px);
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+/* Then, every 4 seconds, a prompt is typed into the search box and the
+   matching place's pin pulses and its card opens. */
+.hero-map {
+  --slot: 4s;
+  --start: 2.8s;
+}
+
+.hero-map__ask {
+  position: absolute;
+  top: 0.9rem;
+  left: 0.9rem;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem 0.55rem 0.8rem;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.hero-map__glass {
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  position: relative;
+}
+
+.hero-map__glass::after {
+  content: "";
+  position: absolute;
+  right: -0.32rem;
+  bottom: -0.3rem;
+  width: 0.35rem;
+  height: 2px;
+  background: var(--muted);
+  transform: rotate(45deg);
+}
+
+.hero-map__q {
+  grid-area: 1 / 2;
+  white-space: nowrap;
+  opacity: 0;
+  animation: hm-type calc(var(--n) * var(--slot)) linear calc(var(--start) + var(--i) * var(--slot)) infinite both;
+}
+
+.hero-map__pin--featured .hero-map__ring {
+  animation: hm-ring calc(var(--n) * var(--slot)) ease-out calc(var(--start) + var(--i) * var(--slot)) infinite both;
+}
+
+.hero-map__card {
+  --kind: var(--food);
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  gap: 0.15rem;
+  width: 13rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 14px;
+  border-top: 4px solid var(--kind);
+  background: #fff;
+  box-shadow: var(--shadow-md);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--muted);
+  opacity: 0;
+  animation: hm-card calc(var(--n) * var(--slot)) ease-out calc(var(--start) + var(--i) * var(--slot)) infinite both;
+}
+
+.hero-map__card strong {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.hero-map__card .tag {
+  margin-bottom: 0.1rem;
+}
+
+.hero-map__card.spot--fun {
+  --kind: var(--fun);
+}
+
+.hero-map__card.spot--outdoors {
+  --kind: var(--outdoors);
+}
+
+/* where a card opens from its pin, so it stays inside the frame */
+.hero-map__card--above {
+  translate: -50% calc(-100% - 42px);
+}
+
+.hero-map__card--below {
+  translate: -50% 14px;
+}
+
+.hero-map__card--left {
+  translate: calc(-100% - 20px) -30%;
+}
+
+.hero-map__card--right {
+  translate: 20px -75%;
+}
+
+/* each prompt holds one slot of the loop: 1 / --n of it (a quarter, for four) */
+@keyframes hm-type {
+  0% {
+    opacity: 1;
+    clip-path: inset(0 100% 0 0);
+  }
+  7% {
+    clip-path: inset(0 0 0 0);
+  }
+  22% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+  25%,
+  100% {
+    opacity: 0;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes hm-card {
+  0%,
+  7% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  10%,
+  21% {
+    opacity: 1;
+    transform: none;
+  }
+  24%,
+  100% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes hm-ring {
+  0%,
+  6% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  9% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  21% {
+    opacity: 0.3;
+    transform: scale(1.5);
+  }
+  24%,
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-map__frame {
+    border-radius: 16px;
+  }
+
+  .hero-map__ask {
+    top: 0.6rem;
+    left: 0.6rem;
+    padding: 0.4rem 0.8rem 0.4rem 0.65rem;
+    font-size: 0.82rem;
+  }
+
+  .hero-map__card {
+    width: 10.5rem;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.74rem;
+  }
+
+  .hero-map__card strong {
+    font-size: 0.9rem;
+  }
+
+  .hero-map__card--above {
+    translate: -50% calc(-100% - 28px);
+  }
+
+  .hero-map__card--below {
+    translate: -50% 24px;
+  }
+
+  .hero-map__card--left {
+    translate: calc(-100% - 12px) -30%;
+  }
+
+  .hero-map__card--right {
+    translate: 12px -75%;
+  }
+}
+
+/* With reduced motion it's a still picture: every pin, the first prompt and
+   its card. (The global rule above stops the animations.) */
+@media (prefers-reduced-motion: reduce) {
+  .hero-map__pin {
+    opacity: 1;
+    transform: none;
+  }
+
+  .hero-map__q.is-first,
+  .hero-map__card.is-first {
+    opacity: 1;
+    clip-path: none;
+    transform: none;
+  }
+}
+
+/* ---- Layout: a group's page ---------------------------------------------------- */
+
+:root {
+  --nav-h: 3.4rem;
+}
+
+/* anchors land below the sticky section links */
+#join,
+#list,
+#explore-section,
+#add,
+#settings {
+  scroll-margin-top: calc(var(--nav-h) + 0.75rem);
+}
+
+.group-head--split {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+}
+
+.group-head__title {
+  flex: 1 1 22rem;
+  min-width: 0;
+}
+
+.group-head h1 {
+  margin-bottom: 0.4rem;
+  overflow-wrap: anywhere;
+}
+
+.group-head .share {
+  flex: 0 1 26rem;
+  padding: 1rem 1.1rem;
+}
+
+.members {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  margin: 0;
+}
+
+.faces {
+  display: inline-flex;
+  padding-left: 0.3rem;
+}
+
+.face {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin-left: -0.3rem;
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+  background: hsl(var(--hue) 55% 88%);
+  color: hsl(var(--hue) 45% 28%);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.you {
+  margin-top: 0.4rem;
+}
+
+.join {
+  margin-top: 1.25rem;
+}
+
+/* Section links: plain anchors that stay in reach while the page scrolls. */
+.section-nav {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  gap: 0.3rem;
+  min-height: var(--nav-h);
+  align-items: center;
+  margin: 1.25rem -1rem 0;
+  padding: 0.45rem 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+.section-nav a {
+  flex: none;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.section-nav a:hover {
+  background: var(--accent-soft);
+}
+
+.section-nav a[aria-current="true"] {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* Our list beside Explore on a wide screen; above it otherwise. */
+.board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 2rem;
+}
+
+.board__list h2,
+.explore-head h2 {
+  margin-top: 1.6rem;
+}
+
+.explore-head {
+  margin-top: 0;
+}
+
+.picks {
+  counter-reset: rank;
+}
+
+.pick {
+  position: relative;
+  counter-increment: rank;
+  box-shadow: var(--shadow-sm);
+}
+
+.pick::before {
+  content: counter(rank);
+  position: absolute;
+  top: -0.5rem;
+  left: -0.5rem;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.pick--top::before {
+  background: var(--accent-strong);
+}
+
+.empty {
+  padding: 1rem 1.1rem;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: var(--radius);
+}
+
+/* list rows stay compact in the sidebar and on a phone */
+@media (min-width: 1180px), (max-width: 600px) {
+  .board__list .pick {
+    gap: 0.75rem;
+    padding: 0.75rem 0.8rem;
+  }
+
+  .board__list .photo--small {
+    width: 3.75rem;
+  }
+
+  .board__list .pick h3 {
+    font-size: 1rem;
+  }
+
+  .board__list .keen {
+    min-width: 4.2rem;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .board__list .keen__count {
+    font-size: 1.2rem;
+  }
+}
+
+@media (min-width: 1180px) {
+  .board {
+    grid-template-columns: 21rem minmax(0, 1fr);
+  }
+
+  .board__list {
+    position: sticky;
+    top: var(--nav-h);
+    max-height: calc(100vh - var(--nav-h));
+    overflow-y: auto;
+    padding: 0 0.6rem 1.5rem 0.6rem;
+    margin-left: -0.6rem;
+    scrollbar-width: thin;
+  }
+}
+
+/* Share a place and the owner's settings, side by side when there's room. */
+.group-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: 1.25rem;
+  align-items: start;
+  margin-top: 2.5rem;
+}
+
+.group-tools h2 {
+  margin: 0 0 0.3rem;
+}
+
+/* On a phone an Explore card is a row, photo beside the words, so the list
+   of places doesn't run to a screen per card. */
+@media (max-width: 600px) {
+  .spots--explore {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .spots--explore .spot {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    column-gap: 0.85rem;
+    row-gap: 0.2rem;
+    padding: 0.75rem;
+    border-top-width: 1px;
+    border-left: 4px solid var(--kind);
+  }
+
+  .spots--explore .spot > * {
+    grid-column: 2;
+  }
+
+  .spots--explore .spot > .photo {
+    grid-column: 1;
+    grid-row: 1 / span 6;
+    margin: 0;
+    aspect-ratio: auto;
+    border-radius: 10px;
+    align-self: stretch;
+    min-height: 6.5rem;
+  }
+
+  .spots--explore .photo figcaption {
+    left: 0;
+    border-radius: 0;
+    font-size: 0.55rem;
+    line-height: 1.3;
+  }
+
+  .spots--explore .spot h3 {
+    font-size: 1rem;
+  }
+
+  .spots--explore .why {
+    font-size: 0.86rem;
+  }
+
+  .spots--explore .spot__actions {
+    padding-top: 0.35rem;
+  }
+
+  .group-head .share {
+    flex-basis: 100%;
+  }
+
+  .top {
+    padding: 0.7rem 0.9rem;
+  }
+
+  .top nav a {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.86rem;
+  }
+
+  .section-nav {
+    gap: 0.1rem;
+    padding-inline: 0.6rem;
+  }
+
+  .section-nav a {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.86rem;
+  }
+
+  .map-credit {
+    font-size: 0.65rem;
+  }
+
+  .keep {
+    padding: 0.9rem 1rem;
+    gap: 0.6rem;
+  }
+
+  .keep .fine {
+    font-size: 0.84rem;
+  }
+}
+
+/* ---- Footer -------------------------------------------------------------------- */
+
+.foot {
+  max-width: 84rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 2.5rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.foot .brand__pin {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: 0.3rem;
+}
+
+/* the home page's handful of sample places fill the row, whatever its width */
+.spots--sample {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
 }

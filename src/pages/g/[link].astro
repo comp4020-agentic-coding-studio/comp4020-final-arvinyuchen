@@ -45,15 +45,27 @@ const pins = shown
   .filter((p) => p.lat !== null && p.lon !== null)
   .map(({ id, name, kind, area, lat, lon }) => ({ id, name, kind, area, lat, lon }));
 const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
+
+// Each member's initial in a colour of its own, the same on every visit.
+const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
 ---
 
 <Base title={`${group.name} · Spots`}>
-  <section class="group-head">
-    <p class="eyebrow">Group</p>
-    <h1>{group.name}</h1>
-    <p class="members">
-      {members.length} {members.length === 1 ? "person" : "people"}: {members.map((m) => m.name).join(", ")}
-    </p>
+  <section class="group-head group-head--split">
+    <div class="group-head__title">
+      <p class="eyebrow">Group</p>
+      <h1>{group.name}</h1>
+      <p class="members">
+        <span class="faces" aria-hidden="true">
+          {members.slice(0, 6).map((m) => (
+            <span class="face" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span>
+          ))}
+        </span>
+        <span>
+          {members.length} {members.length === 1 ? "person" : "people"}: {members.map((m) => m.name).join(", ")}
+        </span>
+      </p>
+    </div>
     <div class={`share card${isNew ? " share--new" : ""}`}>
       <label for="share-link">{isNew ? "Your group is ready. Send this link to everyone coming:" : "Invite link"}</label>
       <div class="share__row">
@@ -64,7 +76,7 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
   </section>
 
   {!member ? (
-    <section class="card join" aria-labelledby="join-title">
+    <section id="join" class="card join" aria-labelledby="join-title">
       <h2 id="join-title">Join {group.name}</h2>
       {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
       <form method="post" action={`/api/groups/${group.id}/join`} class="stack">
@@ -89,7 +101,7 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
     <div class="you">
       <p>
         You're in as <strong>{member.name}</strong>
-        {isOwner && <span class="owner-tag">owner</span>}.
+        {isOwner && <span class="owner-tag">owner</span>}
         {account && member.accountId === account.id && (
           <>
             {" "}Signed in with a passkey · <a href="/me">My groups</a>
@@ -119,10 +131,19 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
     </div>
   )}
 
-  <section id="list" aria-labelledby="list-title">
+  <nav class="section-nav" aria-label="On this page">
+    {!member && <a href="#join">Join</a>}
+    <a href="#list">Our list</a>
+    <a href="#explore-section">Explore</a>
+    {member && <a href="#add">Share a place</a>}
+    {isOwner && <a href="#settings">Settings</a>}
+  </nav>
+
+  <div class="board">
+  <section id="list" class="board__list" aria-labelledby="list-title">
     <h2 id="list-title">Our list</h2>
     {picks.length === 0 ? (
-      <p class="empty">Nothing on the list yet. Add something from Explore below.</p>
+      <p class="empty">Nothing on the list yet. Add something from Explore.</p>
     ) : (
       <ol class="picks">
         {picks.map(({ id, place, addedBy, keen }, i) => {
@@ -158,7 +179,7 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
     )}
   </section>
 
-  <section class="explore-wrap" aria-labelledby="explore-title">
+  <section id="explore-section" class="explore-wrap" aria-labelledby="explore-title">
     <div class="explore-head">
       <h2 id="explore-title">Explore</h2>
       <p class="fine">Places every group on Spots has shared, each with a reason it's good.</p>
@@ -237,7 +258,9 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
       </div>
     </div>
   </section>
+  </div>
 
+  <div class="group-tools">
   {member && (
     <section id="add" class="card add" aria-labelledby="add-title">
       <h2 id="add-title">Share a good place</h2>
@@ -350,6 +373,7 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
       </form>
     </section>
   )}
+  </div>
 
   <script is:inline define:vars={{ groupId: group.id }}>
     // Live: anyone joining, picking or voting in this group, or any group
@@ -456,6 +480,23 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
       askInput.value = new URLSearchParams(location.search).get("q") ?? "";
       showSearch(askInput.value, false);
     });
+
+    // The section links mark where the reader is. Without a script they're
+    // still plain links down the page.
+    const navLinks = [...document.querySelectorAll(".section-nav a")];
+    const sections = navLinks.map((a) => document.querySelector(a.hash)).filter(Boolean);
+    const here = new IntersectionObserver(
+      (entries) => {
+        const seen = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (!seen) return;
+        for (const a of navLinks) {
+          if (a.hash === `#${seen.target.id}`) a.setAttribute("aria-current", "true");
+          else a.removeAttribute("aria-current");
+        }
+      },
+      { rootMargin: "-20% 0px -60% 0px" },
+    );
+    for (const section of sections) here.observe(section);
 
     for (const button of document.querySelectorAll("[data-copy]")) {
       button.addEventListener("click", async () => {
