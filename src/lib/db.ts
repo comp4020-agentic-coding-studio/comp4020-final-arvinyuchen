@@ -488,12 +488,19 @@ export function addPlace(place: NewPlace, addedBy: Member): number {
   );
 }
 
-/** Toggles a member's "keen" on one of their group's picks. */
-export function toggleKeen(pickId: number, member: Member, groupId: string): boolean {
+/**
+ * Sets a member's "keen" on one of their group's picks to what their button
+ * showed, so a double-tap or a second device can't undo it. With no `on`
+ * (an old page), it toggles. Returns whether anything changed.
+ */
+export function setKeen(pickId: number, member: Member, groupId: string, on?: boolean): boolean {
   const pick = db.prepare("SELECT id FROM picks WHERE id = ? AND group_id = ?").get(pickId, groupId);
   if (!pick) return false;
-  const removed = db.prepare("DELETE FROM votes WHERE pick_id = ? AND member_id = ?").run(pickId, member.id);
-  if (removed.changes === 0) db.prepare("INSERT INTO votes (pick_id, member_id) VALUES (?, ?)").run(pickId, member.id);
+  const has = db.prepare("SELECT 1 FROM votes WHERE pick_id = ? AND member_id = ?").get(pickId, member.id) !== undefined;
+  const want = on ?? !has;
+  if (want === has) return false;
+  if (want) db.prepare("INSERT INTO votes (pick_id, member_id) VALUES (?, ?)").run(pickId, member.id);
+  else db.prepare("DELETE FROM votes WHERE pick_id = ? AND member_id = ?").run(pickId, member.id);
   return true;
 }
 

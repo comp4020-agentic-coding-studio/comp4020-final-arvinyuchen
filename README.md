@@ -3,8 +3,9 @@
 Spots is a shared list of places for one group of friends: the food spots, fun
 places and things to do you might go to together. Someone starts a group and
 shares the link; everyone joins with just a name, explores places, adds the
-ones they're keen on, and votes. The list re-ranks live as people vote, and
-it's still there next time the group wants to go out.
+ones they're keen on, and votes. Votes show up live as people make them, the
+list re-ranks when you ask it to, and it's still there next time the group
+wants to go out.
 
 ## Who it's for
 
@@ -92,8 +93,9 @@ other's taste.
 Start a group, join by link, and explore the shared places on cards and a map:
 click a card and the map flies to it. Add a place to your group's list, or
 share a new one by looking it up on OpenStreetMap and saying why it's good; it
-appears in every group's Explore. Vote "keen" and the list re-ranks live in
-every open page. Search Explore by describing what you're after: the answer is
+appears in every group's Explore. Vote "keen" and the count changes live in
+every open page. Cards hold their place while you're looking, and a "New
+order" bar re-ranks the list when you tap it. Search Explore by describing what you're after: the answer is
 the matching cards, best first, and the map frames their pins. Save a passkey
 to be yourself on any device and see all your groups; the person who started a
 group can rename it, remove or merge members, and reset its invite link. Next:

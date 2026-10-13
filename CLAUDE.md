@@ -18,9 +18,11 @@ follow from it; every change has to hold to them.
   app's User-Agent, and caches answers. Keep it that way: no search-as-you-type,
   no autocomplete against Nominatim. Map tiles and data are credited on the
   map; photos are credited on the card.
-- **One person, one keen.** A member can vote "keen" on a spot once; voting
-  again takes it back. Never let a vote be cast for someone else: identity is
-  the per-group cookie (`src/lib/me.ts`), never a name typed into a form.
+- **One person, one keen.** A member can vote "keen" on a spot once. The
+  button sends the state it shows ("on" or "off") and the server sets exactly
+  that (`setKeen`), so a double-tap or a second device never undoes a vote.
+  Never let a vote be cast for someone else: identity is the per-group cookie
+  (`src/lib/me.ts`), never a name typed into a form.
 - **Joining stays a link and a name.** An account is optional and never stands
   between someone and joining or voting.
 - **Accounts are passkeys only.** No passwords, no email, no "sign in with"
@@ -37,6 +39,10 @@ follow from it; every change has to hold to them.
   (`src/pages/api/events.ts` + the page's refresh script). A new kind of
   change has to call `changed(groupId)`; a change to the shared places also
   calls `placesChanged()` so every group's Explore catches up.
+- **Nothing moves under someone's thumb.** While someone is on a group's page,
+  live changes update the list's counts and names but keep its order; when
+  the ranking has moved, a "New order" bar offers it (PROCESS.md, "Several
+  people voting at once"). Don't make a live update reorder cards on its own.
 - **Nothing is lost.** All state lives in the one SQLite file on `/data`.
   Schema changes are additive only; never drop or rewrite data a group made.
   The one exception is the site admin (`src/lib/admin.ts`): a group is

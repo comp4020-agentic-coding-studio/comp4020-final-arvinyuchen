@@ -56,6 +56,34 @@ describe("a group", () => {
     expect(doc.querySelector("#list")?.textContent).not.toContain("Ben,");
   });
 
+  it("sets a keen to what the button showed, so tapping twice can't undo it", async () => {
+    const start = await post("/api/groups", { group: "Double-tap crew", name: "Ana" });
+    const ana = cookieOf(start);
+    const groupPath = (start.headers.get("location") ?? "").split("?")[0];
+    const api = groupPath.replace("/g/", "/api/groups/");
+    await post(`${api}/picks`, { key: "questacon" }, ana);
+    let doc = await page(groupPath, ana);
+    const pick = doc.querySelector<HTMLInputElement>('#list input[name="pick"]')?.value ?? "";
+    expect(doc.querySelector<HTMLInputElement>('#list input[name="keen"]')?.value).toBe("on");
+
+    await post(`${api}/keen`, { pick, keen: "on" }, ana);
+    await post(`${api}/keen`, { pick, keen: "on" }, ana); // a double-tap, or a second device
+    doc = await page(groupPath, ana);
+    expect(doc.querySelector("#list .keen__count")?.textContent).toBe("1");
+    expect(doc.querySelector<HTMLInputElement>('#list input[name="keen"]')?.value).toBe("off");
+
+    // The page's own script posts in the background and stays where it is.
+    const inPage = await fetch(new URL(`${api}/keen`, baseUrl), {
+      method: "POST",
+      headers: { origin: new URL(baseUrl).origin, cookie: ana, "x-spots": "in-page" },
+      body: new URLSearchParams({ pick, keen: "off" }),
+      redirect: "manual",
+    });
+    expect(inPage.status).toBe(204);
+    doc = await page(groupPath, ana);
+    expect(doc.querySelector("#list .keen__count")?.textContent).toBe("0");
+  });
+
   it("doesn't let someone without the group's cookie add or vote", async () => {
     const start = await post("/api/groups", { group: "Closed crew", name: "Ana" });
     const groupPath = (start.headers.get("location") ?? "").split("?")[0];
