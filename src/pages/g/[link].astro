@@ -164,8 +164,9 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
                 <p class="keen-who">{keen.length > 0 ? `Keen: ${keen.join(", ")}` : "No one's keen yet"}</p>
               </div>
               {member && (
-                <form method="post" action={`/api/groups/${group.id}/keen`}>
+                <form method="post" action={`/api/groups/${group.id}/keen`} data-keen>
                   <input type="hidden" name="pick" value={id} />
+                  <input type="hidden" name="keen" value={mine ? "off" : "on"} />
                   <button class={`keen${mine ? " keen--on" : ""}`} aria-pressed={mine ? "true" : "false"}>
                     <span class="keen__count">{keen.length}</span>
                     <span>{mine ? "Keen!" : "I'm keen"}</span>
@@ -387,9 +388,50 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
       const q = new URLSearchParams(location.search).get("q");
       return location.pathname + (q ? `?q=${encodeURIComponent(q)}` : "");
     };
+    // The list keeps each person's order while they're on the page: a card
+    // never moves under someone's thumb mid-vote (see PROCESS.md, "Several
+    // people voting at once"). Counts and names still change live; when the
+    // ranking underneath has moved, a bar offers the new order.
+    let held = true;
+    const pickIds = (root) => [...root.querySelectorAll("#list .picks > li")].map((li) => li.id);
+    function holdOrder(now, next) {
+      const held = pickIds(document);
+      const ranked = pickIds(next.ownerDocument);
+      const focused = document.activeElement?.closest(".picks > li")?.id;
+      now.innerHTML = next.innerHTML;
+      const list = now.querySelector(".picks");
+      if (list && held.length > 0) {
+        // Cards already here keep their place; new ones join the bottom.
+        const order = [...held.filter((id) => ranked.includes(id)), ...ranked.filter((id) => !held.includes(id))];
+        for (const id of order) list.append(list.querySelector(`#${CSS.escape(id)}`));
+        if (order.join() !== ranked.join()) {
+          // Out of rank order, the position numbers would be wrong: hide them.
+          list.classList.add("picks--held");
+          const bar = document.createElement("button");
+          bar.type = "button";
+          bar.className = "reorder";
+          bar.dataset.reorder = "";
+          bar.textContent = "New order — show it";
+          now.querySelector("h2").after(bar);
+        }
+      }
+      if (focused) now.querySelector(`#${CSS.escape(focused)} .keen`)?.focus();
+    }
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest("[data-reorder]")) return;
+      // The server already renders the list most keen first: ask for it.
+      held = false;
+      refresh();
+    });
     let pending = false;
+    let again = false;
     async function refresh() {
-      if (pending) return;
+      // A change that lands mid-refresh gets its own pass afterwards, so the
+      // last vote is never the one that's missed.
+      if (pending) {
+        again = true;
+        return;
+      }
       pending = true;
       try {
         const res = await fetch(current(), { cache: "no-store" });
@@ -401,15 +443,42 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         for (const selector of regions) {
           const now = document.querySelector(selector);
           const next = fresh.querySelector(selector);
-          if (now && next && now.innerHTML !== next.innerHTML) now.innerHTML = next.innerHTML;
+          if (!now || !next) continue;
+          if (selector === "#list" && held) holdOrder(now, next);
+          else if (now.innerHTML !== next.innerHTML) now.innerHTML = next.innerHTML;
         }
+        held = true;
         document.dispatchEvent(new Event("spots:refreshed"));
       } catch {
         location.reload();
       } finally {
         pending = false;
+        if (again) {
+          again = false;
+          refresh();
+        }
       }
     }
+    // A keen posts in the background, so the page (and its order) stays put.
+    // If that fails, the form posts the plain way.
+    document.addEventListener("submit", async (event) => {
+      const form = event.target.closest("[data-keen]");
+      if (!form) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      // Busy rather than disabled: disabling would drop the keyboard focus.
+      if (form.dataset.busy) return;
+      form.dataset.busy = "true";
+      try {
+        const res = await fetch(form.action, { method: "POST", body: new FormData(form), headers: { "x-spots": "in-page" } });
+        if (!res.ok) throw new Error(String(res.status));
+        await refresh();
+      } catch {
+        form.submit();
+      } finally {
+        delete form.dataset.busy;
+      }
+    }, true);
     const source = new EventSource(`/api/events?group=${encodeURIComponent(groupId)}`);
     source.addEventListener("change", refresh);
     source.addEventListener("places", refresh);
@@ -436,7 +505,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     document.addEventListener(
       "submit",
       (event) => {
-        if (!event.target.matches("[data-search]")) source.close();
+        if (!event.target.matches("[data-search], [data-keen]")) source.close();
       },
       true,
     );

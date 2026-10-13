@@ -2269,6 +2269,11 @@ main {
   background: var(--accent-strong);
 }
 
+/* Held out of rank order (see .reorder): the numbers would mislead. */
+.picks--held > .pick::before {
+  display: none;
+}
+
 .empty {
   padding: 1rem 1.1rem;
   border: 1.5px dashed var(--line-strong);
@@ -2492,4 +2497,25 @@ main {
 /* the home page's handful of sample places fill the row, whatever its width */
 .spots--sample {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+
+/* Offers the list's new order without moving cards under anyone's thumb. */
+.reorder {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.9rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-strong);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.reorder:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
 }
