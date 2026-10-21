@@ -1625,36 +1625,104 @@ body:has(.home) .top nav a:hover {
   visibility: hidden;
 }
 
-/* On a wide screen the form is in the stage too (the script puts it
-   there), and the two land side by side, the pair in the middle: the card
-   as wide as the room left beside the form allows. */
-@media (min-width: 64rem) {
-  .fly.is-live {
-    --form: 26rem;
-    --gap: 2.5rem;
-    --wide: min(46rem, 100vw - 4rem - var(--form) - var(--gap), (100svh - 3rem) * 560 / 493);
-  }
+/* The form is in the stage too (the script puts it there, and says
+   which way with .is-beside or .is-under), and lands with the map, clear
+   of the header (its height, --head, measured by the script): */
+.fly.is-live .fly__stage > .start {
+  position: absolute;
+  z-index: 2;
+  margin: 0;
+  opacity: var(--card, 0);
+}
 
-  .fly.is-live .fly__card {
-    left: calc(50% - (var(--wide) + var(--gap) + var(--form)) / 2);
-    width: var(--wide);
-    translate: 0 -50%;
-  }
+.fly.is-live .fly__stage > .start:not(.is-on) {
+  pointer-events: none;
+}
 
-  .fly.is-live .fly__stage > .start {
-    position: absolute;
-    top: 50%;
-    left: calc(50% - (var(--wide) + var(--gap) + var(--form)) / 2 + var(--wide) + var(--gap));
-    z-index: 2;
-    width: var(--form);
-    margin: 0;
-    translate: 0 calc(-50% + (1 - var(--card, 0)) * 1rem);
-    opacity: var(--card, 0);
-  }
+/* on a wide screen, side by side, the pair in the middle: the card as
+   wide as the room left beside the form allows */
+.fly.is-live.is-beside {
+  --form: 26rem;
+  --gap: 2.5rem;
+  --wide: min(46rem, 100vw - 4rem - var(--form) - var(--gap), (100svh - 2 * var(--head)) * 560 / 493);
+}
 
-  .fly.is-live .fly__stage > .start:not(.is-on) {
-    pointer-events: none;
-  }
+.fly.is-live.is-beside .fly__card {
+  left: calc(50% - (var(--wide) + var(--gap) + var(--form)) / 2);
+  width: var(--wide);
+  translate: 0 -50%;
+}
+
+.fly.is-live.is-beside .fly__stage > .start {
+  top: 50%;
+  left: calc(50% - (var(--wide) + var(--gap) + var(--form)) / 2 + var(--wide) + var(--gap));
+  width: var(--form);
+  translate: 0 calc(-50% + (1 - var(--card, 0)) * 1rem);
+}
+
+/* on a narrow one, the card over the form, the pair in the room under the
+   header: the card as tall as the form, its height measured by the
+   script (--form-h), leaves room for */
+.fly.is-live.is-under {
+  --gap: 0.75rem;
+  --room: calc(100svh - var(--head) - 1rem);
+  --tall: min(min(100vw - 2rem, 46rem) * 493 / 560, var(--room) - var(--gap) - var(--form-h, 0px));
+  --from: calc(var(--head) + (var(--room) - var(--tall) - var(--gap) - var(--form-h, 0px)) / 2);
+}
+
+.fly.is-live.is-under .fly__card {
+  top: var(--from);
+  width: calc(var(--tall) * 560 / 493);
+  translate: -50% 0;
+}
+
+.fly.is-live.is-under .fly__stage > .start {
+  top: calc(var(--from) + var(--tall) + var(--gap));
+  left: 50%;
+  width: min(100vw - 2rem, 30rem);
+  translate: -50% calc((1 - var(--card, 0)) * 1rem);
+  --pad: 1.1rem;
+}
+
+/* (the form a little tighter there, to leave the map more room: the
+   photo has already said it's free and needs no sign-up) */
+.fly.is-live.is-under .fly__stage > .start > .fine {
+  display: none;
+}
+
+.fly.is-live.is-under .fly__stage > .start .card__actions {
+  margin-top: 0.75rem;
+  padding-top: 1rem;
+}
+
+/* The header stays at the top through the flight (fixed, over the stage),
+   white on the photo, ink on the map once the photo has gone (.is-paper,
+   from the script). */
+body:has(.fly.is-live) .top {
+  position: fixed;
+}
+
+body:has(.fly.is-live) :is(.brand, .top nav a) {
+  transition:
+    color 0.3s,
+    text-shadow 0.3s;
+}
+
+body:has(.fly.is-live) .brand__pin {
+  transition: background 0.3s;
+}
+
+body:has(.fly.is-live) .top.is-paper :is(.brand, nav a) {
+  color: var(--ink);
+  text-shadow: none;
+}
+
+body:has(.fly.is-live) .top.is-paper .brand__pin {
+  background: var(--accent);
+}
+
+body:has(.fly.is-live) .top.is-paper nav a:hover {
+  background: var(--accent-soft);
 }
 
 /* (and its credit names the live map's tiles) */
@@ -1811,6 +1879,20 @@ body:has(.home) .top nav a:hover {
 
 .hero-map__chip--start {
   --lean: calc(50% - 14px);
+}
+
+/* On a small frame (the home page's map over its form on a phone) a
+   place's card is a size smaller, so it doesn't cover half the map. */
+@container (max-width: 300px) {
+  .hero-map .hero-map__card {
+    width: 8.75rem;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.66rem;
+  }
+
+  .hero-map .hero-map__card strong {
+    font-size: 0.8rem;
+  }
 }
 
 /* On the narrowest frames there's no room between a hanging chip and the
