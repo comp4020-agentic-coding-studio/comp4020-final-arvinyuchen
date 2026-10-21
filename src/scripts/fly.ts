@@ -112,8 +112,9 @@ if (fly && motion && gl) {
   place();
   // The header stays at the top through it all, so the landing has the
   // logo and the way to sign in too: white on the photo, ink once the
-  // photo has gone (styles.css).
+  // photo has gone (styles.css). It goes in the stage, pinned with it.
   const top = document.querySelector<HTMLElement>(".top");
+  if (top) stage.prepend(top);
   fly.classList.add("is-live");
 
   const map = new maplibregl.Map({
@@ -241,7 +242,8 @@ if (fly && motion && gl) {
     const photo = ready ? 1 - part(p, PHOTO_OUT) : 1 - part(p, CARD_IN);
     s.setProperty("--photo", String(photo));
     top?.classList.toggle("is-paper", photo < 0.5);
-    // (and once it's gone, it's not there at all, for Safari's bars too)
+    // (and once it's gone, it's not there at all, for Safari's bars too,
+    // which still take their colour from what's only transparent)
     fly.classList.toggle("is-past", photo === 0);
     const n = ease(part(p, NARROW));
     s.setProperty(

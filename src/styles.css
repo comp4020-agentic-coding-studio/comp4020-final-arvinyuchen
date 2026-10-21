@@ -83,8 +83,10 @@ main,
 .foot {
   max-width: calc(var(--page) + 2rem);
   margin: 0 auto;
-  padding-right: 1rem;
-  padding-left: 1rem;
+  /* (the page runs to the screen's edges, viewport-fit=cover in Base.astro,
+     so these keep clear of a phone's notch, island and home bar) */
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-left: max(1rem, env(safe-area-inset-left));
 }
 
 main {
@@ -124,7 +126,7 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding-top: 0.85rem;
+  padding-top: calc(0.85rem + env(safe-area-inset-top));
   padding-bottom: 0.85rem;
 }
 
@@ -1552,7 +1554,7 @@ body:has(.home) .top nav a:hover {
   left: 0;
   z-index: 2;
   display: block;
-  height: 1px;
+  height: 8px;
 }
 
 .fly__edge--top {
@@ -1584,10 +1586,15 @@ body:has(.home) .top nav a:hover {
   height: 340svh;
 }
 
+/* (as tall as the screen with the browser's bars gone, so the picture
+   runs on under them; and stuck 1px above the top, so at the top of the
+   page, before any scroll, it isn't stuck at all: Safari on a phone paints
+   its bars over anything pinned at the screen's edges in a flat colour,
+   but over the photo at rest it lets the photo show) */
 .fly.is-live .fly__stage {
   position: sticky;
-  top: 0;
-  height: 100svh;
+  top: -1px;
+  height: 100lvh;
   overflow: hidden;
   background: #f4f3ef;
 }
@@ -1607,7 +1614,7 @@ body:has(.home) .top nav a:hover {
 }
 
 .fly.is-live.is-past .fly__intro {
-  visibility: hidden;
+  display: none;
 }
 
 .fly.is-live .fly__words {
@@ -1730,11 +1737,17 @@ body:has(.home) .top nav a:hover {
   padding-top: 1rem;
 }
 
-/* The header stays at the top through the flight (fixed, over the stage),
-   white on the photo, ink on the map once the photo has gone (.is-paper,
-   from the script). */
-body:has(.fly.is-live) .top {
-  position: fixed;
+/* The header stays at the top through the flight, white on the photo, ink
+   on the map once the photo has gone (.is-paper, from the script). The
+   script puts it in the stage, so it's pinned with the stage rather than
+   fixed to the screen on its own: Safari would paint its bar in the
+   header's colour over the photo. */
+.fly.is-live .fly__stage > .top {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 3;
 }
 
 body:has(.fly.is-live) :is(.brand, .top nav a) {
@@ -2554,7 +2567,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   align-items: baseline;
   gap: 0.5rem 1.25rem;
   padding-top: 1.25rem;
-  padding-bottom: 2rem;
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 0.85rem;

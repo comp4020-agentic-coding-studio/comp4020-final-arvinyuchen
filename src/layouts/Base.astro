@@ -20,7 +20,7 @@ const account = signedIn(Astro.cookies);
 <html lang="en-AU">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
     <meta property="og:site_name" content="Spots" />
     <meta property="og:type" content="website" />
@@ -36,7 +36,7 @@ const account = signedIn(Astro.cookies);
     <title>{title}</title>
   </head>
   <body>
-    <header class="top">
+    <header class="top" role="banner">
       <a class="brand" href="/"><span class="brand__pin" aria-hidden="true"></span>Spots</a>
       <nav aria-label="site">
         {account ? <a href="/me">My groups</a> : <a href="/signin">Sign in</a>}
