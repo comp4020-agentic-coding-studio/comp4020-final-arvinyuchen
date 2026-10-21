@@ -36,14 +36,22 @@ other's taste.
   and pins, not a paragraph. Places are matched on meaning, using the reasons
   people wrote, so the better the reasons, the better the search.
 - **Joining costs nothing.** A link and a name. No app to install, no sign-up
-  wall between the group chat and the decision.
+  wall between the group chat and the decision. The link goes wherever the
+  group already talks: one Share button opens the phone's own share sheet
+  (Messages, WhatsApp, Instagram, WeChat), and there are direct links and a QR
+  code for everywhere else. It never goes to a public feed, since anyone who
+  has it can join. Opening the link shows one invite card: the group, who
+  started it, who's in, a line from whoever started it if they wrote one,
+  and a name field to join. Under it, the first few places on a small street
+  map. The full list and its votes are for the group.
 - **You stay you, without a password.** Anyone who wants to be themselves on
   their phone and their laptop can save a passkey (face, fingerprint or PIN)
   and find all their groups in one place. It's optional, there's no
   password or email, and it never stands between someone and joining.
-- **Whoever starts a group can look after it.** Rename it, take someone out,
-  merge someone who joined twice, and reset the invite link if it spread too
-  far, without losing anything the group made.
+- **Whoever starts a group can look after it.** Rename it, write a line to
+  the people they invite, take someone out, merge someone who joined twice,
+  and reset the invite link if it spread too far, without losing anything
+  the group made.
 - **It remembers.** What the group added and voted for stays, across visits,
   restarts and redeploys, so next weekend starts from the list, not from
   scratch.
@@ -68,7 +76,10 @@ other's taste.
   `scripts/build-hero-map.ts`, so nothing on it is drawn by hand and the
   site never queries OpenStreetMap for it. The starter places were
   checked against Wikipedia, with photos from Wikimedia Commons credited on
-  each card.
+  each card. The invite page's small map is OpenFreeMap's tiles, recoloured
+  and drawn closer than usual so side streets show, with hills shaded from
+  Mapzen's open terrain tiles; its photo of Canberra is from Unsplash,
+  credited in the footer.
 - Voyage AI's embeddings turn each card and each search prompt into a
   vector; cards are ranked by how close they are in meaning (cosine
   similarity). Only card text and prompts are sent, nothing about a group.
@@ -98,5 +109,6 @@ every open page. Cards hold their place while you're looking, and a "New
 order" bar re-ranks the list when you tap it. Search Explore by describing what you're after: the answer is
 the matching cards, best first, and the map frames their pins. Save a passkey
 to be yourself on any device and see all your groups; the person who started a
-group can rename it, remove or merge members, and reset its invite link. Next:
+group can rename it, write a note for the people they invite, remove or merge
+members, and reset its invite link. Next:
 deciding a date and time, and a "who's coming" for the chosen spot.

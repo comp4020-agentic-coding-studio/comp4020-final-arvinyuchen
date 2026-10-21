@@ -1,10 +1,11 @@
 import type { APIRoute } from "astro";
-import { getGroup, mergeMembers, removeMember, renameGroup, resetLink } from "../../../../lib/db";
+import { getGroup, mergeMembers, removeMember, renameGroup, resetLink, setNote, NOTE_MAX } from "../../../../lib/db";
 import { changed } from "../../../../lib/events";
 import { clean, me } from "../../../../lib/me";
 
-// The owner's tools: rename the group, take someone out, fold a duplicate
-// into the person they really are, and reset the invite link. Only the
+// The owner's tools: rename the group, write a note to the people they
+// invite, take someone out, fold a duplicate into the person they really
+// are, and reset the invite link. Only the
 // owner gets past the first check; everything else just goes back.
 export const POST: APIRoute = async ({ params, cookies, request, redirect }) => {
   const group = getGroup(params.id ?? "");
@@ -21,6 +22,11 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
     renameGroup(group.id, name);
     changed(group.id);
     return back(group.link, "renamed");
+  }
+  if (action === "note") {
+    setNote(group.id, clean(form.get("note"), NOTE_MAX).replace(/\s+/g, " "));
+    changed(group.id);
+    return back(group.link, "noted");
   }
   if (action === "remove") {
     const done = removeMember(group, Number(form.get("member")));

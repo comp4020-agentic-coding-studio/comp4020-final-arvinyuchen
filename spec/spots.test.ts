@@ -50,10 +50,33 @@ describe("a group", () => {
     expect(doc.querySelector("#list .keen__count")?.textContent).toBe("2");
 
     await keen(ben); // voting again takes it back
-    doc = await page(groupPath);
-    expect(doc.querySelector("#list .keen__count")).toBeNull(); // no vote buttons for a non-member
+    doc = await page(groupPath, ana);
     expect(doc.querySelector("#list")?.textContent).toContain("Keen: Ana");
     expect(doc.querySelector("#list")?.textContent).not.toContain("Ben,");
+  });
+
+  it("shows someone with the link a preview to join, never the list or its votes", async () => {
+    const start = await post("/api/groups", { group: "Preview crew", name: "Ana" });
+    const ana = cookieOf(start);
+    const groupPath = (start.headers.get("location") ?? "").split("?")[0];
+    const api = groupPath.replace("/g/", "/api/groups/");
+    for (const key of ["questacon", "arboretum", "nga", "lonsdale-st"]) await post(`${api}/picks`, { key }, ana);
+    const doc = await page(groupPath, ana);
+    const last = [...doc.querySelectorAll<HTMLInputElement>('#list input[name="pick"]')].map((i) => i.value).at(-1) ?? "";
+    await post(`${api}/keen`, { pick: last, keen: "on" }, ana); // the newest pick now ranks first
+
+    const stranger = await page(groupPath);
+    expect(stranger.querySelector("h1")?.textContent).toBe("Preview crew");
+    expect(stranger.body.textContent).toContain("Ana started it");
+    // The first three places, oldest first: the order says nothing about votes.
+    const preview = [...stranger.querySelectorAll(".welcome__stop strong")].map((s) => s.textContent);
+    expect(preview).toEqual(["Questacon", "National Arboretum", "National Gallery of Australia"]);
+    expect(stranger.querySelector('form#join input[name="name"]')).toBeTruthy();
+    // Members only: the list, its keens, Explore, the map and the invite card.
+    for (const members of ["#list", "#explore", "#map", "#share-link", ".keen"]) {
+      expect(stranger.querySelector(members)).toBeNull();
+    }
+    expect(stranger.body.textContent).not.toContain("Keen:");
   });
 
   it("sets a keen to what the button showed, so tapping twice can't undo it", async () => {
@@ -84,6 +107,32 @@ describe("a group", () => {
     expect(doc.querySelector("#list .keen__count")?.textContent).toBe("0");
   });
 
+  it("shares its invite person to person, with a card that names the group", async () => {
+    const start = await post("/api/groups", { group: "Share crew", name: "Ana" });
+    const groupPath = (start.headers.get("location") ?? "").split("?")[0];
+    const doc = await page(groupPath, cookieOf(start));
+    const link = doc.querySelector<HTMLInputElement>("#share-link")?.value ?? "";
+    const meta = (property: string) => doc.querySelector(`meta[property="${property}"]`)?.getAttribute("content");
+
+    // The card a chat app builds from the link.
+    expect(meta("og:title")).toBe("Join Share crew on Spots");
+    expect(meta("og:url")).toBe(link);
+    const image = await fetch(meta("og:image") ?? "");
+    expect(image.status).toBe(200);
+    expect(image.headers.get("content-type")).toContain("image/png");
+
+    // Private channels, each carrying the link; never a public feed.
+    const hrefs = [...doc.querySelectorAll<HTMLAnchorElement>(".share__by a")].map((a) => a.getAttribute("href") ?? "");
+    expect(hrefs.map((h) => h.split(/[?:]/)[0])).toEqual(["sms", "https", "https", "mailto"]);
+    expect(hrefs.some((h) => h.startsWith("https://wa.me/"))).toBe(true);
+    expect(hrefs.some((h) => h.startsWith("https://t.me/share/url"))).toBe(true);
+    for (const href of hrefs) expect(decodeURIComponent(href)).toContain(link);
+    expect(doc.body.innerHTML).not.toMatch(/facebook\.com\/sharer|twitter\.com\/intent|x\.com\/intent/);
+
+    // A QR code for friends in the same room, drawn on the server.
+    expect(doc.querySelector(".share__qr svg")).toBeTruthy();
+  });
+
   it("doesn't let someone without the group's cookie add or vote", async () => {
     const start = await post("/api/groups", { group: "Closed crew", name: "Ana" });
     const groupPath = (start.headers.get("location") ?? "").split("?")[0];
@@ -111,7 +160,7 @@ describe("a group", () => {
     expect(explore).toContain(name);
     expect(explore).toContain("Chilli oil worth the trip");
     // the other group's members and list stay their own
-    expect((await page(theirPath)).querySelector("#list")?.textContent).not.toContain(name);
+    expect((await page(theirPath, cookieOf(theirs))).querySelector("#list")?.textContent).not.toContain(name);
   });
 
   it("refuses a place with no reason it's good", async () => {
@@ -124,7 +173,7 @@ describe("a group", () => {
       cookieOf(start),
     );
     expect(res.headers.get("location")).toContain("error=place");
-    expect((await page(groupPath)).querySelector("#explore")?.textContent).not.toContain(name);
+    expect((await page(groupPath, cookieOf(start))).querySelector("#explore")?.textContent).not.toContain(name);
   });
 
   it("puts every located place on the map", async () => {
