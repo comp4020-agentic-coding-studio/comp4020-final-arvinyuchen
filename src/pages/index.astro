@@ -27,6 +27,10 @@ const error = Astro.url.searchParams.get("error");
             <span class="fine">Free, and no sign-up</span>
           </p>
         </div>
+        {/* (the photo's colour at its top and its foot, for the phone's
+            browser to carry on under its bars: styles.css) */}
+        <span class="fly__edge fly__edge--top" aria-hidden="true"></span>
+        <span class="fly__edge fly__edge--foot" aria-hidden="true"></span>
         {/* (with the flight only: it plays it for you) */}
         <button class="fly__go" type="button">
           See it from above

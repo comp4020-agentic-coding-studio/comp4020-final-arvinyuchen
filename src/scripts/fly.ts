@@ -241,6 +241,8 @@ if (fly && motion && gl) {
     const photo = ready ? 1 - part(p, PHOTO_OUT) : 1 - part(p, CARD_IN);
     s.setProperty("--photo", String(photo));
     top?.classList.toggle("is-paper", photo < 0.5);
+    // (and once it's gone, it's not there at all, for Safari's bars too)
+    fly.classList.toggle("is-past", photo === 0);
     const n = ease(part(p, NARROW));
     s.setProperty(
       "--clip",
@@ -382,9 +384,10 @@ if (fly && motion && gl) {
   // fades out as it comes to the card's edge, its card with it, and back in
   // as it comes round; a name (placed for the map seen from above) fades
   // out while it would cover a pin, a chip or a name before it. A place's
-  // card opens above it, or below when there's no room above (chosen as
-  // its turn in the search comes round, while it's hidden, so a card never
-  // jumps), slid along to stay inside.
+  // card opens on whichever side of it (above, below, right or left) it
+  // fits best, chosen as its turn in the search comes round, while it's
+  // hidden, so a card never jumps; and it's slid back inside the card's
+  // edges, where on a phone's small map it fits on no side whole.
   //
   // All of it every frame, so none of it may make the page lay itself out:
   // they're moved by translation from the card's corner, never by left and
@@ -405,7 +408,7 @@ if (fly && motion && gl) {
       card: el.classList.contains("hero-map__card"),
       // (a name only the wide card shows, on a narrow one)
       unshown: false,
-      below: false,
+      side: "above" as Side,
       choose: true,
       w: 0,
       h: 0,
@@ -432,6 +435,20 @@ if (fly && motion && gl) {
     }
     measured = true;
   };
+  // (where a place's card goes on each side of it, from its corner, and
+  // how far that would run outside the map card)
+  type Side = "above" | "below" | "right" | "left";
+  const SIDES: Side[] = ["above", "below", "right", "left"];
+  const opens = (side: Side, x: number, y: number, cw: number, ch: number) =>
+    side === "above"
+      ? [x - cw / 2, y - ch - 16]
+      : side === "below"
+        ? [x - cw / 2, y + 14]
+        : side === "right"
+          ? [x + 20, y - ch / 2]
+          : [x - 20 - cw, y - ch / 2];
+  const over = ([x0, y0]: number[], cw: number, ch: number) =>
+    Math.max(0, 8 - x0) + Math.max(0, x0 + cw - (size.w - 8)) + Math.max(0, 8 - y0) + Math.max(0, y0 + ch - (size.h - 8));
   const fade = (m: (typeof placed)[number], seen: number) => {
     const f = seen > 0.99 ? "" : `opacity(${Math.max(0, seen).toFixed(2)})`;
     if (f !== m.faded) m.el.style.filter = m.faded = f;
@@ -455,9 +472,15 @@ if (fly && motion && gl) {
       // (gone by 6px from the edge, over the 24px before)
       fade(m, clamp((Math.min(x, w - x, y, h - y) - 6) / 24));
       if (m.card) {
-        if (m.choose) [m.below, m.choose] = [y - m.h - 16 < 8, false];
-        const x0 = Math.min(Math.max(x - m.w / 2, 8), w - 8 - m.w);
-        m.el.style.translate = `${px(x0)} ${px(y + (m.below ? 14 : -m.h - 16))}`;
+        if (m.choose) {
+          // (the first side that fits whole, else the one that runs out least)
+          const fits = SIDES.map((side) => ({ side, out: over(opens(side, x, y, m.w, m.h), m.w, m.h) }));
+          m.side = fits.reduce((a, b) => (b.out < a.out ? b : a)).side;
+          m.choose = false;
+        }
+        const [x0, y0] = opens(m.side, x, y, m.w, m.h);
+        const inside = (v: number, room: number) => Math.min(Math.max(v, 8), Math.max(8, room - 8));
+        m.el.style.translate = `${px(inside(x0, w - m.w))} ${px(inside(y0, h - m.h))}`;
         continue;
       }
       m.el.style.transform = `translate(${px(x)}, ${px(y)})`;
