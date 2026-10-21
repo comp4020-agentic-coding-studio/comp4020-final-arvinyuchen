@@ -113,6 +113,9 @@ if (fly && motion && gl) {
     interactive: false,
     attributionControl: false,
     maxPitch: 89,
+    // (a phone's third pixel a point would be half as much again to draw,
+    // every frame, for a picture no one could tell from this)
+    pixelRatio: Math.min(devicePixelRatio, 2),
     center: [149.13, -35.29],
     zoom: 12,
   });
@@ -123,6 +126,14 @@ if (fly && motion && gl) {
   let landing: maplibregl.JumpToOptions | undefined;
   let way = -1;
   let box = { top: 0, right: 0, bottom: 0, left: 0 };
+  // (where the stage's scroll runs on the page, and how tall the stage is:
+  // read when the sizes change, so a scroll reads nothing back from the
+  // page and never makes it lay itself out again mid-frame)
+  let span = { top: 0, height: 1, stage: 1 };
+  // (and the card's size, and whether its pins and names have been measured
+  // since it last changed)
+  let size = { w: 0, h: 0 };
+  let measured = false;
   // (the flight's views, the photo's first and the landing last, channel by
   // channel: longitude, latitude, zoom, tilt, heading, ground height)
   let track: { times: number[]; channels: number[][] } | undefined;
@@ -150,6 +161,10 @@ if (fly && motion && gl) {
     // middle moved to the card's, wherever on the stage it is).
     const s = stage.getBoundingClientRect();
     const c = card.getBoundingClientRect();
+    const f = fly.getBoundingClientRect();
+    span = { top: f.top + scrollY, height: f.height, stage: vh };
+    size = { w: c.width, h: c.height };
+    measured = false;
     box = { top: c.top - s.top, left: c.left - s.left, right: s.right - c.right, bottom: s.bottom - c.bottom };
     const [, west, , east] = BBOX;
     const mid = where(W / 2, H / 2);
@@ -177,11 +192,36 @@ if (fly && motion && gl) {
     track = { times: views.map((v) => v.at), channels: keys.map((k) => views.map((v) => v[k])) };
   };
 
+  // The flight follows the scroll a moment behind, easing after it: a
+  // mouse wheel moves the page in steps, a hundred pixels at once and then
+  // nothing, and a flight set straight from the scroll would lurch at each.
+  // It eases twice over (FOLLOW seconds each, a point that chases the
+  // scroll and the flight chasing that), so not only where it is but how
+  // fast it goes changes smoothly, and the steps run into one movement. A
+  // jump to the end the page makes itself (to the form) is taken at once,
+  // by `leap`.
+  const FOLLOW = 0.07;
+  let chase = 0;
+  let flown = 0;
+  let settled = true;
+  let drew = 0;
+  let leap = false;
   let queued = false;
-  const draw = () => {
+  const draw = (now = performance.now()) => {
     queued = false;
-    const r = fly.getBoundingClientRect();
-    const p = clamp(-r.top / (r.height - stage.clientHeight));
+    const target = clamp((scrollY - span.top) / (span.height - span.stage));
+    // (a frame's worth of easing when it sets off again after resting)
+    const dt = settled ? 1 / 60 : Math.min(0.05, (now - drew) / 1000);
+    drew = now;
+    const k = 1 - Math.exp(-dt / FOLLOW);
+    chase = leap ? target : chase + (target - chase) * k;
+    flown = leap ? target : flown + (chase - flown) * k;
+    leap = false;
+    if (Math.abs(target - flown) < 0.0003 && Math.abs(target - chase) < 0.0003) chase = flown = target;
+    settled = flown === target;
+    if (!settled) later();
+    const p = flown;
+    const onScreen = span.top + span.height - scrollY > 0;
     const s = fly.style;
     s.setProperty("--words", String(1 - part(p, WORDS)));
     // Until the map has drawn, the photo stays and goes straight to the card.
@@ -194,8 +234,15 @@ if (fly && motion && gl) {
     const cardIn = part(p, CARD_IN);
     s.setProperty("--card", String(cardIn));
     cardBox.classList.toggle("is-on", cardIn > 0.5);
+    cardBox.classList.toggle("is-out", cardIn === 0);
     form?.classList.toggle("is-on", cardIn > 0.5);
     if (!ready || !landing || !track) return;
+    // (the camera's still out on the flight it's flown unseen to warm up,
+    // until someone scrolls)
+    if (warming) {
+      if (target === 0) return;
+      warming = false;
+    }
     shown = cardIn > 0;
     // Down: it turns on its own while the stage is on screen, and the
     // scroll leaves it be.
@@ -203,7 +250,7 @@ if (fly && motion && gl) {
     if (u >= 1) {
       deepen(1);
       map.jumpTo({ ...landing, bearing: NORTH + spun });
-      if (r.bottom > 0) spin();
+      if (onScreen) spin();
       else halt();
       return;
     }
@@ -213,14 +260,18 @@ if (fly && motion && gl) {
     // photo's back)
     const kept = ease(part(p, [PHOTO_OUT[1], FLIGHT[1]]));
     if (!kept) spun = 0;
+    along(u, spun * kept);
+  };
+  // The camera `u` of the way through the flight, turned `turned` more.
+  const along = (u: number, turned: number) => {
     const tall = deepen(u);
-    const [lng, lat, zoom, pitch, bearing, ground] = track.channels.map((c) => curve(track!.times, c, u));
+    const [lng, lat, zoom, pitch, bearing, ground] = track!.channels.map((c) => curve(track!.times, c, u));
     const k = (n: number) => n * ease(u);
     map.jumpTo({
       center: [lng, lat],
       zoom,
       pitch: Math.max(TILT.pitch, pitch),
-      bearing: bearing + spun * kept,
+      bearing: bearing + turned,
       // (the ground it looks at, lifted with the hills, so the camera rises
       // with it rather than sinking into it)
       elevation: ground * tall,
@@ -228,13 +279,52 @@ if (fly && motion && gl) {
     });
   };
 
-  // The hills, as tall as `tall` times their height (redrawn only when
-  // that's changed enough to see, or reached an end).
+  // Warmed up: while the photo still covers the map and nobody has
+  // scrolled, the camera flies the whole way unseen, a view at a time,
+  // each held until its tiles have come and been drawn, so the flight
+  // itself has nothing left to fetch or get ready, which is what stalled
+  // it. (Not where the visitor has asked to save data.)
+  let warming = false;
+  const warm = async () => {
+    if ((navigator as { connection?: { saveData?: boolean } }).connection?.saveData) return;
+    warming = true;
+    // (the flight, then the landing faced four ways, as it turns there)
+    const views = [0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1, 1.25, 1.5, 1.75];
+    for (const u of views) {
+      if (!warming) return;
+      if (u < 1) along(u, 0);
+      else {
+        deepen(1);
+        map.jumpTo({ ...landing!, bearing: NORTH + (u - 1) * 360 });
+      }
+      await new Promise<void>((done) => {
+        const late = setTimeout(done, 2500);
+        map.once("idle", () => {
+          clearTimeout(late);
+          done();
+        });
+      });
+    }
+    if (!warming) return;
+    warming = false;
+    draw();
+  };
+
+  // The hills, as tall as `tall` times their height. setTerrain would
+  // build the terrain anew, its tiles drawn again from scratch, every frame
+  // they grow; but the height is only a number the terrain multiplies its
+  // elevations by as it draws and samples them, so it's changed in place
+  // (MapLibre 6's Terrain and its TerrainCoverage), and setTerrain is only
+  // the fallback should those ever not be there.
+  type Tall = { exaggeration: number; coverage?: { exaggeration: number } };
   const terrain = (tall: number) => {
     if (tall === hills) return;
-    if (Math.abs(tall - hills) < 0.01 && tall !== 1 && tall !== TILT.hills) return;
     hills = tall;
-    map.setTerrain({ source: "terrain", exaggeration: tall });
+    const t = (map as unknown as { terrain?: Tall | null }).terrain;
+    if (t && typeof t.exaggeration === "number" && typeof t.coverage?.exaggeration === "number") {
+      t.exaggeration = t.coverage.exaggeration = tall;
+      map.triggerRepaint();
+    } else map.setTerrain({ source: "terrain", exaggeration: tall });
   };
   // `u` of the way through the flight: the lens widening and
   // the hills standing up. Gives how tall they are.
@@ -273,12 +363,18 @@ if (fly && motion && gl) {
   };
 
   // The drawn card's pins, names and cards over the live map, each placed
-  // where its spot is on it every time the map draws. As it turns, a pin fades out as it comes to the
-  // card's edge, its card with it, and back in as it comes round; a name
-  // (placed for the map seen from above) fades out while it would cover a
-  // pin, a chip or a name before it. A place's card opens above it, or
-  // below when there's no room above (chosen while it's hidden, so a card
-  // never jumps), slid along to stay inside.
+  // where its spot is on it every time the map draws. As it turns, a pin
+  // fades out as it comes to the card's edge, its card with it, and back in
+  // as it comes round; a name (placed for the map seen from above) fades
+  // out while it would cover a pin, a chip or a name before it. A place's
+  // card opens above it, or below when there's no room above (chosen as
+  // its turn in the search comes round, while it's hidden, so a card never
+  // jumps), slid along to stay inside.
+  //
+  // All of it every frame, so none of it may make the page lay itself out:
+  // they're moved by translation from the card's corner, never by left and
+  // top, and their sizes are read once, all together, before anything is
+  // written (and again when the card changes size).
   let shown = false;
   type Box = { x0: number; x1: number; y0: number; y1: number };
   const hits = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
@@ -292,51 +388,73 @@ if (fly && motion && gl) {
       chip: el.querySelector<HTMLElement>(".hero-map__chip"),
       hangs: !!el.querySelector(".is-below"),
       card: el.classList.contains("hero-map__card"),
+      // (a name only the wide card shows, on a narrow one)
+      unshown: false,
       below: false,
+      choose: true,
       w: 0,
       h: 0,
       faded: "",
     };
   });
+  for (const m of placed) {
+    if (!m.card) continue;
+    const choose = (e: AnimationEvent) => {
+      if (e.animationName === "hm-card") m.choose = true;
+    };
+    m.el.addEventListener("animationstart", choose);
+    m.el.addEventListener("animationiteration", choose);
+  }
+  const measure = () => {
+    for (const m of placed) {
+      m.w = (m.chip ?? m.el).offsetWidth;
+      m.h = m.el.offsetHeight;
+      m.unshown = m.name && !m.w;
+    }
+    for (const { el } of placed) {
+      el.style.left = "0";
+      el.style.top = "0";
+    }
+    measured = true;
+  };
   const fade = (m: (typeof placed)[number], seen: number) => {
     const f = seen > 0.99 ? "" : `opacity(${Math.max(0, seen).toFixed(2)})`;
     if (f !== m.faded) m.el.style.filter = m.faded = f;
   };
+  const px = (n: number) => `${n.toFixed(1)}px`;
   map.on("render", () => {
     if (!shown) return;
-    const [w, h] = [card.clientWidth, card.clientHeight];
+    if (!measured) measure();
+    const { w, h } = size;
     const taken: Box[] = [];
     const names: { m: (typeof placed)[number]; x: number; y: number }[] = [];
     for (const m of placed) {
+      if (m.unshown) continue;
       const q = map.project(m.at);
       const [x, y] = [q.x - box.left, q.y - box.top];
-      m.el.style.left = `${x.toFixed(1)}px`;
-      m.el.style.top = `${y.toFixed(1)}px`;
       if (m.name) {
+        m.el.style.transform = `translate(${px(x)}, ${px(y)})`;
         names.push({ m, x, y });
         continue;
       }
       // (gone by 6px from the edge, over the 24px before)
       fade(m, clamp((Math.min(x, w - x, y, h - y) - 6) / 24));
       if (m.card) {
-        if (!m.w) [m.w, m.h] = [m.el.offsetWidth, m.el.offsetHeight];
-        if (parseFloat(getComputedStyle(m.el).opacity) < 0.05) m.below = y - m.h - 16 < 8;
+        if (m.choose) [m.below, m.choose] = [y - m.h - 16 < 8, false];
         const x0 = Math.min(Math.max(x - m.w / 2, 8), w - 8 - m.w);
-        m.el.style.translate = `${(x0 - x).toFixed(1)}px ${m.below ? 14 : -m.h - 16}px`;
+        m.el.style.translate = `${px(x0)} ${px(y + (m.below ? 14 : -m.h - 16))}`;
+        continue;
       }
-      if (!m.pin) continue;
+      m.el.style.transform = `translate(${px(x)}, ${px(y)})`;
       taken.push({ x0: x - 8, x1: x + 8, y0: y - 8, y1: y + 8 });
       if (!m.chip) continue;
       // (the chip as the CSS sets it: over its place, or hanging below and
       // running right, slid back inside the card)
       m.el.style.setProperty("--x", ((x / w) * 100).toFixed(2));
-      m.w ||= m.chip.offsetWidth;
       const x0 = Math.min(Math.max(m.hangs ? x - 14 : x - m.w / 2, 6), w - 6 - m.w);
       taken.push({ x0, x1: x0 + m.w, ...(m.hangs ? { y0: y, y1: y + 40 } : { y0: y - 40, y1: y }) });
     }
     for (const { m, x, y } of names) {
-      if (!m.w) [m.w, m.h] = [m.el.offsetWidth, m.el.offsetHeight];
-      if (!m.w) continue;
       const at = { x0: x - m.w / 2, x1: x + m.w / 2, y0: y - m.h / 2, y1: y + m.h / 2 };
       const clear = !taken.some((t) => hits(t, at));
       if (clear) taken.push(at);
@@ -377,6 +495,7 @@ if (fly && motion && gl) {
       ready = true;
       fly.classList.add("is-ready");
       draw();
+      if (scrollY <= span.top) warm();
     };
     map.once("idle", go);
     setTimeout(go, 4000);
@@ -434,13 +553,17 @@ if (fly && motion && gl) {
   // (beside the map, a field tabbed to before it's landed takes the page
   // straight there, so what has the focus is in view)
   form?.addEventListener("focusin", () => {
-    if (inStage() && !form.classList.contains("is-on")) {
+    if (inStage() && scrollY < landed() - 1) {
       stop();
+      leap = true;
       scrollTo({ top: landed(), behavior: "instant" });
     }
   });
   // (and a link to the form, as after a form sent without a name, lands)
-  if (location.hash === "#start" && inStage()) scrollTo({ top: landed(), behavior: "instant" });
+  if (location.hash === "#start" && inStage()) {
+    leap = true;
+    scrollTo({ top: landed(), behavior: "instant" });
+  }
   beside.addEventListener("change", () => {
     place();
     later();

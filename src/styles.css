@@ -1594,6 +1594,16 @@ body:has(.home) .top nav a:hover {
   pointer-events: none;
 }
 
+/* (and until it starts to show, it isn't drawn at all, its search and its
+   pins waiting to play until it does) */
+.fly.is-live .fly__card.is-out {
+  visibility: hidden;
+}
+
+.fly.is-live .fly__card.is-out * {
+  animation-play-state: paused;
+}
+
 .fly.is-live .fly__credit {
   position: absolute;
   right: 0.75rem;
