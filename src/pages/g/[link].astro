@@ -1,5 +1,6 @@
 ---
 import QRCode from "qrcode";
+import CityPhoto from "../../components/CityPhoto.astro";
 import MiniMap from "../../components/MiniMap.astro";
 import SpotPhoto from "../../components/SpotPhoto.astro";
 import Base from "../../layouts/Base.astro";
@@ -76,33 +77,17 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
 
 <Base
   title={`${group.name} · Spots`}
-  theme={member ? undefined : "canberra"}
   share={{
     title: `Join ${group.name} on Spots`,
     description: "A shared list of places to go, picked together. Join with just your name: no app, no sign-up.",
     url: shareUrl,
   }}
 >
-  {/* The invite's photo is credited with everyone else's, in the footer. */}
-  {!member && (
-    <Fragment slot="credits">
-      The invite's photo of Canberra is by{" "}
-      <a href="https://unsplash.com/photos/cityscape-during-daytime-QkcWZlBHykg" rel="noopener">Linda Xu on Unsplash</a>.
-    </Fragment>
-  )}
   {!member ? (
   <section class="welcome" aria-labelledby="welcome-title">
     <div class="card welcome__card">
       <div class="welcome__hero">
-        <img
-          class="welcome__photo"
-          src="/images/canberra-from-ainslie-1000.jpg"
-          srcset="/images/canberra-from-ainslie-1000.jpg 1000w, /images/canberra-from-ainslie.jpg 2000w"
-          sizes="(min-width: 34rem) 32rem, 100vw"
-          width="1000"
-          height="663"
-          alt="Canberra from Mount Ainslie: Anzac Parade runs down to Lake Burley Griffin and Parliament House, with the Brindabellas behind"
-        />
+        <CityPhoto class="welcome__photo" sizes="(min-width: 34rem) 32rem, 100vw" first />
         <header class="welcome__head">
           <p class="eyebrow">You're invited to</p>
           <h1 id="welcome-title">{group.name}</h1>
@@ -411,10 +396,15 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         </ul>
       </div>
       <div class="map-wrap">
-        <div id="map" role="region" aria-label="Map of the places in Explore"></div>
-        <p class="map-credit">
-          Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, tiles by <a href="https://openfreemap.org">OpenFreeMap</a>
-        </p>
+        <figure class="map-frame">
+          <div id="map" role="region" aria-label="Map of the places in Explore"></div>
+          <figcaption class="fold-credit">
+            <span class="fold-credit__sources">
+              © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>{" · "}<a href="https://openfreemap.org">OpenFreeMap</a>{" · relief "}<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Mapzen</a>
+            </span>
+            <button type="button" class="fold-credit__info" aria-label="Map credits" aria-expanded="false">i</button>
+          </figcaption>
+        </figure>
       </div>
     </div>
   </section>

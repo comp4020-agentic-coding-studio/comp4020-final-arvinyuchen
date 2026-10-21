@@ -119,7 +119,7 @@ describe("a group", () => {
     expect(meta("og:url")).toBe(link);
     const image = await fetch(meta("og:image") ?? "");
     expect(image.status).toBe(200);
-    expect(image.headers.get("content-type")).toContain("image/png");
+    expect(image.headers.get("content-type")).toContain("image/jpeg");
 
     // Private channels, each carrying the link; never a public feed.
     const hrefs = [...doc.querySelectorAll<HTMLAnchorElement>(".share__by a")].map((a) => a.getAttribute("href") ?? "");

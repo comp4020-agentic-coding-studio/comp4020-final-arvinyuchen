@@ -1,7 +1,8 @@
 ---
-import { CATALOGUE, KIND_LABEL, type Kind } from "../lib/catalogue";
+import { CATALOGUE, KIND_LABEL } from "../lib/catalogue";
 import { at, H, W } from "../lib/hero-frame";
-import { CAMPUS, LAKE, MOTORWAYS, PARKS, PEAKS, RESERVES, ROADS, SUBURBS, WATER } from "../lib/hero-map-data";
+import { PEAKS, SUBURBS } from "../lib/hero-map-data";
+import MapDrawing from "./MapDrawing.astro";
 
 // The home page's moving picture: the starter places dropping onto a sketch of
 // Canberra as pins, then a few prompts answered the way Explore answers them,
@@ -11,34 +12,90 @@ import { CAMPUS, LAKE, MOTORWAYS, PARKS, PEAKS, RESERVES, ROADS, SUBURBS, WATER 
 //
 // Pins sit at each place's real coordinates (src/lib/catalogue.ts), projected
 // into the frame (src/lib/hero-frame.ts). Places outside it (Tidbinbilla) are
-// left off. Everything under the pins is OpenStreetMap's, built by
-// scripts/build-hero-map.ts into src/lib/hero-map-data.ts: nothing is drawn by
-// hand.
+// left off. It wears the live maps' marks (src/scripts/map-marks.ts and
+// "Map marks" in styles.css): the places the prompts find are white name
+// chips, the rest are dots, a few names are set in the page's font, and the
+// credit folds behind an "i". Everything under them is OpenStreetMap's, drawn
+// in the live maps' colours and line weights by MapDrawing.astro, over hills
+// shaded from Mapzen's terrain: nothing is drawn by hand.
 const inFrame = ({ x, y }: { x: number; y: number }) => x > 8 && x < W - 8 && y > 24 && y < H - 4;
 
 const pins = CATALOGUE.map((s) => ({ ...s, ...at(s.lat, s.lon) })).filter(inFrame);
 
 // The prompts, in order, and where each card opens from its pin so it stays
 // inside the frame. Each prompt is a phrase from the matching place's own card.
-const FEATURED: { key: string; ask: string; side: "above" | "below" | "left" | "right" }[] = [
-  { key: "woolley-st", ask: "cheap dumplings", side: "below" },
-  { key: "mt-ainslie", ask: "a walk with a view", side: "left" },
+// A chip that would run into the frame's top or the search box hangs below
+// its place instead; one that would meet a hanging chip on the narrowest
+// frames (a 320px phone) tucks under its place there (.hero-map__drop--tuck).
+const FEATURED: {
+  key: string;
+  ask: string;
+  side: "above" | "below" | "left" | "right";
+  hang?: boolean;
+  tuck?: boolean;
+}[] = [
+  { key: "woolley-st", ask: "cheap dumplings", side: "below", hang: true },
+  { key: "mt-ainslie", ask: "a walk with a view", side: "left", tuck: true },
   { key: "questacon", ask: "something fun with friends", side: "above" },
   { key: "arboretum", ask: "room for a picnic", side: "right" },
 ];
 const featured = FEATURED.map((f) => ({ ...f, spot: pins.find((p) => p.key === f.key)! })).filter((f) => f.spot);
 const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
-const order = new Map(featured.map((f, i) => [f.key, i]));
-const tint: Record<Kind, string> = { food: "var(--food)", fun: "var(--fun)", outdoors: "var(--outdoors)" };
+const byKey = new Map(featured.map((f, i) => [f.key, { ...f, i }]));
+// A chip is centred over its place, or, one that hangs, starts there and runs
+// right, clear of the search box; either way the CSS slides it back inside
+// the frame however narrow that is (see .hero-map__chip), its tail still on
+// the place.
 
-// The land axis, from Parliament House to the War Memorial: the one line on
-// the map that isn't a road or a river, because it's the city's own plan.
-const axis = [at(-35.3081, 149.1245), at(-35.2805, 149.1491)];
+// A few names, as the live maps print them (names() in map-marks.ts): the
+// lake's, the hills a visitor would know, then the suburbs from the middle of
+// town out, each only where it covers no pin, no chip, the search box or
+// another name. The frame is a different size on a phone and a wide screen,
+// so they're placed for both, in pixels: the names that only fit on the
+// wide one wait for it (.hero-map__wide).
+const LANDMARKS = new Set(["Black Mountain"]);
+type Label = { name: string; x: number; y: number; water?: boolean; peak?: boolean };
+const candidates: Label[] = [
+  { name: "Lake Burley Griffin", water: true, ...at(-35.2899, 149.0989) },
+  ...PEAKS.filter((p) => LANDMARKS.has(p.name) && !pins.some((s) => s.name === p.name)).map((p) => ({ ...p, peak: true })),
+  ...[...SUBURBS].sort((a, b) => Math.hypot(a.x - W / 2, a.y - H / 2) - Math.hypot(b.x - W / 2, b.y - H / 2)),
+];
+type Box = { x0: number; x1: number; y0: number; y1: number };
+const hits = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
 
-// Of the named peaks, the ones a visitor would know by name; the rest of the
-// hills read as the reserves they sit in.
-const LANDMARKS = new Set(["Black Mountain", "Mount Ainslie"]);
-const peaks = PEAKS.filter((p) => LANDMARKS.has(p.name));
+function fit(frame: number, max: number, chipEm: number, ask: Box) {
+  const k = frame / W;
+  const chip = 16 * chipEm;
+  const taken: Box[] = [ask];
+  for (const p of pins) {
+    const [x, y] = [p.x * k, p.y * k];
+    taken.push({ x0: x - 8, x1: x + 8, y0: y - 8, y1: y + 8 });
+    const f = byKey.get(p.key);
+    if (!f) continue;
+    // A chip's width, roughly: its name at about half an em a letter, its
+    // disc and padding; and where it sits, kept inside the frame.
+    const wide = p.name.length * chip * 0.56 + 34;
+    const x0 = Math.min(Math.max(f.hang ? x - 14 : x - wide / 2, 6), frame - 6 - wide);
+    taken.push({ x0: x0 - 6, x1: x0 + wide + 6, ...(f.hang ? { y0: y, y1: y + 40 } : { y0: y - 40, y1: y }) });
+  }
+  const shown: string[] = [];
+  for (const c of candidates) {
+    if (shown.length >= max) break;
+    const [x, y] = [c.x * k, c.y * k];
+    const half = (c.name.length * 10.5 * 0.58) / 2 + (c.peak ? 8 : 3);
+    const box = { x0: x - half, x1: x + half, y0: y - 8, y1: y + 8 };
+    if (box.x0 < 6 || box.x1 > frame - 6 || box.y0 < 6 || box.y1 > frame * (H / W) - 22) continue;
+    if (taken.some((t) => hits(t, box))) continue;
+    taken.push(box);
+    shown.push(c.name);
+  }
+  return shown;
+}
+// The phone: a 375px screen less its gutters; the wide screen: a 540px
+// frame (most show it wider, which only gives the names more room).
+const phone = fit(343, 4, 0.68, { x0: 0, x1: 250, y0: 0, y1: 52 });
+const wide = fit(540, 7, 0.75, { x0: 0, x1: 300, y0: 0, y1: 64 });
+const labels = candidates.filter((c) => phone.includes(c.name) || wide.includes(c.name));
 ---
 
 <figure class="hero-map" style={`--n: ${featured.length}`}>
@@ -54,49 +111,36 @@ const peaks = PEAKS.filter((p) => LANDMARKS.has(p.name));
       ))}
     </div>
     <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <pattern id="hm-dots" width="14" height="14" patternUnits="userSpaceOnUse">
-          <circle cx="2" cy="2" r="1" fill="rgb(120 100 70 / 0.16)"></circle>
-        </pattern>
-      </defs>
-      <rect width={W} height={H} fill="#f8f0e2"></rect>
-      <rect width={W} height={H} fill="url(#hm-dots)"></rect>
-      {RESERVES.map((r) => <path class="hero-map__reserve" d={r.d} fill-rule="evenodd"></path>)}
-      {PARKS.map((r) => <path class="hero-map__park" d={r.d} fill-rule="evenodd"></path>)}
-      <path class="hero-map__campus" d={CAMPUS} fill-rule="evenodd"></path>
-      <path class="hero-map__road" d={ROADS}></path>
-      <path class="hero-map__road hero-map__road--major" d={MOTORWAYS}></path>
-      <path class="hero-map__water" d={WATER}></path>
-      <line
-        class="hero-map__axis"
-        x1={axis[0].x}
-        y1={axis[0].y}
-        x2={axis[1].x}
-        y2={axis[1].y}
-      ></line>
-      <path class="hero-map__lake" d={LAKE} fill-rule="evenodd"></path>
-      {SUBURBS.map((p) => <text class="hero-map__suburb" x={p.x} y={p.y}>{p.name}</text>)}
-      {peaks.map((p) => (
-        <g class="hero-map__peak" transform={`translate(${p.x} ${p.y})`}>
-          <path d="M0 -5L5 3H-5Z"></path>
-          <text x="0" y="15">{p.name}</text>
-        </g>
-      ))}
-      <text class="hero-map__label" x="22" y={H - 22}>Canberra</text>
-      {pins.map((p, i) => (
-        <g transform={`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`}>
-          <g
-            class:list={["hero-map__pin", { "hero-map__pin--featured": order.has(p.key) }]}
-            style={`--d: ${(i * 0.16).toFixed(2)}s; --kind: ${tint[p.kind]}; --i: ${order.get(p.key) ?? 0}`}
-          >
-            <ellipse class="hero-map__shadow" cx="0" cy="1" rx="6" ry="2.2"></ellipse>
-            <circle class="hero-map__ring" cx="0" cy="-16" r="12"></circle>
-            <path d="M0 0C-4-7-10-11-10-17a10 10 0 1 1 20 0c0 6-6 10-10 17Z"></path>
-            <circle cx="0" cy="-17" r="3.6" fill="#fff"></circle>
-          </g>
-        </g>
-      ))}
+      <MapDrawing />
     </svg>
+    {labels.map((l) => (
+      <span
+        class:list={[
+          "map-label",
+          { "map-label--water": l.water, "map-label--peak": l.peak, "hero-map__wide": !phone.includes(l.name) },
+        ]}
+        style={`left: ${pct(l.x, W)}; top: ${pct(l.y, H)}`}
+      >{l.name}</span>
+    ))}
+    {pins.map((p, i) => {
+      const f = byKey.get(p.key);
+      return (
+        <span
+          class:list={["map-mark", "hero-map__pin", `spot--${p.kind}`, { "hero-map__pin--featured": f }]}
+          style={`left: ${pct(p.x, W)}; top: ${pct(p.y, H)}; --x: ${((p.x / W) * 100).toFixed(2)}; --d: ${(i * 0.16).toFixed(2)}s; --i: ${f?.i ?? 0}`}
+        >
+          {f && <span class="hero-map__ring"></span>}
+          <span class:list={["map-drop", { "is-below": f?.hang, "hero-map__drop--tuck": f?.tuck }]}>
+            {f && (
+              <span class:list={["map-chip", "hero-map__chip", { "hero-map__chip--start": f.hang, "is-first": f.i === 0 }]}>
+                <i></i><b>{p.name}</b>
+              </span>
+            )}
+            <span class="map-dot"></span>
+          </span>
+        </span>
+      );
+    })}
     {featured.map((f, i) => (
       <div
         class:list={["hero-map__card", `hero-map__card--${f.side}`, `spot--${f.spot.kind}`, { "is-first": i === 0 }]}
@@ -108,7 +152,11 @@ const peaks = PEAKS.filter((p) => LANDMARKS.has(p.name));
       </div>
     ))}
   </div>
-  <figcaption class="hero-map__credit">
-    Map data ©{" "}<a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>
+  <figcaption class="fold-credit">
+    <span class="fold-credit__sources">
+      © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a><span class="hero-map__tiles">{" · "}<a href="https://openfreemap.org">OpenFreeMap</a></span>{" · relief "}<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Mapzen</a>
+    </span>
+    {/* No script here: it opens on hover, or on the focus a tap gives it. */}
+    <button type="button" class="fold-credit__info" aria-label="Map credits">i</button>
   </figcaption>
 </figure>

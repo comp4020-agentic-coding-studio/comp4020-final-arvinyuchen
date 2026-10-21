@@ -13,14 +13,16 @@ if (signedIn(Astro.cookies)) return Astro.redirect("/me", 303);
       Use the passkey you saved in one of your groups: your face, fingerprint or phone PIN. There's no password and no
       username to remember.
     </p>
-    <div data-passkey-only hidden class="stack-row">
-      <button type="button" class="btn btn--primary" data-passkey="signin" data-next="/me">Sign in with a passkey</button>
-      <span class="passkey-msg" aria-live="polite"></span>
+    <div class="card__actions stack">
+      <div data-passkey-only hidden class="stack">
+        <button type="button" class="btn btn--primary" data-passkey="signin" data-next="/me">Sign in with a passkey</button>
+        <span class="passkey-msg" aria-live="polite"></span>
+      </div>
+      <p class="fine" data-no-passkey>
+        No passkey yet? You don't need one to use Spots: open your group's link and join with your name. Once you're
+        in, you can save a passkey there.
+      </p>
     </div>
-    <p class="fine" data-no-passkey>
-      No passkey yet? You don't need one to use Spots: open your group's link and join with your name. Once you're in,
-      you can save a passkey there.
-    </p>
   </section>
   <script>
     import "../scripts/passkeys";
