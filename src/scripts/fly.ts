@@ -94,17 +94,26 @@ if (fly && motion && gl) {
   const holder = fly.querySelector<HTMLElement>(".fly__map")!;
   const cardBox = fly.querySelector<HTMLElement>(".fly__card")!;
   const card = cardBox.querySelector<HTMLElement>(".hero-map__frame")!;
-  // On a wide screen the form lands beside the map, in the stage, so the
-  // two arrive together and there's nothing more to scroll for; narrower,
-  // it follows the stage, as it stands without the script.
+  // The form lands with the map, in the stage, so the two arrive together
+  // and there's nothing more to scroll for: beside it on a wide screen,
+  // under it on a narrow one. On a screen too short for both (a phone on
+  // its side), it follows the stage, as it stands without the script.
   const form = document.querySelector<HTMLElement>("#start");
   const beside = matchMedia("(min-width: 64rem)");
+  const under = matchMedia("(min-height: 36rem)");
   const place = () => {
     if (!form) return;
-    if (beside.matches) stage.append(form);
+    const into = beside.matches || under.matches;
+    fly.classList.toggle("is-beside", beside.matches);
+    fly.classList.toggle("is-under", !beside.matches && into);
+    if (into) stage.append(form);
     else fly.after(form);
   };
   place();
+  // The header stays at the top through it all, so the landing has the
+  // logo and the way to sign in too: white on the photo, ink once the
+  // photo has gone (styles.css).
+  const top = document.querySelector<HTMLElement>(".top");
   fly.classList.add("is-live");
 
   const map = new maplibregl.Map({
@@ -159,6 +168,10 @@ if (fly && motion && gl) {
     // The card, where the drawn map is: its frame shows the whole of
     // hero-frame.ts's picture, so the landing puts that picture there (its
     // middle moved to the card's, wherever on the stage it is).
+    // (clear of the header, and under the map, as tall as the form leaves
+    // room for)
+    fly.style.setProperty("--head", `${top?.offsetHeight ?? 0}px`);
+    fly.style.setProperty("--form-h", `${form?.parentElement === stage ? form.offsetHeight : 0}px`);
     const s = stage.getBoundingClientRect();
     const c = card.getBoundingClientRect();
     const f = fly.getBoundingClientRect();
@@ -225,7 +238,9 @@ if (fly && motion && gl) {
     const s = fly.style;
     s.setProperty("--words", String(1 - part(p, WORDS)));
     // Until the map has drawn, the photo stays and goes straight to the card.
-    s.setProperty("--photo", String(ready ? 1 - part(p, PHOTO_OUT) : 1 - part(p, CARD_IN)));
+    const photo = ready ? 1 - part(p, PHOTO_OUT) : 1 - part(p, CARD_IN);
+    s.setProperty("--photo", String(photo));
+    top?.classList.toggle("is-paper", photo < 0.5);
     const n = ease(part(p, NARROW));
     s.setProperty(
       "--clip",
@@ -513,6 +528,7 @@ if (fly && motion && gl) {
   });
   sizes.observe(card);
   sizes.observe(stage);
+  if (form) sizes.observe(form);
   // Played for you: the page scrolls itself through the flight, so it's the
   // same flight as by hand. "See it from above" stops on the card; "Start a
   // group" carries on to the form and puts the cursor in it. Any wheel,
@@ -564,10 +580,11 @@ if (fly && motion && gl) {
     leap = true;
     scrollTo({ top: landed(), behavior: "instant" });
   }
-  beside.addEventListener("change", () => {
-    place();
-    later();
-  });
+  for (const query of [beside, under])
+    query.addEventListener("change", () => {
+      place();
+      later();
+    });
 
   // (the camera in the page's console, for lining it up)
   (window as unknown as { fly: unknown }).fly = { map, EYE, frame, draw };
