@@ -1531,7 +1531,38 @@ body:has(.home) .top nav a:hover {
   position: relative;
   height: clamp(26rem, 80svh, 44rem);
   overflow: hidden;
-  background: var(--accent);
+  /* (the sky at the photo's top, under its shade, while it loads) */
+  background: #044a5d;
+}
+
+/* Safari on a phone colours the strips under its status bar and its
+   toolbar from what's at the top and bottom edges of the page: not the
+   photo itself, but the background colour of what's there. So a
+   pixel-high line at each edge carries the photo's own colour there (the
+   shaded sky at the top, the trees at its foot, sampled from the photo),
+   and the strips match the picture; once the photo has gone they go with
+   it, and the strips take the stage's paper. */
+.fly__edge {
+  display: none;
+}
+
+.fly.is-live .fly__edge {
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  display: block;
+  height: 1px;
+}
+
+.fly__edge--top {
+  top: 0;
+  background: #044a5d;
+}
+
+.fly__edge--foot {
+  bottom: 0;
+  background: #3b352a;
 }
 
 .fly__intro::after {
@@ -1573,6 +1604,10 @@ body:has(.home) .top nav a:hover {
   inset: 0;
   height: auto;
   opacity: var(--photo, 1);
+}
+
+.fly.is-live.is-past .fly__intro {
+  visibility: hidden;
 }
 
 .fly.is-live .fly__words {
