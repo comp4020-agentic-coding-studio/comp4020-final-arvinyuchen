@@ -60,6 +60,12 @@ const pins = shown
   .map(({ id, name, kind, area, lat, lon }) => ({ id, name, kind, area, lat, lon }));
 const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
 
+// Before joining, the link shows a preview and nothing more: who's in, who
+// started it, and the first few places, oldest first so the order says
+// nothing about votes. The list, the keens and Explore are for members.
+const owner = members.find((m) => m.id === group.ownerId);
+const preview = [...picks].sort((a, b) => a.id - b.id).slice(0, 3);
+
 // Each member's initial in a colour of its own, the same on every visit.
 const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
 ---
@@ -72,6 +78,78 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     url: shareUrl,
   }}
 >
+  {!member ? (
+  <section class="welcome" aria-labelledby="welcome-title">
+    <div class="card welcome__card">
+      <p class="eyebrow">You're invited to</p>
+      <h1 id="welcome-title">{group.name}</h1>
+      <p class="members">
+        <span class="faces" aria-hidden="true">
+          {members.slice(0, 6).map((m) => (
+            <span class="face" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span>
+          ))}
+        </span>
+        <span>
+          {owner && <>{owner.name} started it · </>}
+          {members.length} {members.length === 1 ? "person" : "people"}: {members.map((m) => m.name).join(", ")}
+        </span>
+      </p>
+
+      {preview.length > 0 ? (
+        <div class="welcome__list">
+          <h2 class="welcome__label">On the list so far</h2>
+          <ul class="welcome__picks">
+            {preview.map(({ place }) => (
+              <li class={`welcome__pick spot--${place.kind}`}>
+                <SpotPhoto photo={place.photo} name={place.name} kind={place.kind} small />
+                <span>
+                  <strong>{place.name}</strong>
+                  <span class="area">{KIND_LABEL[place.kind]}{place.area && ` · ${place.area}`}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          {picks.length > preview.length && (
+            <p class="fine">and {picks.length - preview.length} more once you're in.</p>
+          )}
+        </div>
+      ) : (
+        <p class="fine welcome__list">Nothing on the list yet: you could add the first place.</p>
+      )}
+
+      <form id="join" method="post" action={`/api/groups/${group.id}/join`} class="stack welcome__form">
+        <input type="hidden" name="link" value={group.link} />
+        <label for="join-name" class="welcome__label">What should we call you?</label>
+        {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
+        <input
+          id="join-name"
+          name="name"
+          required
+          maxlength="40"
+          autocomplete="nickname"
+          value={account?.name}
+          placeholder="Your first name"
+        />
+        <button class="btn btn--primary welcome__join">Join {group.name}</button>
+        <p class="fine">No app, no sign-up, no password. Only people with this group's link see your name.</p>
+      </form>
+      {!account && (
+        <p class="fine passkey-alt" data-passkey-only hidden>
+          Been here before on another device?{" "}
+          <button type="button" class="linkish" data-passkey="signin" data-group={group.id}>
+            Sign in with your passkey
+          </button>
+          <span class="passkey-msg" aria-live="polite"></span>
+        </p>
+      )}
+    </div>
+    <p class="fine welcome__about">
+      Spots is a shared list of places for one group of friends: add the ones you're keen on, vote, and decide
+      where to go together. <a href="/readme/">How it works</a>
+    </p>
+  </section>
+  ) : (
+  <>
   <section class="group-head group-head--split">
     <div class="group-head__title">
       <p class="eyebrow">Group</p>
@@ -108,29 +186,6 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     </div>
   </section>
 
-  {!member ? (
-    <section id="join" class="card join" aria-labelledby="join-title">
-      <h2 id="join-title">Join {group.name}</h2>
-      {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
-      <form method="post" action={`/api/groups/${group.id}/join`} class="stack">
-        <input type="hidden" name="link" value={group.link} />
-        <label>
-          <span>Your name</span>
-          <input name="name" required maxlength="40" autocomplete="nickname" value={account?.name} />
-        </label>
-        <button class="btn btn--primary">Join the group</button>
-      </form>
-      {!account && (
-        <p class="fine passkey-alt" data-passkey-only hidden>
-          Been here before on another device?{" "}
-          <button type="button" class="linkish" data-passkey="signin" data-group={group.id}>
-            Sign in with your passkey
-          </button>
-          <span class="passkey-msg" aria-live="polite"></span>
-        </p>
-      )}
-    </section>
-  ) : (
     <div class="you">
       <p>
         You're in as <strong>{member.name}</strong>
@@ -162,10 +217,8 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         </div>
       )}
     </div>
-  )}
 
   <nav class="section-nav" aria-label="On this page">
-    {!member && <a href="#join">Join</a>}
     <a href="#list">Our list</a>
     <a href="#explore-section">Explore</a>
     {member && <a href="#add">Share a place</a>}
@@ -629,6 +682,8 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
       }
     });
   </script>
+  </>
+  )}
   <script>
     import "../../scripts/map";
     import "../../scripts/passkeys";

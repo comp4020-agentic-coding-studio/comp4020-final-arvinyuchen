@@ -50,10 +50,34 @@ describe("a group", () => {
     expect(doc.querySelector("#list .keen__count")?.textContent).toBe("2");
 
     await keen(ben); // voting again takes it back
-    doc = await page(groupPath);
-    expect(doc.querySelector("#list .keen__count")).toBeNull(); // no vote buttons for a non-member
+    doc = await page(groupPath, ana);
     expect(doc.querySelector("#list")?.textContent).toContain("Keen: Ana");
     expect(doc.querySelector("#list")?.textContent).not.toContain("Ben,");
+  });
+
+  it("shows someone with the link a preview to join, never the list or its votes", async () => {
+    const start = await post("/api/groups", { group: "Preview crew", name: "Ana" });
+    const ana = cookieOf(start);
+    const groupPath = (start.headers.get("location") ?? "").split("?")[0];
+    const api = groupPath.replace("/g/", "/api/groups/");
+    for (const key of ["questacon", "arboretum", "nga", "lonsdale-st"]) await post(`${api}/picks`, { key }, ana);
+    const doc = await page(groupPath, ana);
+    const last = [...doc.querySelectorAll<HTMLInputElement>('#list input[name="pick"]')].map((i) => i.value).at(-1) ?? "";
+    await post(`${api}/keen`, { pick: last, keen: "on" }, ana); // the newest pick now ranks first
+
+    const stranger = await page(groupPath);
+    expect(stranger.querySelector("h1")?.textContent).toBe("Preview crew");
+    expect(stranger.body.textContent).toContain("Ana started it");
+    // The first three places, oldest first: the order says nothing about votes.
+    const preview = [...stranger.querySelectorAll(".welcome__pick strong")].map((s) => s.textContent);
+    expect(preview).toEqual(["Questacon", "National Arboretum", "National Gallery of Australia"]);
+    expect(stranger.body.textContent).toContain("and 1 more once you're in");
+    expect(stranger.querySelector('form#join input[name="name"]')).toBeTruthy();
+    // Members only: the list, its keens, Explore, the map and the invite card.
+    for (const members of ["#list", "#explore", "#map", "#share-link", ".keen"]) {
+      expect(stranger.querySelector(members)).toBeNull();
+    }
+    expect(stranger.body.textContent).not.toContain("Keen:");
   });
 
   it("sets a keen to what the button showed, so tapping twice can't undo it", async () => {
@@ -137,7 +161,7 @@ describe("a group", () => {
     expect(explore).toContain(name);
     expect(explore).toContain("Chilli oil worth the trip");
     // the other group's members and list stay their own
-    expect((await page(theirPath)).querySelector("#list")?.textContent).not.toContain(name);
+    expect((await page(theirPath, cookieOf(theirs))).querySelector("#list")?.textContent).not.toContain(name);
   });
 
   it("refuses a place with no reason it's good", async () => {
@@ -150,7 +174,7 @@ describe("a group", () => {
       cookieOf(start),
     );
     expect(res.headers.get("location")).toContain("error=place");
-    expect((await page(groupPath)).querySelector("#explore")?.textContent).not.toContain(name);
+    expect((await page(groupPath, cookieOf(start))).querySelector("#explore")?.textContent).not.toContain(name);
   });
 
   it("puts every located place on the map", async () => {

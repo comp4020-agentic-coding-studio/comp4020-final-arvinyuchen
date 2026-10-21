@@ -40,7 +40,9 @@ other's taste.
   group already talks: one Share button opens the phone's own share sheet
   (Messages, WhatsApp, Instagram, WeChat), and there are direct links and a QR
   code for everywhere else. It never goes to a public feed, since anyone who
-  has it can join.
+  has it can join. Opening the link shows a short welcome: the group, who
+  started it, who's in and the first few places, then one question, "What
+  should we call you?". The full list and its votes are for the group.
 - **You stay you, without a password.** Anyone who wants to be themselves on
   their phone and their laptop can save a passkey (face, fingerprint or PIN)
   and find all their groups in one place. It's optional, there's no
