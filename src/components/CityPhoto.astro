@@ -1,0 +1,30 @@
+---
+// The one photo of Canberra, from Mount Ainslie, that the home page and the
+// invite open on (built by scripts/build-photo.mjs, credited in the footer).
+// AVIF where the browser takes it, JPEG where not, in three widths; `sizes`
+// says how wide the page shows it, which for a photo cropped to fill a box
+// is often wider than the screen.
+interface Props {
+  class: string;
+  sizes: string;
+  // (the first thing on the page: fetched first)
+  first?: boolean;
+}
+const { class: className, sizes, first } = Astro.props;
+const widths = [1000, 2000, 3000];
+const set = (type: string) => widths.map((w) => `/images/canberra-from-ainslie-${w}.${type} ${w}w`).join(", ");
+---
+
+<picture>
+  <source type="image/avif" srcset={set("avif")} sizes={sizes} />
+  <img
+    class={className}
+    src="/images/canberra-from-ainslie-1000.jpg"
+    srcset={set("jpg")}
+    sizes={sizes}
+    width="1000"
+    height="663"
+    fetchpriority={first ? "high" : undefined}
+    alt="Canberra from Mount Ainslie: Anzac Parade runs down to Lake Burley Griffin and Parliament House, with the Brindabellas behind"
+  />
+</picture>

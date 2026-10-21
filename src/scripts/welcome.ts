@@ -20,12 +20,3 @@ if (input && face) {
     face.classList.toggle("is-new", initial !== "");
   });
 }
-
-// Credits folded behind an "i" in a picture's corner (the map's) open on
-// hover in CSS; a tap opens them too, for a phone that has no hover.
-for (const credit of document.querySelectorAll<HTMLElement>(".fold-credit")) {
-  credit.querySelector("button")?.addEventListener("click", (event) => {
-    const open = credit.classList.toggle("is-open");
-    (event.currentTarget as HTMLElement).setAttribute("aria-expanded", String(open));
-  });
-}

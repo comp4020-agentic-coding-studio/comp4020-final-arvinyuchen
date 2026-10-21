@@ -1,12 +1,16 @@
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { look, quiet, STYLE, WIDTH } from "./map-look";
+import { chipFont, chips, dress, fold, mark, measure, names, type Name } from "./map-marks";
 
 // The invite card's map (src/components/MiniMap.astro). The page draws a
-// still map of the first places; this lays the real street map over it,
-// restyled to a calm, Apple Maps-like look so the pins are what you see,
-// and drops the pins when the map comes into view, not on a timer that's run
-// out before anyone has scrolled down to it. If the street map can't load
-// (no WebGL, no tiles), the drawn one stays.
+// still map of the first places; this lays the real street map over it, in
+// Spots' map look (src/scripts/map-look.ts) with its lettering swapped for a
+// few names in the page's own font, so the pins are what you see. Its pins,
+// names and credit are the ones every Spots map wears (map-marks.ts). It
+// drops the pins when the map comes into view, not on a timer that's run
+// out before anyone has scrolled down to it. If the street map can't load (no
+// WebGL, no tiles), the drawn one stays.
 
 interface Pin {
   n: number;
@@ -19,192 +23,13 @@ interface Pin {
 // See scripts/copy-maplibre-worker.mjs.
 maplibregl.setWorkerUrl("/vendor/maplibre/maplibre-gl-worker.mjs");
 
-const STYLE = "https://tiles.openfreemap.org/styles/positron";
-type PaintKey = Parameters<maplibregl.Map["setPaintProperty"]>[1];
-
-// The Apple Maps-like look: a warm neutral ground, fresh parks, clear blue
-// water, white streets with pale yellow highways, the hills in soft relief,
-// and the map's own lettering swapped for a few names in the page's own font
-// (drawn as HTML by names() below, so they're SF on Apple devices).
-const APPLE: [string, PaintKey, string | number][] = [
-  ["background", "background-color", "#f4f3ef"],
-  ["landuse_residential", "fill-color", "#efede8"],
-  ["park", "fill-color", "#cde6bd"],
-  ["park", "fill-opacity", 1],
-  ["landcover_wood", "fill-color", "#cde6bd"],
-  ["landcover_wood", "fill-opacity", 1],
-  ["water", "fill-color", "#a3d0ef"],
-  ["waterway", "line-color", "#a3d0ef"],
-  ["building", "fill-color", "#e6e3dc"],
-  ["aeroway-area", "fill-color", "#e9e7e1"],
-  ...["highway_minor", "highway_path", "highway_major_inner", "highway_major_subtle"].map(
-    (id): [string, PaintKey, string] => [id, "line-color", "#ffffff"],
-  ),
-  ["highway_major_casing", "line-color", "#dedad2"],
-  ...["highway_motorway_inner", "highway_motorway_subtle", "highway_motorway_bridge_inner"].map(
-    (id): [string, PaintKey, string] => [id, "line-color", "#fadb8b"],
-  ),
-  ...["highway_motorway_casing", "highway_motorway_bridge_casing"].map((id): [string, PaintKey, string] => [
-    id,
-    "line-color",
-    "#e6bf62",
-  ]),
-];
-// Elevation for the relief: Mapzen's terrain tiles, open on AWS.
-const TERRAIN = "https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png";
-
-// Line widths as they show on the card, in pixels: hairline side streets,
-// clear main roads, highways a little wider, as Apple Maps draws a city.
-const WIDTH: [string, number][] = [
-  ["highway_minor", 0.7],
-  ["highway_major_casing", 2.8],
-  ["highway_major_inner", 1.9],
-  ["highway_motorway_casing", 3.8],
-  ["highway_motorway_inner", 2.8],
-  ["highway_motorway_bridge_casing", 3.8],
-  ["highway_motorway_bridge_inner", 2.8],
-  ["waterway", 0.8],
-  ["railway", 0.8],
-];
-
+// The card's own touches on the shared look: no map lettering (names()
+// prints a few in the page's font instead) and lines as fine as they show.
 function apple(map: maplibregl.Map, k: number) {
-  for (const layer of map.getStyle().layers)
-    if (layer.type === "symbol") map.setLayoutProperty(layer.id, "visibility", "none");
-  for (const id of ["highway_path", "railway_dashline", "aeroway-taxiway"])
-    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
-  for (const [id, key, value] of APPLE) if (map.getLayer(id)) map.setPaintProperty(id, key, value);
+  quiet(map);
+  look(map);
   // The map is drawn k times bigger than it shows (see DETAIL), so its lines are too.
   for (const [id, width] of WIDTH) if (map.getLayer(id)) map.setPaintProperty(id, "line-width", width / k);
-  map.setPaintProperty("railway", "line-color", "#d3d0c8");
-  map.addSource("relief", {
-    type: "raster-dem",
-    tiles: [TERRAIN],
-    encoding: "terrarium",
-    tileSize: 256,
-    maxzoom: 14,
-  });
-  map.addLayer(
-    {
-      id: "relief",
-      type: "hillshade",
-      source: "relief",
-      paint: {
-        "hillshade-exaggeration": 0.5,
-        "hillshade-shadow-color": "rgba(74, 66, 48, 0.32)",
-        "hillshade-highlight-color": "rgba(255, 255, 255, 0.45)",
-        "hillshade-accent-color": "rgba(0, 0, 0, 0)",
-      },
-    },
-    "waterway",
-  );
-}
-
-// A few names, in the page's font: the lake's, then suburbs, each only
-// where it covers no pin and no other name.
-function names(holder: HTMLElement, pen: CanvasRenderingContext2D, proj: Project, put: Put) {
-  const width = holder.clientWidth;
-  const height = holder.clientHeight;
-  const frame = holder.getBoundingClientRect();
-  const taken: Box[] = [...holder.querySelectorAll(".minimap__marker")].map((el) => {
-    const r = el.getBoundingClientRect();
-    return {
-      x0: r.left - frame.left - 8,
-      x1: r.right - frame.left + 8,
-      y0: r.top - frame.top - 4,
-      y1: r.bottom - frame.top + 4,
-    };
-  });
-  const places: { name: string; water: boolean; lat: number; lon: number }[] = JSON.parse(
-    holder.closest<HTMLElement>(".minimap")?.dataset.places ?? "[]",
-  );
-  const candidates = places.map((p) => ({
-    name: p.name,
-    water: p.water,
-    at: [p.lon, p.lat] as [number, number],
-  }));
-  let shown = 0;
-  for (const c of candidates) {
-    if (shown >= 5) break;
-    const { x, y } = proj(c.at);
-    pen.font = `${c.water ? "italic 500" : "600"} 10.5px ${getComputedStyle(holder).fontFamily}`;
-    const half = pen.measureText(c.name).width / 2 + 3;
-    const box = { x0: x - half, x1: x + half, y0: y - 8, y1: y + 8 };
-    if (box.x0 < 6 || box.x1 > width - 6 || box.y0 < 6 || box.y1 > height - 22) continue;
-    if (taken.some((t) => hits(t, box))) continue;
-    taken.push(box);
-    shown++;
-    const el = document.createElement("span");
-    el.className = c.water ? "minimap__place minimap__place--water" : "minimap__place";
-    el.textContent = c.name;
-    put(el, c.at, "center");
-  }
-}
-interface Box {
-  x0: number;
-  x1: number;
-  y0: number;
-  y1: number;
-}
-const hits = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
-
-// A chip sits over its place, slid sideways to stay inside the map (its
-// tail still points at the place). It says its name when that fits; one
-// that would cover another shrinks to its number.
-function chips(
-  points: { x: number; y: number; wide: number }[],
-  width: number,
-  height: number,
-): { named: boolean; shift: number; below: boolean }[] {
-  const taken: Box[] = points.map(({ x, y }) => ({
-    x0: x - 6,
-    x1: x + 6,
-    y0: y - 6,
-    y1: y + 6,
-  }));
-  return points.map(({ x, y, wide }) => {
-    const half = (wide + 44) / 2;
-    const inside = (s: number) => s + Math.max(6 - (x - half + s), 0) + Math.min(width - 6 - (x + half + s), 0);
-    // Centred on its place, else slid so the tail sits near one end.
-    const shifts = [...new Set([0, half - 18, 18 - half].map(inside))];
-    // Over the place first; under it (the tail pointing up) if that's taken.
-    for (const below of [false, true]) {
-      for (const shift of shifts) {
-        const xs = { x0: x - half + shift, x1: x + half + shift };
-        const box = below ? { ...xs, y0: y + 6, y1: y + 40 } : { ...xs, y0: y - 40, y1: y - 6 };
-        if (half * 2 < width - 12 && box.y0 > 0 && box.y1 < height && !taken.some((t) => hits(t, box))) {
-          taken.push(box);
-          return { named: true, shift, below };
-        }
-      }
-    }
-    taken.push({ x0: x - 14, x1: x + 14, y0: y - 40, y1: y });
-    return { named: false, shift: 0, below: false };
-  });
-}
-
-function chip(pin: Pin, named: boolean, shift: number, below: boolean) {
-  const el = document.createElement("div");
-  el.className = `minimap__marker spot--${pin.kind}`;
-  const drop = document.createElement("div");
-  drop.className = "minimap__drop";
-  drop.classList.toggle("is-below", below);
-  drop.style.setProperty("--n", String(pin.n));
-  const body = document.createElement("span");
-  body.className = "minimap__chip";
-  body.style.setProperty("--shift", `${shift}px`);
-  const n = document.createElement("i");
-  n.textContent = String(pin.n);
-  body.append(n);
-  if (named) {
-    const name = document.createElement("b");
-    name.textContent = pin.name;
-    body.append(name);
-  }
-  const dot = document.createElement("span");
-  dot.className = "minimap__dot";
-  drop.append(body, dot);
-  el.append(drop);
-  return el;
 }
 
 // OpenStreetMap's tiles only carry side streets from about zoom 13 (and
@@ -222,14 +47,7 @@ function zoomFor(bounds: maplibregl.LngLatBounds, width: number, height: number,
   return Math.min(14, Math.log2(Math.min((width - pad.x) / (dx * 512), (height - pad.y) / (dy * 512))));
 }
 
-type Project = (at: [number, number]) => { x: number; y: number };
-type Anchor = "center" | "top" | "bottom";
-type Put = (el: HTMLElement, at: [number, number], anchor: Anchor, offset?: [number, number]) => void;
-const SHIFT: Record<Anchor, string> = {
-  center: "-50% -50%",
-  top: "-50% 0",
-  bottom: "-50% -100%",
-};
+fold();
 
 for (const figure of document.querySelectorAll<HTMLElement>(".minimap")) {
   const below = figure.getBoundingClientRect().top > innerHeight * 0.8;
@@ -325,33 +143,32 @@ function build(figure: HTMLElement, holder: HTMLElement, pins: Pin[], done: () =
       maxZoom: 16,
       duration: 0,
     });
-    const proj: Project = (at) => {
+    const proj = (at: [number, number]) => {
       const p = map.project(at);
       return { x: p.x * k, y: p.y * k };
     };
-    const put: Put = (el, at, anchor, offset = [0, 0]) => {
+    // Marks and names have no size of their own (see .map-mark, .map-label):
+    // each goes on its place, centred there.
+    const put = (el: HTMLElement, at: [number, number]) => {
       const { x, y } = proj(at);
-      Object.assign(el.style, {
-        left: `${x + offset[0]}px`,
-        top: `${y + offset[1]}px`,
-        translate: SHIFT[anchor],
-      });
+      Object.assign(el.style, { left: `${x}px`, top: `${y}px` });
       over.append(el);
     };
     map.once("load", () => {
       apple(map, k);
-      // Names are measured in the font they're shown in.
-      const pen = document.createElement("canvas").getContext("2d")!;
-      pen.font = `700 ${parseFloat(getComputedStyle(document.documentElement).fontSize) * 0.75}px ${getComputedStyle(figure).fontFamily}`;
-      const placing = chips(
-        pins.map((pin) => ({ ...proj([pin.lon, pin.lat]), wide: pen.measureText(pin.name).width })),
+      const font = chipFont(figure);
+      const { placing, taken } = chips(
+        pins.map((pin) => ({ ...proj([pin.lon, pin.lat]), wide: measure(pin.name, font) })),
         holder.clientWidth,
         holder.clientHeight,
       );
-      // The dot's centre is on the place: 4px up from the marker's bottom.
       pins.forEach((pin, i) => {
-        const { named, shift, below } = placing[i];
-        put(chip(pin, named, shift, below), [pin.lon, pin.lat], below ? "top" : "bottom", [0, below ? -4 : 4]);
+        const el = mark(pin.kind);
+        dress(el, { n: pin.n, name: pin.name, placing: placing[i] });
+        const drop = el.querySelector<HTMLElement>(".map-drop")!;
+        drop.classList.add("is-dropping");
+        drop.style.setProperty("--n", String(pin.n));
+        put(el, [pin.lon, pin.lat]);
       });
       // The pins drop after the card has reached the map, or right away if
       // the map arrived later than that.
@@ -361,7 +178,23 @@ function build(figure: HTMLElement, holder: HTMLElement, pins: Pin[], done: () =
         figure.style.setProperty("--live-wait", `${Math.max(0.15, after + 0.55 - now)}s`);
       }
       map.once("idle", () => {
-        names(holder, pen, proj, put);
+        // A few names: the lake's, then suburbs, each clear of the pins
+        // (with a little room round them) and of each other.
+        const places: { name: string; water: boolean; lat: number; lon: number }[] = JSON.parse(
+          figure.dataset.places ?? "[]",
+        );
+        names(
+          places.map((p): Name => ({ name: p.name, water: p.water, at: [p.lon, p.lat] })),
+          {
+            width: holder.clientWidth,
+            height: holder.clientHeight,
+            taken: taken.map((t) => ({ x0: t.x0 - 8, x1: t.x1 + 8, y0: t.y0 - 4, y1: t.y1 + 4 })),
+            max: 5,
+            font: getComputedStyle(holder).fontFamily,
+            project: proj,
+            put,
+          },
+        );
         figure.classList.add("is-live");
         done();
       });

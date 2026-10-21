@@ -1,0 +1,33 @@
+---
+import { H, W } from "../lib/hero-frame";
+import { LAKE, MOTORWAYS, PARKS, RESERVES, ROADS, WATER } from "../lib/hero-map-data";
+
+// Central Canberra drawn the way the live maps draw it (src/scripts/map-look.ts),
+// for the maps that are drawn rather than loaded: the home page's
+// (src/components/HeroMap.astro) and the invite's while its street map loads,
+// or without a script (src/components/MiniMap.astro). Everything is
+// OpenStreetMap's, built by scripts/build-hero-map.ts into
+// src/lib/hero-map-data.ts and public/images/hero-streets.svg, over hills
+// shaded from Mapzen's terrain by scripts/build-hero-relief.ts, in the frame
+// of src/lib/hero-frame.ts; the parent <svg> picks the part it shows.
+//
+// With `fixed`, the main roads keep their
+// widths in pixels however far the picture is zoomed, as the invite's
+// zoomed-in crop needs; without, they scale with the picture.
+interface Props {
+  fixed?: boolean;
+}
+const effect = Astro.props.fixed ? "non-scaling-stroke" : undefined;
+---
+
+<rect class="map-drawn__land" width={W} height={H}></rect>
+{RESERVES.map((r) => <path class="map-drawn__reserve" d={r.d} fill-rule="evenodd"></path>)}
+{PARKS.map((r) => <path class="map-drawn__park" d={r.d} fill-rule="evenodd"></path>)}
+<path class="map-drawn__lake" d={LAKE} fill-rule="evenodd"></path>
+<image href="/images/hero-relief.webp" width={W} height={H} preserveAspectRatio="none"></image>
+<path class="map-drawn__water" d={WATER} vector-effect={effect}></path>
+<image href="/images/hero-streets.svg" width={W} height={H} preserveAspectRatio="none"></image>
+<path class="map-drawn__casing" d={ROADS} vector-effect={effect}></path>
+<path class="map-drawn__road" d={ROADS} vector-effect={effect}></path>
+<path class="map-drawn__casing map-drawn__casing--motorway" d={MOTORWAYS} vector-effect={effect}></path>
+<path class="map-drawn__road map-drawn__road--motorway" d={MOTORWAYS} vector-effect={effect}></path>

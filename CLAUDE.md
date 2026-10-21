@@ -77,9 +77,31 @@ follow from it; every change has to hold to them.
   words and still works. Only card text and prompts go to Voyage, never
   names of members or anything about a group.
 - **Motion is a guide, not a show.** The map flies to a place so you can see
-  where it is; under `prefers-reduced-motion` it jumps instead. The invite
-  page's entrance, scroll and pin-drop animations are off there too: the page
-  is simply there.
+  where it is; under `prefers-reduced-motion` it jumps instead. Every page's
+  entrance, and the invite's scroll and pin-drop animations, are off there
+  too: the page is simply there. A live refresh never replays an entrance.
+  The home page's photo turning into the map (`src/scripts/fly.ts`) is
+  driven by the scroll, so it goes as fast as the visitor scrolls and
+  stops when they stop; it plays itself only when they press a button for
+  it, and any touch, wheel or key stops it. Landed, the map turns slowly
+  while it's on screen. Under reduced motion, or without WebGL, none of it
+  runs: the page is the photo, the drawn map and the form.
+- **One look everywhere.** Every page takes the invite page's design: the
+  colours, cards, buttons and fields come from the `:root` tokens and shared
+  classes in `src/styles.css` (`.card`, `.card__actions`, `.btn--primary`),
+  the header and footer line up with the page's content through `--page`,
+  every live map uses `src/scripts/map-look.ts`, and the home page's drawn
+  map takes the same colours, relief and pins. A page doesn't bring its own
+  palette or font.
+- **Every map is the invite's map.** The group's map, the invite's and the
+  home page's share one language: tiles' lettering hidden (street names only
+  once the camera is down in a street) and a few place names set in the
+  page's font, fine line weights, white chips for the places on a list and
+  dots for the rest, a popup that is the chip grown into a card, and the
+  credit folded behind an "i" on the map. Pins, names and credit are placed
+  by `src/scripts/map-marks.ts` and styled once ("Map marks" in
+  `src/styles.css`); the drawn maps share `src/components/MapDrawing.astro`.
+  Don't give a map its own pin or label style.
 - **Phones first.** Every page works at 375px wide with no sideways scroll.
 
 ## The work

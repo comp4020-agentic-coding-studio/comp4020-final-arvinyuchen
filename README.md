@@ -70,16 +70,32 @@ other's taste.
   are good, which is the one thing Spots is for.
 - OpenStreetMap: its Nominatim search finds a real place's name and location
   when someone shares it (under its usage policy: one request at a time, only
-  when asked), and OpenFreeMap serves its map tiles. The home page's moving
-  map is OpenStreetMap too: its lake, reserves, parks, rivers, main roads and
-  suburb names come from one Overpass query, built into the page by
-  `scripts/build-hero-map.ts`, so nothing on it is drawn by hand and the
-  site never queries OpenStreetMap for it. The starter places were
+  when asked), and OpenFreeMap serves its map tiles. The home page opens
+  on a photo of the city from Mount Ainslie, and as you scroll it turns into
+  a 3D map of the same view: OpenFreeMap's tiles over Mapzen's terrain, with
+  the camera in the photographer's place, so the two line up. The camera
+  climbs away round the city and comes down at a tilt over the whole of it,
+  in the card where the starter places are pinned, and there it keeps
+  turning slowly. Without WebGL or with reduced motion, the card holds a
+  drawn map instead, OpenStreetMap too: its lake, reserves, parks, rivers,
+  roads, side streets and suburb names come from one Overpass query, built
+  into the page (and one streets picture beside it) by
+  `scripts/build-hero-map.ts`, so nothing on it is drawn by hand and the site
+  never queries OpenStreetMap for it. Its hills are shaded once from
+  Mapzen's terrain by `scripts/build-hero-relief.ts`. The starter places were
   checked against Wikipedia, with photos from Wikimedia Commons credited on
-  each card. The invite page's small map is OpenFreeMap's tiles, recoloured
-  and drawn closer than usual so side streets show, with hills shaded from
-  Mapzen's open terrain tiles; its photo of Canberra is from Unsplash,
-  credited in the footer.
+  each card. Both street maps, the group's and the invite's small one, are
+  OpenFreeMap's tiles recoloured to look like Apple Maps, with city parks
+  in green, hairline side streets, hills shaded from Mapzen's open terrain
+  tiles, and buildings that stand up as the group's map flies into a
+  street. All three maps look like one: the same colours and line weights,
+  the tiles' lettering swapped for a few place names in the page's own font,
+  the same white chips for the places on a list (its number, and the name
+  where there's room) and dots for the rest, and the credit folded behind an
+  "i" in the map's corner. One photo of
+  Canberra, from Unsplash and credited in the footer, opens the home page,
+  every invite and a Spots link shared in a chat, so all three look like the
+  same place.
 - Voyage AI's embeddings turn each card and each search prompt into a
   vector; cards are ranked by how close they are in meaning (cosine
   similarity). Only card text and prompts are sent, nothing about a group.

@@ -7,12 +7,12 @@ interface Props {
   description?: string;
   /** How the page looks as a link in a chat: the card Messages, WhatsApp and the rest build from it. */
   share?: { title: string; description: string; url: string };
-  /** A page trying out a design direction before the whole site moves (see styles.css). */
-  theme?: "canberra";
+  /** The header's New group button; off on the home page, whose own form is the way to start one. */
+  newGroup?: boolean;
 }
 const { title, description = "Spots: a shared list of places for one group of friends to explore and vote on." } = Astro.props;
 const share = Astro.props.share ?? { title, description, url: new URL(Astro.url.pathname, Astro.url).href };
-const shareImage = new URL("/og.png", Astro.url).href;
+const shareImage = new URL("/og.jpg", Astro.url).href;
 const account = signedIn(Astro.cookies);
 ---
 
@@ -32,15 +32,15 @@ const account = signedIn(Astro.cookies);
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Spots: places to go, picked together" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='14' r='9' fill='%23e8573a'/><circle cx='16' cy='14' r='3.5' fill='%23fff8ef'/><path d='M16 31 9 20h14z' fill='%23e8573a'/></svg>" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='14' r='9' fill='%230b6e88'/><circle cx='16' cy='14' r='3.5' fill='%23f7fafb'/><path d='M16 31 9 20h14z' fill='%230b6e88'/></svg>" />
     <title>{title}</title>
   </head>
-  <body class:list={[Astro.props.theme && `theme-${Astro.props.theme}`]}>
+  <body>
     <header class="top">
       <a class="brand" href="/"><span class="brand__pin" aria-hidden="true"></span>Spots</a>
       <nav aria-label="site">
         {account ? <a href="/me">My groups</a> : <a href="/signin">Sign in</a>}
-        <a class="top__cta" href="/#start">New group</a>
+        {Astro.props.newGroup !== false && <a class="top__cta" href="/#start">New group</a>}
       </nav>
     </header>
     <main>
@@ -54,9 +54,10 @@ const account = signedIn(Astro.cookies);
         Map data ©{" "}<a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>; map tiles
         by{" "}<a href="https://openfreemap.org">OpenFreeMap</a>; place lookup by{" "}
         <a href="https://nominatim.org">Nominatim</a>. Photos from{" "}
-        <a href="https://commons.wikimedia.org">Wikimedia Commons</a>, credited on each card. Headings in Nunito,{" "}
-        <a href="/fonts/Nunito-OFL.txt">SIL Open Font License</a>. Search by meaning with{" "}
-        <a href="https://www.voyageai.com">Voyage AI</a> embeddings. <slot name="credits" />
+        <a href="https://commons.wikimedia.org">Wikimedia Commons</a>, credited on each card. Search by meaning with{" "}
+        <a href="https://www.voyageai.com">Voyage AI</a> embeddings. The photo of Canberra is by{" "}
+        <a href="https://unsplash.com/photos/cityscape-during-daytime-QkcWZlBHykg" rel="noopener">Linda Xu on Unsplash</a>.{" "}
+        <slot name="credits" />
         </p>
       </details>
     </footer>

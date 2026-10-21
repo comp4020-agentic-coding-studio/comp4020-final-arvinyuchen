@@ -1,44 +1,43 @@
-/* Nunito, Latin subset, weights 600 to 900 in one variable file (39 KB).
-   Licence: public/fonts/Nunito-OFL.txt. Self-hosted, so no visitor is sent to
-   a font CDN. */
-@font-face {
-  font-family: "Nunito";
-  font-style: normal;
-  font-weight: 600 900;
-  font-display: swap;
-  src: url("/fonts/nunito-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
-    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
 :root {
-  --bg: #fff8ef;
-  --bg-deep: #fbeedd;
+  /* Colours taken from the invite's photo of Canberra: the sky and Lake
+     Burley Griffin give the blues, Anzac Parade's red the food colour and
+     the gums the outdoors green. Every text colour passes WCAG AA on white
+     and on the page tint. */
+  --bg: #f7fafb;
+  --bg-deep: #edf4f6;
   --card: #ffffff;
-  --ink: #241c15;
-  --muted: #6f6257;
-  --line: #eadfce;
-  --line-strong: #dccbb3;
-  /* coral: --accent for pins and borders; the two darker ones for text and
-     filled buttons, so both read clearly (WCAG AA) on cream and white */
-  --accent: #e8573a;
-  --accent-strong: #cf4527;
-  --accent-ink: #b83c20;
-  --accent-soft: #fde4da;
-  --shadow-sm: 0 1px 2px rgb(36 28 21 / 6%), 0 8px 20px -14px rgb(36 28 21 / 30%);
-  --shadow-md: 0 1px 2px rgb(36 28 21 / 6%), 0 22px 44px -28px rgb(36 28 21 / 55%);
-  /* headings: Nunito, served from the app (public/fonts, SIL Open Font License) */
-  --font-display: "Nunito", ui-rounded, var(--font);
-  --food: #e8573a;
-  --fun: #6c5ce7;
-  --outdoors: #2f9e6e;
+  --ink: #0d2b36;
+  --muted: #4a6470;
+  --line: #d3e3e8;
+  --line-strong: #b5ccd4;
+  /* teal: --accent for pins, rings and borders; the two darker ones for text
+     and filled buttons, so both read clearly (WCAG AA) on the tint and white */
+  --accent: #1795ae;
+  --accent-strong: #0b6e88;
+  --accent-ink: #0a6680;
+  --accent-soft: #d5ecf2;
+  /* the tint a card's action area sits on, a shade deeper than the page */
+  --tint: #eef6f8;
+  --shadow-sm: 0 1px 2px rgb(13 43 54 / 6%), 0 10px 30px -18px rgb(13 43 54 / 35%);
+  --shadow-md: 0 2px 4px rgb(13 43 54 / 6%), 0 28px 56px -28px rgb(13 43 54 / 50%);
+  --food: #b0472f;
+  --fun: #7a5cc7;
+  --outdoors: #5d7a3c;
   --radius: 16px;
-  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* the system's own face: SF on Apple devices, Segoe on Windows, Roboto on Android */
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font);
   color-scheme: light;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Hidden means hidden, whatever display a class gives it (a row that waits
+   for a script to say it can work, a card a filter has put away). */
+[hidden] {
+  display: none !important;
 }
 
 body {
@@ -49,10 +48,48 @@ body {
   line-height: 1.55;
 }
 
-main {
-  max-width: 60rem;
+/* Every page has one content width, --page, and the header and footer
+   share it, so their edges line up with the cards between them. A page
+   sets its own below (a group's page is the widest). */
+:root {
+  --page: 82rem;
+}
+
+body:has(.home) {
+  --page: 72rem;
+}
+
+body:has(.readme) {
+  --page: 44rem;
+}
+
+body:has(.notice-page),
+body:has(.welcome) {
+  --page: 32rem;
+}
+
+body:has(.me) {
+  --page: 40rem;
+}
+
+@media (min-width: 60rem) {
+  body:has(.welcome) {
+    --page: 74rem;
+  }
+}
+
+main,
+.top,
+.foot {
+  max-width: calc(var(--page) + 2rem);
   margin: 0 auto;
-  padding: 1.5rem 1rem 4rem;
+  padding-right: 1rem;
+  padding-left: 1rem;
+}
+
+main {
+  padding-top: 1.5rem;
+  padding-bottom: 4rem;
 }
 
 a {
@@ -87,9 +124,8 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  max-width: 84rem;
-  margin: 0 auto;
-  padding: 0.85rem 1.25rem;
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
 }
 
 .brand {
@@ -151,22 +187,34 @@ h2 {
   color: var(--accent-ink);
 }
 
-.lede {
-  max-width: 38rem;
-  font-size: 1.1rem;
-  color: var(--muted);
-}
-
 .card {
   background: var(--card);
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: var(--radius);
-  padding: 1.35rem;
-  box-shadow: var(--shadow-sm);
+  padding: var(--pad);
+  box-shadow: var(--shadow-md);
+  --pad: 1.5rem;
+}
+
+@media (max-width: 34rem) {
+  .card {
+    --pad: 1.25rem;
+  }
 }
 
 .card h2 {
   margin-top: 0;
+}
+
+/* A card's action, as on the invite: the full width of the card, on a tint
+   of its own under a hairline, its fields white on the tint. It closes the
+   card, so it takes the card's own inset back. */
+.card__actions {
+  margin: 1.25rem calc(-1 * var(--pad)) calc(-1 * var(--pad));
+  padding: 1.25rem var(--pad) var(--pad);
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--tint);
 }
 
 .start {
@@ -175,7 +223,11 @@ h2 {
 }
 
 .start h2 {
-  margin-bottom: 0.7rem;
+  margin-bottom: 0.3rem;
+}
+
+.start > .fine {
+  margin: 0;
 }
 
 .stack {
@@ -185,28 +237,54 @@ h2 {
 
 label span {
   display: block;
-  margin-bottom: 0.25rem;
-  font-size: 0.85rem;
-  font-weight: 600;
+  margin-bottom: 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
+/* Fields as on the invite: white, a soft line, rounded to match the
+   buttons, and an accent ring while you're in one. */
 input,
-select {
+select,
+textarea {
   width: 100%;
+  min-height: 3rem;
   font: inherit;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  padding: 0.65rem 1rem;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
   background: #fff;
   color: var(--ink);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--line-strong);
 }
 
 input:focus-visible,
-select:focus-visible {
+select:focus-visible,
+textarea:focus-visible {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  min-height: 0;
+  accent-color: var(--accent-strong);
 }
 
 .btn {
@@ -227,22 +305,57 @@ select:focus-visible {
 }
 
 .btn:hover {
-  box-shadow: 0 8px 18px -12px rgb(36 28 21 / 55%);
+  border-color: var(--line-strong);
+  box-shadow: 0 8px 18px -12px rgb(13 43 54 / 55%);
 }
 
 .btn:active {
   transform: scale(0.97);
 }
 
+/* The invite's Join button, for every main action: a lit teal gradient
+   (white text is 4.5:1 or better on both its stops) that lifts a little
+   under the pointer. */
 .btn--primary {
-  background: var(--accent-strong);
-  border-color: var(--accent-strong);
+  border: 0;
+  background: linear-gradient(180deg, #12809b, #0a6680);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 22%),
+    0 1px 2px rgb(10 102 128 / 30%),
+    0 10px 24px -10px rgb(10 102 128 / 70%);
   color: #fff;
 }
 
 .btn--primary:hover {
-  background: var(--accent-ink);
-  border-color: var(--accent-ink);
+  background: linear-gradient(180deg, #0f7a94, #095f78);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 22%),
+    0 2px 4px rgb(10 102 128 / 30%),
+    0 14px 28px -10px rgb(10 102 128 / 75%);
+}
+
+.btn--primary:active {
+  transform: translateY(0) scale(0.985);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 15%),
+    0 1px 2px rgb(10 102 128 / 30%);
+}
+
+/* A form's own button is as tall and as rounded as its fields, so the two
+   read as one piece. */
+.stack > .btn,
+.stack > button.btn {
+  min-height: 3.25rem;
+  border-radius: 16px;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+/* A button beside a field (Copy, Find, Rename) stands as tall as it. */
+:is(.share__row, .finder__row, .settings__row) > .btn {
+  min-height: 3rem;
+  border-radius: 14px;
 }
 
 .btn:focus-visible,
@@ -269,39 +382,9 @@ select:focus-visible {
 }
 
 .notice {
-  padding: 0.6rem 0.8rem;
-  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  border-radius: 14px;
   background: var(--accent-soft);
-}
-
-.steps {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-  gap: 0.75rem;
-  padding: 0;
-  list-style: none;
-  counter-reset: step;
-}
-
-.steps > li {
-  counter-increment: step;
-  padding: 1rem;
-  border-radius: var(--radius);
-  background: var(--card);
-  border: 1px solid var(--line);
-}
-
-.steps > li::before {
-  content: counter(step);
-  display: inline-grid;
-  place-items: center;
-  width: 1.7rem;
-  height: 1.7rem;
-  margin-right: 0.5rem;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 700;
 }
 
 .spots {
@@ -328,7 +411,7 @@ select:focus-visible {
 
 .spot:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px -22px rgb(36 28 21 / 60%);
+  box-shadow: 0 14px 30px -22px rgb(13 43 54 / 60%);
 }
 
 .spot h3,
@@ -673,10 +756,6 @@ select:focus-visible {
 
 /* ---- Explore + map --------------------------------------------------------- */
 
-main {
-  max-width: 84rem;
-}
-
 .explore-head {
   display: flex;
   flex-wrap: wrap;
@@ -714,7 +793,7 @@ main {
   font-size: 1.05rem;
   padding: 0.85rem 1.1rem;
   border-radius: 999px;
-  box-shadow: 0 10px 28px -22px rgb(36 28 21 / 60%);
+  box-shadow: 0 10px 28px -22px rgb(13 43 54 / 60%);
 }
 
 .ask .btn {
@@ -843,7 +922,7 @@ main {
   outline: 3px solid var(--kind, var(--accent));
   outline-offset: 2px;
   transform: translateY(-2px);
-  box-shadow: 0 18px 36px -22px rgb(36 28 21 / 65%);
+  box-shadow: 0 18px 36px -22px rgb(13 43 54 / 65%);
 }
 
 .map-wrap {
@@ -857,88 +936,150 @@ main {
   border-radius: var(--radius);
   border: 1px solid var(--line);
   overflow: hidden;
-  box-shadow: 0 18px 40px -28px rgb(36 28 21 / 55%);
-  background: #eef0e8;
+  box-shadow: 0 18px 40px -28px rgb(13 43 54 / 55%);
+  background: #f4f3ef;
 }
 
-.map-credit {
-  margin: 0.3rem 0 0;
-  font-size: 0.72rem;
-  color: var(--muted);
+/* The map and its credit, folded into its corner as on the invite's map. */
+.map-frame {
+  position: relative;
+  margin: 0;
 }
 
-.pin {
-  --kind: var(--accent);
-  width: 26px;
-  height: 26px;
+/* The group's map wears the invite map's marks (see "Map marks" below); on
+   it a mark is a button, and a tap flies there. MapLibre sets its own font
+   on the map, so the page's is set again here. */
+#map .maplibregl-marker,
+#map .maplibregl-popup {
+  font-family: var(--font);
+}
+
+button.map-mark {
+  z-index: 1;
   padding: 0;
-  border: 3px solid #fff;
-  border-radius: 50% 50% 50% 0;
-  background: var(--kind);
-  transform: rotate(-45deg);
-  box-shadow: 0 4px 10px rgb(0 0 0 / 30%);
+  border: 0;
+  background: none;
   cursor: pointer;
-  transition: width 0.2s, height 0.2s;
+  pointer-events: auto;
 }
 
-.pin--food {
-  --kind: var(--food);
+/* A fingertip's room round each dot. */
+button.map-mark::before {
+  position: absolute;
+  inset: -14px;
+  content: "";
 }
 
-.pin--fun {
-  --kind: var(--fun);
+button.map-mark:focus-visible {
+  outline: none;
 }
 
-.pin--outdoors {
-  --kind: var(--outdoors);
+button.map-mark:focus-visible :is(.map-chip, .map-dot) {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
 }
 
-.pin--active {
-  width: 36px;
-  height: 36px;
-  animation: pin-drop 0.9s cubic-bezier(0.3, 1.6, 0.5, 1) 1;
+/* The list's chips over Explore's dots, the place flown to over both. */
+#map .map-mark:not(.map-mark--dot) {
+  z-index: 2;
+}
+
+#map .map-mark.is-active,
+#map .map-mark--dot:hover,
+#map .map-mark--preview {
   z-index: 3;
 }
 
-.pin--preview {
-  --kind: var(--ink);
-  border-style: dashed;
+.map-mark.is-active .map-dot {
+  scale: 1.35;
 }
 
-@keyframes pin-drop {
-  0% {
-    translate: 0 -28px;
-  }
-  60% {
-    translate: 0 4px;
-  }
-  100% {
-    translate: 0 0;
-  }
+/* While its popup is open, the popup is the place's chip. */
+.map-mark.is-open .map-chip {
+  visibility: hidden;
+}
+
+/* Names step out while the zoom changes and come back placed afresh. */
+#map .map-label {
+  transition: opacity 0.25s ease-out;
+}
+
+#map.is-zooming .map-label {
+  opacity: 0;
+}
+
+/* The zoom buttons, white and rounded like the chips. */
+#map .maplibregl-ctrl-group {
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow:
+    0 1px 2px rgb(13 43 54 / 14%),
+    0 4px 10px rgb(13 43 54 / 16%);
+}
+
+/* A place's popup: its chip grown into a small card, the number (or disc)
+   in its colour, its name, its kind and suburb. */
+.maplibregl-popup {
+  z-index: 4;
+}
+
+.maplibregl-popup-content {
+  padding: 0.5rem 0.8rem 0.55rem 0.5rem;
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgb(13 43 54 / 14%),
+    0 12px 28px -10px rgb(13 43 54 / 40%);
+}
+
+:where(.map-pop) {
+  --kind: var(--food);
 }
 
 .map-pop {
   display: grid;
-  gap: 0.15rem;
-  font-family: var(--font);
+  gap: 0.25rem;
+  color: var(--ink);
 }
 
-.map-pop .tag {
-  --kind: var(--food);
+.map-pop__head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
-.map-pop .spot--fun {
-  --kind: var(--fun);
+.map-pop__head i {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--kind);
+  color: #fff;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
 }
 
-.map-pop .spot--outdoors {
-  --kind: var(--outdoors);
+.map-pop__head i:empty {
+  width: 14px;
+  height: 14px;
+  margin: 3px;
 }
 
-.maplibregl-popup-content {
-  border-radius: 12px;
-  padding: 0.7rem 0.9rem;
-  box-shadow: 0 12px 28px -12px rgb(0 0 0 / 40%);
+.map-pop strong {
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.map-pop__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding-left: calc(20px + 0.45rem);
+  color: var(--muted);
+  font-size: 0.78rem;
 }
 
 /* ---- sharing a place --------------------------------------------------------- */
@@ -1008,7 +1149,7 @@ main {
     /* cards scroll under the stuck map, so the band it sits in is opaque */
     background: var(--bg);
     padding: 0.4rem 0 0.5rem;
-    box-shadow: 0 10px 12px -12px rgb(36 28 21 / 35%);
+    box-shadow: 0 10px 12px -12px rgb(13 43 54 / 35%);
   }
 
   #map {
@@ -1105,6 +1246,10 @@ main {
   margin: 0;
 }
 
+.settings__row + .settings__row {
+  margin-top: 1rem;
+}
+
 .merge {
   margin-top: 0.8rem;
 }
@@ -1133,8 +1278,21 @@ main {
 }
 
 .notice-page {
-  max-width: 34rem;
-  margin: 2.5rem auto;
+  margin: 1.5rem auto;
+}
+
+.notice-page h1 {
+  font-size: clamp(1.9rem, 7vw, 2.4rem);
+  letter-spacing: -0.02em;
+}
+
+.card__actions > :first-child,
+.card__actions.fine {
+  margin-top: 0;
+}
+
+.card__actions .fine {
+  margin: 0;
 }
 
 .notice-page h1 {
@@ -1153,7 +1311,6 @@ main {
   list-style: none;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
   gap: 0.9rem;
 }
 
@@ -1167,12 +1324,13 @@ main {
 
 .my-group:hover {
   transform: translateY(-2px);
-  box-shadow: 0 18px 36px -24px rgb(36 28 21 / 55%);
+  box-shadow:
+    0 2px 4px rgb(13 43 54 / 6%),
+    0 32px 60px -28px rgb(13 43 54 / 60%);
 }
 
 .account {
   margin-top: 2rem;
-  max-width: 40rem;
 }
 
 .keys {
@@ -1229,548 +1387,338 @@ main {
 
 /* ---- Layout: home ------------------------------------------------------------ */
 
-/* The home page sits a little narrower than a group page, so the intro, the
-   form and the map read as one picture rather than two far-apart columns. */
+/* The home page sits a little narrower than a group page. */
 .home {
   max-width: 72rem;
   margin-inline: auto;
 }
 
-/* Intro and form on the left, the moving map on the right; on a phone the map
-   comes between the intro and the form. */
+/* It opens the way an invite does, on the city's photo with the question
+   on its sky, but the photo runs edge to edge under the header, which
+   turns white on it. As the page scrolls the photo turns into the map
+   (below); the form follows. */
+body:has(.home) {
+  overflow-x: clip;
+}
+
+body:has(.home) main {
+  padding-top: 0;
+}
+
+body:has(.home) .top {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 3;
+}
+
+body:has(.home) .brand,
+body:has(.home) .top nav a {
+  color: #fff;
+  text-shadow: 0 1px 8px rgb(4 38 52 / 50%);
+}
+
+body:has(.home) .brand__pin {
+  background: #fff;
+}
+
+body:has(.home) .top nav a:hover {
+  background: rgb(255 255 255 / 16%);
+}
+
 .hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-  grid-template-areas:
-    "intro map"
-    "start map";
-  gap: 1.25rem 3rem;
-  align-items: start;
-  padding-block: 1.25rem 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
-.hero__intro {
-  grid-area: intro;
+.hero__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
 }
 
-.hero .hero-map {
-  grid-area: map;
-  align-self: center;
+/* It settles into place as the invite's does (and is simply there under
+   reduced motion, by the global rule). */
+@media (prefers-reduced-motion: no-preference) {
+  .hero__photo {
+    animation: photo-settle 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
 }
 
-.hero .start {
-  grid-area: start;
-  max-width: 30rem;
-  margin: 0;
-  box-shadow: var(--shadow-md);
+/* (the words line up with the page's edge) */
+.hero__words {
+  position: relative;
+  z-index: 1;
+  padding: 6rem max(1rem, calc(50vw - var(--page) / 2)) 0;
+  color: #fff;
 }
 
 .hero h1 {
-  font-size: clamp(2.4rem, 6.5vw, 4.2rem);
-  line-height: 1.02;
-}
-
-.eyebrow .pins {
-  display: inline-flex;
-  gap: 0.2rem;
-  margin-right: 0.35rem;
-  vertical-align: -0.05em;
-}
-
-.pin-dot {
-  width: 0.65rem;
-  height: 0.65rem;
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
-  background: var(--food);
-}
-
-.pin-dot--fun {
-  background: var(--fun);
-}
-
-.pin-dot--outdoors {
-  background: var(--outdoors);
-}
-
-/* ---- How it works, drawn (src/pages/index.astro) -------------------------------- */
-
-/* Each step is a tile: its number sits on the tile's top edge, a small
-   picture made of the app's own pieces, then the sentence. Side by side, a
-   dashed line runs behind the tiles and shows through the gaps, joining the
-   numbers into one path. */
-.how .steps--art {
-  position: relative;
-  gap: 1.75rem 1.25rem;
-  margin: 2rem 0 0;
-}
-
-.how .steps--art > li {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  align-content: start;
-  gap: 0.9rem;
-  padding: 1.5rem 1rem 1.1rem;
-  box-shadow: var(--shadow-sm);
-}
-
-.how .steps--art > li::before {
-  position: absolute;
-  top: -0.95rem;
-  left: 1rem;
-  width: 1.9rem;
-  height: 1.9rem;
   margin: 0;
-  box-shadow: 0 0 0 4px var(--bg-deep);
-  font-family: var(--font-display);
-}
-
-.how .steps--art p {
-  margin: 0;
-}
-
-@media (min-width: 760px) {
-  .how .steps--art {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .how .steps--art::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 1.5rem;
-    right: 1.5rem;
-    border-top: 2px dashed var(--line-strong);
-  }
-}
-
-/* The picture's ground: the home map's paper and dots, so the steps read as
-   part of the same place. */
-.step-art {
-  position: relative;
-  display: grid;
-  align-content: center;
-  justify-items: start;
-  gap: 0.6rem;
-  min-height: 9.5rem;
-  padding: 0.9rem;
-  border-radius: 12px;
-  background:
-    radial-gradient(rgb(120 100 70 / 0.16) 1px, transparent 1.2px) 0 0 / 14px 14px,
-    #f8f0e2;
-  font-size: 0.8rem;
-  line-height: 1.3;
-  overflow: hidden;
-  user-select: none;
-}
-
-/* food unless the card says otherwise: :where() keeps this default weaker
-   than .spot--fun and .spot--outdoors, which come earlier in the file */
-:where(.mini-card, .mini-pick) {
-  --kind: var(--food);
-}
-
-/* 1: the invite link, and who's come in on it */
-.mini-share {
-  display: flex;
-  width: 100%;
-  max-width: 15rem;
-  padding: 0.25rem;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: var(--shadow-sm);
-}
-
-.mini-share__link {
-  flex: 1;
-  min-width: 0;
-  padding: 0.3rem 0.45rem;
-  color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.75rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mini-share__copy {
-  padding: 0.3rem 0.65rem;
-  border-radius: 7px;
-  background: var(--accent-strong);
   color: #fff;
-  font-weight: 700;
-}
-
-.mini-faces {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding-left: 0.3rem;
-  color: var(--muted);
-  font-weight: 600;
-}
-
-.mini-faces .face {
-  border-color: #f8f0e2;
-}
-
-/* 2: a search, answered with a card */
-.mini-ask {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.35rem 0.8rem 0.35rem 0.6rem;
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: var(--shadow-sm);
-  font-weight: 600;
-}
-
-.mini-ask__glass {
-  position: relative;
-  width: 0.65rem;
-  height: 0.65rem;
-  border: 2px solid var(--muted);
-  border-radius: 50%;
-}
-
-.mini-ask__glass::after {
-  content: "";
-  position: absolute;
-  right: -0.28rem;
-  bottom: -0.25rem;
-  width: 0.3rem;
-  height: 2px;
-  background: var(--muted);
-  transform: rotate(45deg);
-}
-
-.mini-card {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 0.1rem 0.6rem;
-  width: 100%;
-  max-width: 15rem;
-  padding: 0.55rem 0.7rem;
-  border-radius: 10px;
-  border-left: 4px solid var(--kind);
-  background: #fff;
-  box-shadow: var(--shadow-sm);
-}
-
-.mini-card .tag {
-  grid-column: 1;
-  font-size: 0.62rem;
-}
-
-.mini-card strong {
-  grid-column: 1;
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-}
-
-.mini-card__area {
-  grid-column: 1;
-  color: var(--muted);
-}
-
-.mini-card__add {
-  grid-column: 2;
-  grid-row: 1 / span 3;
-  padding: 0.3rem 0.55rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--outdoors) 14%, white);
-  color: color-mix(in srgb, var(--outdoors) 70%, black);
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-/* 3: a keen vote, and the list re-ranking on it. The resting state is the
-   end of the story (the voted place on top, its keen on), so that's the still
-   picture under reduced motion; the animation starts each loop from before
-   the vote. */
-.mini-live {
-  position: absolute;
-  top: 0.6rem;
-  right: 0.7rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  color: color-mix(in srgb, var(--outdoors) 70%, black);
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.mini-live::before {
-  content: "";
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background: var(--outdoors);
-  animation: mini-blink 2s ease-in-out infinite;
-}
-
-.mini-list {
-  --row: 2.6rem;
-  --gap: 0.4rem;
-  display: grid;
-  gap: var(--gap);
-  width: 100%;
-  max-width: 15rem;
-  margin: 0.5rem 0 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: none;
-  animation: mini-list 7s linear infinite;
-}
-
-.mini-pick {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  height: var(--row);
-  padding: 0 0.3rem 0 0.7rem;
-  border-radius: 10px;
-  border-left: 4px solid var(--kind);
-  background: #fff;
-  box-shadow: var(--shadow-sm);
-}
-
-.mini-pick strong {
-  min-width: 0;
-  font-family: var(--font-display);
-  font-size: 0.9rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mini-pick--rises {
-  position: relative;
-  z-index: 1;
-  animation: mini-rise 7s ease-in-out infinite;
-}
-
-.mini-pick--drops {
-  animation: mini-drop 7s ease-in-out infinite;
-}
-
-.mini-keen {
-  display: inline-grid;
-  grid-template-columns: auto auto;
-  align-items: baseline;
-  gap: 0.25rem;
-  padding: 0.25rem 0.55rem;
-  border-radius: 8px;
-  border: 2px solid var(--line);
-  background: #fff;
-  font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 800;
+  font-size: clamp(3rem, 9vw, 5.6rem);
   line-height: 1;
+  letter-spacing: -0.04em;
+  text-shadow: 0 2px 20px rgb(4 38 52 / 40%);
 }
 
-.mini-keen small {
-  font-family: var(--font);
-  font-size: 0.65rem;
-  font-weight: 700;
+/* The question's answer, said like a friend would. */
+.hero__answer {
+  margin: 0.6rem 0 0;
+  font-size: clamp(1.15rem, 2.6vw, 1.55rem);
+  font-weight: 600;
+  line-height: 1.3;
+  text-shadow: 0 1px 10px rgb(4 38 52 / 60%);
 }
 
-.mini-keen--mine {
-  border-color: var(--accent-strong);
-  background: var(--accent-strong);
-  color: #fff;
-  animation: mini-press 7s ease-in-out infinite;
-}
-
-.mini-keen__was,
-.mini-keen__now {
-  grid-area: 1 / 1;
-}
-
-.mini-keen__was {
-  opacity: 0;
-  animation: mini-was 7s steps(1) infinite;
-}
-
-.mini-keen__now {
-  animation: mini-now 7s steps(1) infinite;
-}
-
-/* One 7s loop: fade in before the vote (the voted place second, at 2 keen),
-   the keen goes on at 40%, the two swap at 48 to 58%, hold, fade out. */
-@keyframes mini-list {
-  0% {
-    opacity: 0;
-  }
-  5%,
-  92% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-@keyframes mini-rise {
-  0%,
-  48% {
-    transform: translateY(calc(var(--row) + var(--gap)));
-  }
-  53% {
-    transform: translateY(calc((var(--row) + var(--gap)) / 2)) scale(1.05);
-    box-shadow: var(--shadow-md);
-  }
-  58%,
-  100% {
-    transform: none;
-  }
-}
-
-@keyframes mini-drop {
-  0%,
-  48% {
-    transform: translateY(calc(-1 * (var(--row) + var(--gap))));
-  }
-  58%,
-  100% {
-    transform: none;
-  }
-}
-
-@keyframes mini-press {
-  0%,
-  39.9% {
-    border-color: var(--line);
-    background: #fff;
-    color: var(--ink);
-    transform: none;
-  }
-  40% {
-    border-color: var(--accent-strong);
-    background: var(--accent-strong);
-    color: #fff;
-    transform: scale(0.9);
-  }
-  44%,
-  100% {
-    transform: none;
-  }
-}
-
-@keyframes mini-was {
-  0% {
-    opacity: 1;
-  }
-  40% {
-    opacity: 0;
-  }
-}
-
-@keyframes mini-now {
-  0% {
-    opacity: 0;
-  }
-  40% {
-    opacity: 1;
-  }
-}
-
-@keyframes mini-blink {
-  50% {
-    opacity: 0.35;
-  }
-}
-
-/* On a phone the form is below the map, so the intro carries a button down
-   to it; side by side, the form is already in view. */
+/* The intro carries a button to the form (with the script, it flies
+   there). */
 .hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  margin: 1.25rem 0 0;
+}
+
+.hero__cta .fine {
+  margin: 0;
+  color: #fff;
+  text-shadow: 0 1px 8px rgb(4 38 52 / 70%);
+}
+
+.hero .start {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 30rem);
+  margin: 2.5rem auto 0;
+  box-shadow: var(--shadow-md);
+}
+
+.start__go svg {
+  flex: none;
+  transition: translate 0.2s;
+}
+
+.start__go:hover svg {
+  translate: 3px 0;
+}
+
+/* The photo turns into the map (src/scripts/fly.ts). As it stands,
+   without the script (or its motion, or WebGL), it's the photo with the
+   drawn map card rising over its foot, then the form. With it, the stage
+   holds still for a few screens of scroll while the photo fades into a 3D
+   map from the same place, the camera climbs round the city and tilts
+   down over it, and the view narrows into the card, where the map keeps
+   turning. */
+.fly {
+  margin-inline: calc(50% - 50vw);
+}
+
+.fly__stage {
+  position: relative;
+}
+
+.fly__map,
+.fly__credit {
   display: none;
 }
 
-@media (max-width: 860px) {
-  .hero {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "intro" "map" "start";
+.fly__intro {
+  position: relative;
+  height: clamp(26rem, 80svh, 44rem);
+  overflow: hidden;
+  background: var(--accent);
+}
+
+.fly__intro::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgb(4 38 52 / 66%) 0%, rgb(4 38 52 / 28%) 45%, rgb(4 38 52 / 0%) 75%);
+}
+
+.fly__card {
+  position: relative;
+  z-index: 1;
+  width: min(100% - 2rem, 46rem);
+  margin: -8rem auto 0;
+}
+
+/* With the script: the stage stays put through the scroll. */
+.fly.is-live {
+  height: 340svh;
+}
+
+.fly.is-live .fly__stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  background: #f4f3ef;
+}
+
+.fly.is-live .fly__map {
+  position: absolute;
+  inset: 0;
+  display: block;
+  clip-path: var(--clip);
+}
+
+.fly.is-live .fly__intro {
+  position: absolute;
+  inset: 0;
+  height: auto;
+  opacity: var(--photo, 1);
+}
+
+.fly.is-live .fly__words {
+  opacity: var(--words, 1);
+}
+
+/* the card in the middle of the stage, framed as the map ends up */
+.fly.is-live .fly__card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(100vw - 2rem, 46rem, (100svh - 3rem) * 560 / 493);
+  margin: 0;
+  translate: -50% -50%;
+  opacity: var(--card, 0);
+}
+
+.fly.is-live .fly__card:not(.is-on) {
+  pointer-events: none;
+}
+
+.fly.is-live .fly__credit {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.5rem;
+  display: block;
+  margin: 0;
+  opacity: calc((1 - var(--photo, 1)) * (1 - var(--card, 0)));
+  font-size: 0.7rem;
+}
+
+/* Landed on the live map, the card keeps its pins, names and search,
+   without its drawn streets, so the live map shows through. (Until the
+   live map has drawn, the drawn one stays.) */
+.fly.is-ready .fly__card .hero-map__frame {
+  background: transparent;
+}
+
+.fly.is-ready .fly__card .hero-map__frame > svg {
+  visibility: hidden;
+}
+
+/* On a wide screen the form is in the stage too (the script puts it
+   there), and the two land side by side, the pair in the middle: the card
+   as wide as the room left beside the form allows. */
+@media (min-width: 64rem) {
+  .fly.is-live {
+    --form: 26rem;
+    --gap: 2.5rem;
+    --wide: min(46rem, 100vw - 4rem - var(--form) - var(--gap), (100svh - 3rem) * 560 / 493);
   }
 
-  .hero__cta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem 0.9rem;
-    margin: 1.1rem 0 0;
+  .fly.is-live .fly__card {
+    left: calc(50% - (var(--wide) + var(--gap) + var(--form)) / 2);
+    width: var(--wide);
+    translate: 0 -50%;
   }
 
-  .hero__cta .fine {
+  .fly.is-live .fly__stage > .start {
+    position: absolute;
+    top: 50%;
+    left: calc(50% - (var(--wide) + var(--gap) + var(--form)) / 2 + var(--wide) + var(--gap));
+    z-index: 2;
+    width: var(--form);
     margin: 0;
+    translate: 0 calc(-50% + (1 - var(--card, 0)) * 1rem);
+    opacity: var(--card, 0);
+  }
+
+  .fly.is-live .fly__stage > .start:not(.is-on) {
+    pointer-events: none;
   }
 }
 
-/* A full-width band of the deeper cream behind a section, without widening
-   the page: the shadow paints the sides, the clip keeps it to the band's own
-   height, and neither can cause a sideways scroll. */
-.band {
-  margin-block: 4rem;
-  padding-block: 2.75rem 3rem;
-  background: var(--bg-deep);
-  box-shadow: 0 0 0 100vmax var(--bg-deep);
-  clip-path: inset(0 -100vmax);
+/* (and its credit names the live map's tiles) */
+.hero-map__tiles {
+  display: none;
 }
 
-.home .band h2,
-.home-sample h2 {
-  margin: 0.3rem 0 1.1rem;
-  font-size: clamp(1.6rem, 3.2vw, 2rem);
+.fly.is-ready .hero-map__tiles {
+  display: inline;
 }
 
-.home-sample {
-  margin-top: 4rem;
+/* (as the map turns, a pin or name the script fades out at the card's
+   edge or under a chip goes softly) */
+.fly.is-live .fly__card :is(.map-label, .hero-map__pin, .hero-map__card) {
+  transition: filter 0.3s;
 }
 
-.band + .home-sample {
-  margin-top: 0;
+/* The flight's own button, at the foot of the photo: it flies there for
+   you. Only with the flight (the script shows it). */
+.fly__go {
+  display: none;
 }
 
-.section-lede {
-  max-width: 40rem;
-  margin: -0.35rem 0 1.4rem;
-  color: var(--muted);
-}
-
-.home-sample__more {
-  margin: 1.25rem 0 0;
+.fly.is-live .fly__go {
+  position: absolute;
+  bottom: max(6.5rem, 11svh);
+  left: 50%;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 16%);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font: inherit;
+  font-size: 0.95rem;
   font-weight: 600;
+  cursor: pointer;
+  translate: -50% 0;
+  opacity: var(--words, 1);
+  transition: background 0.2s;
 }
 
-.spots--sample {
-  gap: 1rem;
+.fly.is-live .fly__go:hover {
+  background: rgb(255 255 255 / 26%);
 }
 
-.spots--sample .spot h3 {
-  font-size: 1.15rem;
-}
-
-@media (max-width: 860px) {
-  .band {
-    margin-block: 3rem;
-    padding-block: 2.25rem 2.5rem;
+/* (its arrow nudging down, as a hint to scroll) */
+@media (prefers-reduced-motion: no-preference) {
+  .fly.is-live .fly__go svg {
+    animation: go-nudge 2s ease-in-out 1.5s infinite;
   }
+}
 
-  .home-sample {
-    margin-top: 3rem;
+@keyframes go-nudge {
+  0%,
+  60%,
+  100% {
+    translate: 0 0;
+  }
+  30% {
+    translate: 0 3px;
   }
 }
 
 /* ---- The moving map (src/components/HeroMap.astro) ------------------------------ */
 
+/* Drawn in the live maps' colours and line weights (src/scripts/map-look.ts),
+   with their marks, names and folded credit ("Map marks" below). */
 .hero-map {
+  position: relative;
   margin: 0;
 }
 
@@ -1778,10 +1726,25 @@ main {
   position: relative;
   aspect-ratio: 560 / 493;
   border-radius: 22px;
-  border: 1px solid var(--line);
-  background: #f8f0e2;
+  border: 0;
+  background: #efede8;
   box-shadow: var(--shadow-md);
   overflow: hidden;
+  /* (a container, so a chip can measure how far its place is from the sides) */
+  container-type: inline-size;
+}
+
+/* A hairline and a soft inner shade, as round the invite's map. */
+.hero-map__frame::after {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px rgb(13 43 54 / 9%),
+    inset 0 0 28px rgb(13 43 54 / 7%);
+  content: "";
+  pointer-events: none;
 }
 
 .hero-map svg {
@@ -1790,128 +1753,101 @@ main {
   height: 100%;
 }
 
-.hero-map__lake {
-  fill: #bfdcec;
-  stroke: #a5cbe0;
-  stroke-width: 1.5;
+/* Names that only fit on the wide frame (see HeroMap.astro). */
+@media (max-width: 600px) {
+  .hero-map__wide {
+    display: none;
+  }
 }
 
-/* the geography under the pins: quiet enough that the pins and cards stay the
-   loudest thing in the frame */
-.hero-map__reserve {
-  fill: #dcebd2;
-  stroke: #c6dcb9;
-  stroke-width: 1;
+/* Its credit, in the frame's corner, clear of the rounding. */
+.hero-map .fold-credit {
+  padding: 0.6rem;
 }
 
-.hero-map__park {
-  fill: #e3efd9;
+/* Every place is a dot in its colour, as on the live maps; they drop in one
+   after another, the places the prompts find with their chips. */
+.hero-map .map-drop {
+  animation: map-drop 0.55s var(--d) cubic-bezier(0.34, 1.6, 0.64, 1) both;
 }
 
-.hero-map__campus {
-  fill: rgb(232 87 58 / 0.07);
-  stroke: rgb(232 87 58 / 0.25);
-  stroke-width: 1;
-  stroke-dasharray: 3 3;
-}
-
-.hero-map__road {
-  fill: none;
-  stroke: #fff;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.hero-map__road--major {
-  stroke: #f3d9a6;
-  stroke-width: 3.2;
-}
-
-.hero-map__water {
-  fill: none;
-  stroke: #a5cbe0;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.hero-map__suburb {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  text-anchor: middle;
-  fill: rgb(120 100 70 / 0.45);
-}
-
-.hero-map__peak path {
-  fill: rgb(80 110 70 / 0.55);
-}
-
-.hero-map__peak text {
-  font-size: 9px;
-  font-style: italic;
-  text-anchor: middle;
-  fill: rgb(70 95 60 / 0.75);
-}
-
-.hero-map__credit a {
-  color: inherit;
-}
-
-.hero-map__axis {
-  stroke: rgb(120 100 70 / 0.22);
-  stroke-width: 2;
-  stroke-dasharray: 2 7;
-  stroke-linecap: round;
-}
-
-.hero-map__label {
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 800;
-  fill: rgb(120 100 70 / 0.35);
-  letter-spacing: 0.04em;
-}
-
-.hero-map__credit {
-  margin-top: 0.35rem;
-  font-size: 0.7rem;
-  color: var(--muted);
-  text-align: right;
-}
-
-/* Pins drop in one after another, the way the real map drops them. */
-.hero-map__pin {
-  animation: hm-drop 0.75s cubic-bezier(0.3, 1.5, 0.5, 1) var(--d) both;
-}
-
-.hero-map__pin path {
-  fill: var(--kind);
-  stroke: #fff;
-  stroke-width: 2.5;
-}
-
-.hero-map__shadow {
-  fill: rgb(36 28 21 / 0.2);
+.hero-map__pin--featured {
+  z-index: 1;
 }
 
 .hero-map__ring {
-  fill: none;
-  stroke: var(--kind);
-  stroke-width: 3;
+  position: absolute;
+  top: -13px;
+  left: -13px;
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--kind, var(--food));
+  border-radius: 50%;
   opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
 }
 
-@keyframes hm-drop {
-  from {
-    opacity: 0;
-    transform: translateY(-70px);
+/* A chip sits centred over its place (one that hangs starts there, --lean),
+   slid sideways as far as it takes to stay 6px inside the frame at any
+   width: its place is --x percent across the frame (100cqw), and 50% is
+   half the chip. Its tail stays on the place, at least 14px in from an end. */
+.hero-map__chip {
+  --lean: 0px;
+  --shift: clamp(
+    14px - 50%,
+    clamp(6px + 50% - var(--x) * 1cqw, var(--lean), 100cqw - 6px - var(--x) * 1cqw - 50%),
+    50% - 14px
+  );
+}
+
+.hero-map__chip--start {
+  --lean: calc(50% - 14px);
+}
+
+/* On the narrowest frames there's no room between a hanging chip and the
+   one under it, so that one tucks under its place too (as .map-drop.is-below). */
+@container (max-width: 300px) {
+  .hero-map .hero-map__drop--tuck {
+    top: -4px;
+    bottom: auto;
+    flex-direction: column-reverse;
+    transform-origin: 50% 0;
   }
-  40% {
+
+  .hero-map .hero-map__drop--tuck .map-dot {
+    margin: 0 0 2px;
+  }
+
+  .hero-map .hero-map__drop--tuck .map-chip::after {
+    top: -4px;
+    bottom: auto;
+  }
+
+  /* and the search box is a size smaller, clear of the chip that hangs */
+  .hero-map .hero-map__ask {
+    top: 0.4rem;
+    left: 0.4rem;
+    padding: 0.28rem 0.7rem 0.28rem 0.55rem;
+    font-size: 0.74rem;
+  }
+}
+
+/* The chip steps aside while its card is open, so the two never overlap. */
+.hero-map__chip {
+  animation: hm-chip-hide calc(var(--n) * var(--slot)) ease-out calc(var(--start) + var(--i) * var(--slot)) infinite
+    both;
+}
+
+@keyframes hm-chip-hide {
+  0%,
+  6% {
+    opacity: 1;
+  }
+  9%,
+  21% {
+    opacity: 0;
+  }
+  24%,
+  100% {
     opacity: 1;
   }
 }
@@ -1927,7 +1863,7 @@ main {
   position: absolute;
   top: 0.9rem;
   left: 0.9rem;
-  z-index: 2;
+  z-index: 3;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
@@ -1990,7 +1926,7 @@ main {
 .hero-map__card {
   --kind: var(--food);
   position: absolute;
-  z-index: 1;
+  z-index: 2;
   display: grid;
   gap: 0.15rem;
   width: 13rem;
@@ -2026,7 +1962,7 @@ main {
 
 /* where a card opens from its pin, so it stays inside the frame */
 .hero-map__card--above {
-  translate: -50% calc(-100% - 42px);
+  translate: -50% calc(-100% - 16px);
 }
 
 .hero-map__card--below {
@@ -2123,11 +2059,24 @@ main {
   }
 
   .hero-map__card--above {
-    translate: -50% calc(-100% - 28px);
+    translate: -50% calc(-100% - 12px);
   }
 
   .hero-map__card--below {
-    translate: -50% 24px;
+    translate: -50% 12px;
+  }
+
+  .hero-map .map-chip {
+    padding: 2px 7px 2px 2px;
+  }
+
+  .hero-map .map-chip b {
+    font-size: 0.68rem;
+  }
+
+  .hero-map .map-chip i:empty {
+    width: 12px;
+    height: 12px;
   }
 
   .hero-map__card--left {
@@ -2142,9 +2091,9 @@ main {
 /* With reduced motion it's a still picture: every pin, the first prompt and
    its card. (The global rule above stops the animations.) */
 @media (prefers-reduced-motion: reduce) {
-  .hero-map__pin {
-    opacity: 1;
-    transform: none;
+  /* the first card is open, so its chip has stepped aside */
+  .hero-map__chip.is-first {
+    display: none;
   }
 
   .hero-map__q.is-first,
@@ -2383,17 +2332,15 @@ main {
   margin: 0 0 0.3rem;
 }
 
-/* On a phone an Explore card (and a home page sample) is a row, photo beside
-   the words, so the list of places doesn't run to a screen per card. */
+/* On a phone an Explore card is a row, photo beside the words, so the list
+   of places doesn't run to a screen per card. */
 @media (max-width: 600px) {
-  .spots--explore,
-  .spots--sample {
+  .spots--explore {
     grid-template-columns: 1fr;
     gap: 0.6rem;
   }
 
-  .spots--explore .spot,
-  .spots--sample .spot {
+  .spots--explore .spot {
     display: grid;
     grid-template-columns: 6.5rem minmax(0, 1fr);
     column-gap: 0.85rem;
@@ -2403,13 +2350,11 @@ main {
     border-left: 4px solid var(--kind);
   }
 
-  .spots--explore .spot > *,
-  .spots--sample .spot > * {
+  .spots--explore .spot > * {
     grid-column: 2;
   }
 
-  .spots--explore .spot > .photo,
-  .spots--sample .spot > .photo {
+  .spots--explore .spot > .photo {
     grid-column: 1;
     grid-row: 1 / span 6;
     margin: 0;
@@ -2419,21 +2364,15 @@ main {
     min-height: 6.5rem;
   }
 
-  .spots--explore .photo figcaption,
-  .spots--sample .photo figcaption {
+  .spots--explore .photo figcaption {
     left: 0;
     border-radius: 0;
     font-size: 0.55rem;
     line-height: 1.3;
   }
 
-  .spots--explore .spot h3,
-  .spots--sample .spot h3 {
+  .spots--explore .spot h3 {
     font-size: 1rem;
-  }
-
-  .spots--sample .spot p:last-child {
-    font-size: 0.88rem;
   }
 
   .spots--explore .why {
@@ -2449,7 +2388,8 @@ main {
   }
 
   .top {
-    padding: 0.7rem 0.9rem;
+    padding-top: 0.7rem;
+    padding-bottom: 0.7rem;
   }
 
   .top nav a {
@@ -2465,10 +2405,6 @@ main {
   .section-nav a {
     padding: 0.4rem 0.65rem;
     font-size: 0.86rem;
-  }
-
-  .map-credit {
-    font-size: 0.65rem;
   }
 
   .keep {
@@ -2490,9 +2426,8 @@ main {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.5rem 1.25rem;
-  max-width: 84rem;
-  margin: 0 auto;
-  padding: 1.25rem 1.25rem 2rem;
+  padding-top: 1.25rem;
+  padding-bottom: 2rem;
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 0.85rem;
@@ -2531,11 +2466,6 @@ main {
 
 .foot__credits a {
   color: inherit;
-}
-
-/* the home page's handful of sample places fill the row, whatever its width */
-.spots--sample {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
 }
 
 /* Offers the list's new order without moving cards under anyone's thumb. */
@@ -2659,7 +2589,7 @@ main {
   gap: 0.9rem;
   border-top: 1px solid var(--line);
   /* (its own tint, a shade deeper than the page behind the card) */
-  background: #eef6f8;
+  background: var(--tint);
 }
 
 .welcome__module--actions .welcome__field input {
@@ -2725,129 +2655,270 @@ main {
   font-weight: 700;
 }
 
-/* A small still map of the first places (src/components/MiniMap.astro),
-   then the same places as a numbered key, so a name is never only a pin. */
-.minimap {
-  position: relative;
-  margin: 0 0 0.75rem;
-  overflow: hidden;
-  border-radius: 14px;
-  background: #eef2ef;
+/* ---- The drawn map ------------------------------------------------------------ */
+
+/* Central Canberra drawn as the live maps draw it (src/components/MapDrawing.astro),
+   under the home page's map and the invite's while its street map loads.
+   It's mostly houses: the ground is the live maps' colour for them, so the
+   white side streets show on it as they do there. */
+.map-drawn__land {
+  fill: #efede8;
 }
 
-/* A hairline and a soft inner shade, so the map sits in the card like a
-   printed inset rather than a box drawn round it. */
-.minimap::after {
+.map-drawn__lake {
+  fill: #a3d0ef;
+}
+
+.map-drawn__reserve {
+  fill: #cde6bd;
+}
+
+.map-drawn__park {
+  fill: #d5eac6;
+}
+
+/* The main roads as the live maps draw them at the city's zoom: white on a
+   pale casing, the motorways pale yellow on gold. (The side streets and
+   secondary roads are in the streets picture under them.) Widths are in
+   the picture's units, or pixels where the roads are `fixed`. */
+.map-drawn__road,
+.map-drawn__casing {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.map-drawn__casing {
+  stroke: #dedad2;
+  stroke-width: 2.8;
+}
+
+.map-drawn__road {
+  stroke: #fff;
+  stroke-width: 1.9;
+}
+
+.map-drawn__casing--motorway {
+  stroke: #e6bf62;
+  stroke-width: 3.8;
+}
+
+.map-drawn__road--motorway {
+  stroke: #fadb8b;
+  stroke-width: 2.8;
+}
+
+.map-drawn__water {
+  fill: none;
+  stroke: #a3d0ef;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---- Map marks: what every map puts over its streets ------------------------ */
+
+/* The pins, place names and credit of all three maps, in the page's own
+   font: the invite's (src/scripts/minimap.ts), the group's
+   (src/scripts/map.ts), both placed by src/scripts/map-marks.ts, and the
+   home page's drawn one (src/components/HeroMap.astro). */
+
+/* A pin's mark has no size and sits on its place; its chip and dot hang
+   off it so the dot's centre is on the place. */
+.map-mark {
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow:
-    inset 0 0 0 1px rgb(13 43 54 / 9%),
-    inset 0 0 28px rgb(13 43 54 / 7%);
-  content: "";
+  width: 0;
+  height: 0;
+  font-family: var(--font);
   pointer-events: none;
 }
 
-.minimap__map {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 16 / 10;
+/* A white chip with the number in the place's colour (or a plain disc in
+   it), the name when it fits, a small tail, and a dot on the place itself. */
+.map-drop {
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  translate: -50% 0;
+  transform-origin: 50% 100%;
 }
 
-/* On a phone the map is taller, so three names fit beside their places. */
-@media (max-width: 30rem) {
-  .minimap__map {
-    aspect-ratio: 4 / 3;
+.map-drop.is-below {
+  top: -4px;
+  bottom: auto;
+  flex-direction: column-reverse;
+  transform-origin: 50% 0;
+}
+
+.map-drop.is-below .map-dot {
+  margin: 0 0 2px;
+}
+
+.map-drop.is-below .map-chip::after {
+  top: -4px;
+  bottom: auto;
+}
+
+/* Pins drop in one after another, each after its --drop-delay. */
+.map-drop.is-dropping {
+  animation: map-drop 0.55s var(--drop-delay, 0s) cubic-bezier(0.34, 1.6, 0.64, 1) both;
+}
+
+/* A map that isn't on screen yet (or hasn't loaded) holds its pins back. */
+@media (prefers-reduced-motion: no-preference) {
+  .is-waiting .map-drop.is-dropping {
+    animation: none;
+    opacity: 0;
   }
 }
 
-.minimap__land {
-  fill: #eef2ef;
+@keyframes map-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-60%) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-.minimap__reserve {
-  fill: #dce8d6;
+.map-chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 3px 9px 3px 3px;
+  border-radius: 999px;
+  background: #fff;
+  translate: var(--shift, 0) 0;
+  box-shadow:
+    0 1px 2px rgb(13 43 54 / 14%),
+    0 4px 10px rgb(13 43 54 / 16%);
+  color: var(--ink);
+  white-space: nowrap;
 }
 
-.minimap__park {
-  fill: #e2ecdc;
+.map-chip:has(> :only-child) {
+  padding-right: 3px;
 }
 
-.minimap__road {
-  fill: none;
-  stroke: #fff;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.map-chip:empty {
+  display: none;
 }
 
-.minimap__casing {
-  fill: none;
-  stroke: #d4dee1;
-  stroke-width: 5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+/* The tail: a small white diamond under the chip, behind it. */
+.map-chip::after {
+  position: absolute;
+  bottom: -4px;
+  left: calc(50% - var(--shift, 0px));
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  background: #fff;
+  content: "";
+  transform: translateX(-50%) rotate(45deg);
+  z-index: -1;
 }
 
-.minimap__road--major {
-  stroke-width: 3;
-}
-
-.minimap__water {
-  fill: none;
-  stroke: #a6d2de;
-  stroke-width: 1.2;
-}
-
-.minimap__lake {
-  fill: #b4dbe5;
-}
-
-.minimap__suburb {
-  fill: rgb(13 43 54 / 38%);
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-anchor: middle;
-  text-transform: uppercase;
-  paint-order: stroke;
-  stroke: #eef2ef;
-  stroke-width: 2px;
-}
-
-.minimap__pin path {
-  fill: var(--kind, var(--food));
-  stroke: #fff;
-  stroke-width: 1.5px;
-  vector-effect: non-scaling-stroke;
-}
-
-.minimap__ground {
-  fill: rgb(13 43 54 / 25%);
-}
-
-.minimap__n {
-  fill: #fff;
+.map-chip i {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--kind, var(--food));
+  color: #fff;
+  font-size: 11px;
+  font-style: normal;
   font-weight: 800;
-  text-anchor: middle;
 }
 
-/* The name beside the pin, on a white halo so it reads over any street. */
-.minimap__name {
-  fill: var(--ink);
+/* No number to show: a plain disc in the place's colour. */
+.map-chip i:empty {
+  width: 14px;
+  height: 14px;
+  margin: 3px 0 3px 3px;
+}
+
+.map-chip b {
+  color: var(--ink);
+  font-size: 0.75rem;
   font-weight: 700;
-  paint-order: stroke;
-  stroke: rgb(255 255 255 / 92%);
-  stroke-width: 3px;
-  stroke-linejoin: round;
 }
 
-/* A credit folded behind a small "i" in a picture's corner (the invite's
-   map): it opens on hover, on focus, or on a tap (src/scripts/welcome.ts),
-   so it stays on the picture, as OpenStreetMap asks, without a line of
-   small print across it. It spans the picture's
-   foot so a long line can wrap, but only the "i" and the credit itself
-   catch the pointer. */
+.map-dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 2px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--kind, var(--food));
+  box-shadow: 0 1px 3px rgb(13 43 54 / 35%);
+}
+
+/* A place that's only a dot keeps its chip, name and all, for a hover or
+   a keyboard's focus. */
+.map-mark--dot .map-chip {
+  display: none;
+}
+
+.map-mark--dot:hover .map-chip,
+.map-mark--dot:focus-visible .map-chip {
+  display: flex;
+}
+
+/* Place names, in the page's font, as Apple Maps sets them: quiet grey
+   suburbs, the water's name in blue italics. Like a mark, a name is placed
+   at its point and centred on it. */
+.map-label {
+  position: absolute;
+  translate: -50% -50%;
+  color: rgb(60 60 67 / 62%);
+  font-family: var(--font);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow:
+    0 0 2px #fff,
+    0 0 2px #fff,
+    0 0 4px #fff;
+}
+
+.map-label--water {
+  color: #2f7fbf;
+  font-style: italic;
+  font-weight: 500;
+  text-shadow: 0 0 3px rgb(255 255 255 / 70%);
+}
+
+/* A hill's name, after a small peak. */
+.map-label--peak {
+  color: rgb(84 104 70 / 82%);
+}
+
+.map-label--peak::before {
+  display: inline-block;
+  width: 7px;
+  height: 6px;
+  margin-right: 3px;
+  background: currentColor;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  content: "";
+}
+
+/* A credit folded behind a small "i" in a map's corner: it opens on hover,
+   on focus, or on a tap (fold() in src/scripts/map-marks.ts), so it stays
+   on the map, as OpenStreetMap asks, without a line of small print across
+   it. It spans the map's foot so a long line can wrap, but only the "i"
+   and the credit itself catch the pointer. */
 .fold-credit {
   position: absolute;
   right: 0;
@@ -2907,6 +2978,85 @@ main {
   color: inherit;
 }
 
+/* ---- The invite's small map (src/components/MiniMap.astro) ------------------ */
+
+/* A small still map of the first places (src/components/MiniMap.astro),
+   then the same places as a numbered key, so a name is never only a pin. */
+.minimap {
+  position: relative;
+  margin: 0 0 0.75rem;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #efede8;
+}
+
+/* A hairline and a soft inner shade, so the map sits in the card like a
+   printed inset rather than a box drawn round it. */
+.minimap::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px rgb(13 43 54 / 9%),
+    inset 0 0 28px rgb(13 43 54 / 7%);
+  content: "";
+  pointer-events: none;
+}
+
+.minimap__map {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+}
+
+/* On a phone the map is taller, so three names fit beside their places. */
+@media (max-width: 30rem) {
+  .minimap__map {
+    aspect-ratio: 4 / 3;
+  }
+}
+
+/* The drawn map's marks, as near the street map's as a drawing gets: the
+   suburbs' names in quiet grey, and white chips with the number in a disc
+   of the place's colour, the name, a tail and a dot on the place. */
+.minimap__suburb {
+  fill: rgb(60 60 67 / 62%);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+}
+
+.minimap__chip {
+  fill: #fff;
+}
+
+.minimap__dot,
+.minimap__disc {
+  fill: var(--kind, var(--food));
+}
+
+.minimap__dot {
+  stroke: #fff;
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+}
+
+.minimap__n {
+  fill: #fff;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.minimap__name {
+  fill: var(--ink);
+  font-weight: 700;
+}
+
 /* Once the map is in, the pins drop onto it one after another. */
 .minimap__pin {
   transform-box: fill-box;
@@ -2914,11 +3064,6 @@ main {
   animation: minimap-drop 0.55s
     calc(var(--after, 0s) + 0.55s + var(--n) * 0.15s)
     cubic-bezier(0.34, 1.6, 0.64, 1) both;
-}
-
-.minimap__name {
-  animation: pin-name 0.4s calc(var(--after, 0s) + 0.8s + var(--n) * 0.15s)
-    ease-out both;
 }
 
 /* The street map over the drawn one (src/scripts/minimap.ts). While it
@@ -2947,14 +3092,8 @@ main {
   inset: 0;
 }
 
-.minimap__over > * {
-  position: absolute;
-}
-
 .minimap.is-pending .minimap__pin,
-.minimap.is-pending .minimap__name,
-.minimap.is-live .minimap__pin,
-.minimap.is-live .minimap__name {
+.minimap.is-live .minimap__pin {
   visibility: hidden;
 }
 
@@ -2966,130 +3105,20 @@ main {
   display: inline;
 }
 
-.minimap__marker {
-  pointer-events: none;
-}
-
-/* Place names over the street map, in the page's font, as Apple Maps sets
-   them: quiet grey suburbs, the lake's name in blue italics. */
-.minimap__place {
-  color: rgb(60 60 67 / 62%);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
-  pointer-events: none;
-  text-shadow:
-    0 0 2px #fff,
-    0 0 2px #fff,
-    0 0 4px #fff;
-}
-
-.minimap__place--water {
-  color: #2f7fbf;
-  font-style: italic;
-  font-weight: 500;
-  text-shadow: 0 0 3px rgb(255 255 255 / 70%);
-}
-
-/* A pin: a white chip with the number in its colour, the name when it
-   fits, a small tail, and a dot on the place itself. */
-.minimap__drop {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  transform-origin: 50% 100%;
-  animation: minimap-drop 0.55s calc(var(--live-wait, 0.15s) + var(--n) * 0.15s)
-    cubic-bezier(0.34, 1.6, 0.64, 1) both;
-}
-
-.minimap__drop.is-below {
-  flex-direction: column-reverse;
-  transform-origin: 50% 0;
-}
-
-.minimap__drop.is-below .minimap__dot {
-  margin: 0 0 2px;
-}
-
-.minimap__drop.is-below .minimap__chip::after {
-  top: -4px;
-  bottom: auto;
-}
-
-.minimap__chip {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 3px 9px 3px 3px;
-  border-radius: 999px;
-  background: #fff;
-  translate: var(--shift, 0) 0;
-  box-shadow:
-    0 1px 2px rgb(13 43 54 / 14%),
-    0 4px 10px rgb(13 43 54 / 16%);
-  white-space: nowrap;
-}
-
-.minimap__chip:has(> :only-child) {
-  padding-right: 3px;
-}
-
-/* The tail: a small white diamond under the chip, behind it. */
-.minimap__chip::after {
-  position: absolute;
-  bottom: -4px;
-  left: calc(50% - var(--shift, 0px));
-  width: 8px;
-  height: 8px;
-  border-radius: 1px;
-  background: #fff;
-  content: "";
-  transform: translateX(-50%) rotate(45deg);
-  z-index: -1;
-}
-
-.minimap__chip i {
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--kind, var(--food));
-  color: #fff;
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 800;
-}
-
-.minimap__chip b {
-  color: var(--ink);
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.minimap__dot {
-  width: 9px;
-  height: 9px;
-  margin-top: 2px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  background: var(--kind, var(--food));
-  box-shadow: 0 1px 3px rgb(13 43 54 / 35%);
+/* Its pins drop after the card has reached the map (--live-wait, set by
+   src/scripts/minimap.ts), one after another by number. */
+.minimap .map-drop {
+  --drop-delay: calc(var(--live-wait, 0.15s) + var(--n) * 0.15s);
 }
 
 /* Drawn again after a resize, the pins are simply there. */
-.minimap.is-settled .minimap__drop {
+.minimap.is-settled .map-drop {
   animation: none;
 }
 
-/* Below the fold, the pins wait for the map to scroll into view. */
+/* Below the fold, the drawn pins wait for the map to scroll into view. */
 @media (prefers-reduced-motion: no-preference) {
-  .minimap.is-waiting .minimap__pin,
-  .minimap.is-waiting .minimap__name,
-  .minimap.is-waiting .minimap__drop {
+  .minimap.is-waiting .minimap__pin {
     animation: none;
     opacity: 0;
   }
@@ -3103,15 +3132,6 @@ main {
   to {
     opacity: 1;
     transform: none;
-  }
-}
-
-@keyframes pin-name {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
   }
 }
 
@@ -3305,6 +3325,32 @@ main {
   animation: page-rise 0.5s calc(var(--after) + 0.15s) ease-out both;
 }
 
+/* Every page arrives the way the invite does: its parts rise into place,
+   top to bottom, quickly enough that nobody waits. Only the first frames
+   are animated (backwards fill), so nothing is left transformed afterwards
+   and a live refresh, which swaps what's inside these parts, never plays it
+   again. The invite has its own, longer entrance. */
+@media (prefers-reduced-motion: no-preference) {
+  main > :not(.welcome, .home, script),
+  .hero > * {
+    animation: page-rise 0.55s ease-out backwards;
+  }
+
+  main > :nth-child(2),
+  .hero > :nth-child(2) {
+    animation-delay: 0.08s;
+  }
+
+  main > :nth-child(3),
+  .hero > :nth-child(3) {
+    animation-delay: 0.16s;
+  }
+
+  main > :nth-child(n + 4) {
+    animation-delay: 0.24s;
+  }
+}
+
 @keyframes page-rise {
   from {
     opacity: 0;
@@ -3334,8 +3380,6 @@ main {
   .welcome__listcard,
   .welcome__listcard .minimap,
   .minimap__pin,
-  .minimap__name,
-  .minimap__drop,
   .welcome__note .face,
   .welcome__from,
   .welcome__note blockquote,
@@ -3428,24 +3472,16 @@ main {
   }
 }
 
-/* (Its darkest stop and its lightest both keep white text at 4.5:1.) */
+/* The invite's button is the site's primary button (.btn--primary), as
+   tall as the field above it, its arrow nudging forward on hover. */
 .welcome__join {
   width: 100%;
   height: 3.5rem;
   gap: 0.5rem;
-  border: 0;
   border-radius: 16px;
-  background: linear-gradient(180deg, #12809b, #0a6680);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 22%),
-    0 1px 2px rgb(10 102 128 / 30%),
-    0 10px 24px -10px rgb(10 102 128 / 70%);
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.01em;
-  transition:
-    transform 0.15s,
-    box-shadow 0.15s;
 }
 
 .welcome__join span {
@@ -3460,24 +3496,8 @@ main {
   transition: translate 0.2s;
 }
 
-.welcome__join:hover {
-  background: linear-gradient(180deg, #0f7a94, #095f78);
-  transform: translateY(-1px);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 22%),
-    0 2px 4px rgb(10 102 128 / 30%),
-    0 14px 28px -10px rgb(10 102 128 / 75%);
-}
-
 .welcome__join:hover svg {
   translate: 3px 0;
-}
-
-.welcome__join:active {
-  transform: translateY(0) scale(0.985);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 15%),
-    0 1px 2px rgb(10 102 128 / 30%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3498,35 +3518,6 @@ main {
 .welcome .passkey-alt {
   color: var(--muted);
   text-align: center;
-}
-
-/* The invite page's colours, taken from its photo. The sky and Lake Burley
-   Griffin give the blues, Anzac Parade's red the food colour and the gums
-   the outdoors green. Every text colour passes WCAG AA on white and on the
-   page tint. Scoped to the invite page (Base's `theme`). */
-.theme-canberra {
-  --bg: #f7fafb;
-  --bg-deep: #edf4f6;
-  --card: #ffffff;
-  --ink: #0d2b36;
-  --muted: #4a6470;
-  --line: #d3e3e8;
-  --line-strong: #b5ccd4;
-  --accent: #1795ae;
-  --accent-strong: #0b6e88;
-  --accent-ink: #0a6680;
-  --accent-soft: #d5ecf2;
-  --food: #b0472f;
-  --fun: #7a5cc7;
-  --outdoors: #5d7a3c;
-  --shadow-sm:
-    0 1px 2px rgb(13 43 54 / 6%), 0 10px 30px -18px rgb(13 43 54 / 35%);
-  --shadow-md:
-    0 2px 4px rgb(13 43 54 / 6%), 0 28px 56px -28px rgb(13 43 54 / 50%);
-  --font:
-    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    sans-serif;
-  --font-display: var(--font);
 }
 
 /* The owner's note on the group's own page, under its name. */
@@ -3598,10 +3589,6 @@ main:has(.welcome) {
    filling it down to the numbered list. The panel simply arrives with
    the rest. */
 @media (min-width: 60rem) {
-  main:has(.welcome) {
-    max-width: 76rem;
-  }
-
   .welcome {
     display: grid;
     grid-template-columns: minmax(0, 30rem) minmax(0, 1fr);
@@ -3647,21 +3634,5 @@ main:has(.welcome) {
     top: 50%;
     left: 0;
     translate: 0 -50%;
-  }
-}
-
-/* On the invite, the header and footer line up with the cards between
-   them: the same width, the same edges. */
-body:has(.welcome) .top,
-body:has(.welcome) .foot {
-  max-width: 34rem;
-  padding-right: 1rem;
-  padding-left: 1rem;
-}
-
-@media (min-width: 60rem) {
-  body:has(.welcome) .top,
-  body:has(.welcome) .foot {
-    max-width: 76rem;
   }
 }
