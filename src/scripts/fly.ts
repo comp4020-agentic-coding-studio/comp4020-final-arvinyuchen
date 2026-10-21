@@ -242,8 +242,8 @@ if (fly && motion && gl) {
     const photo = ready ? 1 - part(p, PHOTO_OUT) : 1 - part(p, CARD_IN);
     s.setProperty("--photo", String(photo));
     top?.classList.toggle("is-paper", photo < 0.5);
-    // (and once it's gone, it's not there at all, for Safari's bars too,
-    // which still take their colour from what's only transparent)
+    // (and once it's gone, it's not there at all, not even to be drawn
+    // see-through)
     fly.classList.toggle("is-past", photo === 0);
     const n = ease(part(p, NARROW));
     s.setProperty(
