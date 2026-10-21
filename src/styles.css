@@ -1399,8 +1399,10 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
    on its sky, but the photo runs edge to edge under the header, which
    turns white on it. As the page scrolls the photo turns into the map
    (below); the form follows. */
+/* (the home page is on the landing's paper, all the way to its footer) */
 body:has(.home) {
   overflow-x: clip;
+  background: #f4f3ef;
 }
 
 body:has(.home) main {
@@ -1537,36 +1539,6 @@ body:has(.home) .top nav a:hover {
   background: #044a5d;
 }
 
-/* Safari on a phone colours the strips under its status bar and its
-   toolbar from what's at the top and bottom edges of the page: not the
-   photo itself, but the background colour of what's there. So a
-   pixel-high line at each edge carries the photo's own colour there (the
-   shaded sky at the top, the trees at its foot, sampled from the photo),
-   and the strips match the picture; once the photo has gone they go with
-   it, and the strips take the stage's paper. */
-.fly__edge {
-  display: none;
-}
-
-.fly.is-live .fly__edge {
-  position: absolute;
-  right: 0;
-  left: 0;
-  z-index: 2;
-  display: block;
-  height: 8px;
-}
-
-.fly__edge--top {
-  top: 0;
-  background: #044a5d;
-}
-
-.fly__edge--foot {
-  bottom: 0;
-  background: #3b352a;
-}
-
 .fly__intro::after {
   content: "";
   position: absolute;
@@ -1587,16 +1559,21 @@ body:has(.home) .top nav a:hover {
 }
 
 /* (as tall as the screen with the browser's bars gone, so the picture
-   runs on under them; and stuck 1px above the top, so at the top of the
-   page, before any scroll, it isn't stuck at all: Safari on a phone paints
-   its bars over anything pinned at the screen's edges in a flat colour,
-   but over the photo at rest it lets the photo show) */
+   runs on under them. And the stage's own box isn't drawn, only what's in
+   it: Safari on a phone paints its bars in a flat colour, taken from
+   anything sticky or fixed at the screen's edges, unless that is hidden
+   (WebKit's LocalFrameView::fixedContainerEdges). Hidden, it leaves the
+   bars over the page as it is: the photo, then the paper behind.) */
 .fly.is-live .fly__stage {
   position: sticky;
-  top: -1px;
+  top: 0;
   height: 100lvh;
   overflow: hidden;
-  background: #f4f3ef;
+  visibility: hidden;
+}
+
+.fly.is-live .fly__stage > * {
+  visibility: visible;
 }
 
 .fly.is-live .fly__map {
