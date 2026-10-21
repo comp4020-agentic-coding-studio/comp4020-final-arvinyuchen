@@ -2483,58 +2483,48 @@ main {
 
 /* ---- Footer -------------------------------------------------------------------- */
 
+/* One quiet line, nothing the header already has: what Spots is, and the
+   credits folded away (the map still carries its own where it appears). */
 .foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1.25rem;
   max-width: 84rem;
   margin: 0 auto;
-  padding: 1.5rem 1.25rem 2.5rem;
+  padding: 1.25rem 1.25rem 2rem;
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 0.85rem;
 }
 
-.foot .brand__pin {
-  display: inline-block;
-  width: 0.6rem;
-  height: 0.6rem;
-  margin-right: 0.3rem;
-}
-
-.foot p {
-  margin: 0;
-}
-
-.foot__main {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.6rem 1.5rem;
-}
-
-.foot__links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem 1.1rem;
-}
-
-.foot__links a {
-  color: var(--ink);
-  font-weight: 600;
+.foot__link {
+  color: var(--muted);
   text-decoration: none;
 }
 
-.foot__links a:hover {
+.foot__link:hover,
+.foot__credits summary:hover {
   color: var(--accent-ink);
   text-decoration: underline;
 }
 
-/* Everyone whose work the site shows, in one place; the map and each photo
-   still carry their own credit where they appear. */
-.foot .foot__credits {
+.foot__credits summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.foot__credits summary::-webkit-details-marker {
+  display: none;
+}
+
+.foot__credits[open] {
+  flex-basis: 100%;
+}
+
+.foot__credits p {
   max-width: 52rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px dashed var(--line);
+  margin: 0.5rem 0 0;
   font-size: 0.78rem;
   line-height: 1.6;
 }
@@ -2569,88 +2559,935 @@ main {
   outline-offset: 2px;
 }
 
-/* The invite link's own page, for someone who hasn't joined yet: one
-   decision (your name), with just enough of the group to want in. */
+/* The invite link's own page, for someone who hasn't joined yet: one card,
+   topped with a photo of the city and the group's name on its sky, then a
+   few of the group's places and the one question. */
 .welcome {
   max-width: 32rem;
   margin: 1.5rem auto 2.5rem;
 }
 
 .welcome__card {
+  padding: 0;
+  overflow: hidden;
+  /* (clip, where it's known, crops the same without making the card a
+     scroll container, which would stop the map's scroll animation.) */
+  overflow: clip;
+  border: 0;
+  box-shadow: var(--shadow-md);
+}
+
+.welcome__hero {
+  position: relative;
+  height: 18rem;
+  background: var(--accent);
+}
+
+/* Anchored to the top so the sky is always there for the title. */
+.welcome__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 0%;
+}
+
+/* A shade over the sky so white text reads on it (about 5.8:1 at the top,
+   where the small text sits; the sky alone is 3.5:1). */
+.welcome__hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgb(4 38 52 / 60%) 0%,
+    rgb(4 38 52 / 20%) 55%,
+    rgb(4 38 52 / 0%) 80%
+  );
+}
+
+.welcome__head {
+  position: relative;
+  z-index: 1;
   display: grid;
-  gap: 1.1rem;
-  padding: 1.75rem;
+  gap: 0.45rem;
+  padding: 1.5rem 1.5rem 0;
+  color: #fff;
 }
 
-.welcome__card h1 {
-  margin: 0.2rem 0 0;
-  font-size: clamp(2rem, 7vw, 2.8rem);
-  line-height: 1.05;
+.welcome__head .eyebrow {
+  color: #fff;
 }
 
-.welcome__card .members {
+.welcome__head h1 {
   margin: 0;
+  color: #fff;
+  font-size: clamp(2rem, 8vw, 2.7rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  text-shadow: 0 2px 16px rgb(4 38 52 / 40%);
+}
+
+.welcome__head .members {
+  margin: 0;
+  color: #fff;
+  text-shadow: 0 1px 8px rgb(4 38 52 / 70%);
+}
+
+.welcome__head .face {
+  border-color: rgb(255 255 255 / 85%);
+}
+
+.welcome__content {
+  display: grid;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+/* The invite card is built of modules, each the full width of the card with
+   the same inset, so every edge inside lines up: the photo, the owner's
+   message, and the action, which sits on a tinted footer of its own, its
+   field white on the tint. */
+.welcome__module {
+  padding: 1.25rem 1.5rem;
+}
+
+.welcome__module--actions {
+  display: grid;
+  gap: 0.9rem;
+  border-top: 1px solid var(--line);
+  /* (its own tint, a shade deeper than the page behind the card) */
+  background: #eef6f8;
+}
+
+.welcome__module--actions .welcome__field input {
+  border-color: var(--line);
+  background: #fff;
+}
+
+.welcome__module--actions .welcome__field input:hover {
+  border-color: var(--line-strong);
+}
+
+.welcome__module--actions .welcome__field input:focus-visible {
+  border-color: var(--accent);
+}
+
+/* On a phone the form is what the page is for, so everything above it is
+   pulled in until the name field and its button sit on the first screen,
+   even under Safari's bars: a shorter photo, a tighter note, no rule between
+   the note and the form. */
+@media (max-width: 34rem) {
+  .welcome {
+    margin-top: 0.5rem;
+  }
+
+  /* The photo gives way first on a short screen, so the invite card stays
+     whole (with the hint under it) on the first screen. */
+  .welcome__hero {
+    height: clamp(7.5rem, calc(100svh - 34.5rem), 12.5rem);
+  }
+
+  .welcome__head {
+    padding: 1rem 1.25rem 0;
+  }
+
+  .welcome__photo {
+    object-position: 50% 25%;
+  }
+
+  .welcome__content,
+  .welcome .welcome__listcard .welcome__content {
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+  }
+
+  .welcome .welcome__form {
+    gap: 0.6rem;
+  }
+
+  .welcome__module {
+    padding: 1rem 1.25rem;
+  }
+
+  .welcome .welcome__note blockquote {
+    padding: 0.75rem 1rem;
+    font-size: 1.05rem;
+  }
+
 }
 
 .welcome__label {
-  margin: 0 0 0.5rem;
-  font-size: 0.95rem;
+  margin: 0 0 0.55rem;
+  font-size: 1rem;
   font-weight: 700;
 }
 
-.welcome__picks {
+/* A small still map of the first places (src/components/MiniMap.astro),
+   then the same places as a numbered key, so a name is never only a pin. */
+.minimap {
+  position: relative;
+  margin: 0 0 0.75rem;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #eef2ef;
+}
+
+/* A hairline and a soft inner shade, so the map sits in the card like a
+   printed inset rather than a box drawn round it. */
+.minimap::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px rgb(13 43 54 / 9%),
+    inset 0 0 28px rgb(13 43 54 / 7%);
+  content: "";
+  pointer-events: none;
+}
+
+.minimap__map {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+}
+
+/* On a phone the map is taller, so three names fit beside their places. */
+@media (max-width: 30rem) {
+  .minimap__map {
+    aspect-ratio: 4 / 3;
+  }
+}
+
+.minimap__land {
+  fill: #eef2ef;
+}
+
+.minimap__reserve {
+  fill: #dce8d6;
+}
+
+.minimap__park {
+  fill: #e2ecdc;
+}
+
+.minimap__road {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.minimap__casing {
+  fill: none;
+  stroke: #d4dee1;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.minimap__road--major {
+  stroke-width: 3;
+}
+
+.minimap__water {
+  fill: none;
+  stroke: #a6d2de;
+  stroke-width: 1.2;
+}
+
+.minimap__lake {
+  fill: #b4dbe5;
+}
+
+.minimap__suburb {
+  fill: rgb(13 43 54 / 38%);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-anchor: middle;
+  text-transform: uppercase;
+  paint-order: stroke;
+  stroke: #eef2ef;
+  stroke-width: 2px;
+}
+
+.minimap__pin path {
+  fill: var(--kind, var(--food));
+  stroke: #fff;
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+}
+
+.minimap__ground {
+  fill: rgb(13 43 54 / 25%);
+}
+
+.minimap__n {
+  fill: #fff;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+/* The name beside the pin, on a white halo so it reads over any street. */
+.minimap__name {
+  fill: var(--ink);
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: rgb(255 255 255 / 92%);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+/* A credit folded behind a small "i" in a picture's corner (the invite's
+   map): it opens on hover, on focus, or on a tap (src/scripts/welcome.ts),
+   so it stays on the picture, as OpenStreetMap asks, without a line of
+   small print across it. It spans the picture's
+   foot so a long line can wrap, but only the "i" and the credit itself
+   catch the pointer. */
+.fold-credit {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0.4rem;
+  color: var(--muted);
+  font-size: 0.62rem;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.fold-credit > * {
+  pointer-events: auto;
+}
+
+.fold-credit__sources {
+  display: none;
+  min-width: 0;
+  padding: 0.1rem 0.45rem;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 90%);
+  text-align: right;
+}
+
+.fold-credit:hover .fold-credit__sources,
+.fold-credit:focus-within .fold-credit__sources,
+.fold-credit.is-open .fold-credit__sources {
+  display: inline;
+}
+
+.fold-credit__info {
   display: grid;
-  gap: 0.5rem;
+  flex: none;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 85%);
+  box-shadow: 0 1px 2px rgb(13 43 54 / 15%);
+  color: var(--muted);
+  font:
+    italic 700 0.7rem/1 Georgia,
+    serif;
+  cursor: pointer;
+}
+
+.fold-credit a {
+  color: inherit;
+}
+
+/* Once the map is in, the pins drop onto it one after another. */
+.minimap__pin {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: minimap-drop 0.55s
+    calc(var(--after, 0s) + 0.55s + var(--n) * 0.15s)
+    cubic-bezier(0.34, 1.6, 0.64, 1) both;
+}
+
+.minimap__name {
+  animation: pin-name 0.4s calc(var(--after, 0s) + 0.8s + var(--n) * 0.15s)
+    ease-out both;
+}
+
+/* The street map over the drawn one (src/scripts/minimap.ts). While it
+   loads, the drawn map shows without its pins, so they don't land twice. */
+/* (Two classes, to win over MapLibre's own .maplibregl-map { position }.) */
+.minimap .minimap__live {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease-out;
+}
+
+.minimap.is-live .minimap__live {
+  opacity: 1;
+}
+
+.minimap .minimap__gl {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+.minimap__over {
+  position: absolute;
+  inset: 0;
+}
+
+.minimap__over > * {
+  position: absolute;
+}
+
+.minimap.is-pending .minimap__pin,
+.minimap.is-pending .minimap__name,
+.minimap.is-live .minimap__pin,
+.minimap.is-live .minimap__name {
+  visibility: hidden;
+}
+
+.minimap__tiles {
+  display: none;
+}
+
+.minimap.is-live .minimap__tiles {
+  display: inline;
+}
+
+.minimap__marker {
+  pointer-events: none;
+}
+
+/* Place names over the street map, in the page's font, as Apple Maps sets
+   them: quiet grey suburbs, the lake's name in blue italics. */
+.minimap__place {
+  color: rgb(60 60 67 / 62%);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow:
+    0 0 2px #fff,
+    0 0 2px #fff,
+    0 0 4px #fff;
+}
+
+.minimap__place--water {
+  color: #2f7fbf;
+  font-style: italic;
+  font-weight: 500;
+  text-shadow: 0 0 3px rgb(255 255 255 / 70%);
+}
+
+/* A pin: a white chip with the number in its colour, the name when it
+   fits, a small tail, and a dot on the place itself. */
+.minimap__drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transform-origin: 50% 100%;
+  animation: minimap-drop 0.55s calc(var(--live-wait, 0.15s) + var(--n) * 0.15s)
+    cubic-bezier(0.34, 1.6, 0.64, 1) both;
+}
+
+.minimap__drop.is-below {
+  flex-direction: column-reverse;
+  transform-origin: 50% 0;
+}
+
+.minimap__drop.is-below .minimap__dot {
+  margin: 0 0 2px;
+}
+
+.minimap__drop.is-below .minimap__chip::after {
+  top: -4px;
+  bottom: auto;
+}
+
+.minimap__chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 3px 9px 3px 3px;
+  border-radius: 999px;
+  background: #fff;
+  translate: var(--shift, 0) 0;
+  box-shadow:
+    0 1px 2px rgb(13 43 54 / 14%),
+    0 4px 10px rgb(13 43 54 / 16%);
+  white-space: nowrap;
+}
+
+.minimap__chip:has(> :only-child) {
+  padding-right: 3px;
+}
+
+/* The tail: a small white diamond under the chip, behind it. */
+.minimap__chip::after {
+  position: absolute;
+  bottom: -4px;
+  left: calc(50% - var(--shift, 0px));
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  background: #fff;
+  content: "";
+  transform: translateX(-50%) rotate(45deg);
+  z-index: -1;
+}
+
+.minimap__chip i {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--kind, var(--food));
+  color: #fff;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.minimap__chip b {
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.minimap__dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 2px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--kind, var(--food));
+  box-shadow: 0 1px 3px rgb(13 43 54 / 35%);
+}
+
+/* Drawn again after a resize, the pins are simply there. */
+.minimap.is-settled .minimap__drop {
+  animation: none;
+}
+
+/* Below the fold, the pins wait for the map to scroll into view. */
+@media (prefers-reduced-motion: no-preference) {
+  .minimap.is-waiting .minimap__pin,
+  .minimap.is-waiting .minimap__name,
+  .minimap.is-waiting .minimap__drop {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+@keyframes minimap-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-60%) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pin-name {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.welcome__stops {
+  display: grid;
+  gap: 0.35rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.welcome__pick {
+.welcome__stop {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.45rem;
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--kind, var(--food));
-  border-radius: 12px;
-  background: #fff;
+  align-items: baseline;
+  gap: 0.6rem;
 }
 
-.welcome__pick .photo--small {
-  width: 3.25rem;
-  border-radius: 8px;
+.welcome__num {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  background: var(--kind, var(--food));
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  transform: translateY(-0.1rem);
 }
 
-.welcome__pick > span {
-  display: grid;
+.welcome__stop strong {
   min-width: 0;
-}
-
-.welcome__pick strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.welcome__list > .fine {
-  margin: 0.5rem 0 0;
+.welcome__where {
+  margin-left: auto;
+  flex: none;
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 
-.welcome__form {
-  padding-top: 1.1rem;
+/* The owner's note. It arrives in three beats: who it's from ("Ana invited
+   you"), then the bubble revealed by a circle
+   spreading out from their face like ink, then the words popping in one
+   after another, as if said out loud. The bubble keeps its shape throughout:
+   it is uncovered, never stretched. CSS only, once per visit; the words
+   are in the page from the start, so a screen reader has them at once. */
+.welcome__note {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.welcome__note figcaption {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.welcome__note figcaption strong {
+  color: var(--ink);
+}
+
+.welcome__note .face {
+  width: 1.9rem;
+  height: 1.9rem;
+  margin-left: 0;
+  font-size: 0.85rem;
+  border-color: var(--card);
+  animation: note-face 0.5s 0.55s cubic-bezier(0.34, 1.8, 0.64, 1) both;
+}
+
+.welcome__from {
+  animation: note-from 0.45s 0.7s ease-out both;
+}
+
+.welcome__note blockquote {
+  margin: 0;
+  padding: 0.9rem 1.1rem;
+  border-radius: 4px 20px 20px 20px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-size: 1.15rem;
+  line-height: 1.4;
+  transform-origin: 0% 0%;
+  animation: note-ripple 0.7s 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.welcome__note blockquote span {
+  display: inline-block;
+  animation: note-word 0.35s calc(1.15s + var(--w) * 50ms)
+    cubic-bezier(0.34, 1.8, 0.64, 1) both;
+}
+
+@keyframes note-face {
+  from {
+    opacity: 0;
+    transform: scale(0) rotate(-30deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes note-from {
+  from {
+    opacity: 0;
+    transform: translateX(-0.6rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A circle grows from the bubble's corner by the face until it uncovers the
+   whole bubble, which swells a touch past full size and settles. */
+@keyframes note-ripple {
+  from {
+    clip-path: circle(0% at 0 0);
+    transform: scale(0.92);
+  }
+  70% {
+    transform: scale(1.02);
+  }
+  to {
+    clip-path: circle(150% at 0 0);
+    transform: none;
+  }
+}
+
+@keyframes note-word {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em) scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The whole card arrives in order, top to bottom, so nothing waits in an
+   empty space: the card rises, the photo settles, the title lines come up,
+   the note plays (above), then the form and the map follow it.
+   Without a note there's nothing to wait for, so they come sooner. */
+.welcome__card {
+  animation: page-rise 0.6s ease-out both;
+}
+
+.welcome__photo {
+  animation: photo-settle 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.welcome__head > * {
+  animation: page-rise 0.5s ease-out both;
+}
+
+.welcome__head > :nth-child(1) {
+  animation-delay: 0.15s;
+}
+
+.welcome__head > :nth-child(2) {
+  animation-delay: 0.25s;
+}
+
+.welcome__head > :nth-child(3) {
+  animation-delay: 0.35s;
+}
+
+.welcome {
+  --after: 1.25s;
+}
+
+.welcome:not(:has(.welcome__note)) {
+  --after: 0.5s;
+}
+
+.welcome__module--actions > * {
+  animation: page-rise 0.5s var(--after) ease-out both;
+}
+
+.welcome__listcard {
+  animation: page-rise 0.5s calc(var(--after) + 0.15s) ease-out both;
+}
+
+@keyframes page-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes photo-settle {
+  from {
+    transform: scale(1.1);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* Under reduced motion the page is simply there. */
+@media (prefers-reduced-motion: reduce) {
+  .welcome__card,
+  .welcome__photo,
+  .welcome__head > *,
+  .welcome__module--actions > *,
+  .welcome__listcard,
+  .welcome__listcard .minimap,
+  .minimap__pin,
+  .minimap__name,
+  .minimap__drop,
+  .welcome__note .face,
+  .welcome__from,
+  .welcome__note blockquote,
+  .welcome__note blockquote span {
+    animation: none;
+  }
+}
+
+.welcome__list {
+  padding-top: 1.25rem;
   border-top: 1px solid var(--line);
 }
 
-.welcome__form input {
-  padding: 0.8rem 0.9rem;
-  font-size: 1.1rem;
+.welcome__list > .fine {
+  margin: 0.55rem 0 0;
 }
 
+/* The name field: a soft filled well that turns white with an accent ring
+   when you're in it, and shows the face you'll have in the group once
+   you've typed. The button under it is the same height and corners, so the two read
+   as one piece. */
+.welcome__field {
+  position: relative;
+}
+
+.welcome__field input {
+  height: 3.5rem;
+  padding: 0 1rem 0 3.5rem;
+  border: 1.5px solid transparent;
+  border-radius: 16px;
+  background: var(--bg);
+  font-size: 1.1rem;
+  font-weight: 500;
+  transition:
+    padding 0.25s cubic-bezier(0.34, 1.4, 0.64, 1),
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.welcome__field input::placeholder {
+  color: var(--muted);
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+.welcome__field input:hover {
+  border-color: var(--line-strong);
+}
+
+.welcome__field input:focus-visible {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.welcome__you {
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  width: 2.1rem;
+  height: 2.1rem;
+  margin: 0;
+  border-color: #fff;
+  translate: 0 -50%;
+  pointer-events: none;
+}
+
+/* No name yet: no face, just the field asking for one. The face comes in
+   with the first letter, and the name slides over to make room for it. */
+.welcome__you:empty {
+  display: none;
+}
+
+.welcome__field:has(.welcome__you:empty) input {
+  padding-left: 1rem;
+}
+
+.welcome__you.is-new {
+  animation: you-pop 0.4s cubic-bezier(0.34, 1.8, 0.64, 1);
+}
+
+@keyframes you-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* (Its darkest stop and its lightest both keep white text at 4.5:1.) */
 .welcome__join {
   width: 100%;
-  padding: 0.85rem 1rem;
+  height: 3.5rem;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #12809b, #0a6680);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 22%),
+    0 1px 2px rgb(10 102 128 / 30%),
+    0 10px 24px -10px rgb(10 102 128 / 70%);
   font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+
+.welcome__join span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.welcome__join svg {
+  flex: none;
+  transition: translate 0.2s;
+}
+
+.welcome__join:hover {
+  background: linear-gradient(180deg, #0f7a94, #095f78);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 22%),
+    0 2px 4px rgb(10 102 128 / 30%),
+    0 14px 28px -10px rgb(10 102 128 / 75%);
+}
+
+.welcome__join:hover svg {
+  translate: 3px 0;
+}
+
+.welcome__join:active {
+  transform: translateY(0) scale(0.985);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 15%),
+    0 1px 2px rgb(10 102 128 / 30%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome__you.is-new,
+  .welcome__field input,
+  .welcome__join,
+  .welcome__join svg {
+    animation: none;
+    transition: none;
+  }
 }
 
 .welcome__form .fine,
@@ -2658,7 +3495,173 @@ main {
   margin: 0;
 }
 
-.welcome__about {
-  margin: 1rem 0.25rem 0;
+.welcome .passkey-alt {
+  color: var(--muted);
   text-align: center;
+}
+
+/* The invite page's colours, taken from its photo. The sky and Lake Burley
+   Griffin give the blues, Anzac Parade's red the food colour and the gums
+   the outdoors green. Every text colour passes WCAG AA on white and on the
+   page tint. Scoped to the invite page (Base's `theme`). */
+.theme-canberra {
+  --bg: #f7fafb;
+  --bg-deep: #edf4f6;
+  --card: #ffffff;
+  --ink: #0d2b36;
+  --muted: #4a6470;
+  --line: #d3e3e8;
+  --line-strong: #b5ccd4;
+  --accent: #1795ae;
+  --accent-strong: #0b6e88;
+  --accent-ink: #0a6680;
+  --accent-soft: #d5ecf2;
+  --food: #b0472f;
+  --fun: #7a5cc7;
+  --outdoors: #5d7a3c;
+  --shadow-sm:
+    0 1px 2px rgb(13 43 54 / 6%), 0 10px 30px -18px rgb(13 43 54 / 35%);
+  --shadow-md:
+    0 2px 4px rgb(13 43 54 / 6%), 0 28px 56px -28px rgb(13 43 54 / 50%);
+  --font:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --font-display: var(--font);
+}
+
+/* The owner's note on the group's own page, under its name. */
+.group-note {
+  margin: 0.25rem 0 0.6rem;
+  font-size: 1.05rem;
+}
+
+/* Under the invite card, the list's own card. */
+.welcome__listcard {
+  margin-top: 1rem;
+}
+
+main:has(.welcome) {
+  padding-bottom: 1rem;
+}
+
+.welcome__listcard .welcome__list {
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* The list's card keeps the invite card's inset. */
+.welcome__listcard .welcome__content {
+  padding: 1.25rem 1.5rem;
+}
+
+/* Where the browser can tie an animation to scrolling, the list's card
+   rises into place as it comes up, and its map opens out from the middle,
+   both at the pace of the scroll. Elsewhere they're simply there. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .welcome__listcard {
+      animation: list-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+
+    .welcome__listcard .minimap {
+      animation: map-open linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 40%;
+    }
+  }
+}
+
+@keyframes list-rise {
+  from {
+    opacity: 0.5;
+    transform: translateY(2.5rem) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes map-open {
+  from {
+    clip-path: inset(20% 12% 20% 12% round 14px);
+  }
+  to {
+    clip-path: inset(0 round 14px);
+  }
+}
+
+/* On a wide screen the invite and the list sit side by side: the invite
+   card on the left, and on the right one panel as tall as it, the map
+   filling it down to the numbered list. The panel simply arrives with
+   the rest. */
+@media (min-width: 60rem) {
+  main:has(.welcome) {
+    max-width: 76rem;
+  }
+
+  .welcome {
+    display: grid;
+    grid-template-columns: minmax(0, 30rem) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: stretch;
+    max-width: none;
+  }
+
+  .welcome .welcome__listcard {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    animation: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .welcome .welcome__listcard {
+      animation: page-rise 0.5s calc(var(--after) + 0.15s) ease-out both;
+    }
+  }
+
+  .welcome__listcard .welcome__content,
+  .welcome__listcard .welcome__list {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  .welcome__listcard .welcome__content {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .welcome .welcome__listcard .minimap {
+    flex: 1;
+    min-height: 20rem;
+    animation: none;
+  }
+
+  /* The drawn map keeps its own shape, centred on its land colour; the
+     street map over it fills the whole panel. */
+  .welcome__listcard .minimap__map {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    translate: 0 -50%;
+  }
+}
+
+/* On the invite, the header and footer line up with the cards between
+   them: the same width, the same edges. */
+body:has(.welcome) .top,
+body:has(.welcome) .foot {
+  max-width: 34rem;
+  padding-right: 1rem;
+  padding-left: 1rem;
+}
+
+@media (min-width: 60rem) {
+  body:has(.welcome) .top,
+  body:has(.welcome) .foot {
+    max-width: 76rem;
+  }
 }

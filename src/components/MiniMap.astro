@@ -1,0 +1,137 @@
+---
+import type { Kind } from "../lib/catalogue";
+import { at, H, W, where } from "../lib/hero-frame";
+import { LAKE, MOTORWAYS, PARKS, RESERVES, ROADS, SUBURBS, WATER } from "../lib/hero-map-data";
+
+// A small map with a few numbered pins: where a group's places are, at a
+// glance. The page draws it whole with no script and no tiles to load, and
+// src/scripts/minimap.ts lays the real street map over it once that's in
+// (MapLibre is already on the page for the group's own map). It reuses the home page
+// map's OpenStreetMap layers (scripts/build-hero-map.ts) and its projection
+// (src/lib/hero-frame.ts), zoomed to fit the pins. A place outside that frame
+// (Tidbinbilla) is left off the map but stays in the list beside it.
+interface Props {
+  pins: { n: number; name: string; area: string | null; kind: Kind; lat: number | null; lon: number | null }[];
+}
+
+const ASPECT = 16 / 10;
+const PAD = 60;
+const placed = Astro.props.pins
+  .filter((p) => p.lat !== null && p.lon !== null)
+  .map((p) => ({ ...p, ...at(p.lat!, p.lon!) }))
+  .filter(({ x, y }) => x > 0 && x < W && y > 0 && y < H);
+
+// The smallest box around the pins (with room for them and a suburb name or
+// two), stretched to the map's shape and kept inside the frame.
+let box = { x: 0, y: 0, w: W, h: W / ASPECT };
+if (placed.length > 0) {
+  const xs = placed.map((p) => p.x);
+  const ys = placed.map((p) => p.y);
+  let w = Math.max(Math.max(...xs) - Math.min(...xs) + 2 * PAD, 200);
+  let h = Math.max(Math.max(...ys) - Math.min(...ys) + 2 * PAD, 200 / ASPECT);
+  if (w / h < ASPECT) w = h * ASPECT;
+  else h = w / ASPECT;
+  w = Math.min(w, W);
+  h = w / ASPECT;
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
+  box = { x: clamp(cx - w / 2, 0, W - w), y: clamp(cy - h / 2, 0, H - h), w, h };
+}
+const r = box.w / 30;
+const label = box.w / 40;
+const name = box.w / 30;
+// Each pin's name sits beside its head, on whichever side has more room.
+const pins = placed.map((p) => {
+  const wide = p.name.length * name * 0.56 + r * 1.4;
+  const left = p.x + wide > box.x + box.w && p.x - box.x > box.x + box.w - p.x;
+  // What the pin and its name cover, so no suburb name is printed under them.
+  const covers = { x0: left ? p.x - wide : p.x - r, x1: left ? p.x + r : p.x + wide, y0: p.y - 3 * r, y1: p.y };
+  return { ...p, left, covers };
+});
+// Only suburb names that fit whole inside the map ("BRADDO" helps nobody)
+// and aren't under a pin or its name.
+const half = (s: string) => (s.length * label * 0.78) / 2;
+const suburbs = SUBURBS.filter(
+  (s) =>
+    s.x - half(s.name) > box.x &&
+    s.x + half(s.name) < box.x + box.w &&
+    s.y - label > box.y &&
+    s.y < box.y + box.h &&
+    !pins.some(({ covers: c }) => s.x + half(s.name) > c.x0 && s.x - half(s.name) < c.x1 && s.y > c.y0 && s.y - label < c.y1),
+);
+// What the street map needs to pin the same places.
+const live = JSON.stringify(
+  Astro.props.pins
+    .filter((p) => p.lat !== null && p.lon !== null)
+    .map(({ n, name, kind, lat, lon }) => ({ n, name, kind, lat, lon })),
+);
+// The names the street map may print (it uses the page's font for them):
+// the lake's, then the suburbs, from the same OpenStreetMap data.
+const places = JSON.stringify([
+  { name: "Lake Burley Griffin", water: true, lat: -35.2899, lon: 149.0989 },
+  ...SUBURBS.map((s) => ({ name: s.name, water: false, ...where(s.x, s.y) })),
+]);
+const said = placed.map((p) => `${p.n}, ${p.name}${p.area ? ` in ${p.area}` : ""}`).join("; ");
+---
+
+{placed.length > 0 && (
+  <figure class="minimap" data-pins={live} data-places={places}>
+    <svg
+      class="minimap__map"
+      viewBox={`${box.x.toFixed(1)} ${box.y.toFixed(1)} ${box.w.toFixed(1)} ${box.h.toFixed(1)}`}
+      preserveAspectRatio="xMidYMid slice"
+      role="img"
+      aria-label={`Map of central Canberra with the places pinned: ${said}.`}
+    >
+      <defs>
+        <filter id="minimap-lift" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy={(r * 0.15).toFixed(2)} stdDeviation={(r * 0.2).toFixed(2)} flood-color="#0d2b36" flood-opacity="0.3" />
+        </filter>
+      </defs>
+      <rect x={box.x} y={box.y} width={box.w} height={box.h} class="minimap__land"></rect>
+      {RESERVES.map((p) => <path class="minimap__reserve" d={p.d} fill-rule="evenodd"></path>)}
+      {PARKS.map((p) => <path class="minimap__park" d={p.d} fill-rule="evenodd"></path>)}
+      <path class="minimap__road" d={ROADS} vector-effect="non-scaling-stroke"></path>
+      <path class="minimap__casing" d={MOTORWAYS} vector-effect="non-scaling-stroke"></path>
+      <path class="minimap__road minimap__road--major" d={MOTORWAYS} vector-effect="non-scaling-stroke"></path>
+      <path class="minimap__water" d={WATER} vector-effect="non-scaling-stroke"></path>
+      <path class="minimap__lake" d={LAKE} fill-rule="evenodd"></path>
+      {suburbs.map((s) => (
+        <text class="minimap__suburb" x={s.x} y={s.y} font-size={label.toFixed(1)}>{s.name}</text>
+      ))}
+      {pins.map((p) => (
+        <g class={`spot--${p.kind}`} transform={`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`}>
+          <g class="minimap__pin" style={`--n: ${p.n}`}>
+            <ellipse class="minimap__ground" rx={(r * 0.5).toFixed(1)} ry={(r * 0.18).toFixed(1)}></ellipse>
+            <path
+              filter="url(#minimap-lift)"
+              d={`M0 0C${-0.3 * r} ${-0.6 * r} ${-r} ${-1.2 * r} ${-r} ${-1.9 * r}A${r} ${r} 0 1 1 ${r} ${-1.9 * r}C${r} ${-1.2 * r} ${0.3 * r} ${-0.6 * r} 0 0Z`}
+            ></path>
+            <text class="minimap__n" y={-1.9 * r} dy="0.36em" font-size={(r * 1.1).toFixed(1)}>{p.n}</text>
+          </g>
+          <text
+            class="minimap__name"
+            style={`--n: ${p.n}`}
+            x={(p.left ? -1.3 : 1.3) * r}
+            y={-1.9 * r}
+            dy="0.35em"
+            text-anchor={p.left ? "end" : "start"}
+            font-size={name.toFixed(1)}
+          >{p.name}</text>
+        </g>
+      ))}
+    </svg>
+    <div class="minimap__live" aria-hidden="true"></div>
+    <figcaption class="fold-credit">
+      <span class="fold-credit__sources">
+        © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a><span class="minimap__tiles">{" · "}<a href="https://openfreemap.org">OpenFreeMap</a>{" · relief "}<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Mapzen</a></span>
+      </span>
+      <button type="button" class="fold-credit__info" aria-label="Map credits" aria-expanded="false">i</button>
+    </figcaption>
+  </figure>
+)}
+
+<script>
+  import "../scripts/minimap";
+</script>

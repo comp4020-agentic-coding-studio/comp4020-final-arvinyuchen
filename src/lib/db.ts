@@ -133,6 +133,8 @@ addColumn("members", "merged_into", "INTEGER REFERENCES members(id)");
 // Site admin (src/pages/admin.astro): an archived group is closed to
 // everyone but can be restored; a hidden place leaves Explore and the map.
 addColumn("accounts", "is_admin", "INTEGER NOT NULL DEFAULT 0");
+// The owner's one line to the people they invite, shown above the join form.
+addColumn("groups", "note", "TEXT");
 addColumn("groups", "archived_at", "TEXT");
 addColumn("places", "hidden_at", "TEXT");
 // Groups from before owners and invite links: whoever started the group
@@ -187,6 +189,8 @@ export interface Group {
   /** The current invite link, the part after /g/. */
   link: string;
   ownerId: number | null;
+  /** The owner's note to the people they invite, or null. */
+  note: string | null;
 }
 export interface Member {
   id: number;
@@ -216,7 +220,7 @@ export interface Pick {
 
 const token = (bytes: number) => randomBytes(bytes).toString("base64url");
 
-const GROUP_COLUMNS = `g.id, g.name, g.owner_member_id AS ownerId,
+const GROUP_COLUMNS = `g.id, g.name, g.owner_member_id AS ownerId, g.note,
   (SELECT slug FROM group_links l WHERE l.group_id = g.id AND l.retired_at IS NULL) AS link`;
 
 export function createGroup(
@@ -343,6 +347,14 @@ export function groupsOfAccount(accountId: number): AccountGroup[] {
 
 export function renameGroup(groupId: string, name: string): void {
   db.prepare("UPDATE groups SET name = ? WHERE id = ?").run(name, groupId);
+}
+
+/** One line, so it reads as a message from a friend, not a description. */
+export const NOTE_MAX = 140;
+
+/** Sets the owner's note to invitees; an empty one takes it down. */
+export function setNote(groupId: string, note: string): void {
+  db.prepare("UPDATE groups SET note = ? WHERE id = ?").run(note || null, groupId);
 }
 
 /** Takes someone out of the group: they can't act any more, and their keens go. */

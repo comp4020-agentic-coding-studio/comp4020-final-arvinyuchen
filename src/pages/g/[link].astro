@@ -1,9 +1,10 @@
 ---
 import QRCode from "qrcode";
+import MiniMap from "../../components/MiniMap.astro";
 import SpotPhoto from "../../components/SpotPhoto.astro";
 import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
-import { groupByLink, listMembers, listPicks, listPlaces } from "../../lib/db";
+import { groupByLink, listMembers, listPicks, listPlaces, NOTE_MAX } from "../../lib/db";
 import { clean, me, signedIn } from "../../lib/me";
 import { search } from "../../lib/search";
 
@@ -42,6 +43,7 @@ const error = Astro.url.searchParams.get("error");
 const done = Astro.url.searchParams.get("done");
 const DONE: Record<string, string> = {
   renamed: "Renamed.",
+  noted: "Note saved. It's what people see above the join form.",
   removed: "Removed from the group.",
   merged: "Merged: their keens and places are now one person's.",
   reset: "New invite link made. The old one no longer lets anyone join; send this one instead.",
@@ -65,6 +67,8 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
 // nothing about votes. The list, the keens and Explore are for members.
 const owner = members.find((m) => m.id === group.ownerId);
 const preview = [...picks].sort((a, b) => a.id - b.id).slice(0, 3);
+// The note's words, each its own span so they can arrive one after another.
+const noteWords = group.note?.split(" ") ?? [];
 
 // Each member's initial in a colour of its own, the same on every visit.
 const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
@@ -72,81 +76,145 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
 
 <Base
   title={`${group.name} · Spots`}
+  theme={member ? undefined : "canberra"}
   share={{
     title: `Join ${group.name} on Spots`,
     description: "A shared list of places to go, picked together. Join with just your name: no app, no sign-up.",
     url: shareUrl,
   }}
 >
+  {/* The invite's photo is credited with everyone else's, in the footer. */}
+  {!member && (
+    <Fragment slot="credits">
+      The invite's photo of Canberra is by{" "}
+      <a href="https://unsplash.com/photos/cityscape-during-daytime-QkcWZlBHykg" rel="noopener">Linda Xu on Unsplash</a>.
+    </Fragment>
+  )}
   {!member ? (
   <section class="welcome" aria-labelledby="welcome-title">
     <div class="card welcome__card">
-      <p class="eyebrow">You're invited to</p>
-      <h1 id="welcome-title">{group.name}</h1>
-      <p class="members">
-        <span class="faces" aria-hidden="true">
-          {members.slice(0, 6).map((m) => (
-            <span class="face" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span>
-          ))}
-        </span>
-        <span>
-          {owner && <>{owner.name} started it · </>}
-          {members.length} {members.length === 1 ? "person" : "people"}: {members.map((m) => m.name).join(", ")}
-        </span>
-      </p>
+      <div class="welcome__hero">
+        <img
+          class="welcome__photo"
+          src="/images/canberra-from-ainslie-1000.jpg"
+          srcset="/images/canberra-from-ainslie-1000.jpg 1000w, /images/canberra-from-ainslie.jpg 2000w"
+          sizes="(min-width: 34rem) 32rem, 100vw"
+          width="1000"
+          height="663"
+          alt="Canberra from Mount Ainslie: Anzac Parade runs down to Lake Burley Griffin and Parliament House, with the Brindabellas behind"
+        />
+        <header class="welcome__head">
+          <p class="eyebrow">You're invited to</p>
+          <h1 id="welcome-title">{group.name}</h1>
+          <p class="members">
+            <span class="faces" aria-hidden="true">
+              {members.slice(0, 6).map((m) => (
+                <span class="face" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span>
+              ))}
+            </span>
+            <span>
+              {owner && <>{owner.name} started it · </>}
+              {members.length} {members.length === 1 ? "person" : "people"}: {members.map((m) => m.name).join(", ")}
+            </span>
+          </p>
+        </header>
+      </div>
 
-      {preview.length > 0 ? (
-        <div class="welcome__list">
-          <h2 class="welcome__label">On the list so far</h2>
-          <ul class="welcome__picks">
-            {preview.map(({ place }) => (
-              <li class={`welcome__pick spot--${place.kind}`}>
-                <SpotPhoto photo={place.photo} name={place.name} kind={place.kind} small />
-                <span>
-                  <strong>{place.name}</strong>
-                  <span class="area">{KIND_LABEL[place.kind]}{place.area && ` · ${place.area}`}</span>
+      {/* The card's modules, top to bottom: the photo and who's in it (above),
+          the owner's message, then the one thing to do, on its own tinted
+          footer. */}
+      {group.note && (
+        <div class="welcome__module">
+          <figure class="welcome__note">
+            <figcaption>
+              {owner && (
+                <span class="face" style={`--hue: ${hue(owner.name)}`} aria-hidden="true">
+                  {[...owner.name][0]?.toUpperCase()}
                 </span>
-              </li>
-            ))}
-          </ul>
-          {picks.length > preview.length && (
-            <p class="fine">and {picks.length - preview.length} more once you're in.</p>
+              )}
+              <span class="welcome__from">
+                {owner ? <><strong>{owner.name}</strong> sent you a message</> : "A message for you"}
+              </span>
+            </figcaption>
+            <blockquote>{noteWords.map((w, i) => <>{i > 0 && " "}<span style={`--w: ${i}`}>{w}</span></>)}</blockquote>
+          </figure>
+        </div>
+      )}
+      <div class="welcome__module welcome__module--actions">
+        <form id="join" method="post" action={`/api/groups/${group.id}/join`} class="stack welcome__form">
+          <input type="hidden" name="link" value={group.link} />
+          <label for="join-name" class="welcome__label">Join the group<span class="sr-only">: your first name</span></label>
+          {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
+          <div class="welcome__field">
+            {/* The face you'll have in the group, filled in as you type (src/scripts/welcome.ts). */}
+            <span
+              class="face welcome__you"
+              aria-hidden="true"
+              style={account?.name ? `--hue: ${hue(account.name)}` : undefined}
+            >
+              {account?.name ? [...account.name][0]?.toUpperCase() : ""}
+            </span>
+            <input
+              id="join-name"
+              name="name"
+              required
+              maxlength="40"
+              autocomplete="nickname"
+              value={account?.name}
+              placeholder="Your first name"
+            />
+          </div>
+          <button class="btn btn--primary welcome__join">
+            <span>Join {group.name}</span>
+            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+              <path d="M4 10h11M11 5.5 15.5 10 11 14.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </form>
+        {!account && (
+          <p class="fine passkey-alt" data-passkey-only hidden>
+            Joined on another device?{" "}
+            <button type="button" class="linkish" data-passkey="signin" data-group={group.id}>
+              Sign in
+            </button>
+            <span class="passkey-msg" aria-live="polite"></span>
+          </p>
+        )}
+      </div>
+    </div>
+
+    <section class="card welcome__card welcome__listcard" id="on-the-list" aria-labelledby="on-the-list-title">
+      <div class="welcome__content">
+        <div class="welcome__list">
+          <h2 id="on-the-list-title" class="welcome__label">On the list so far</h2>
+          {preview.length > 0 ? (
+            <>
+              <MiniMap
+                pins={preview.map(({ place }, i) => ({
+                  n: i + 1,
+                  name: place.name,
+                  area: place.area,
+                  kind: place.kind,
+                  lat: place.lat,
+                  lon: place.lon,
+                }))}
+              />
+              <ol class="welcome__stops">
+                {preview.map(({ place }, i) => (
+                  <li class={`welcome__stop spot--${place.kind}`}>
+                    <span class="welcome__num" aria-hidden="true">{i + 1}</span>
+                    <strong>{place.name}</strong>
+                    <span class="welcome__where">{place.area ?? KIND_LABEL[place.kind]}</span>
+                  </li>
+                ))}
+              </ol>
+            </>
+          ) : (
+            <p class="fine">Nothing yet: you could add the first place.</p>
           )}
         </div>
-      ) : (
-        <p class="fine welcome__list">Nothing on the list yet: you could add the first place.</p>
-      )}
-
-      <form id="join" method="post" action={`/api/groups/${group.id}/join`} class="stack welcome__form">
-        <input type="hidden" name="link" value={group.link} />
-        <label for="join-name" class="welcome__label">What should we call you?</label>
-        {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
-        <input
-          id="join-name"
-          name="name"
-          required
-          maxlength="40"
-          autocomplete="nickname"
-          value={account?.name}
-          placeholder="Your first name"
-        />
-        <button class="btn btn--primary welcome__join">Join {group.name}</button>
-        <p class="fine">No app, no sign-up, no password. Only people with this group's link see your name.</p>
-      </form>
-      {!account && (
-        <p class="fine passkey-alt" data-passkey-only hidden>
-          Been here before on another device?{" "}
-          <button type="button" class="linkish" data-passkey="signin" data-group={group.id}>
-            Sign in with your passkey
-          </button>
-          <span class="passkey-msg" aria-live="polite"></span>
-        </p>
-      )}
-    </div>
-    <p class="fine welcome__about">
-      Spots is a shared list of places for one group of friends: add the ones you're keen on, vote, and decide
-      where to go together. <a href="/readme/">How it works</a>
-    </p>
+      </div>
+    </section>
   </section>
   ) : (
   <>
@@ -154,6 +222,11 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     <div class="group-head__title">
       <p class="eyebrow">Group</p>
       <h1>{group.name}</h1>
+      {group.note && (
+        <p class="group-note">
+          “{group.note}” <span class="fine">{owner ? `${owner.name}, to the group` : ""}</span>
+        </p>
+      )}
       <p class="members">
         <span class="faces" aria-hidden="true">
           {members.slice(0, 6).map((m) => (
@@ -405,6 +478,21 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         </label>
         <button class="btn">Rename</button>
       </form>
+
+      <form method="post" action={`/api/groups/${group.id}/owner`} class="settings__row">
+        <input type="hidden" name="action" value="note" />
+        <label class="grow">
+          <span>A note for people you invite</span>
+          <input
+            name="note"
+            maxlength={NOTE_MAX}
+            value={group.note ?? ""}
+            placeholder="Where are we going Friday? Add yours by Wednesday."
+          />
+        </label>
+        <button class="btn">Save</button>
+      </form>
+      <p class="fine">It's the first thing someone sees when they open your invite link. Leave it empty to take it down.</p>
 
       <h3>People</h3>
       <ul class="people">
@@ -687,5 +775,6 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
   <script>
     import "../../scripts/map";
     import "../../scripts/passkeys";
+    import "../../scripts/welcome";
   </script>
 </Base>

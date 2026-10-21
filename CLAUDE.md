@@ -11,9 +11,11 @@ follow from it; every change has to hold to them.
   group may see that a place is "on 3 lists", never whose lists or who's keen.
 - **Before joining, the link shows a preview, not the group.** Someone who
   isn't a member sees only the group's name, who started it, its members'
-  names and its first three places, oldest first, so the order gives away no
-  votes. The server doesn't render the list, keens, Explore, the map or the
-  invite card for them (`src/pages/g/[link].astro`, checked in `spec/`).
+  names, the owner's note to invitees, and its first three places, oldest
+  first, so the order gives away no votes, pinned on a small map of just
+  those three (`src/components/MiniMap.astro`). The server doesn't render the
+  list, keens, Explore, the group's map or the invite card for them
+  (`src/pages/g/[link].astro`, checked in `spec/`).
 - **A place gets in with a reason.** Adding a place needs a "why it's good"
   from the person sharing it, shown with their name. That sentence is the
   filter: no reason, no place. Never import places in bulk from a directory or
@@ -22,7 +24,7 @@ follow from it; every change has to hold to them.
   Nominatim only when someone presses Find, at most once a second, with the
   app's User-Agent, and caches answers. Keep it that way: no search-as-you-type,
   no autocomplete against Nominatim. Map tiles and data are credited on the
-  map; photos are credited on the card.
+  map.
 - **One person, one keen.** A member can vote "keen" on a spot once. The
   button sends the state it shows ("on" or "off") and the server sets exactly
   that (`setKeen`), so a double-tap or a second device never undoes a vote.
@@ -75,7 +77,9 @@ follow from it; every change has to hold to them.
   words and still works. Only card text and prompts go to Voyage, never
   names of members or anything about a group.
 - **Motion is a guide, not a show.** The map flies to a place so you can see
-  where it is; under `prefers-reduced-motion` it jumps instead.
+  where it is; under `prefers-reduced-motion` it jumps instead. The invite
+  page's entrance, scroll and pin-drop animations are off there too: the page
+  is simply there.
 - **Phones first.** Every page works at 375px wide with no sideways scroll.
 
 ## The work

@@ -69,9 +69,8 @@ describe("a group", () => {
     expect(stranger.querySelector("h1")?.textContent).toBe("Preview crew");
     expect(stranger.body.textContent).toContain("Ana started it");
     // The first three places, oldest first: the order says nothing about votes.
-    const preview = [...stranger.querySelectorAll(".welcome__pick strong")].map((s) => s.textContent);
+    const preview = [...stranger.querySelectorAll(".welcome__stop strong")].map((s) => s.textContent);
     expect(preview).toEqual(["Questacon", "National Arboretum", "National Gallery of Australia"]);
-    expect(stranger.body.textContent).toContain("and 1 more once you're in");
     expect(stranger.querySelector('form#join input[name="name"]')).toBeTruthy();
     // Members only: the list, its keens, Explore, the map and the invite card.
     for (const members of ["#list", "#explore", "#map", "#share-link", ".keen"]) {

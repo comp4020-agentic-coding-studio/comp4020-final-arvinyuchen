@@ -103,6 +103,28 @@ describe("the owner's tools", () => {
     expect((await page(new Jar(), `/g/${id}`)).querySelector("h1")?.textContent).toBe("Friday crew");
   });
 
+  it("writes a note for the people they invite, on one line, that only they can change", async () => {
+    const { owner, ben, id, act } = await crew();
+    const invitee = async () => (await page(new Jar(), `/g/${id}`)).querySelector(".welcome__note");
+    expect(await invitee()).toBeNull(); // no note, no bubble
+
+    await act(owner, { action: "note", note: "  Where are we going Friday?\n\nAdd yours by Wednesday.  " });
+    let note = await invitee();
+    expect(note?.querySelector("blockquote")?.textContent).toBe("Where are we going Friday? Add yours by Wednesday.");
+    expect(note?.querySelector("figcaption")?.textContent).toContain("Ana");
+    // Members see the same words under the group's name.
+    expect((await page(ben, `/g/${id}`)).querySelector(".group-note")?.textContent).toContain("Add yours by Wednesday.");
+
+    await act(ben, { action: "note", note: "Ben was here" });
+    expect((await invitee())?.querySelector("blockquote")?.textContent).not.toContain("Ben was here");
+
+    await act(owner, { action: "note", note: "x".repeat(500) });
+    expect((await invitee())?.querySelector("blockquote")?.textContent).toHaveLength(140);
+
+    await act(owner, { action: "note", note: "   " });
+    expect(await invitee()).toBeNull();
+  });
+
   it("merges a duplicate into the person they are, keeping their keens", async () => {
     const { owner, benAgain, id, people, act } = await crew();
     await request(owner, `/api/groups/${id}/picks`, { form: { key: "questacon" } });

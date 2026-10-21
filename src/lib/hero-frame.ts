@@ -11,6 +11,8 @@ const SCALE = 6236.266; // px per degree of latitude; longitude shrinks by cos(l
 const COS = Math.cos((35.28 * Math.PI) / 180);
 
 export const at = (lat: number, lon: number) => ({ x: (lon - LON0) * COS * SCALE, y: (LAT0 - lat) * SCALE });
+// and back, from a point in the picture to where it is
+export const where = (x: number, y: number) => ({ lat: LAT0 - y / SCALE, lon: LON0 + x / (COS * SCALE) });
 
 // the frame in degrees, south, west, north, east (Overpass's order)
 export const BBOX = [LAT0 - H / SCALE, LON0, LAT0, LON0 + W / (COS * SCALE)] as const;
