@@ -392,7 +392,56 @@ select:focus-visible {
 
 .share__row {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.share__row input {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+/* Only where the browser has a system share sheet (set by the page script). */
+.share__native {
+  display: none;
+}
+
+.can-share .share__native {
+  display: inline-flex;
+}
+
+.share__by,
+.share__qr {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.share__by {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.share__by .chip {
+  text-decoration: none;
+}
+
+.share__qr summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.share__qr-code {
+  width: 10rem;
+  margin: 0.6rem 0 0.3rem;
+}
+
+.share__qr-code svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .join {

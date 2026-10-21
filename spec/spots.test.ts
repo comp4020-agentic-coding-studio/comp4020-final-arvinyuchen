@@ -84,6 +84,32 @@ describe("a group", () => {
     expect(doc.querySelector("#list .keen__count")?.textContent).toBe("0");
   });
 
+  it("shares its invite person to person, with a card that names the group", async () => {
+    const start = await post("/api/groups", { group: "Share crew", name: "Ana" });
+    const groupPath = (start.headers.get("location") ?? "").split("?")[0];
+    const doc = await page(groupPath, cookieOf(start));
+    const link = doc.querySelector<HTMLInputElement>("#share-link")?.value ?? "";
+    const meta = (property: string) => doc.querySelector(`meta[property="${property}"]`)?.getAttribute("content");
+
+    // The card a chat app builds from the link.
+    expect(meta("og:title")).toBe("Join Share crew on Spots");
+    expect(meta("og:url")).toBe(link);
+    const image = await fetch(meta("og:image") ?? "");
+    expect(image.status).toBe(200);
+    expect(image.headers.get("content-type")).toContain("image/png");
+
+    // Private channels, each carrying the link; never a public feed.
+    const hrefs = [...doc.querySelectorAll<HTMLAnchorElement>(".share__by a")].map((a) => a.getAttribute("href") ?? "");
+    expect(hrefs.map((h) => h.split(/[?:]/)[0])).toEqual(["sms", "https", "https", "mailto"]);
+    expect(hrefs.some((h) => h.startsWith("https://wa.me/"))).toBe(true);
+    expect(hrefs.some((h) => h.startsWith("https://t.me/share/url"))).toBe(true);
+    for (const href of hrefs) expect(decodeURIComponent(href)).toContain(link);
+    expect(doc.body.innerHTML).not.toMatch(/facebook\.com\/sharer|twitter\.com\/intent|x\.com\/intent/);
+
+    // A QR code for friends in the same room, drawn on the server.
+    expect(doc.querySelector(".share__qr svg")).toBeTruthy();
+  });
+
   it("doesn't let someone without the group's cookie add or vote", async () => {
     const start = await post("/api/groups", { group: "Closed crew", name: "Ana" });
     const groupPath = (start.headers.get("location") ?? "").split("?")[0];

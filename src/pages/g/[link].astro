@@ -1,4 +1,5 @@
 ---
+import QRCode from "qrcode";
 import SpotPhoto from "../../components/SpotPhoto.astro";
 import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
@@ -24,6 +25,19 @@ const onList = new Set(picks.map((p) => p.place.id));
 const kinds = Object.keys(KIND_LABEL) as Kind[];
 const shareUrl = new URL(`/g/${group.link}`, Astro.url).href;
 const isNew = Astro.url.searchParams.has("new");
+// The invite goes person to person, never to a public feed: whoever holds the
+// link can join, so there's no Facebook post or X button (see CLAUDE.md). On a
+// phone the Share button opens the system sheet (Messages, WhatsApp, Messenger,
+// Instagram, WeChat...); these links and the QR code work everywhere, script or not.
+const invite = `Join ${group.name} on Spots: we're picking places to go together.`;
+const enc = encodeURIComponent;
+const sendBy = [
+  { label: "Messages", href: `sms:?&body=${enc(`${invite} ${shareUrl}`)}` },
+  { label: "WhatsApp", href: `https://wa.me/?text=${enc(`${invite} ${shareUrl}`)}` },
+  { label: "Telegram", href: `https://t.me/share/url?url=${enc(shareUrl)}&text=${enc(invite)}` },
+  { label: "Email", href: `mailto:?subject=${enc(`Join ${group.name} on Spots`)}&body=${enc(`${invite}\n\n${shareUrl}`)}` },
+];
+const qr = await QRCode.toString(shareUrl, { type: "svg", margin: 1, color: { dark: "#241c15", light: "#ffffff" } });
 const error = Astro.url.searchParams.get("error");
 const done = Astro.url.searchParams.get("done");
 const DONE: Record<string, string> = {
@@ -50,7 +64,14 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
 const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
 ---
 
-<Base title={`${group.name} · Spots`}>
+<Base
+  title={`${group.name} · Spots`}
+  share={{
+    title: `Join ${group.name} on Spots`,
+    description: "A shared list of places to go, picked together. Join with just your name: no app, no sign-up.",
+    url: shareUrl,
+  }}
+>
   <section class="group-head group-head--split">
     <div class="group-head__title">
       <p class="eyebrow">Group</p>
@@ -71,6 +92,18 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
       <div class="share__row">
         <input id="share-link" value={shareUrl} readonly />
         <button type="button" class="btn" data-copy="#share-link">Copy</button>
+        <button type="button" class="btn btn--primary share__native" data-share data-title={`Join ${group.name} on Spots`} data-text={invite}>Share…</button>
+        <p class="share__by">
+          <span class="fine">Or send it by</span>
+          {sendBy.map(({ label, href }) => (
+            <a class="chip" href={href} {...(href.startsWith("https:") ? { target: "_blank", rel: "noopener" } : {})}>{label}</a>
+          ))}
+        </p>
+        <details class="share__qr">
+          <summary>Show a QR code</summary>
+          <div class="share__qr-code" role="img" aria-label="QR code for the invite link" set:html={qr} />
+          <p class="fine">Friends in the room can scan it with their phone camera.</p>
+        </details>
       </div>
     </div>
   </section>
@@ -567,18 +600,34 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     );
     for (const section of sections) here.observe(section);
 
-    for (const button of document.querySelectorAll("[data-copy]")) {
-      button.addEventListener("click", async () => {
-        const input = document.querySelector(button.dataset.copy);
-        try {
-          await navigator.clipboard.writeText(input.value);
-          button.textContent = "Copied";
-        } catch {
-          input.select();
-        }
-        setTimeout(() => (button.textContent = "Copy"), 1500);
-      });
-    }
+    // Delegated, since a reset invite link swaps the share row in live.
+    document.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-copy]");
+      if (!button) return;
+      const input = document.querySelector(button.dataset.copy);
+      try {
+        await navigator.clipboard.writeText(input.value);
+        button.textContent = "Copied";
+      } catch {
+        input.select();
+      }
+      setTimeout(() => (button.textContent = "Copy"), 1500);
+    });
+
+    // The system share sheet, where there is one (phones, Safari, Edge): it
+    // reaches every app on the device, Instagram and WeChat included, which
+    // no web link can. Elsewhere the button stays hidden and the links do.
+    if (navigator.share) document.documentElement.classList.add("can-share");
+    document.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-share]");
+      if (!button) return;
+      const url = document.querySelector("#share-link").value;
+      try {
+        await navigator.share({ title: button.dataset.title, text: button.dataset.text, url });
+      } catch {
+        // Closing the sheet without picking an app is not an error worth showing.
+      }
+    });
   </script>
   <script>
     import "../../scripts/map";

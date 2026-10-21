@@ -25,6 +25,11 @@ follow from it; every change has to hold to them.
   (`src/lib/me.ts`), never a name typed into a form.
 - **Joining stays a link and a name.** An account is optional and never stands
   between someone and joining or voting.
+- **The invite goes person to person.** Whoever holds the link can join, so
+  it's shared through private channels only: the system share sheet, Messages,
+  WhatsApp, Telegram, email, a QR code. Never add a button that posts it to a
+  public feed (a Facebook post, X, a story). A link preview may name the group
+  (Open Graph, `src/layouts/Base.astro`), never its members or votes.
 - **Accounts are passkeys only.** No passwords, no email, no "sign in with"
   providers. An account starts from a member who's already in a group
   (`src/pages/api/passkeys/`), its sessions store only a hash of their token,
