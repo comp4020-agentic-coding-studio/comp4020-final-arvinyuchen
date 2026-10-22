@@ -410,11 +410,6 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
                 <p class="keen-who">
                   {keen.length > 0 ? (
                     <>
-                      <span class="faces faces--small" aria-hidden="true">
-                        {keen.slice(0, 5).map((name) => (
-                          <span class="face" style={`--hue: ${hue(name)}`}>{[...name][0]?.toUpperCase()}</span>
-                        ))}
-                      </span>
                       <span class="sr-only">Keen: </span>
                       <span class="keen-who__names">{everyone(keen) ? "Everyone" : keen.join(", ")}</span>
                     </>
