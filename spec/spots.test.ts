@@ -232,11 +232,18 @@ describe("a group", () => {
   });
 
   it("shows every card with a photo or its kind's picture", async () => {
-    const { jar, path } = await started("Every photo crew");
+    const { jar, path, api } = await started("Every photo crew");
+    // (one on the list with a photo, one without)
+    await request(jar, `${api}/picks`, { form: { key: "questacon" } });
+    await request(jar, `${api}/places`, { form: { name: `Bare ${Date.now()}`, kind: "drinks", area: "City", why: "Jazz most nights" } });
     const doc = await page(jar, path);
     const cards = [...doc.querySelectorAll("#explore .spot, #list .pick")];
     expect(cards.length).toBeGreaterThan(0);
     expect(cards.every((c) => c.querySelector("img[src], [data-kind-art]"))).toBe(true);
+    // (on Our list the picture's corner names the kind, for a screen reader too)
+    const picks = [...doc.querySelectorAll("#list .pick")];
+    expect(picks.length).toBe(2);
+    expect(picks.every((c) => c.querySelector(".photo__badge, [data-kind-art]")?.textContent?.trim())).toBe(true);
   });
 
   it("puts every located place on the map", async () => {

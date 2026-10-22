@@ -8,7 +8,10 @@ import KindIcon from "./KindIcon.astro";
 // licence, or the sharer's own with their name; the panel's tint in the
 // kind's colour shows while it loads. A place without one shows its kind's
 // picture (src/lib/kind-art.ts), or the kind's icon, named with the kind so
-// it isn't taken for a photo of the place.
+// it isn't taken for a photo of the place. Small, on Our list, there's no
+// room to name the kind, and the list names it nowhere else: the kind's
+// icon marks the picture's corner instead (the icon itself, where the
+// picture is the icon), and is named for a screen reader.
 interface Props {
   photo: Photo | null;
   name: string;
@@ -17,13 +20,16 @@ interface Props {
 }
 const { photo, name, kind, small = false } = Astro.props;
 const art = photo ? undefined : KIND_ART[kind];
+const label = KIND_LABEL[kind];
 ---
 
 {
   photo ? (
     <figure class:list={["photo", `photo--${kind}`, { "photo--small": small }]}>
       <img src={photo.src} alt={`${name}`} loading="lazy" decoding="async" width="800" height="533" />
-      {!small && (
+      {small ? (
+        <span class="photo__badge"><KindIcon kind={kind} /><span class="sr-only">{label}</span></span>
+      ) : (
         <figcaption>
           <a href={photo.page} rel="noopener">
             Photo: {photo.credit}
@@ -35,20 +41,22 @@ const art = photo ? undefined : KIND_ART[kind];
   ) : (
     <figure class:list={["photo", "photo--kind", `photo--${kind}`, { "photo--small": small, "photo--art": art }]} data-kind-art={kind}>
       {art ? (
-        <>
-          <img src={art.src} alt="" loading="lazy" decoding="async" width="800" height="533" />
-          {/* (too small to name the kind on, so its icon marks it instead) */}
-          {small && <span class="photo__badge"><KindIcon kind={kind} /></span>}
-        </>
+        <img src={art.src} alt="" loading="lazy" decoding="async" width="800" height="533" />
       ) : (
         <>
           <span class="photo__icon"><KindIcon kind={kind} /></span>
           <span class="photo__ghost"><KindIcon kind={kind} /></span>
         </>
       )}
-      {!small && (
+      {small ? (
+        art ? (
+          <span class="photo__badge"><KindIcon kind={kind} /><span class="sr-only">{label}</span></span>
+        ) : (
+          <span class="sr-only">{label}</span>
+        )
+      ) : (
         <figcaption>
-          <span class="photo__kind">{KIND_LABEL[kind]}</span>
+          <span class="photo__kind">{label}</span>
           {art && (
             <a href={art.page ?? "https://unsplash.com"} rel="noopener">
               {art.credit ? `Photo: ${art.credit}, Unsplash` : "Photo: Unsplash"}

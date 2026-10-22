@@ -3618,16 +3618,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-size: 0.82rem;
 }
 
-/* (the kind after the suburb, its glyph kept to its word) */
-.area__kind {
-  white-space: nowrap;
-}
-
-.area__kind .kind-icon {
-  margin-right: 0.2em;
-  vertical-align: -0.22em;
-}
-
 .keen-who {
   display: flex;
   align-items: center;

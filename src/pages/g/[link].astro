@@ -406,10 +406,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
               <div class="pick__main">
                 {lead && <p class="pick__lead">Most keen</p>}
                 <h3>{place.name}</h3>
-                <p class="area">
-                  {place.area && `${place.area} · `}
-                  <span class="area__kind"><KindIcon kind={place.kind} />{KIND_LABEL[place.kind]}</span>
-                </p>
+                {place.area && <p class="area">{place.area}</p>}
                 <p class="keen-who">
                   {keen.length > 0 ? (
                     <>
