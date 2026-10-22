@@ -1558,6 +1558,11 @@ body:has(.home) .top nav a:hover {
   height: 340svh;
 }
 
+/* (and once it has landed, no more than the stage: fly.ts) */
+.fly.is-live.is-held {
+  height: auto;
+}
+
 /* (as tall as the screen with the browser's bars gone, so the picture
    runs on under them. And the stage's own box isn't drawn, only what's in
    it: Safari on a phone paints its bars in a flat colour, taken from

@@ -84,7 +84,8 @@ follow from it; every change has to hold to them.
   driven by the scroll, so it goes as fast as the visitor scrolls and
   stops when they stop; it plays itself only when they press a button for
   it, and any touch, wheel or key stops it. Landed, the map turns slowly
-  while it's on screen. Under reduced motion, or without WebGL, none of it
+  while it's on screen, and it stays landed: scrolling back up doesn't fly
+  it back. Under reduced motion, or without WebGL, none of it
   runs: the page is the photo, the drawn map and the form.
 - **One look everywhere.** Every page takes the invite page's design: the
   colours, cards, buttons and fields come from the `:root` tokens and shared
