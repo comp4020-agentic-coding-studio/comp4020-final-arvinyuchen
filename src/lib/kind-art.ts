@@ -5,8 +5,8 @@ import type { Kind } from "./kinds";
 // names the kind on it to say so. Each is a photo from Unsplash (free to
 // use under the Unsplash licence, which asks for no credit), kept in
 // public/kinds/ at the card's size rather than hotlinked, and credited
-// anyway: to its photographer where we know them, else to Unsplash. Until
-// a kind has one, its card shows the kind's colour and icon instead.
+// anyway: to its photographer where we know them, else to Unsplash. A kind
+// without one would show the kind's colour and icon instead.
 export interface KindArt {
   src: string;
   /** the photo's page on Unsplash, and who took it, where we know them */
@@ -15,6 +15,7 @@ export interface KindArt {
 }
 
 export const KIND_ART: Partial<Record<Kind, KindArt>> = {
+  food: { src: "/kinds/food.jpg" },
   coffee: { src: "/kinds/coffee.jpg" },
   drinks: { src: "/kinds/drinks.jpg" },
   outdoors: { src: "/kinds/outdoors.jpg" },
