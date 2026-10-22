@@ -459,68 +459,180 @@ input[type="radio"] {
   background: color-mix(in srgb, var(--kind) 12%, white);
 }
 
+/* The invite panel (src/pages/g/[link].astro): a heading, the link in one
+   pill with Copy inside it, Share… where there's a share sheet, the
+   private channels as a row of even tiles, and the QR code for the room. */
 .share {
-  max-width: 34rem;
+  display: grid;
+  gap: 0.9rem;
 }
 
 .share--new {
   border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-soft);
+  box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow-md);
 }
 
-.share label {
-  display: block;
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-bottom: 0.4rem;
+.share__title {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.share__say {
+  margin: -0.55rem 0 0;
 }
 
 .share__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  display: grid;
+  gap: 0.9rem;
 }
 
-.share__row input {
-  flex: 1 1 12rem;
+.share__link {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.3rem 0.3rem 0.95rem;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--tint);
+}
+
+.share__link:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.share__link input {
+  flex: 1;
   min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 0.92rem;
+  text-overflow: ellipsis;
+  box-shadow: none;
+  outline: none;
+}
+
+.share__copy {
+  flex: none;
+  min-width: 4.6rem;
+  padding: 0.5rem 0.95rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.share__copy:hover {
+  background: var(--accent-strong);
 }
 
 /* Only where the browser has a system share sheet (set by the page script). */
 .share__native {
   display: none;
+  width: 100%;
 }
 
 .can-share .share__native {
   display: inline-flex;
-}
-
-.share__by,
-.share__qr {
-  flex-basis: 100%;
-  margin: 0;
+  justify-content: center;
 }
 
 .share__by {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.share__by .chip {
+.share__app {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.2rem 0.5rem;
+  border-radius: 14px;
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 600;
   text-decoration: none;
 }
 
+.share__app:hover {
+  background: var(--tint);
+}
+
+.share__icon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: var(--app);
+  color: #fff;
+  transition: transform 0.15s;
+}
+
+.share__app:hover .share__icon {
+  transform: translateY(-2px);
+}
+
+.share__app--sms {
+  --app: #2fb84f;
+}
+
+.share__app--whatsapp {
+  --app: #1faa5a;
+}
+
+.share__app--telegram {
+  --app: #2a9fd8;
+}
+
+.share__app--email {
+  --app: var(--accent-strong);
+}
+
+.share__qr {
+  margin: 0 -0.2rem;
+  border-top: 1px solid var(--line);
+}
+
 .share__qr summary {
-  cursor: pointer;
-  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.2rem 0;
+  color: var(--muted);
+  font-size: 0.85rem;
   font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+.share__qr summary::-webkit-details-marker {
+  display: none;
+}
+
+.share__qr summary:hover {
+  color: var(--ink);
 }
 
 .share__qr-code {
-  width: 10rem;
-  margin: 0.6rem 0 0.3rem;
+  width: 11rem;
+  margin: 0.75rem auto 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
 }
 
 .share__qr-code svg {
@@ -2359,8 +2471,25 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 
 .invite .share {
   justify-self: stretch;
-  max-width: none;
-  padding: 1rem 1.1rem;
+  padding: 1.15rem 1.2rem 1rem;
+  text-align: left;
+}
+
+/* Beside the name (wider than a phone), the panel opens under its button
+   over the page, rather than pushing the page down. */
+@media (min-width: 601px) {
+  .invite {
+    position: relative;
+  }
+
+  .invite .share {
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    right: 0;
+    z-index: 8;
+    width: min(24rem, calc(100vw - 2rem));
+    box-shadow: var(--shadow-md);
+  }
 }
 
 .members {
