@@ -444,7 +444,7 @@ if (container) {
     own.addEventListener("change", showPhoto);
 
     const clearLocation = () => {
-      for (const name of ["osm", "lat", "lon"]) field(name).value = "";
+      for (const name of ["ref", "lat", "lon"]) field(name).value = "";
       showFound(null);
       located.hidden = true;
       preview?.remove();
@@ -463,7 +463,7 @@ if (container) {
         const results = res.ok ? await res.json() : [];
         list.replaceChildren();
         if (!Array.isArray(results) || results.length === 0) {
-          list.append(Object.assign(document.createElement("li"), { textContent: "Nothing found in Canberra. Try the suburb too, or fill it in by hand below.", className: "fine" }));
+          list.append(Object.assign(document.createElement("li"), { textContent: "Nothing found in Canberra. Check the spelling, or fill it in by hand below.", className: "fine" }));
           return;
         }
         for (const r of results) {
@@ -477,7 +477,7 @@ if (container) {
           where.textContent = r.detail;
           button.append(name, where);
           button.addEventListener("click", () => {
-            field("osm").value = r.osm;
+            field("ref").value = r.ref;
             field("lat").value = String(r.lat);
             field("lon").value = String(r.lon);
             field("name").value = r.name;

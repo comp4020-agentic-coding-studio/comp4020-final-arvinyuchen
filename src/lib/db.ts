@@ -73,6 +73,11 @@ if (!pickColumns.some((c) => c.name === "place_id")) {
   db.exec("ALTER TABLE picks ADD COLUMN place_id INTEGER REFERENCES places(id)");
 }
 db.exec("CREATE UNIQUE INDEX IF NOT EXISTS picks_group_place ON picks (group_id, place_id)");
+// A place found in Overture Maps' places (src/lib/places-index.ts) keeps
+// its id there, as one from OpenStreetMap keeps its osm_id.
+const placeColumns = db.prepare("PRAGMA table_info(places)").all() as { name: string }[];
+if (!placeColumns.some((c) => c.name === "overture_id")) db.exec("ALTER TABLE places ADD COLUMN overture_id TEXT");
+db.exec("CREATE UNIQUE INDEX IF NOT EXISTS places_overture ON places (overture_id)");
 
 // Each place's card as a vector, for search by meaning (src/lib/search.ts).
 // It keeps the exact text and model it was made from, so a changed card or
@@ -453,7 +458,8 @@ export const placeIdForSeed = (key: string): number | undefined =>
   (db.prepare("SELECT id FROM places WHERE seed_key = ?").get(key) as { id: number } | undefined)?.id;
 
 export interface NewPlace {
-  osmId: string | null;
+  /** where it was found: "node/1", "way/2", "relation/3" or "overture/<id>" */
+  ref: string | null;
   name: string;
   kind: Kind;
   area: string;
@@ -464,13 +470,20 @@ export interface NewPlace {
   photo: Photo;
 }
 
-/** The place already shared from this OpenStreetMap place, if there is one. */
-export const placeIdForOsm = (osmId: string): number | undefined =>
-  (db.prepare("SELECT id FROM places WHERE osm_id = ?").get(osmId) as { id: number } | undefined)?.id;
+// (a find's ref as the column it's kept in, and its id there)
+const refColumn = (ref: string) =>
+  ref.startsWith("overture/") ? { column: "overture_id", id: ref.slice("overture/".length) } : { column: "osm_id", id: ref };
 
-/** The photo of the place already shared from this OpenStreetMap place. */
-export function photoOfOsm(osmId: string): Photo | null {
-  const row = db.prepare("SELECT photo_src, photo_page, photo_credit, photo_license FROM places WHERE osm_id = ?").get(osmId) as
+/** The place already shared from this find, if there is one. */
+export function placeIdForRef(ref: string): number | undefined {
+  const { column, id } = refColumn(ref);
+  return (db.prepare(`SELECT id FROM places WHERE ${column} = ?`).get(id) as { id: number } | undefined)?.id;
+}
+
+/** The photo of the place already shared from this find. */
+export function photoOfRef(ref: string): Photo | null {
+  const { column, id } = refColumn(ref);
+  const row = db.prepare(`SELECT photo_src, photo_page, photo_credit, photo_license FROM places WHERE ${column} = ?`).get(id) as
     | { photo_src: string | null; photo_page: string | null; photo_credit: string | null; photo_license: string | null }
     | undefined;
   return row?.photo_src && row.photo_page
@@ -478,21 +491,22 @@ export function photoOfOsm(osmId: string): Photo | null {
     : null;
 }
 
-/** Adds a place everyone can see, or, if that OpenStreetMap place is already
- *  shared, returns the one that's there. */
+/** Adds a place everyone can see, or, if the place it was found as is
+ *  already shared, returns the one that's there. */
 export function addPlace(place: NewPlace, addedBy: Member): number {
   if (!(place.kind in KIND_LABEL)) throw new Error("bad kind");
   if (!place.photo?.src) throw new Error("no photo");
-  const existing = place.osmId ? placeIdForOsm(place.osmId) : undefined;
+  const existing = place.ref ? placeIdForRef(place.ref) : undefined;
   if (existing) return existing;
   const { src, page, credit, license } = place.photo;
+  const where = place.ref ? refColumn(place.ref) : null;
   return Number(
     db
       .prepare(
-        `INSERT INTO places (osm_id, name, kind, area, why, lat, lon, source, photo_src, photo_page, photo_credit, photo_license, added_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO places (osm_id, overture_id, name, kind, area, why, lat, lon, source, photo_src, photo_page, photo_credit, photo_license, added_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run(place.osmId, place.name, place.kind, place.area, place.why, place.lat, place.lon, place.source, src, page, credit, license, addedBy.name)
+      .run(where?.column === "osm_id" ? where.id : null, where?.column === "overture_id" ? where.id : null, place.name, place.kind, place.area, place.why, place.lat, place.lon, place.source, src, page, credit, license, addedBy.name)
       .lastInsertRowid,
   );
 }

@@ -108,6 +108,9 @@ export async function photoFromTags(osm: string, tags: Record<string, string> | 
   return photo;
 }
 
+/** What's been worked out for an OpenStreetMap place so far, if anything. */
+export const knownPhoto = (osm: string): Photo | null => found.get(osm) ?? null;
+
 /** The photo for an OpenStreetMap place being shared: what Find found, or
  *  (if the server has restarted since) its tags asked for once more. */
 export async function photoForOsm(osm: string): Promise<Photo | null> {

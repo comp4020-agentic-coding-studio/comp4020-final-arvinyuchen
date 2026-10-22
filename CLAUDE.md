@@ -26,11 +26,16 @@ follow from it; every change has to hold to them.
   among it) stripped and credited to them. The server finds the Commons
   photo itself; it never takes a photo's address from the browser. Never import places in bulk from a directory or
   an API to pad the pool.
-- **Look places up politely.** `src/pages/api/lookup.ts` asks OpenStreetMap's
-  Nominatim only when someone presses Find, at most once a second, with the
-  app's User-Agent, and caches answers. Keep it that way: no search-as-you-type,
-  no autocomplete against Nominatim. Map tiles and data are credited on the
-  map.
+- **Look places up politely.** Find (`src/pages/api/lookup.ts`) searches
+  Overture Maps' Canberra places on the server first
+  (`src/data/places-index.json`, built by `scripts/build-places-index.ts`),
+  then OpenStreetMap through Photon, and asks Nominatim once for the
+  OpenStreetMap finds' tags (their photos). It asks only when someone
+  presses Find, with the app's User-Agent, Nominatim at most once a second
+  (`src/lib/nominatim.ts`), and caches answers. Keep it that way: no
+  search-as-you-type, no autocomplete against Photon or Nominatim. The index
+  is only a finder's: none of it is in Explore until someone shares it.
+  Overture, Photon, Nominatim, map tiles and data are credited.
 - **One person, one keen.** A member can vote "keen" on a spot once. The
   button sends the state it shows ("on" or "off") and the server sets exactly
   that (`setKeen`), so a double-tap or a second device never undoes a vote.

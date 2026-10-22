@@ -499,7 +499,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         <ul class="finder__results" aria-live="polite"></ul>
       </div>
       <form method="post" action={`/api/groups/${group.id}/places`} class="grid-form" id="add-form" enctype="multipart/form-data">
-        <input type="hidden" name="osm" />
+        <input type="hidden" name="ref" />
         <input type="hidden" name="lat" />
         <input type="hidden" name="lon" />
         <label>

@@ -74,9 +74,14 @@ other's taste.
   ratings and one person's account, not a group deciding together. Google's
   Places API would bring thousands of restaurants but no judgement about which
   are good, which is the one thing Spots is for.
-- OpenStreetMap: its Nominatim search finds a real place's name and location
-  when someone shares it (under its usage policy: one request at a time, only
-  when asked), and OpenFreeMap serves its map tiles. The home page opens
+- Finding a real place to share: OpenStreetMap alone missed too many of
+  Canberra's cafés and bars, so Find searches Overture Maps' places first
+  (an open dataset, its Canberra places built into an index once), then
+  OpenStreetMap through Photon, which forgives a half-remembered name
+  ("Lonsdale Street Roasters" finds "Lonsdale St Roasters"). The index only
+  helps someone find a place; Explore still holds only what people shared.
+  Nominatim is asked once a search for the OpenStreetMap finds' tags (one
+  request at a time, only when asked), and OpenFreeMap serves the map tiles. The home page opens
   on a photo of the city from Mount Ainslie, and as you scroll it turns into
   a 3D map of the same view: OpenFreeMap's tiles over Mapzen's terrain, with
   the camera in the photographer's place, so the two line up. The camera
