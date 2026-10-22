@@ -534,71 +534,19 @@ input[type="radio"] {
   margin-top: 1.25rem;
 }
 
-.picks {
-  display: grid;
-  gap: 0.6rem;
-  padding: 0;
-  list-style: none;
-}
-
-.pick {
-  --kind: var(--food);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.9rem 1rem;
-  border-radius: var(--radius);
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-left: 5px solid var(--kind);
-  animation: rise 0.3s ease-out backwards;
-}
-
-/* .pick sets the food colour above, so the other kinds say theirs again */
-.pick.spot--fun {
-  --kind: var(--fun);
-}
-
-.pick.spot--outdoors {
-  --kind: var(--outdoors);
-}
-
-.pick--top {
-  box-shadow: 0 0 0 3px var(--accent-soft);
-}
-
-.pick__main {
-  flex: 1;
-  min-width: 0;
-}
-
-.pick h3 {
-  margin: 0.2rem 0 0;
-  font-size: 1.1rem;
-}
-
-.pick p {
-  margin: 0.1rem 0 0;
-}
-
 .note {
   font-style: italic;
-}
-
-.keen-who {
-  font-size: 0.85rem;
-  font-weight: 600;
 }
 
 .keen {
   display: grid;
   justify-items: center;
-  min-width: 5.2rem;
-  padding: 0.5rem 0.7rem;
+  min-width: 3.9rem;
+  padding: 0.35rem 0.5rem;
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 2px solid var(--line);
   background: #fff;
   color: var(--ink);
@@ -607,8 +555,8 @@ input[type="radio"] {
 }
 
 .keen__count {
-  font-size: 1.4rem;
-  line-height: 1;
+  font-size: 1.15rem;
+  line-height: 1.1;
 }
 
 .keen:active {
@@ -2380,8 +2328,38 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   overflow-wrap: anywhere;
 }
 
-.group-head .share {
+/* The invite, folded into its button (a <details>) beside the group's name;
+   opened, the card drops under the button. */
+.invite {
   flex: 0 1 26rem;
+  display: grid;
+  justify-items: end;
+  gap: 0.75rem;
+}
+
+.invite > summary {
+  list-style: none;
+}
+
+.invite > summary::-webkit-details-marker {
+  display: none;
+}
+
+.invite__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+}
+
+.invite[open] > .invite__open {
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+.invite .share {
+  justify-self: stretch;
+  max-width: none;
   padding: 1rem 1.1rem;
 }
 
@@ -2450,7 +2428,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   background: var(--accent-soft);
 }
 
-.section-nav a[aria-current="true"] {
+.section-nav a[aria-current] {
   background: var(--ink);
   color: #fff;
 }
@@ -2471,41 +2449,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   margin-top: 0;
 }
 
-.picks {
-  counter-reset: rank;
-}
-
-.pick {
-  position: relative;
-  counter-increment: rank;
-  box-shadow: var(--shadow-sm);
-}
-
-.pick::before {
-  content: counter(rank);
-  position: absolute;
-  top: -0.5rem;
-  left: -0.5rem;
-  display: grid;
-  place-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  background: var(--ink);
-  color: #fff;
-  font-family: var(--font-display);
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.pick--top::before {
-  background: var(--accent-strong);
-}
-
-/* Held out of rank order (see .reorder): the numbers would mislead. */
-.picks--held > .pick::before {
-  display: none;
-}
 
 .empty {
   padding: 1rem 1.1rem;
@@ -2513,30 +2456,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   border-radius: var(--radius);
 }
 
-/* list rows stay compact in the sidebar and on a phone */
-@media (min-width: 1180px), (max-width: 600px) {
-  .board__list .pick {
-    gap: 0.75rem;
-    padding: 0.75rem 0.8rem;
-  }
-
-  .board__list .photo--small {
-    width: 3.75rem;
-  }
-
-  .board__list .pick h3 {
-    font-size: 1rem;
-  }
-
-  .board__list .keen {
-    min-width: 4.2rem;
-    padding: 0.4rem 0.5rem;
-  }
-
-  .board__list .keen__count {
-    font-size: 1.2rem;
-  }
-}
 
 @media (min-width: 1180px) {
   .board {
@@ -2552,6 +2471,229 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     margin-left: -0.6rem;
     scrollbar-width: thin;
   }
+}
+
+/* ---- Our list, a ranking ---------------------------------------------------- */
+
+/* Most keen first: each row its rank, photo, name, who's keen, and the keen
+   button, with a bar along its foot for how much of the group is keen. The
+   leader (.pick--top, first with anyone keen) is a size up. */
+.picks {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: rank;
+}
+
+.pick {
+  --kind: var(--food);
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.3rem 3.25rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.8rem 0.8rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  counter-increment: rank;
+  animation: rise 0.3s ease-out backwards;
+}
+
+/* .pick sets the food colour above, so the other kinds say theirs again */
+.pick.spot--fun {
+  --kind: var(--fun);
+}
+
+.pick.spot--outdoors {
+  --kind: var(--outdoors);
+}
+
+.pick::before {
+  content: counter(rank);
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* Held out of rank order (see .reorder): the numbers would mislead, and so
+   would a leader in the middle. */
+.picks--held > .pick::before {
+  visibility: hidden;
+}
+
+.pick .photo--small {
+  width: 3.25rem;
+  border-radius: 10px;
+}
+
+.pick__main {
+  min-width: 0;
+}
+
+.pick h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.pick p {
+  margin: 0.1rem 0 0;
+}
+
+.pick .area {
+  font-size: 0.82rem;
+}
+
+.keen-who {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.pick .keen-who {
+  margin-top: 0.3rem;
+}
+
+.keen-who__names {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.faces--small {
+  flex: none;
+  padding-left: 0.25rem;
+}
+
+.faces--small .face {
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-left: -0.25rem;
+  border-width: 1.5px;
+  border-color: var(--card);
+  font-size: 0.6rem;
+}
+
+.pick__bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--keen, 0) * 100%);
+  height: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--kind);
+  transition: width 0.4s ease;
+}
+
+.pick--top {
+  grid-template-columns: 1.3rem 4.75rem minmax(0, 1fr) auto;
+  padding: 0.9rem 0.9rem 1rem;
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: linear-gradient(135deg, var(--accent-soft), var(--card) 70%);
+}
+
+.pick--top::before {
+  color: var(--accent-strong);
+  font-size: 1.45rem;
+}
+
+.pick--top .photo--small {
+  width: 4.75rem;
+  border-radius: 12px;
+}
+
+.pick--top h3 {
+  font-size: 1.2rem;
+}
+
+.pick--top .pick__bar {
+  height: 4px;
+}
+
+/* (the leader has room to say all its names) */
+.pick--top .keen-who {
+  flex-wrap: wrap;
+  row-gap: 0.25rem;
+}
+
+.pick--top .keen-who__names {
+  white-space: normal;
+}
+
+.pick__lead {
+  color: var(--accent-strong);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.picks--held > .pick--top {
+  grid-template-columns: 1.3rem 3.25rem minmax(0, 1fr) auto;
+  padding: 0.7rem 0.8rem 0.8rem;
+  border-color: var(--line);
+  background: var(--card);
+}
+
+.picks--held > .pick--top::before {
+  font-size: 1.05rem;
+}
+
+.picks--held > .pick--top .photo--small {
+  width: 3.25rem;
+}
+
+.picks--held > .pick--top h3 {
+  font-size: 1rem;
+}
+
+.picks--held .pick__lead {
+  display: none;
+}
+
+/* ---- Tabs ---------------------------------------------------------------------- */
+
+/* With the script, the section links are tabs: one part showing at a time
+   (on a wide screen, Our list and Explore together). */
+.tabs__n {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  margin-left: 0.2rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.section-nav a[aria-current] .tabs__n {
+  background: rgb(255 255 255 / 22%);
+  color: #fff;
+}
+
+.group-page.is-tabbed .group-tools {
+  display: block;
+  margin-top: 1.5rem;
+}
+
+.group-page.is-tabbed .group-tools > section {
+  max-width: 44rem;
 }
 
 /* Share a place and the owner's settings, side by side when there's room. */
@@ -2618,8 +2760,22 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     padding-top: 0.35rem;
   }
 
-  .group-head .share {
+  .invite {
     flex-basis: 100%;
+    justify-items: start;
+  }
+
+  .invite__open {
+    padding: 0.5rem 0.95rem;
+    font-size: 0.92rem;
+  }
+
+  .group-head--split {
+    gap: 0.9rem;
+  }
+
+  .group-page .section-nav {
+    margin-top: 0.75rem;
   }
 
   .top {

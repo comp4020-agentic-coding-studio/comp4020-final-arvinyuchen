@@ -72,6 +72,9 @@ const preview = [...picks].sort((a, b) => a.id - b.id).slice(0, 3);
 // The note's words, each its own span so they can arrive one after another.
 const noteWords = group.note?.split(" ") ?? [];
 
+// The whole group keen (three or more of them) reads as "Everyone".
+const everyone = (keen: string[]) => members.length > 2 && keen.length === members.length;
+
 // Each member's initial in a colour of its own, the same on every visit.
 const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
 ---
@@ -216,9 +219,9 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
   </section>
   ) : (
   <>
+  <div class="group-page">
   <section class="group-head group-head--split">
     <div class="group-head__title">
-      <p class="eyebrow">Group</p>
       <h1>{group.name}</h1>
       {group.note && (
         <p class="group-note">
@@ -235,75 +238,102 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
           {members.length} {members.length === 1 ? "person" : "people"}: {members.map((m) => m.name).join(", ")}
         </span>
       </p>
+      <p class="you">
+        You're in as <strong>{member.name}</strong>
+        {isOwner && <span class="owner-tag">owner</span>}
+      </p>
     </div>
-    <div class={`share card${isNew ? " share--new" : ""}`}>
-      <label for="share-link">{isNew ? "Your group is ready. Send this link to everyone coming:" : "Invite link"}</label>
-      <div class="share__row">
-        <input id="share-link" value={shareUrl} readonly />
-        <button type="button" class="btn" data-copy="#share-link">Copy</button>
-        <button type="button" class="btn btn--primary share__native" data-share data-title={`Join ${group.name} on Spots`} data-text={invite}>Share…</button>
-        <p class="share__by">
-          <span class="fine">Or send it by</span>
-          {sendBy.map(({ label, href }) => (
-            <a class="chip" href={href} {...(href.startsWith("https:") ? { target: "_blank", rel: "noopener" } : {})}>{label}</a>
-          ))}
-        </p>
-        <details class="share__qr">
-          <summary>Show a QR code</summary>
-          <div class="share__qr-code" role="img" aria-label="QR code for the invite link" set:html={qr} />
-          <p class="fine">Friends in the room can scan it with their phone camera.</p>
-        </details>
+    {/* The invite, folded behind a button: it's needed once, then every
+        visit would open on it. Open by itself while the group is new or
+        still just its owner. A <details>, so it opens without a script. */}
+    <details class="invite" id="invite" open={isNew || members.length === 1}>
+      <summary class="btn invite__open">
+        <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+          <path d="M8 9.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2.5 16.5c.6-2.8 2.8-4.5 5.5-4.5s4.9 1.7 5.5 4.5M15.5 6.5v5M13 9h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+        Invite friends
+      </summary>
+      <div class={`share card${isNew ? " share--new" : ""}`}>
+        <label for="share-link">{isNew ? "Your group is ready. Send this link to everyone coming:" : "Invite link"}</label>
+        <div class="share__row">
+          <input id="share-link" value={shareUrl} readonly />
+          <button type="button" class="btn" data-copy="#share-link">Copy</button>
+          <button type="button" class="btn btn--primary share__native" data-share data-title={`Join ${group.name} on Spots`} data-text={invite}>Share…</button>
+          <p class="share__by">
+            <span class="fine">Or send it by</span>
+            {sendBy.map(({ label, href }) => (
+              <a class="chip" href={href} {...(href.startsWith("https:") ? { target: "_blank", rel: "noopener" } : {})}>{label}</a>
+            ))}
+          </p>
+          <details class="share__qr">
+            <summary>Show a QR code</summary>
+            <div class="share__qr-code" role="img" aria-label="QR code for the invite link" set:html={qr} />
+            <p class="fine">Friends in the room can scan it with their phone camera.</p>
+          </details>
+        </div>
       </div>
-    </div>
+    </details>
   </section>
 
-    <p class="you">
-      You're in as <strong>{member.name}</strong>
-      {isOwner && <span class="owner-tag">owner</span>}
-      {" "}· <a href="/me">My groups</a>
-    </p>
-
-  <nav class="section-nav" aria-label="On this page">
-    <a href="#list">Our list</a>
-    <a href="#explore-section">Explore</a>
-    {member && <a href="#add">Share a place</a>}
-    {isOwner && <a href="#settings">Settings</a>}
+  {/* One part of the group at a time: tabs, by the script below. Without
+      it they're links down the page, and every part is there. */}
+  <nav class="section-nav tabs" aria-label="Group">
+    <a href="#list" data-tab="list">Our list <span class="tabs__n">{picks.length}</span></a>
+    <a href="#explore-section" data-tab="explore">Explore</a>
+    <a href="#add" data-tab="add">Share a place</a>
+    {isOwner && <a href="#settings" data-tab="settings">Settings</a>}
   </nav>
 
   <div class="board">
-  <section id="list" class="board__list" aria-labelledby="list-title">
+  {/* Our list as a ranking: most keen first, the leader standing out, the
+      rest compact rows, each with who's keen and a bar for how much of the
+      group that is. */}
+  <section id="list" class="board__list" aria-labelledby="list-title" data-panel="list">
     <h2 id="list-title">Our list</h2>
     {picks.length === 0 ? (
       <p class="empty">Nothing on the list yet. Add something from Explore.</p>
     ) : (
       <ol class="picks">
-        {picks.map(({ id, place, addedBy, keen }, i) => {
-          const mine = member ? keen.includes(member.name) : false;
+        {picks.map(({ id, place, keen }, i) => {
+          const mine = keen.includes(member.name);
+          const lead = i === 0 && keen.length > 0;
           return (
             <li
               id={`pick-${id}`}
-              class={`pick spot--${place.kind}${i === 0 && keen.length > 0 ? " pick--top" : ""}`}
+              class={`pick spot--${place.kind}${lead ? " pick--top" : ""}`}
               data-place={place.lat !== null ? place.id : undefined}
+              style={`--keen: ${members.length > 0 ? keen.length / members.length : 0}`}
             >
               <SpotPhoto photo={place.photo} name={place.name} kind={place.kind} small />
               <div class="pick__main">
-                <span class="tag">{KIND_LABEL[place.kind]}</span>
+                {lead && <p class="pick__lead">Most keen</p>}
                 <h3>{place.name}</h3>
-                <p class="area">
-                  {place.area && `${place.area} · `}added by {addedBy}
+                <p class="area">{[place.area, KIND_LABEL[place.kind]].filter(Boolean).join(" · ")}</p>
+                <p class="keen-who">
+                  {keen.length > 0 ? (
+                    <>
+                      <span class="faces faces--small" aria-hidden="true">
+                        {keen.slice(0, 5).map((name) => (
+                          <span class="face" style={`--hue: ${hue(name)}`}>{[...name][0]?.toUpperCase()}</span>
+                        ))}
+                      </span>
+                      <span class="sr-only">Keen: </span>
+                      <span class="keen-who__names">{everyone(keen) ? "Everyone" : keen.join(", ")}</span>
+                    </>
+                  ) : (
+                    "No one's keen yet"
+                  )}
                 </p>
-                <p class="keen-who">{keen.length > 0 ? `Keen: ${keen.join(", ")}` : "No one's keen yet"}</p>
               </div>
-              {member && (
-                <form method="post" action={`/api/groups/${group.id}/keen`} data-keen>
-                  <input type="hidden" name="pick" value={id} />
-                  <input type="hidden" name="keen" value={mine ? "off" : "on"} />
-                  <button class={`keen${mine ? " keen--on" : ""}`} aria-pressed={mine ? "true" : "false"}>
-                    <span class="keen__count">{keen.length}</span>
-                    <span>{mine ? "Keen!" : "I'm keen"}</span>
-                  </button>
-                </form>
-              )}
+              <form method="post" action={`/api/groups/${group.id}/keen`} data-keen>
+                <input type="hidden" name="pick" value={id} />
+                <input type="hidden" name="keen" value={mine ? "off" : "on"} />
+                <button class={`keen${mine ? " keen--on" : ""}`} aria-pressed={mine ? "true" : "false"}>
+                  <span class="keen__count">{keen.length}</span>
+                  <span>{mine ? "Keen!" : "I'm keen"}</span>
+                </button>
+              </form>
+              <span class="pick__bar" aria-hidden="true"></span>
             </li>
           );
         })}
@@ -311,7 +341,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     )}
   </section>
 
-  <section id="explore-section" class="explore-wrap" aria-labelledby="explore-title">
+  <section id="explore-section" class="explore-wrap" aria-labelledby="explore-title" data-panel="explore">
     <div class="explore-head">
       <h2 id="explore-title">Explore</h2>
       <p class="fine">Places every group on Spots has shared, each with a reason it's good.</p>
@@ -399,7 +429,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
 
   <div class="group-tools">
   {member && (
-    <section id="add" class="card add" aria-labelledby="add-title">
+    <section id="add" class="card add" aria-labelledby="add-title" data-panel="add">
       <h2 id="add-title">Share a good place</h2>
       <p class="fine">
         It goes into Explore for every group, so only add somewhere you'd actually send a friend, and say why.
@@ -442,7 +472,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
   )}
 
   {isOwner && (
-    <section id="settings" class="card settings" aria-labelledby="settings-title">
+    <section id="settings" class="card settings" aria-labelledby="settings-title" data-panel="settings">
       <h2 id="settings-title">Group settings</h2>
       <p class="fine">Only you see this: you started {group.name}.</p>
       {done && DONE[done] && <p class="notice notice--ok" role="status">{DONE[done]}</p>}
@@ -531,6 +561,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     </section>
   )}
   </div>
+  </div>
 
   <script is:inline define:vars={{ groupId: group.id }}>
     // Live: anyone joining, picking or voting in this group, or any group
@@ -538,7 +569,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     // reload by the viewer. The page asks the server for itself again and
     // swaps in the changed parts, keeping the scroll position, the map and
     // anything typed in the forms.
-    const regions = [".group-head h1", ".group-head .members", ".share__row", "#list", "#explore", "#settings .people"];
+    const regions = [".group-head h1", ".group-head .members", ".share__row", ".tabs__n", "#list", "#explore", "#settings .people"];
     // The page as it is now, search included, without one-off notices.
     const current = () => {
       const q = new URLSearchParams(location.search).get("q");
@@ -702,26 +733,77 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
       showSearch("", true);
     });
     window.addEventListener("popstate", () => {
-      askInput.value = new URLSearchParams(location.search).get("q") ?? "";
-      showSearch(askInput.value, false);
+      // (only when the search itself changed, not on going back a tab)
+      const q = new URLSearchParams(location.search).get("q") ?? "";
+      if (q === (document.querySelector("#explore")?.dataset.q ?? "")) return;
+      askInput.value = q;
+      showSearch(q, false);
     });
 
-    // The section links mark where the reader is. Without a script they're
-    // still plain links down the page.
-    const navLinks = [...document.querySelectorAll(".section-nav a")];
-    const sections = navLinks.map((a) => document.querySelector(a.hash)).filter(Boolean);
-    const here = new IntersectionObserver(
-      (entries) => {
-        const seen = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-        if (!seen) return;
-        for (const a of navLinks) {
-          if (a.hash === `#${seen.target.id}`) a.setAttribute("aria-current", "true");
-          else a.removeAttribute("aria-current");
-        }
+    // Tabs: one part of the group at a time (Our list, Explore, Share a
+    // place, Settings), the open one in the URL's #, so a reload, the back
+    // button or a form that lands on #settings opens the right one. On a
+    // wide screen Our list and Explore show together, side by side.
+    const page = document.querySelector(".group-page");
+    const tabLinks = [...document.querySelectorAll(".tabs a[data-tab]")];
+    const panels = [...document.querySelectorAll("[data-panel]")];
+    const wide = matchMedia("(min-width: 1180px)");
+    const tabOf = (hash) => {
+      if (/^#(explore|explore-section)$/.test(hash)) return "explore";
+      if (hash === "#add") return "add";
+      if (hash === "#settings" && document.querySelector("#settings")) return "settings";
+      return "list";
+    };
+    let tab = tabOf(location.hash);
+    function show(next, scroll) {
+      tab = next;
+      page.dataset.tab = tab;
+      const both = wide.matches && (tab === "list" || tab === "explore");
+      for (const panel of panels) {
+        const kind = panel.dataset.panel;
+        panel.hidden = !(kind === tab || (both && (kind === "list" || kind === "explore")));
+      }
+      for (const a of tabLinks) {
+        if (a.dataset.tab === tab) a.setAttribute("aria-current", "page");
+        else a.removeAttribute("aria-current");
+      }
+      // (a map shown again takes its size)
+      window.dispatchEvent(new Event("resize"));
+      // The tab opens at its top, under the tabs, never scrolled half way.
+      const top = document.querySelector(".group-head").getBoundingClientRect().bottom + scrollY;
+      if (scroll && scrollY > top) scrollTo({ top, behavior: "instant" });
+    }
+    page.classList.add("is-tabbed");
+    show(tab, false);
+    // (a link to one card, like a vote without the script, still lands on it)
+    try {
+      if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+    } catch {
+      // (a # that isn't an id)
+    }
+    wide.addEventListener("change", () => show(tab, false));
+    window.addEventListener("popstate", () => show(tabOf(location.hash), true));
+    function go(next, hash) {
+      if (location.hash !== hash) history.pushState(null, "", location.pathname + location.search + hash);
+      show(next, true);
+    }
+    document.addEventListener("click", (event) => {
+      const link = event.target.closest(".tabs a[data-tab]");
+      if (!link || event.metaKey || event.ctrlKey || event.shiftKey) return;
+      event.preventDefault();
+      go(link.dataset.tab, link.hash);
+    });
+    // A tap on a place in the list shows it on the map, which on a narrow
+    // screen is Explore's: open that first (src/scripts/map.ts then flies).
+    document.addEventListener(
+      "click",
+      (event) => {
+        if (wide.matches || tab !== "list") return;
+        if (event.target.closest("button, a, form, input, select, label")) return;
+        if (event.target.closest("#list [data-place]")) go("explore", "#explore-section");
       },
-      { rootMargin: "-20% 0px -60% 0px" },
+      true,
     );
-    for (const section of sections) here.observe(section);
 
     // Delegated, since a reset invite link swaps the share row in live.
     document.addEventListener("click", async (event) => {

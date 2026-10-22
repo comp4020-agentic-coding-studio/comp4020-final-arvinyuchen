@@ -123,6 +123,23 @@ describe("a group", () => {
     expect(doc.querySelector(".share__qr svg")).toBeTruthy();
   });
 
+  it("folds the invite away once someone else is in, and puts every part of the group behind its tab", async () => {
+    const { jar: ana, id, path } = await started("Tabbed crew");
+    const invite = async (where: string) => (await page(ana, where)).querySelector<HTMLDetailsElement>("details#invite");
+    expect((await invite(path))?.hasAttribute("open")).toBe(true); // just the owner: open
+    await join(new Jar(), id, id, "Ben");
+    expect((await invite(path))?.hasAttribute("open")).toBe(false);
+    expect((await invite(`${path}?new=1`))?.hasAttribute("open")).toBe(true);
+    // Folded, the invite is still all there, links and QR code included.
+    expect((await invite(path))?.querySelector(".share__by a[href^='https://wa.me/']")).toBeTruthy();
+
+    // Each tab is a link to its part, and without a script every part is on the page.
+    const doc = await page(ana, path);
+    const tabs = [...doc.querySelectorAll<HTMLAnchorElement>(".tabs a[data-tab]")].map((a) => a.getAttribute("href"));
+    expect(tabs).toEqual(["#list", "#explore-section", "#add", "#settings"]);
+    for (const hash of tabs) expect(doc.querySelector(`${hash}[data-panel]`)).toBeTruthy();
+  });
+
   it("doesn't let anyone who isn't a member add or vote, signed in or not", async () => {
     const { jar, path, api } = await started("Closed crew");
     await request(new Jar(), `${api}/picks`, { form: { key: "nga" } });

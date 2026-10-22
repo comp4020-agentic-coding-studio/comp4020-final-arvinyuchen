@@ -196,7 +196,7 @@ describe("the owner's tools", () => {
     // The new account is Ben now, his old keen came with him, and the old
     // account (whoever has its passkey) is out of the group.
     expect(await you(benAgain, id)).toContain("You're in as Ben");
-    expect((await page(owner, `/g/${id}`)).querySelector("#list .keen-who")?.textContent).toBe("Keen: Ben");
+    expect((await page(owner, `/g/${id}`)).querySelector("#list .keen-who__names")?.textContent).toBe("Ben");
     expect(await you(ben, id)).toBe("");
   });
 
