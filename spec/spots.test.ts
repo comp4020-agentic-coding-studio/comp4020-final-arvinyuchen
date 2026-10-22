@@ -198,6 +198,9 @@ describe("a group", () => {
     const art = card?.querySelector("[data-kind-art]");
     expect(art?.getAttribute("data-kind-art")).toBe("coffee");
     expect(art?.querySelector("figcaption")?.textContent).toContain("Coffee");
+    const src = art?.querySelector("img")?.getAttribute("src") ?? "";
+    expect(src).toBe("/kinds/coffee.jpg");
+    expect((await fetch(new URL(src, baseUrl))).headers.get("content-type")).toBe("image/jpeg");
     // (a picture of the kind says nothing about the place: no alt text names it)
     expect(card?.querySelector(`img[alt*="${name}"]`)).toBeNull();
     const pick = [...doc.querySelectorAll("#list .pick")].find((c) => c.textContent?.includes(name));

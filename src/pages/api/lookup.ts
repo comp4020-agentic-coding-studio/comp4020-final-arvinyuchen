@@ -2,8 +2,6 @@ import type { APIRoute } from "astro";
 import { photoOfRef } from "../../lib/db";
 import { best, type Candidate, merge, score, words } from "../../lib/finder";
 import type { Kind } from "../../lib/kinds";
-import { nominatim, USER_AGENT } from "../../lib/nominatim";
-import { knownPhoto, photoFromTags } from "../../lib/photos";
 import { LOCAL } from "../../lib/places-index";
 
 // Finding a place to share, in Canberra, from two sources:
@@ -17,15 +15,13 @@ import { LOCAL } from "../../lib/places-index";
 //
 // The two are ranked together by how well each name answers what was
 // typed, and merged, one place listed once: as OpenStreetMap has it, where
-// both do, since its tags can bring a photo. Neither says whether a place is
-// good: nothing found here enters Explore until a person shares it with a
-// reason. Each find comes with the photo it would get, if it has
-// one: the photo it was shared with before, or the Commons photo its
-// OpenStreetMap tags lead to (src/lib/photos.ts), for which Nominatim is
-// asked once for every OpenStreetMap find's tags (src/lib/nominatim.ts).
+// both do. Neither says whether a place is good: nothing found here enters
+// Explore until a person shares it with a reason. A find already shared
+// comes with the photo it was shared with, if it has one.
 //
-// The browser asks only when someone presses Find, never as they type, and
-// answers are cached for a day.
+// The browser asks only when someone presses Find, never as they type, with
+// the app's User-Agent, and answers are cached for a day.
+const USER_AGENT = "Spots/1.0 (https://comp4020-final-arvinyuchen.fly.dev; COMP4020 student project)";
 const cache = new Map<string, { at: number; results: unknown[] }>();
 const BOX = "148.76,-35.92,149.40,-35.12";
 
@@ -98,18 +94,6 @@ async function fromOsm(q: string): Promise<Candidate[]> {
   return own.length && own.length < words(q).length ? photon(own.join(" ")) : [];
 }
 
-/** The Commons photo each OpenStreetMap find's tags lead to, all asked at once. */
-async function osmPhotos(finds: Candidate[]) {
-  const osm = finds.filter((f) => !f.ref.startsWith("overture/") && !photoOfRef(f.ref));
-  if (!osm.length) return;
-  const ids = osm.map((f) => `${f.ref[0].toUpperCase()}${f.ref.split("/")[1]}`).join(",");
-  const tagged = await nominatim<{ osm_type: string; osm_id: number; extratags?: Record<string, string> }[]>("lookup", {
-    osm_ids: ids,
-    extratags: "1",
-  });
-  await Promise.all(tagged.map((t) => photoFromTags(`${t.osm_type}/${t.osm_id}`, t.extratags)));
-}
-
 export const GET: APIRoute = async ({ url }) => {
   const q = (url.searchParams.get("q") ?? "").trim().slice(0, 80);
   if (q.length < 2) return Response.json([]);
@@ -131,11 +115,6 @@ export const GET: APIRoute = async ({ url }) => {
     .sort((a, b) => b.s - a.s || a.o - b.o || a.i - b.i)
     .map((r) => r.c);
   const finds = merge(ranked).slice(0, 8);
-  try {
-    await osmPhotos(finds);
-  } catch {
-    // (no tags: those finds show no photo, and their sharer adds one)
-  }
   const results = finds.map((f) => ({
       ref: f.ref,
       name: f.name,
@@ -144,8 +123,8 @@ export const GET: APIRoute = async ({ url }) => {
       lon: f.lon,
       kind: f.kind,
       detail: [f.address, f.area].filter(Boolean).join(", "),
-      // (to show; sharing works the photo out again on the server)
-      photo: photoOfRef(f.ref) ?? knownPhoto(f.ref),
+      // (to show: one already shared goes on the list as it is)
+      photo: photoOfRef(f.ref),
   }));
   if (reached) cache.set(key, { at: Date.now(), results });
   return Response.json(results);

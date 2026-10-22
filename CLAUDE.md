@@ -19,27 +19,24 @@ follow from it; every change has to hold to them.
 - **A place gets in with a reason.** Adding a place needs a "why it's good"
   from the person sharing it, shown with their name. That sentence is the
   filter: no reason, no place.
-- **A photo is credited and free to use, or there's none.** A place's photo
-  (`src/lib/photos.ts`) is one on Wikimedia Commons that its OpenStreetMap
-  tags lead to, under a licence that allows reuse and credited on the card,
-  or one the sharer uploads, re-encoded with all its metadata (GPS among it)
-  stripped and credited to them. The server finds the Commons photo itself;
-  it never takes a photo's address from the browser. Never take a venue's
-  own photos or a photographer's from their sites. A place with no photo
+- **A place's photo is the sharer's own, or there's none.** One a member
+  uploads (`src/lib/photos.ts`) is re-encoded with all its metadata (GPS
+  among it) stripped and credited to them; a place shared without one
   still gets in, and its card shows its kind's picture
-  (`src/lib/kind-art.ts`), named with the kind so it isn't taken for that
-  place. Never import places in bulk from a directory or an API to pad the
-  pool.
+  (`src/lib/kind-art.ts`, from Unsplash), named with the kind so it isn't
+  taken for that place. Nothing is fetched to give a place a photo, and it
+  never takes a photo's address from the browser. The starter places, and
+  places shared before, keep the credited Commons photos they have. Never
+  take a venue's own photos or a photographer's from their sites. Never
+  import places in bulk from a directory or an API to pad the pool.
 - **Look places up politely.** Find (`src/pages/api/lookup.ts`) searches
   Overture Maps' Canberra places on the server first
   (`src/data/places-index.json`, built by `scripts/build-places-index.ts`),
-  then OpenStreetMap through Photon, and asks Nominatim once for the
-  OpenStreetMap finds' tags (their photos). It asks only when someone
-  presses Find, with the app's User-Agent, Nominatim at most once a second
-  (`src/lib/nominatim.ts`), and caches answers. Keep it that way: no
-  search-as-you-type, no autocomplete against Photon or Nominatim. The index
+  then OpenStreetMap through Photon. It asks only when someone presses
+  Find, with the app's User-Agent, and caches answers. Keep it that way: no
+  search-as-you-type, no autocomplete against Photon. The index
   is only a finder's: none of it is in Explore until someone shares it.
-  Overture, Photon, Nominatim, map tiles and data are credited.
+  Overture, Photon, map tiles and data are credited.
 - **One person, one keen.** A member can vote "keen" on a spot once. The
   button sends the state it shows ("on" or "off") and the server sets exactly
   that (`setKeen`), so a double-tap or a second device never undoes a vote.

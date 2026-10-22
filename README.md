@@ -80,8 +80,7 @@ other's taste.
   OpenStreetMap through Photon, which forgives a half-remembered name
   ("Lonsdale Street Roasters" finds "Lonsdale St Roasters"). The index only
   helps someone find a place; Explore still holds only what people shared.
-  Nominatim is asked once a search for the OpenStreetMap finds' tags (one
-  request at a time, only when asked), and OpenFreeMap serves the map tiles. The home page opens
+  OpenFreeMap serves the map tiles. The home page opens
   on a photo of the city from Mount Ainslie, and as you scroll it turns into
   a 3D map of the same view: OpenFreeMap's tiles over Mapzen's terrain, with
   the camera in the photographer's place, so the two line up. The camera
@@ -96,12 +95,13 @@ other's taste.
   never queries OpenStreetMap for it. Its hills are shaded once from
   Mapzen's terrain by `scripts/build-hero-relief.ts`. The starter places were
   checked against Wikipedia, with photos from Wikimedia Commons credited on
-  each card where there is one. A place a person shares gets the Commons
-  photo its OpenStreetMap entry links to, where its licence allows reuse,
-  or the one they upload, kept with its location and every other bit
-  of metadata stripped, and credited to them. A place with neither isn't
-  turned away: its card shows its kind's picture, named with the kind, so
-  it's never taken for a photo of that place. Both street maps, the group's and the invite's small one, are
+  each card where there is one. Finding a free photo of every café and bar
+  proved hopeless (Commons has few, and a venue's own are its own), so a
+  place a person shares has the photo they upload, if any, kept with its
+  location and every other bit of metadata stripped, and credited to them.
+  One without isn't turned away: its card shows its kind's picture, one
+  from Unsplash for each kind, named with the kind, so it's never taken
+  for a photo of that place. Both street maps, the group's and the invite's small one, are
   OpenFreeMap's tiles recoloured to look like Apple Maps, with city parks
   in green, hairline side streets, hills shaded from Mapzen's open terrain
   tiles, and buildings that stand up as the group's map flies into a

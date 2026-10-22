@@ -3,7 +3,7 @@ import { KIND_LABEL, type Kind } from "../../../../lib/catalogue";
 import { addPick, addPlace, getGroup, placeIdForRef } from "../../../../lib/db";
 import { changed, placesChanged } from "../../../../lib/events";
 import { clean, me } from "../../../../lib/me";
-import { photoForOsm, savePhoto } from "../../../../lib/photos";
+import { savePhoto } from "../../../../lib/photos";
 import { localPlace } from "../../../../lib/places-index";
 import { indexPlaces } from "../../../../lib/search";
 
@@ -12,9 +12,8 @@ import { indexPlaces } from "../../../../lib/search";
 // instead of a star rating. Picked from Find (src/pages/api/lookup.ts) it
 // carries where it was found and its location; typed by hand (no
 // JavaScript) it has neither, and simply won't have a pin on the map. Its
-// photo is the sharer's own if they chose one, or else the Commons photo its
-// OpenStreetMap tags lead to (worked out here, never taken from the
-// browser), or none, and its card shows its kind's picture.
+// photo is the sharer's own if they chose one, or none, and its card shows
+// its kind's picture.
 const inCanberra = (lat: number, lon: number) => lat > -35.95 && lat < -35.1 && lon > 148.7 && lon < 149.45;
 
 export const POST: APIRoute = async ({ params, cookies, request, redirect }) => {
@@ -43,7 +42,7 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   const shared = found ? placeIdForRef(found) : undefined;
   const upload = form.get("photo");
   const chosen = !shared && upload instanceof File && upload.size > 0;
-  const photo = shared ? null : chosen ? await savePhoto(upload, member.name) : osm && located ? await photoForOsm(osm) : null;
+  const photo = chosen ? await savePhoto(upload, member.name) : null;
   // (a file chosen that isn't a photo we can read is sent back, not dropped)
   if (chosen && !photo) return redirect(`/g/${group.link}?error=photo#add`, 303);
 

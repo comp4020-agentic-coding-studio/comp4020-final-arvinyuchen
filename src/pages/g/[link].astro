@@ -592,9 +592,9 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
           <span>Why it's good (required)</span>
           <input name="why" required maxlength="160" placeholder="Best chilli oil in Canberra, and open late" />
         </label>
-        {/* A photo if there is one: one found for it (src/scripts/map.ts shows
-            it once a place is picked on the map), or the sharer's own. Without
-            one, its card shows its kind's picture. */}
+        {/* A photo of the sharer's own, if they have one; without, its card
+            shows its kind's picture. (A place picked that's already shared
+            shows its photo instead: src/scripts/map.ts.) */}
         <div class="photo-pick wide">
           <figure class="photo-pick__found" hidden>
             <img alt="" />

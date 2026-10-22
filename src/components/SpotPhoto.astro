@@ -35,7 +35,11 @@ const art = photo ? undefined : KIND_ART[kind];
   ) : (
     <figure class:list={["photo", "photo--kind", `photo--${kind}`, { "photo--small": small, "photo--art": art }]} data-kind-art={kind}>
       {art ? (
-        <img src={art.src} alt="" loading="lazy" decoding="async" width="800" height="533" />
+        <>
+          <img src={art.src} alt="" loading="lazy" decoding="async" width="800" height="533" />
+          {/* (too small to name the kind on, so its icon marks it instead) */}
+          {small && <span class="photo__badge"><KindIcon kind={kind} /></span>}
+        </>
       ) : (
         <>
           <span class="photo__icon"><KindIcon kind={kind} /></span>
@@ -46,8 +50,8 @@ const art = photo ? undefined : KIND_ART[kind];
         <figcaption>
           <span class="photo__kind">{KIND_LABEL[kind]}</span>
           {art && (
-            <a href={art.page} rel="noopener">
-              Photo: {art.credit}, Unsplash
+            <a href={art.page ?? "https://unsplash.com"} rel="noopener">
+              {art.credit ? `Photo: ${art.credit}, Unsplash` : "Photo: Unsplash"}
             </a>
           )}
         </figcaption>
