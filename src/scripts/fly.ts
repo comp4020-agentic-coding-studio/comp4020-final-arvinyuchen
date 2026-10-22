@@ -555,7 +555,8 @@ if (fly && motion && gl) {
   const hold = () => {
     clearTimeout(resting);
     resting = window.setTimeout(() => {
-      if (held || touching || flown < 1) return;
+      // (nor once the page has set off back up: by the logo, below)
+      if (held || touching || flown < 1 || scrollY < span.top + span.height - span.stage - 1) return;
       held = true;
       stop();
       const before = fly.offsetHeight;
@@ -633,6 +634,23 @@ if (fly && motion && gl) {
       leap = true;
       scrollTo({ top: landed(), behavior: "instant" });
     }
+  });
+  // The way back is the logo: on this page, below the photo, it flies the
+  // flight back to the photo (the scroll it ran on put back first, the page
+  // scrolled down by as much at the same moment, so nothing moves). Opened
+  // in a new tab, or clicked on the photo, it's the link it always is.
+  top?.querySelector<HTMLAnchorElement>(".brand")?.addEventListener("click", (e) => {
+    if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (!held && scrollY <= span.top) return;
+    e.preventDefault();
+    if (held) {
+      held = false;
+      const before = fly.offsetHeight;
+      fly.classList.remove("is-held");
+      scrollTo({ top: scrollY + fly.offsetHeight - before, behavior: "instant" });
+      frame();
+    }
+    play(span.top);
   });
   // (and a link to the form, as after a form sent without a name, lands)
   if (location.hash === "#start" && inStage()) {

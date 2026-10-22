@@ -85,7 +85,7 @@ follow from it; every change has to hold to them.
   stops when they stop; it plays itself only when they press a button for
   it, and any touch, wheel or key stops it. Landed, the map turns slowly
   while it's on screen, and it stays landed: scrolling back up doesn't fly
-  it back. Under reduced motion, or without WebGL, none of it
+  it back; the logo does, played like the buttons. Under reduced motion, or without WebGL, none of it
   runs: the page is the photo, the drawn map and the form.
 - **One look everywhere.** Every page takes the invite page's design: the
   colours, cards, buttons and fields come from the `:root` tokens and shared
