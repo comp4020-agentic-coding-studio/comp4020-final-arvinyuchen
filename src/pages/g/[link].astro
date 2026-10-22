@@ -266,6 +266,11 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         {isOwner && <span class="owner-tag">owner</span>}
       </p>
     </div>
+    {/* (on a wide screen, where this is the group's panel: the home page's
+        Canberra across its top) */}
+    <div class="group-head__photo" aria-hidden="true">
+      <CityPhoto class="group-head__img" sizes="24rem" lazy />
+    </div>
     {/* The invite, folded behind a button: it's needed once, then every
         visit would open on it. Open by itself while the group is new or
         still just its owner. A <details>, so it opens without a script. */}
@@ -632,7 +637,11 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
       const was = new Map([...now.querySelectorAll(".picks > li")].map((li) => [li.id, li.getBoundingClientRect().top]));
       const order = [...was.keys()].join();
       const focused = document.activeElement?.closest(".picks > li")?.id;
+      // (on a wide screen the list scrolls inside its column: stay where you were)
+      const scrolled = now.querySelector(".picks")?.scrollTop ?? 0;
       now.innerHTML = next.innerHTML;
+      const picks = now.querySelector(".picks");
+      if (picks) picks.scrollTop = scrolled;
       // (no entrance replayed: only cards that are new arrive)
       now.dataset.live = "";
       const cards = [...now.querySelectorAll(".picks > li")];

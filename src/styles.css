@@ -2375,6 +2375,11 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   min-width: 0;
 }
 
+/* (the photo across the group's panel: wide screens only, below) */
+.group-head__photo {
+  display: none;
+}
+
 .group-head h1 {
   margin-bottom: 0.4rem;
   overflow-wrap: anywhere;
@@ -2559,6 +2564,8 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   /* the group's panel: its name, who's in, you, and the invite */
   .group-head.group-head--split {
     display: grid;
+    justify-content: stretch;
+    align-items: start;
     gap: 0.9rem;
     padding: 1.25rem;
     border-radius: var(--radius);
@@ -2569,6 +2576,26 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   .group-head h1 {
     margin: 0 0 0.5rem;
     font-size: 1.85rem;
+  }
+
+  /* the home page's Canberra, a strip across the top of the panel */
+  .group-head.group-head--split {
+    overflow: hidden;
+  }
+
+  .group-head__photo {
+    display: block;
+    order: -1;
+    height: 6.5rem;
+    margin: -1.25rem -1.25rem 0.1rem;
+  }
+
+  .group-head__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 58%;
   }
 
   .group-head .you {
@@ -2703,12 +2730,24 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     flex: none;
   }
 
-  /* (a short screen with the invite open: then the whole column scrolls) */
+  /* Our list's title stays; the list scrolls inside its own rounded card,
+     so what scrolls out of sight goes behind its rounded corners. (A short
+     screen with the invite open: then the whole column scrolls.) */
   .group-page.is-tabbed #list {
+    display: flex;
     flex: 1 1 auto;
+    flex-direction: column;
     min-height: 14rem;
-    margin: 0 -0.5rem;
-    padding: 0 0.5rem 1rem;
+  }
+
+  .group-page.is-tabbed #list > h2 {
+    flex: none;
+  }
+
+  .group-page.is-tabbed .picks {
+    flex: 0 1 auto;
+    align-content: start;
+    min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
@@ -2720,11 +2759,16 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     grid-template-rows: auto minmax(0, 1fr);
   }
 
+  /* (the cards scroll in a box with the cards' own corners, so one scrolled
+     half out of sight is still rounded) */
   .group-page.is-tabbed #explore {
     min-height: 0;
     height: 100%;
-    margin: 0 -0.5rem;
-    padding: 0 0.5rem 1rem;
+    padding-bottom: 1rem;
+    border-radius: var(--radius);
+    /* cards fade as they slide under the search, and in at the foot,
+       rather than being cut off square */
+    mask-image: linear-gradient(transparent, #000 0.9rem, #000 calc(100% - 1rem), transparent);
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
@@ -2755,8 +2799,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     grid-row: 1;
     grid-column: 2;
     height: 100%;
-    margin: 0 -0.5rem;
-    padding: 0 0.5rem 1rem;
+    border-radius: var(--radius);
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
