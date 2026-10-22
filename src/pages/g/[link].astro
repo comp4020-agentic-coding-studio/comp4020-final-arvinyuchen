@@ -367,84 +367,86 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
   {/* Our list as a ranking: most keen first, the leader standing out, the
       rest compact rows, each with who's keen. */}
   <section id="list" class="board__list" aria-labelledby="list-title" data-panel="list" data-editing={editing ? "" : undefined}>
-    <div class="list-head">
-      <h2 id="list-title">Our list</h2>
-      {picks.length > 0 && (
-        <a class="list-edit" href={editing ? `/g/${group.link}#list` : `/g/${group.link}?edit#list`} data-edit-toggle>
-          <span class="list-edit__edit">Edit</span><span class="list-edit__done">Done</span>
-        </a>
+    <div class="list-card">
+      <div class="list-head">
+        <h2 id="list-title">Our list</h2>
+        {picks.length > 0 && (
+          <a class="list-edit" href={editing ? `/g/${group.link}#list` : `/g/${group.link}?edit#list`} data-edit-toggle>
+            <span class="list-edit__edit">Edit</span><span class="list-edit__done">Done</span>
+          </a>
+        )}
+      </div>
+      {removed && (
+        <form class="notice notice--ok list-note" method="post" action={`/api/groups/${group.id}/picks`} role="status">
+          <input type="hidden" name="place" value={removed.id} />
+          <span>Took {removed.name} off the list.</span>
+          <button class="list-note__undo">Undo</button>
+        </form>
+      )}
+      {error === "remove" && (
+        <p class="notice list-note" role="alert">That one stays: someone else is keen on it now. Only the owner can take it off.</p>
+      )}
+      {picks.length === 0 ? (
+        <p class="empty">Nothing on the list yet. Add something from Explore.</p>
+      ) : (
+        <ol class="picks">
+          {picks.map((pick, i) => {
+            const { id, place, keen } = pick;
+            const mine = keen.includes(member.name);
+            // (others' keens go with it: the owner is asked first)
+            const othersKeen = keen.filter((name) => name !== member.name).length;
+            const lead = i === 0 && keen.length > 0;
+            return (
+              <li
+                id={`pick-${id}`}
+                class={`pick spot--${place.kind}${lead ? " pick--top" : ""}`}
+                data-place={place.lat !== null ? place.id : undefined}
+                data-place-id={place.id}
+              >
+                <SpotPhoto photo={place.photo} name={place.name} kind={place.kind} small />
+                <div class="pick__main">
+                  {lead && <p class="pick__lead">Most keen</p>}
+                  <h3>{place.name}</h3>
+                  {place.area && <p class="area">{place.area}</p>}
+                  <p class="keen-who">
+                    {keen.length > 0 ? (
+                      <>
+                        <span class="sr-only">Keen: </span>
+                        <span class="keen-who__names">{everyone(keen) ? "Everyone" : keen.join(", ")}</span>
+                      </>
+                    ) : (
+                      "No one's keen yet"
+                    )}
+                  </p>
+                </div>
+                <form method="post" action={`/api/groups/${group.id}/keen`} data-keen>
+                  <input type="hidden" name="pick" value={id} />
+                  <input type="hidden" name="keen" value={mine ? "off" : "on"} />
+                  <button class={`keen${mine ? " keen--on" : ""}`} aria-pressed={mine ? "true" : "false"}>
+                    <span class="keen__count">{keen.length}</span>
+                    <span>{mine ? "Keen!" : "I'm keen"}</span>
+                  </button>
+                </form>
+                {canRemovePick(group, pick, member) ? (
+                  <form
+                    method="post"
+                    action={`/api/groups/${group.id}/picks`}
+                    class="pick__remove"
+                    data-remove={place.name}
+                    data-confirm={othersKeen > 0 ? `Take ${place.name} off the list? ${othersKeen === 1 ? "1 keen goes" : `${othersKeen} keens go`} with it.` : undefined}
+                  >
+                    <input type="hidden" name="remove" value={id} />
+                    <button class="remove">Remove<span class="sr-only"> {place.name}</span></button>
+                  </form>
+                ) : (
+                  <p class="pick__remove pick__by">{pick.addedById === member.id ? "Others are keen" : `${pick.addedBy}'s`}</p>
+                )}
+              </li>
+            );
+          })}
+        </ol>
       )}
     </div>
-    {removed && (
-      <form class="notice notice--ok list-note" method="post" action={`/api/groups/${group.id}/picks`} role="status">
-        <input type="hidden" name="place" value={removed.id} />
-        <span>Took {removed.name} off the list.</span>
-        <button class="list-note__undo">Undo</button>
-      </form>
-    )}
-    {error === "remove" && (
-      <p class="notice list-note" role="alert">That one stays: someone else is keen on it now. Only the owner can take it off.</p>
-    )}
-    {picks.length === 0 ? (
-      <p class="empty">Nothing on the list yet. Add something from Explore.</p>
-    ) : (
-      <ol class="picks">
-        {picks.map((pick, i) => {
-          const { id, place, keen } = pick;
-          const mine = keen.includes(member.name);
-          // (others' keens go with it: the owner is asked first)
-          const othersKeen = keen.filter((name) => name !== member.name).length;
-          const lead = i === 0 && keen.length > 0;
-          return (
-            <li
-              id={`pick-${id}`}
-              class={`pick spot--${place.kind}${lead ? " pick--top" : ""}`}
-              data-place={place.lat !== null ? place.id : undefined}
-              data-place-id={place.id}
-            >
-              <SpotPhoto photo={place.photo} name={place.name} kind={place.kind} small />
-              <div class="pick__main">
-                {lead && <p class="pick__lead">Most keen</p>}
-                <h3>{place.name}</h3>
-                {place.area && <p class="area">{place.area}</p>}
-                <p class="keen-who">
-                  {keen.length > 0 ? (
-                    <>
-                      <span class="sr-only">Keen: </span>
-                      <span class="keen-who__names">{everyone(keen) ? "Everyone" : keen.join(", ")}</span>
-                    </>
-                  ) : (
-                    "No one's keen yet"
-                  )}
-                </p>
-              </div>
-              <form method="post" action={`/api/groups/${group.id}/keen`} data-keen>
-                <input type="hidden" name="pick" value={id} />
-                <input type="hidden" name="keen" value={mine ? "off" : "on"} />
-                <button class={`keen${mine ? " keen--on" : ""}`} aria-pressed={mine ? "true" : "false"}>
-                  <span class="keen__count">{keen.length}</span>
-                  <span>{mine ? "Keen!" : "I'm keen"}</span>
-                </button>
-              </form>
-              {canRemovePick(group, pick, member) ? (
-                <form
-                  method="post"
-                  action={`/api/groups/${group.id}/picks`}
-                  class="pick__remove"
-                  data-remove={place.name}
-                  data-confirm={othersKeen > 0 ? `Take ${place.name} off the list? ${othersKeen === 1 ? "1 keen goes" : `${othersKeen} keens go`} with it.` : undefined}
-                >
-                  <input type="hidden" name="remove" value={id} />
-                  <button class="remove">Remove<span class="sr-only"> {place.name}</span></button>
-                </form>
-              ) : (
-                <p class="pick__remove pick__by">{pick.addedById === member.id ? "Others are keen" : `${pick.addedBy}'s`}</p>
-              )}
-            </li>
-          );
-        })}
-      </ol>
-    )}
   </section>
 
   </div>

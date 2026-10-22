@@ -3072,8 +3072,14 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   box-shadow: 0 1px 3px rgb(0 0 0 / 12%), 0 1px 1px rgb(0 0 0 / 4%);
 }
 
-#list h2 {
+/* Our list as one card, as Explore is: its title and Edit on top, the
+   ranking under them. */
+.list-card {
   margin-top: 1.6rem;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
 }
 
 .empty {
@@ -3190,7 +3196,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     display: none;
   }
 
-  #list h2 {
+  .list-card {
     margin-top: 1.25rem;
   }
 
@@ -3287,9 +3293,10 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     flex: none;
   }
 
-  /* Our list's title stays; the list scrolls inside its own rounded card,
-     so what scrolls out of sight goes behind its rounded corners. (A short
-     screen with the invite open: then the whole column scrolls.) */
+  /* Our list's title stays at the top of its card; the rows scroll under
+     it, so what scrolls out of sight goes behind the card's rounded
+     corners. (A short screen with the invite open: then the whole column
+     scrolls.) */
   .group-page.is-tabbed #list {
     display: flex;
     flex: 1 1 auto;
@@ -3297,8 +3304,15 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     min-height: 14rem;
   }
 
-  .group-page.is-tabbed #list > .list-head,
-  .group-page.is-tabbed #list > .list-note {
+  .group-page.is-tabbed .list-card {
+    display: flex;
+    flex: 0 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .group-page.is-tabbed .list-card > .list-head,
+  .group-page.is-tabbed .list-card > .list-note {
     flex: none;
   }
 
@@ -3382,16 +3396,14 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 /* Most keen first, always: each row its rank, photo, name, who's keen, and
    the keen button. The leader (.pick--top, first with anyone keen) is a
    size up. */
-/* One inset grouped list, as in Settings or Music's charts: white, rounded,
-   its rows parted by hairlines that start where the words do. */
+/* One inset grouped list, as in Settings or Music's charts: the rows of
+   the list's white card, parted by hairlines that start where the words
+   do. */
 .picks {
   display: grid;
   margin: 0;
   padding: 0;
   overflow: hidden;
-  border-radius: var(--radius);
-  background: var(--card);
-  box-shadow: var(--shadow-sm);
   list-style: none;
   counter-reset: rank;
 }
@@ -3454,6 +3466,11 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
+  padding: 1rem 0.9rem 0.35rem;
+}
+
+.list-head h2 {
+  margin: 0;
 }
 
 .list-edit {
@@ -3483,7 +3500,14 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.25rem 0.75rem;
-  margin: 0 0 0.75rem;
+  margin: 0.4rem 0.9rem 0.5rem;
+}
+
+/* (an empty list says so in its card, under the title) */
+.list-card > .empty {
+  margin: 0;
+  padding: 0.25rem 0.9rem 1.1rem;
+  border: 0;
 }
 
 .list-note__undo {
