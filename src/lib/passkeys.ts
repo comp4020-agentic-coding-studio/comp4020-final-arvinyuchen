@@ -12,13 +12,10 @@ export type Ceremony =
   | {
       kind: "register";
       challenge: string;
-      /** The account to add a passkey to, or the new one to create. */
+      /** The account to add a passkey to, or null for a new one. */
       accountId: number | null;
       handle: string;
       name: string;
-      /** The member (and group) that becomes the new account's. */
-      memberId: number | null;
-      groupId: string | null;
     }
   | { kind: "signin"; challenge: string };
 

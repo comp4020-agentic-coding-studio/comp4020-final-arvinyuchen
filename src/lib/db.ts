@@ -84,11 +84,10 @@ db.exec(`
   );
 `);
 
-// Accounts are optional: joining is still a link and a name. Someone who
-// wants to be themselves on every device saves a passkey, which makes an
-// account and ties their members (one per group) to it. No passwords, no
-// email: a passkey is the only way in. Sessions keep a hash of their token,
-// so the database alone can't be used to sign in.
+// Everyone is an account: a name and the passkeys that sign in as it, with
+// one member per group it's in. No passwords, no email: a passkey is the
+// only way in. Sessions keep a hash of their token, so the database alone
+// can't be used to sign in.
 db.exec(`
   CREATE TABLE IF NOT EXISTS accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -137,6 +136,10 @@ addColumn("accounts", "is_admin", "INTEGER NOT NULL DEFAULT 0");
 addColumn("groups", "note", "TEXT");
 addColumn("groups", "archived_at", "TEXT");
 addColumn("places", "hidden_at", "TEXT");
+// Which passkey is which, on the account page: the password manager's
+// AAGUID, and the device and browser it was made on.
+addColumn("passkeys", "aaguid", "TEXT");
+addColumn("passkeys", "made_on", "TEXT");
 // Groups from before owners and invite links: whoever started the group
 // (its first member) owns it, and its link is the one already shared.
 db.exec(`
@@ -223,18 +226,15 @@ const token = (bytes: number) => randomBytes(bytes).toString("base64url");
 const GROUP_COLUMNS = `g.id, g.name, g.owner_member_id AS ownerId, g.note,
   (SELECT slug FROM group_links l WHERE l.group_id = g.id AND l.retired_at IS NULL) AS link`;
 
-export function createGroup(
-  groupName: string,
-  memberName: string,
-  accountId: number | null = null,
-): { group: Group; member: Member; secret: string } {
+/** A new group, with the account that started it as its first member and owner. */
+export function createGroup(groupName: string, account: { id: number; name: string }): { group: Group; member: Member } {
   const id = token(6);
   return db.transaction(() => {
     db.prepare("INSERT INTO groups (id, name) VALUES (?, ?)").run(id, groupName);
     db.prepare("INSERT INTO group_links (slug, group_id) VALUES (?, ?)").run(id, id);
-    const { member, secret } = joinGroup(id, memberName, accountId);
+    const member = joinGroup(id, account);
     db.prepare("UPDATE groups SET owner_member_id = ? WHERE id = ?").run(member.id, id);
-    return { group: getGroup(id)!, member, secret };
+    return { group: getGroup(id)!, member };
   })();
 }
 
@@ -257,45 +257,19 @@ export function groupByLink(slug: string): { group: Group; current: boolean } | 
   return group ? { group, current: row.retired_at === null } : undefined;
 }
 
-export function joinGroup(
-  groupId: string,
-  name: string,
-  accountId: number | null = null,
-): { member: Member; secret: string } {
-  const secret = token(18);
+/**
+ * An account joins a group, under its name. (Members from before accounts
+ * were required carry a cookie secret; new ones get a random one nobody
+ * holds, as the column wants a value and schema changes stay additive.)
+ */
+export function joinGroup(groupId: string, account: { id: number; name: string }): Member {
   const { lastInsertRowid } = db
     .prepare("INSERT INTO members (group_id, name, secret, account_id) VALUES (?, ?, ?, ?)")
-    .run(groupId, name, secret, accountId);
-  return { member: { id: Number(lastInsertRowid), name, accountId }, secret };
+    .run(groupId, account.name, token(18), account.id);
+  return { id: Number(lastInsertRowid), name: account.name, accountId: account.id };
 }
 
 const MEMBER_COLUMNS = "id, name, account_id AS accountId";
-
-/**
- * The member a browser's cookie value ("<id>.<secret>") proves it is. A
- * member merged into another is now that one; a removed member is no one.
- */
-export function memberFor(groupId: string, cookie: string | undefined): Member | undefined {
-  const [id, secret] = (cookie ?? "").split(".");
-  if (!id || !secret) return undefined;
-  const row = db
-    .prepare("SELECT id, merged_into, removed_at FROM members WHERE id = ? AND group_id = ? AND secret = ?")
-    .get(Number(id), groupId, secret) as { id: number; merged_into: number | null; removed_at: string | null } | undefined;
-  if (!row) return undefined;
-  let memberId: number | null = row.removed_at ? row.merged_into : row.id;
-  // Merges can chain (A into B, then B into C); follow them to the end.
-  for (let hops = 0; memberId !== null && hops < 10; hops++) {
-    const next = db.prepare("SELECT merged_into, removed_at FROM members WHERE id = ?").get(memberId) as
-      | { merged_into: number | null; removed_at: string | null }
-      | undefined;
-    if (!next?.removed_at) break;
-    memberId = next.merged_into;
-  }
-  if (memberId === null) return undefined;
-  return db.prepare(`SELECT ${MEMBER_COLUMNS} FROM members WHERE id = ? AND removed_at IS NULL`).get(memberId) as
-    | Member
-    | undefined;
-}
 
 export function listMembers(groupId: string): Member[] {
   return db
@@ -308,13 +282,6 @@ export function memberOfAccount(groupId: string, accountId: number): Member | un
   return db
     .prepare(`SELECT ${MEMBER_COLUMNS} FROM members WHERE group_id = ? AND account_id = ? AND removed_at IS NULL ORDER BY id LIMIT 1`)
     .get(groupId, accountId) as Member | undefined;
-}
-
-/** Ties a member to an account, unless that account is already someone in the group. */
-export function linkMember(member: Member, groupId: string, accountId: number): boolean {
-  if (member.accountId !== null || memberOfAccount(groupId, accountId)) return false;
-  db.prepare("UPDATE members SET account_id = ? WHERE id = ?").run(accountId, member.id);
-  return true;
 }
 
 export interface AccountGroup {
@@ -371,7 +338,10 @@ export function removeMember(group: Group, memberId: number): boolean {
 
 /**
  * Folds a duplicate into the member they really are: their keens and the
- * places they added move over, and their browser becomes that member.
+ * places they added move over, and the duplicate's account leaves the group.
+ * It's also the way back for someone who lost every passkey: they make a new
+ * account, join again by the link, and the owner merges their old member
+ * into the new one. There's no other recovery.
  */
 export function mergeMembers(group: Group, fromId: number, intoId: number): boolean {
   if (fromId === intoId) return false;

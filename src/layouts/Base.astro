@@ -34,6 +34,20 @@ const account = signedIn(Astro.cookies);
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='14' r='9' fill='%230b6e88'/><circle cx='16' cy='14' r='3.5' fill='%23f7fafb'/><path d='M16 31 9 20h14z' fill='%230b6e88'/></svg>" />
     <title>{title}</title>
+    {/* Whether this browser can sign in with a passkey, before anything
+        paints: html.passkeys shows the passkey buttons, otherwise the note
+        saying to open the page in Safari or Chrome shows instead
+        (src/components/NoPasskey.astro). Other apps' built-in browsers
+        (Instagram, Facebook, WeChat...) say they have passkeys and then
+        can't make one, so they count as without (html.in-app). */}
+    <script is:inline>
+      (() => {
+        const root = document.documentElement;
+        const inApp = /Instagram|FBAN|FBAV|FB_IAB|FBIOS|MicroMessenger|\bLine\/|musical_ly|BytedanceWebview|Snapchat|LinkedInApp/.test(navigator.userAgent);
+        if (inApp) root.classList.add("in-app");
+        else if (typeof window.PublicKeyCredential === "function") root.classList.add("passkeys");
+      })();
+    </script>
   </head>
   <body>
     <header class="top" role="banner">

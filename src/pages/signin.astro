@@ -1,28 +1,41 @@
 ---
+import NoPasskey from "../components/NoPasskey.astro";
 import Base from "../layouts/Base.astro";
-import { signedIn } from "../lib/me";
+import { nextPath, signedIn } from "../lib/me";
 
-if (signedIn(Astro.cookies)) return Astro.redirect("/me", 303);
+// The way in: a passkey you have, or a new account (your name and a new
+// passkey). Either way you go on to ?next=, or your groups.
+const next = nextPath(Astro.url.searchParams.get("next"));
+if (signedIn(Astro.cookies)) return Astro.redirect(next, 303);
 ---
 
 <Base title="Sign in · Spots">
-  <section class="card notice-page">
+  <section class="card notice-page signin">
     <p class="eyebrow">Sign in</p>
     <h1>Sign in with your passkey</h1>
     <p>
-      Use the passkey you saved in one of your groups: your face, fingerprint or phone PIN. There's no password and no
-      username to remember.
+      Your face, fingerprint or phone PIN: there's no password and no username to remember. On a computer that doesn't
+      have your passkey, choose to use a phone and scan the code with yours.
     </p>
-    <div class="card__actions stack">
-      <div data-passkey-only hidden class="stack">
-        <button type="button" class="btn btn--primary" data-passkey="signin" data-next="/me">Sign in with a passkey</button>
+    <div class="card__actions stack" data-passkey-only>
+      <button type="button" class="btn btn--primary" data-passkey="signin" data-then={next}>Sign in with a passkey</button>
+      <span class="passkey-msg" aria-live="polite"></span>
+
+      <form class="stack signin__new" data-account="new" data-then={next}>
+        <h2>New to Spots?</h2>
+        <label>
+          <span>Your name</span>
+          <input name="name" required maxlength="40" placeholder="What your friends call you" autocomplete="nickname" />
+        </label>
+        <button class="btn">Make an account</button>
         <span class="passkey-msg" aria-live="polite"></span>
-      </div>
-      <p class="fine" data-no-passkey>
-        No passkey yet? You don't need one to use Spots: open your group's link and join with your name. Once you're
-        in, you can save a passkey there.
-      </p>
+        <p class="fine">
+          It's your name and a passkey, nothing else. Lost every passkey one day? There's no reset: make a new account,
+          and each group's owner can merge your old name into it.
+        </p>
+      </form>
     </div>
+    <NoPasskey to="sign in" />
   </section>
   <script>
     import "../scripts/passkeys";

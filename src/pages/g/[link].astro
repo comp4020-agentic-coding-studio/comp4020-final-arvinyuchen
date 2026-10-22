@@ -2,6 +2,7 @@
 import QRCode from "qrcode";
 import CityPhoto from "../../components/CityPhoto.astro";
 import MiniMap from "../../components/MiniMap.astro";
+import NoPasskey from "../../components/NoPasskey.astro";
 import SpotPhoto from "../../components/SpotPhoto.astro";
 import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
@@ -79,7 +80,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
   title={`${group.name} · Spots`}
   share={{
     title: `Join ${group.name} on Spots`,
-    description: "A shared list of places to go, picked together. Join with just your name: no app, no sign-up.",
+    description: "A shared list of places to go, picked together. Join with your name and a passkey: no app, no password.",
     url: shareUrl,
   }}
 >
@@ -126,45 +127,57 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         </div>
       )}
       <div class="welcome__module welcome__module--actions">
-        <form id="join" method="post" action={`/api/groups/${group.id}/join`} class="stack welcome__form">
+        {/* Everyone joins as an account. Signed in, it's one button; signed
+            out, sending the form makes the account first (your name and a
+            passkey, src/scripts/passkeys.ts), or "Sign in" finds the one
+            you have and then sends it. */}
+        <form
+          id="join"
+          method="post"
+          action={`/api/groups/${group.id}/join`}
+          class="stack welcome__form"
+          data-account={account ? undefined : "new"}
+          data-passkey-only={account ? undefined : ""}
+        >
           <input type="hidden" name="link" value={group.link} />
-          <label for="join-name" class="welcome__label">Join the group<span class="sr-only">: your first name</span></label>
-          {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
-          <div class="welcome__field">
-            {/* The face you'll have in the group, filled in as you type (src/scripts/welcome.ts). */}
-            <span
-              class="face welcome__you"
-              aria-hidden="true"
-              style={account?.name ? `--hue: ${hue(account.name)}` : undefined}
-            >
-              {account?.name ? [...account.name][0]?.toUpperCase() : ""}
-            </span>
-            <input
-              id="join-name"
-              name="name"
-              required
-              maxlength="40"
-              autocomplete="nickname"
-              value={account?.name}
-              placeholder="Your first name"
-            />
-          </div>
+          {error === "account" && (
+            <p class="notice" role="alert">Joining needs an account: your name and a passkey.</p>
+          )}
+          {account ? (
+            <>
+              <p class="welcome__label">Join the group</p>
+              <p class="welcome__field welcome__as">
+                <span class="face welcome__you" aria-hidden="true" style={`--hue: ${hue(account.name)}`}>
+                  {[...account.name][0]?.toUpperCase()}
+                </span>
+                <span>as <strong>{account.name}</strong></span>
+              </p>
+            </>
+          ) : (
+            <>
+              <label for="join-name" class="welcome__label">Join the group<span class="sr-only">: your first name</span></label>
+              <div class="welcome__field">
+                {/* The face you'll have in the group, filled in as you type (src/scripts/welcome.ts). */}
+                <span class="face welcome__you" aria-hidden="true"></span>
+                <input id="join-name" name="name" required maxlength="40" autocomplete="nickname" placeholder="Your first name" />
+              </div>
+            </>
+          )}
           <button class="btn btn--primary welcome__join">
             <span>Join {group.name}</span>
             <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
               <path d="M4 10h11M11 5.5 15.5 10 11 14.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </button>
+          <span class="passkey-msg" aria-live="polite"></span>
+          {!account && (
+            <p class="fine passkey-alt">
+              You'll save a passkey for Spots: your face, fingerprint or phone PIN. Have one?{" "}
+              <button type="button" class="linkish" data-passkey="signin" data-then="#join">Sign in</button>
+            </p>
+          )}
         </form>
-        {!account && (
-          <p class="fine passkey-alt" data-passkey-only hidden>
-            Joined on another device?{" "}
-            <button type="button" class="linkish" data-passkey="signin" data-group={group.id}>
-              Sign in
-            </button>
-            <span class="passkey-msg" aria-live="polite"></span>
-          </p>
-        )}
+        {!account && <NoPasskey to="join" />}
       </div>
     </div>
 
@@ -244,37 +257,11 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     </div>
   </section>
 
-    <div class="you">
-      <p>
-        You're in as <strong>{member.name}</strong>
-        {isOwner && <span class="owner-tag">owner</span>}
-        {account && member.accountId === account.id && (
-          <>
-            {" "}Signed in with a passkey · <a href="/me">My groups</a>
-          </>
-        )}
-      </p>
-      {member.accountId === null && (
-        <div class="keep card" data-passkey-only hidden>
-          <div>
-            <strong>Be {member.name} on every device</strong>
-            <p class="fine">
-              Save a passkey (your face, fingerprint or phone PIN) and you can sign in anywhere and find all your
-              groups. No password, no email.
-            </p>
-          </div>
-          <div class="keep__actions">
-            <button type="button" class="btn btn--primary" data-passkey="register" data-group={group.id}>
-              Save a passkey
-            </button>
-            <button type="button" class="linkish" data-passkey="signin" data-group={group.id}>
-              I already have one
-            </button>
-            <span class="passkey-msg" aria-live="polite"></span>
-          </div>
-        </div>
-      )}
-    </div>
+    <p class="you">
+      You're in as <strong>{member.name}</strong>
+      {isOwner && <span class="owner-tag">owner</span>}
+      {" "}· <a href="/me">My groups</a>
+    </p>
 
   <nav class="section-nav" aria-label="On this page">
     <a href="#list">Our list</a>
@@ -491,7 +478,6 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
             <span class="people__name">
               {m.name}
               {m.id === group.ownerId && <span class="owner-tag">owner</span>}
-              {m.accountId !== null && <span class="fine"> · passkey</span>}
             </span>
             {m.id !== group.ownerId && (
               <form method="post" action={`/api/groups/${group.id}/owner`} data-confirm={`Remove ${m.name}? Their keens go too.`}>
@@ -521,6 +507,12 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
           </label>
           <button class="btn">Merge</button>
         </form>
+      )}
+      {members.length > 1 && (
+        <p class="fine">
+          Someone who lost every passkey makes a new account and joins again by the link: merge their old name into
+          the new one, and their keens and places come with them.
+        </p>
       )}
 
       <h3>Invite link</h3>

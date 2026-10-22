@@ -1183,6 +1183,43 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   display: none;
 }
 
+/* Passkey buttons only where a passkey can work (html.passkeys, from
+   Base.astro's check); elsewhere the note to open the page in Safari or
+   Chrome (src/components/NoPasskey.astro), with how to get out of another
+   app's browser when that's where it is. */
+html:not(.passkeys) [data-passkey-only],
+html.passkeys [data-no-passkey],
+html:not(.in-app) .no-passkey__app {
+  display: none !important;
+}
+
+.no-passkey {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius);
+  background: var(--tint);
+}
+
+.no-passkey p {
+  margin: 0;
+}
+
+/* (on the invite, the join module's own tint is its box) */
+.welcome .no-passkey {
+  margin: 0;
+  padding: 0;
+  background: none;
+}
+
+.no-passkey__copy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .owner-tag {
   margin-left: 0.4rem;
   padding: 0.05rem 0.5rem;
@@ -1193,34 +1230,8 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   background: var(--accent-soft);
 }
 
-.you p {
-  margin: 0.8rem 0 0;
-}
-
-.keep {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem 1.5rem;
-  margin-top: 0.9rem;
-  color: var(--ink);
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
-}
-
-.keep > div:first-child {
-  flex: 1 1 18rem;
-}
-
-.keep .fine {
-  margin: 0.25rem 0 0;
-}
-
-.keep__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 1rem;
+.you {
+  margin: 1.2rem 0 0;
 }
 
 .settings {
@@ -1335,8 +1346,58 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   margin-top: 2rem;
 }
 
+.account h2 {
+  margin-bottom: 0.75rem;
+}
+
+.account .notice {
+  margin: 0 0 0.75rem;
+}
+
+/* Each passkey: where it lives and when it was used, and its Remove. */
 .keys {
-  padding-left: 1.1rem;
+  display: grid;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.keys li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.keys li:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.keys li > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.account > form:last-child {
+  margin-top: 1rem;
+}
+
+/* The sign-in page's second way in: a new account, under a hairline. */
+.signin__new {
+  margin-top: 0.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.signin__new h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.signin__new .fine {
+  margin: 0;
 }
 
 /* ---- Site admin ------------------------------------------------------------ */
@@ -1503,6 +1564,10 @@ body:has(.home) .top nav a:hover {
 
 .start__go:hover svg {
   translate: 3px 0;
+}
+
+.start__or {
+  text-align: center;
 }
 
 /* The photo turns into the map (src/scripts/fly.ts). As it stands,
@@ -2348,10 +2413,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-weight: 800;
 }
 
-.you {
-  margin-top: 0.4rem;
-}
-
 .join {
   margin-top: 1.25rem;
 }
@@ -2579,15 +2640,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   .section-nav a {
     padding: 0.4rem 0.65rem;
     font-size: 0.86rem;
-  }
-
-  .keep {
-    padding: 0.9rem 1rem;
-    gap: 0.6rem;
-  }
-
-  .keep .fine {
-    font-size: 0.84rem;
   }
 }
 
@@ -3620,6 +3672,26 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   border-color: #fff;
   translate: 0 -50%;
   pointer-events: none;
+}
+
+/* Signed in, no field: the face and name you'll join as, where the field
+   would be. */
+.welcome__as {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  height: 3.5rem;
+  margin: 0;
+  padding: 0 1rem 0 0.75rem;
+  border-radius: 16px;
+  background: var(--bg);
+  font-size: 1.05rem;
+}
+
+.welcome__as .welcome__you {
+  position: static;
+  flex: none;
+  translate: none;
 }
 
 /* No name yet: no face, just the field asking for one. The face comes in

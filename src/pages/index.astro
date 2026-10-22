@@ -1,9 +1,14 @@
 ---
 import CityPhoto from "../components/CityPhoto.astro";
 import HeroMap from "../components/HeroMap.astro";
+import NoPasskey from "../components/NoPasskey.astro";
 import Base from "../layouts/Base.astro";
+import { signedIn } from "../lib/me";
 
 const error = Astro.url.searchParams.get("error");
+// Signed in, a group is just its name. Signed out, the form also takes your
+// name, and sending it makes your account with a passkey first.
+const account = signedIn(Astro.cookies);
 ---
 
 <Base title="Spots: places to go, picked together" newGroup={false}>
@@ -38,24 +43,45 @@ const error = Astro.url.searchParams.get("error");
 
   <section id="start" class="card start" aria-labelledby="start-title">
     <h2 id="start-title">Start a group</h2>
-    <p class="fine">No sign-up. Anyone with your group's link joins by typing a name.</p>
-    <form method="post" action="/api/groups" class="stack card__actions">
-      {error && <p class="notice" role="alert">Give the group a name, and tell everyone yours.</p>}
+    {account ? (
+      <p class="fine">You'll start it as <strong>{account.name}</strong>, and get its link to send your friends.</p>
+    ) : (
+      <p class="fine">You'll get its link to send your friends. Everyone signs in with a passkey: no password, no email.</p>
+    )}
+    <form
+      method="post"
+      action="/api/groups"
+      class="stack card__actions"
+      data-account={account ? undefined : "new"}
+      data-passkey-only={account ? undefined : ""}
+    >
+      {error === "missing" && <p class="notice" role="alert">Give the group a name.</p>}
+      {error === "account" && <p class="notice" role="alert">Starting a group needs an account: your name and a passkey.</p>}
       <label>
         <span>Group name</span>
         <input name="group" required maxlength="60" placeholder="Saturday crew" autocomplete="off" />
       </label>
-      <label>
-        <span>Your name</span>
-        <input name="name" required maxlength="40" placeholder="What your friends call you" autocomplete="nickname" />
-      </label>
+      {!account && (
+        <label>
+          <span>Your name</span>
+          <input name="name" required maxlength="40" placeholder="What your friends call you" autocomplete="nickname" />
+        </label>
+      )}
       <button class="btn btn--primary start__go">
         <span>Start and get the link</span>
         <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
           <path d="M4 10h11M11 5.5 15.5 10 11 14.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </button>
+      <span class="passkey-msg" aria-live="polite"></span>
+      {!account && (
+        <p class="fine start__or">
+          You'll save a passkey for Spots: your face, fingerprint or phone PIN. Have one?{" "}
+          <button type="button" class="linkish" data-passkey="signin" data-then="/#start">Sign in</button>
+        </p>
+      )}
     </form>
+    {!account && <NoPasskey to="start a group" />}
   </section>
   </div>
   </div>
@@ -63,5 +89,8 @@ const error = Astro.url.searchParams.get("error");
     // (the map and its code only with motion allowed: without, the page is
     // the photo and the drawn map under it)
     if (!matchMedia("(prefers-reduced-motion: reduce)").matches) import("../scripts/fly.ts");
+  </script>
+  <script>
+    import "../scripts/passkeys";
   </script>
 </Base>
