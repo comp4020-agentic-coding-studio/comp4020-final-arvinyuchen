@@ -1,6 +1,7 @@
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Photo } from "../lib/catalogue";
+import { kindIcon } from "../lib/kind-icons";
 import { KIND_LABEL, type Kind } from "../lib/kinds";
 import { buildings, fine, letters, look, quiet, STYLE } from "./map-look";
 import { around, type Box, chipFont, chips, dress, fold, mark, measure, names, type Name } from "./map-marks";
@@ -119,7 +120,7 @@ if (container) {
     meta.className = "map-pop__meta";
     const tag = document.createElement("span");
     tag.className = "tag";
-    tag.textContent = KIND_LABEL[pin.kind];
+    tag.append(kindIcon(pin.kind), KIND_LABEL[pin.kind]);
     const where = document.createElement("span");
     where.textContent = [pin.area, list.order.has(pin.id) && "on our list"].filter(Boolean).join(" · ");
     meta.append(tag, where);

@@ -1,5 +1,6 @@
 ---
 import CityPhoto from "../../components/CityPhoto.astro";
+import KindIcon from "../../components/KindIcon.astro";
 import MiniMap from "../../components/MiniMap.astro";
 import NoPasskey from "../../components/NoPasskey.astro";
 import SpotPhoto from "../../components/SpotPhoto.astro";
@@ -360,7 +361,10 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
               <div class="pick__main">
                 {lead && <p class="pick__lead">Most keen</p>}
                 <h3>{place.name}</h3>
-                <p class="area">{[place.area, KIND_LABEL[place.kind]].filter(Boolean).join(" · ")}</p>
+                <p class="area">
+                  {place.area && `${place.area} · `}
+                  <span class="area__kind"><KindIcon kind={place.kind} />{KIND_LABEL[place.kind]}</span>
+                </p>
                 <p class="keen-who">
                   {keen.length > 0 ? (
                     <>
@@ -401,6 +405,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         <button type="button" class="chip chip--on" data-filter="all" aria-pressed="true">All</button>
         {kinds.map((k) => (
           <button type="button" class={`chip chip--${k}`} data-filter={k} aria-pressed="false">
+            <KindIcon kind={k} />
             {KIND_LABEL[k]}
           </button>
         ))}
@@ -437,7 +442,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
             <li class={`spot spot--${p.kind}`} data-kind={p.kind} data-place={p.lat !== null ? p.id : undefined}>
               <SpotPhoto photo={p.photo} name={p.name} kind={p.kind} />
               <div class="spot__meta">
-                <span class="tag">{KIND_LABEL[p.kind]}</span>
+                <span class="tag"><KindIcon kind={p.kind} />{KIND_LABEL[p.kind]}</span>
                 {p.groups > 0 && (
                   <span class="groups">
                     On {p.groups} {p.groups === 1 ? "list" : "lists"}

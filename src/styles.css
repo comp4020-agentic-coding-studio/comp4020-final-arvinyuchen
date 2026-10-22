@@ -440,16 +440,28 @@ input[type="radio"] {
   --kind: var(--culture);
 }
 
-/* A place's kind: its system colour, in words, on a wash of it. */
+/* A place's kind: its system colour, in its glyph and words, on a wash of
+   it. */
 .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
   align-self: flex-start;
   justify-self: start;
-  padding: 0.12rem 0.55rem;
+  padding: 0.12rem 0.55rem 0.12rem 0.45rem;
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--kind);
   background: color-mix(in srgb, var(--kind) 10%, white);
+}
+
+/* A kind's glyph (src/lib/kind-icons.ts): sized to the words beside it
+   and in their colour, so it changes with them (a chip that's on). */
+.kind-icon {
+  flex: none;
+  width: 1.2em;
+  height: 1.2em;
 }
 
 /* The invite panel (src/pages/g/[link].astro): a heading, the link in one
@@ -965,6 +977,9 @@ input[type="file"]::file-selector-button {
 }
 
 .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
   font: inherit;
   font-size: 0.85rem;
   font-weight: 500;
@@ -979,6 +994,11 @@ input[type="file"]::file-selector-button {
 
 .chip:hover {
   background: var(--fill-strong);
+}
+
+/* (a glyph's side wants a little less room than a letter's) */
+.chip .kind-icon {
+  margin-left: -0.15rem;
 }
 
 .chip--on,
@@ -2092,7 +2112,8 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   pointer-events: none;
 }
 
-.hero-map svg {
+/* (the drawing itself, not the kind glyphs on its cards) */
+.hero-map__frame > svg {
   display: block;
   width: 100%;
   height: 100%;
@@ -3060,6 +3081,16 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 
 .pick .area {
   font-size: 0.82rem;
+}
+
+/* (the kind after the suburb, its glyph kept to its word) */
+.area__kind {
+  white-space: nowrap;
+}
+
+.area__kind .kind-icon {
+  margin-right: 0.2em;
+  vertical-align: -0.22em;
 }
 
 .keen-who {
