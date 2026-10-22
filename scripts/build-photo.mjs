@@ -22,3 +22,16 @@ for (const width of [1000, 2000, 3000]) {
   await photo.clone().jpeg({ quality: 78, mozjpeg: true }).toFile(`${out}.jpg`);
   console.log(`wrote ${out}.avif and .jpg`);
 }
+
+// And for a phone held upright, which shows a third of the photo's width
+// at most: its middle three fifths, in two widths, so a phone fetches half
+// as much for the same picture (CityPhoto.astro's `tall`).
+const { width: full, height } = await sharp(original).metadata();
+for (const width of [900, 1800]) {
+  const out = `public/images/canberra-from-ainslie-tall-${width}`;
+  const side = Math.round(full * 0.2);
+  const photo = sharp(original).extract({ left: side, top: 0, width: full - 2 * side, height }).resize(width);
+  await photo.clone().avif({ quality: 55 }).toFile(`${out}.avif`);
+  await photo.clone().jpeg({ quality: 78, mozjpeg: true }).toFile(`${out}.jpg`);
+  console.log(`wrote ${out}.avif and .jpg`);
+}

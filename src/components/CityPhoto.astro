@@ -9,13 +9,29 @@ interface Props {
   sizes: string;
   // (the first thing on the page: fetched first)
   first?: boolean;
+  // (filling the screen's whole height: on a phone held upright, only the
+  // photo's middle shows, so it fetches only the middle, as cut by
+  // build-photo.mjs. Not where the photo's box can be wider for its height
+  // than nine to ten, or the cut would show.)
+  tall?: boolean;
 }
-const { class: className, sizes, first } = Astro.props;
+const { class: className, sizes, first, tall } = Astro.props;
 const widths = [1000, 2000, 3000];
 const set = (type: string) => widths.map((w) => `/images/canberra-from-ainslie-${w}.${type} ${w}w`).join(", ");
+const upright = "(max-aspect-ratio: 3/4) and (max-width: 40rem)";
+const middle = (type: string) =>
+  [900, 1800].map((w) => `/images/canberra-from-ainslie-tall-${w}.${type} ${w}w`).join(", ");
 ---
 
 <picture>
+  {
+    tall && (
+      <>
+        <source media={upright} type="image/avif" srcset={middle("avif")} sizes="91vh" />
+        <source media={upright} srcset={middle("jpg")} sizes="91vh" />
+      </>
+    )
+  }
   <source type="image/avif" srcset={set("avif")} sizes={sizes} />
   <img
     class={className}

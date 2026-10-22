@@ -26,6 +26,13 @@ const TERRAIN = "https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}
 // land axis just below the summit, about 100 m above the ground, looking
 // down the axis, with a lens about 24 degrees tall.
 const EYE = { lng: 149.16045, lat: -35.26824, alt: 930, bearing: -143.6, pitch: 85.5, fov: 24 };
+// (and the height of the ground the middle of the photo looks at, where
+// that line meets Mapzen's terrain, four and a half kilometres off: the
+// camera is worked out from it, not from the hills as loaded so far. They
+// come in coarse first, and a camera worked out from them sat fifty metres
+// lower than the photographer, in the slope under the lookout, so the
+// flight set off with the hill in its face.)
+const AIM = 573;
 const PHOTO = 2000 / 1325;
 
 // The scroll, in parts of the way through the stage.
@@ -150,6 +157,29 @@ if (fly && motion && gl) {
   let lens = EYE.fov;
   let hills = 1;
 
+  // The photo's view: the camera in the photographer's place, looking at
+  // the ground AIM high, at the lens and the stage's height as they are.
+  const photoView = () => {
+    const r = Math.PI / 180;
+    const drop = EYE.alt - AIM;
+    const reach = drop * Math.tan(EYE.pitch * r);
+    const b = EYE.bearing * r;
+    // (as MapLibre has it, on its flat map: so far along the heading, in
+    // its units at the far end; and the zoom at which the stage's half
+    // height, at that lens, spans the camera's distance from the ground)
+    const eye = maplibregl.MercatorCoordinate.fromLngLat([EYE.lng, EYE.lat]);
+    let unit = eye.meterInMercatorCoordinateUnits();
+    let far = eye;
+    for (let i = 0; i < 3; i++) {
+      far = new maplibregl.MercatorCoordinate(eye.x + Math.sin(b) * reach * unit, eye.y - Math.cos(b) * reach * unit);
+      unit = far.meterInMercatorCoordinateUnits();
+    }
+    const center = far.toLngLat();
+    const half = stage.clientHeight / 2 / Math.tan((map.getVerticalFieldOfView() / 2) * r);
+    const zoom = Math.log2(half / (Math.hypot(drop, reach) * unit) / 512);
+    return { center, zoom, pitch: EYE.pitch, bearing: EYE.bearing, elevation: AIM };
+  };
+
   // The photo fills the stage as `object-fit: cover`, centred: the map's
   // lens is cut to the part of the photo that shows.
   const frame = () => {
@@ -159,13 +189,8 @@ if (fly && motion && gl) {
     const fov = (2 * Math.atan(Math.tan(((EYE.fov / 2) * Math.PI) / 180) * (vh / shown)) * 180) / Math.PI;
     map.setVerticalFieldOfView(fov);
     lens = fov;
-    const first = map.calculateCameraOptionsFromCameraLngLatAltRotation(
-      [EYE.lng, EYE.lat],
-      EYE.alt,
-      EYE.bearing,
-      EYE.pitch,
-    );
-    const at = maplibregl.LngLat.convert(first.center!);
+    const first = photoView();
+    const at = first.center;
     // The card, where the drawn map is: its frame shows the whole of
     // hero-frame.ts's picture, so the landing puts that picture there (its
     // middle moved to the card's, wherever on the stage it is).
@@ -188,7 +213,7 @@ if (fly && motion && gl) {
     // (the hills under it stood up as tall as they will be by then)
     landing = { center: [mid.lon, mid.lat], zoom, pitch: TILT.pitch, bearing: NORTH, elevation: ground * TILT.hills, padding: { ...box } };
     const views = [
-      { at: 0, lng: at.lng, lat: at.lat, zoom: first.zoom!, pitch: first.pitch!, bearing: first.bearing!, ground: first.elevation ?? ground },
+      { at: 0, lng: at.lng, lat: at.lat, zoom: first.zoom, pitch: first.pitch, bearing: first.bearing, ground: first.elevation },
       ...VIEWS.map((v) => ({
         at: v.at,
         lng: v.center[0],
@@ -510,9 +535,15 @@ if (fly && motion && gl) {
 
   map.on("load", () => {
     quiet(map);
-    look(map);
+    // (the shading and the hills' shape from elevation at zoom 12, about 30m
+    // to a pixel: the camera never comes down closer than the city, and
+    // finer than that was most of what the flight downloaded, megabytes of
+    // it, for hills that look the same)
+    look(map, 12);
     fine(map);
-    map.addSource("terrain", { type: "raster-dem", tiles: [TERRAIN], encoding: "terrarium", tileSize: 256, maxzoom: 14 });
+    // (and its shape a zoom coarser again, each tile taken as twice the
+    // size it is: the ground stood up needs less than the shading does)
+    map.addSource("terrain", { type: "raster-dem", tiles: [TERRAIN], encoding: "terrarium", tileSize: 512, maxzoom: 12 });
     map.setTerrain({ source: "terrain", exaggeration: 1 });
     // The photo's sky, deep teal over a pale haze at the hills.
     map.setSky({
@@ -526,7 +557,7 @@ if (fly && motion && gl) {
     });
     frame();
     // (in the photographer's place, so it's the photo's view that loads first)
-    map.jumpTo(map.calculateCameraOptionsFromCameraLngLatAltRotation([EYE.lng, EYE.lat], EYE.alt, EYE.bearing, EYE.pitch));
+    map.jumpTo(photoView());
     // Ready once the photo's view has drawn, or after a few seconds
     // whatever's still loading (the rest fills in as it flies).
     const go = () => {
