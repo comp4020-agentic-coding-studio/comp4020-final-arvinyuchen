@@ -1,5 +1,5 @@
 ---
-import { KIND_ICON, STROKE } from "../lib/kind-icons";
+import { KIND_ICON, VIEW_BOX } from "../lib/kind-icons";
 import type { Kind } from "../lib/kinds";
 
 // A kind's glyph (src/lib/kind-icons.ts), sized to the text beside it and
@@ -10,4 +10,4 @@ interface Props {
 const { kind } = Astro.props;
 ---
 
-<svg class="kind-icon" viewBox="0 0 20 20" aria-hidden="true"><path d={KIND_ICON[kind]} {...STROKE} /></svg>
+<svg class="kind-icon" viewBox={VIEW_BOX} fill="currentColor" aria-hidden="true"><path d={KIND_ICON[kind]} /></svg>
