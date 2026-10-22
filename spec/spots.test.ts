@@ -7,8 +7,9 @@ import { baseUrl, join, origin, page, photo, request, startGroup } from "./brows
 // start a group, a friend can join by its link, a spot added and voted for
 // is still there when they come back, one person counts once, a place
 // shared by one group reaches every group's Explore (but never another
-// group's list), no place gets in without a reason or a photo, an uploaded
-// photo keeps nothing of where it was taken, and the group's page
+// group's list), no place gets in without a reason, one without a photo
+// shows its kind's picture, an uploaded photo keeps nothing of where it was
+// taken, and the group's page
 // streams changes live. Each Jar is one browser, signed up with its own
 // passkey (spec/browser.ts).
 
@@ -187,15 +188,28 @@ describe("a group", () => {
     expect((await page(jar, path)).querySelector("#explore")?.textContent).not.toContain(name);
   });
 
-  it("refuses a place with no photo", async () => {
+  it("shares a place with no photo, its card showing its kind, not a photo of it", async () => {
     const { jar, path, api } = await started("No photo crew");
     const name = `Unseen ${Date.now()}`;
     const res = await request(jar, `${api}/places`, { form: { name, kind: "coffee", area: "Civic", why: "Good flat white" } });
-    expect(res.headers.get("location")).toContain("error=photo");
-    // (nor with a file that isn't a photo)
+    expect(res.headers.get("location")).not.toContain("error");
+    const doc = await page(jar, path);
+    const card = [...doc.querySelectorAll("#explore .spot")].find((c) => c.textContent?.includes(name));
+    const art = card?.querySelector("[data-kind-art]");
+    expect(art?.getAttribute("data-kind-art")).toBe("coffee");
+    expect(art?.querySelector("figcaption")?.textContent).toContain("Coffee");
+    // (a picture of the kind says nothing about the place: no alt text names it)
+    expect(card?.querySelector(`img[alt*="${name}"]`)).toBeNull();
+    const pick = [...doc.querySelectorAll("#list .pick")].find((c) => c.textContent?.includes(name));
+    expect(pick?.querySelector("[data-kind-art]")).toBeTruthy();
+  });
+
+  it("sends back a file that isn't a photo", async () => {
+    const { jar, path, api } = await started("Junk photo crew");
+    const name = `Unreadable ${Date.now()}`;
     const junk = new Blob(["not a photo"], { type: "image/jpeg" });
-    const again = await request(jar, `${api}/places`, { form: { name, kind: "coffee", area: "Civic", why: "Good flat white", photo: junk } });
-    expect(again.headers.get("location")).toContain("error=photo");
+    const res = await request(jar, `${api}/places`, { form: { name, kind: "coffee", area: "Civic", why: "Good flat white", photo: junk } });
+    expect(res.headers.get("location")).toContain("error=photo");
     expect((await page(jar, path)).querySelector("#explore")?.textContent).not.toContain(name);
   });
 
@@ -214,12 +228,12 @@ describe("a group", () => {
     expect(meta.exif).toBeUndefined();
   });
 
-  it("shows no card without a photo", async () => {
+  it("shows every card with a photo or its kind's picture", async () => {
     const { jar, path } = await started("Every photo crew");
     const doc = await page(jar, path);
     const cards = [...doc.querySelectorAll("#explore .spot, #list .pick")];
     expect(cards.length).toBeGreaterThan(0);
-    expect(cards.every((c) => c.querySelector("img[src]"))).toBe(true);
+    expect(cards.every((c) => c.querySelector("img[src], [data-kind-art]"))).toBe(true);
   });
 
   it("puts every located place on the map", async () => {

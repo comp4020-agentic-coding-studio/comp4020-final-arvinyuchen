@@ -19,7 +19,7 @@ import { LOCAL } from "../../lib/places-index";
 // typed, and merged, one place listed once: as OpenStreetMap has it, where
 // both do, since its tags can bring a photo. Neither says whether a place is
 // good: nothing found here enters Explore until a person shares it with a
-// reason and a photo. Each find comes with the photo it would get, if it has
+// reason. Each find comes with the photo it would get, if it has
 // one: the photo it was shared with before, or the Commons photo its
 // OpenStreetMap tags lead to (src/lib/photos.ts), for which Nominatim is
 // asked once for every OpenStreetMap find's tags (src/lib/nominatim.ts).

@@ -13,7 +13,8 @@
 //
 // Photos are from Wikimedia Commons under the licence named, hotlinked as
 // 800px thumbnails, and credited on the card with a link to the file page,
-// which is what CC BY and CC BY-SA ask for.
+// which is what CC BY and CC BY-SA ask for. A place with no such photo goes
+// without, and its card shows its kind's picture (src/lib/kind-art.ts).
 import type { Kind } from "./kinds";
 
 export { KIND_LABEL, type Kind } from "./kinds";
@@ -34,7 +35,8 @@ export interface CatalogueSpot {
   area: string;
   blurb: string;
   source: string;
-  photo: Photo;
+  /** a credited photo whose licence allows reuse, if there is one */
+  photo?: Photo;
 }
 
 export const CATALOGUE: CatalogueSpot[] = [

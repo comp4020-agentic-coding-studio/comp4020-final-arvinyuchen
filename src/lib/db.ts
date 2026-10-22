@@ -167,7 +167,7 @@ const seed = db.prepare(`
     photo_src = excluded.photo_src, photo_page = excluded.photo_page,
     photo_credit = excluded.photo_credit, photo_license = excluded.photo_license
 `);
-for (const spot of CATALOGUE) seed.run({ ...spot, ...spot.photo });
+for (const spot of CATALOGUE) seed.run({ ...spot, src: null, page: null, credit: null, license: null, ...spot.photo });
 
 // Picks made before places were shared point at nothing: link each to its
 // seed place, or turn a group's own find into a place of its own.
@@ -193,14 +193,13 @@ for (const pick of db.prepare("SELECT * FROM picks WHERE place_id IS NULL").all(
   db.prepare("UPDATE picks SET place_id = ? WHERE id = ?").run(placeId, pick.id);
 }
 
-// Every place has a photo (src/lib/photos.ts), and every starter place is
-// one on the list in catalogue.ts. One without a photo, shared before that
-// was the rule, or a starter place taken off the list (a street, say, which
-// isn't a place to go), is deleted with all that points at it: its keens,
-// its place on every group's list, and its search vector.
+// Every starter place is one on the list in catalogue.ts. One taken off
+// the list (a street, say, which isn't a place to go) is deleted with all
+// that points at it: its keens, its place on every group's list, and its
+// search vector.
 db.transaction(() => {
   const starters = CATALOGUE.map((s) => `'${s.key.replace(/'/g, "''")}'`).join(", ");
-  const bare = `SELECT id FROM places WHERE photo_src IS NULL OR (seed_key IS NOT NULL AND seed_key NOT IN (${starters}))`;
+  const bare = `SELECT id FROM places WHERE seed_key IS NOT NULL AND seed_key NOT IN (${starters})`;
   db.prepare(`DELETE FROM votes WHERE pick_id IN (SELECT id FROM picks WHERE place_id IN (${bare}))`).run();
   db.prepare(`DELETE FROM picks WHERE place_id IN (${bare})`).run();
   db.prepare(`DELETE FROM place_vectors WHERE place_id IN (${bare})`).run();
@@ -230,8 +229,8 @@ export interface Place {
   lat: number | null;
   lon: number | null;
   source: string;
-  /** (every place has one: one without is deleted on boot, above) */
-  photo: Photo;
+  /** its photo, if it has one (a card without shows its kind's picture) */
+  photo: Photo | null;
   addedBy: string;
   /** How many groups have it on their list. */
   groups: number;
@@ -414,7 +413,7 @@ type PlaceRow = Omit<Place, "photo" | "addedBy"> & {
 const toPlace = ({ added_by, photo_src, photo_page, photo_credit, photo_license, ...row }: PlaceRow): Place => ({
   ...row,
   addedBy: added_by,
-  photo: { src: photo_src ?? "", page: photo_page ?? photo_src ?? "", credit: photo_credit ?? "", license: photo_license ?? "" },
+  photo: photo_src ? { src: photo_src, page: photo_page ?? photo_src, credit: photo_credit ?? "", license: photo_license ?? "" } : null,
 });
 const PLACE_COLUMNS = `p.id, p.name, p.kind, p.area, p.why, p.lat, p.lon, p.source, p.photo_src, p.photo_page,
   p.photo_credit, p.photo_license, p.added_by,
@@ -503,7 +502,7 @@ export interface NewPlace {
   lat: number | null;
   lon: number | null;
   source: string;
-  photo: Photo;
+  photo: Photo | null;
 }
 
 // (a find's ref as the column it's kept in, and its id there)
@@ -531,10 +530,9 @@ export function photoOfRef(ref: string): Photo | null {
  *  already shared, returns the one that's there. */
 export function addPlace(place: NewPlace, addedBy: Member): number {
   if (!(place.kind in KIND_LABEL)) throw new Error("bad kind");
-  if (!place.photo?.src) throw new Error("no photo");
   const existing = place.ref ? placeIdForRef(place.ref) : undefined;
   if (existing) return existing;
-  const { src, page, credit, license } = place.photo;
+  const { src = null, page = null, credit = null, license = null } = place.photo ?? {};
   const where = place.ref ? refColumn(place.ref) : null;
   return Number(
     db

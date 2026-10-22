@@ -979,6 +979,80 @@ input[type="file"]::file-selector-button {
   --kind: var(--food);
 }
 
+/* A place with no photo shows its kind's picture (src/lib/kind-art.ts), or,
+   until the kind has one, its icon on the kind's colour, with a large
+   faint copy cut off at the corner. Either way the kind's name sits on it,
+   so nobody takes it for a photo of the place. */
+.photo--kind {
+  display: grid;
+  place-items: center;
+  color: var(--kind);
+  background: radial-gradient(120% 90% at 30% 20%, color-mix(in srgb, var(--kind) 9%, white), color-mix(in srgb, var(--kind) 22%, white));
+}
+
+.photo--art {
+  background: color-mix(in srgb, var(--kind) 14%, white);
+}
+
+.photo__icon .kind-icon {
+  display: block;
+  width: 3.4rem;
+  height: 3.4rem;
+}
+
+.photo__ghost {
+  position: absolute;
+  right: -1.4rem;
+  bottom: -1.8rem;
+  opacity: 0.09;
+  transform: rotate(-12deg);
+}
+
+.photo__ghost .kind-icon {
+  display: block;
+  width: 9rem;
+  height: 9rem;
+}
+
+.photo--small .photo__icon .kind-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.photo--small .photo__ghost {
+  display: none;
+}
+
+.photo--kind figcaption {
+  left: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border-radius: 0;
+}
+
+.photo__kind {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--kind) 70%, black);
+  opacity: 0.8;
+}
+
+/* (on a picture, the name and credit sit on a shade to be read) */
+.photo--art figcaption {
+  background: linear-gradient(transparent, rgb(0 0 0 / 45%));
+}
+
+.photo--art .photo__kind {
+  color: #fff;
+  opacity: 1;
+}
+
 @media (max-width: 480px) {
   .pick {
     flex-wrap: wrap;

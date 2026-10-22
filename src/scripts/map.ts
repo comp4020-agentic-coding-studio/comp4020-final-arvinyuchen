@@ -426,8 +426,8 @@ if (container) {
     let preview: maplibregl.Marker | null = null;
 
     // Its photo: the one found for the place picked (a Commons photo, or the
-    // one it was shared with), which makes a photo of yours optional; or the
-    // one you choose, shown before you share it.
+    // one it was shared with), or the one you choose, shown before you share
+    // it. Neither is needed.
     const own = form.querySelector<HTMLInputElement>('input[name="photo"]')!;
     const shown = form.querySelector<HTMLElement>(".photo-pick__found")!;
     const label = form.querySelector<HTMLElement>(".photo-pick__label")!;
@@ -447,8 +447,7 @@ if (container) {
     };
     const showFound = (photo: Photo | null) => {
       found = photo;
-      own.required = !photo;
-      label.textContent = photo ? "Or use a photo of yours" : "Photo (required)";
+      label.textContent = photo ? "Or use a photo of yours" : "Photo (optional)";
       showPhoto();
     };
     own.addEventListener("change", showPhoto);

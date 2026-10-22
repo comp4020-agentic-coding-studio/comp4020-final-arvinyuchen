@@ -96,10 +96,12 @@ other's taste.
   never queries OpenStreetMap for it. Its hills are shaded once from
   Mapzen's terrain by `scripts/build-hero-relief.ts`. The starter places were
   checked against Wikipedia, with photos from Wikimedia Commons credited on
-  each card. Every place has a photo: one a person shares gets the Commons
+  each card where there is one. A place a person shares gets the Commons
   photo its OpenStreetMap entry links to, where its licence allows reuse,
-  or else the one they upload, kept with its location and every other bit
-  of metadata stripped, and credited to them. Both street maps, the group's and the invite's small one, are
+  or the one they upload, kept with its location and every other bit
+  of metadata stripped, and credited to them. A place with neither isn't
+  turned away: its card shows its kind's picture, named with the kind, so
+  it's never taken for a photo of that place. Both street maps, the group's and the invite's small one, are
   OpenFreeMap's tiles recoloured to look like Apple Maps, with city parks
   in green, hairline side streets, hills shaded from Mapzen's open terrain
   tiles, and buildings that stand up as the group's map flies into a

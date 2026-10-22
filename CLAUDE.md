@@ -19,13 +19,17 @@ follow from it; every change has to hold to them.
 - **A place gets in with a reason.** Adding a place needs a "why it's good"
   from the person sharing it, shown with their name. That sentence is the
   filter: no reason, no place.
-- **Every card has a photo.** A place gets in only with one
-  (`src/lib/photos.ts`): a photo on Wikimedia Commons that its OpenStreetMap
+- **A photo is credited and free to use, or there's none.** A place's photo
+  (`src/lib/photos.ts`) is one on Wikimedia Commons that its OpenStreetMap
   tags lead to, under a licence that allows reuse and credited on the card,
-  or else one the sharer uploads, re-encoded with all its metadata (GPS
-  among it) stripped and credited to them. The server finds the Commons
-  photo itself; it never takes a photo's address from the browser. Never import places in bulk from a directory or
-  an API to pad the pool.
+  or one the sharer uploads, re-encoded with all its metadata (GPS among it)
+  stripped and credited to them. The server finds the Commons photo itself;
+  it never takes a photo's address from the browser. Never take a venue's
+  own photos or a photographer's from their sites. A place with no photo
+  still gets in, and its card shows its kind's picture
+  (`src/lib/kind-art.ts`), named with the kind so it isn't taken for that
+  place. Never import places in bulk from a directory or an API to pad the
+  pool.
 - **Look places up politely.** Find (`src/pages/api/lookup.ts`) searches
   Overture Maps' Canberra places on the server first
   (`src/data/places-index.json`, built by `scripts/build-places-index.ts`),
@@ -84,8 +88,8 @@ follow from it; every change has to hold to them.
   Schema changes are additive only; never drop or rewrite data a group made.
   A place's kind is stored by its key (`src/lib/kinds.ts`), so a key is never
   renamed: relabel it instead, as Fun became Activities.
-  The exceptions: a place without a photo, or a starter place taken off the
-  list in `src/lib/catalogue.ts`, is deleted, with its keens and its place
+  The exceptions: a starter place taken off the
+  list in `src/lib/catalogue.ts` is deleted, with its keens and its place
   on every list (`src/lib/db.ts`); a place a member takes off their group's
   list goes from that list with its keens; and the site admin
   (`src/lib/admin.ts`) archives a group first (closed, restorable), and only
@@ -146,5 +150,5 @@ follow from it; every change has to hold to them.
   browser before it ships.
 - Don't invent places: anything added to the starter list in
   `src/lib/catalogue.ts` has to be a real place in Canberra, checked against a
-  source that's cited in the entry, with coordinates and a credited photo
-  whose licence allows reuse.
+  source that's cited in the entry, with coordinates, and a photo only if
+  it's credited and its licence allows reuse.

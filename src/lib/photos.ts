@@ -7,11 +7,12 @@ import type { Photo } from "./catalogue";
 import { dataDir } from "./db";
 import { nominatim, USER_AGENT } from "./nominatim";
 
-// Every place has a photo. Where OpenStreetMap links a place to Wikidata or
-// to a file on Wikimedia Commons, and that photo's licence allows reuse, the
-// place gets it, credited the way the starter places are. Otherwise the
-// person sharing it uploads their own, which is re-encoded here with every
-// bit of metadata (a phone's GPS location among it) left behind.
+// A place's photo. Where OpenStreetMap links a place to Wikidata or to a
+// file on Wikimedia Commons, and that photo's licence allows reuse, the
+// place gets it, credited the way the starter places are. Or the person
+// sharing it uploads their own, which is re-encoded here with every bit of
+// metadata (a phone's GPS location among it) left behind. Or it has none,
+// and its card shows its kind's picture (src/lib/kind-art.ts).
 
 // ---- Found: Wikimedia Commons, through OpenStreetMap's tags -----------------
 
