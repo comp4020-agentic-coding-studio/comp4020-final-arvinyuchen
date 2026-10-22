@@ -513,25 +513,29 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
                   </span>
                 )}
               </div>
-              <h3>{p.name}</h3>
+              {/* (a click anywhere on the card shows it on the map; its name is
+                  the same thing from a keyboard) */}
+              <h3>
+                {p.lat !== null ? (
+                  <button type="button" class="spot__go" data-fly={p.id}>{p.name}</button>
+                ) : (
+                  p.name
+                )}
+              </h3>
               <p class="area">{p.area}</p>
               <p class="why">{p.addedBy === "Spots" ? p.why : `“${p.why}” — ${p.addedBy}`}</p>
-              <div class="spot__actions">
-                {p.lat !== null && (
-                  <button type="button" class="btn btn--small btn--ghost" data-fly={p.id}>
-                    Show on map
-                  </button>
-                )}
-                {member &&
-                  (onList.has(p.id) ? (
+              {member && (
+                <div class="spot__actions">
+                  {onList.has(p.id) ? (
                     <span class="added">On our list</span>
                   ) : (
                     <form method="post" action={`/api/groups/${group.id}/picks`}>
                       <input type="hidden" name="place" value={p.id} />
                       <button class="btn btn--small">Add to our list</button>
                     </form>
-                  ))}
-              </div>
+                  )}
+                </div>
+              )}
             </li>
           ))}
         </ul>

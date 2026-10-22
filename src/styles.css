@@ -1386,9 +1386,27 @@ input[type="file"]::file-selector-button {
   grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
 }
 
-.spots--explore .spot,
+.spots--explore .spot[data-place],
 .pick[data-place] {
   cursor: pointer;
+}
+
+/* An Explore card's name is a button: Tab to it and Enter shows the place
+   on the map, as a click anywhere on the card does. It looks like the name. */
+.spot__go {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.spot__go:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .spot__meta {
