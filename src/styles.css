@@ -758,20 +758,16 @@ input[type="radio"] {
 
 /* ---- Explore + map --------------------------------------------------------- */
 
+/* Explore's title with its kind filters beside it, the search under both. */
 .explore-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.25rem 1rem;
-  margin-top: 2.2rem;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 1.6rem;
 }
 
 .explore-head h2 {
-  margin: 0;
-}
-
-.explore-head .fine {
-  flex: 1 1 18rem;
   margin: 0;
 }
 
@@ -2519,20 +2515,8 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   box-shadow: 0 1px 3px rgb(0 0 0 / 12%), 0 1px 1px rgb(0 0 0 / 4%);
 }
 
-/* Our list beside Explore on a wide screen; above it otherwise. */
-.board {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0 2rem;
-}
-
-.board__list h2,
-.explore-head h2 {
+#list h2 {
   margin-top: 1.6rem;
-}
-
-.explore-head {
-  margin-top: 0;
 }
 
 .empty {
@@ -2541,19 +2525,146 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   border-radius: var(--radius);
 }
 
+/* The group's own column (who's in, inviting, the tabs, Our list) is just
+   the top of the page on a phone or a tablet... */
+.group-side {
+  display: contents;
+}
+
+/* ...and on a wide screen the left of three columns, all level at the top:
+   the group's panel with Our list under it, then Explore (its title,
+   filters, search and cards), then the map. The tabs choose what's beside
+   the list: Explore and the map, Share a place, or Settings. */
 @media (min-width: 1180px) {
-  .board {
-    grid-template-columns: 21rem minmax(0, 1fr);
+  .group-page {
+    display: grid;
+    grid-template-columns: 23.5rem minmax(0, 1fr);
+    gap: 1.5rem 1.75rem;
+    align-items: start;
+    margin-top: 0.75rem;
   }
 
-  .board__list {
+  .group-side {
+    display: block;
+    grid-row: 1 / span 2;
     position: sticky;
-    top: var(--nav-h);
-    max-height: calc(100vh - var(--nav-h));
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem 1rem;
     overflow-y: auto;
-    padding: 0 0.6rem 1.5rem 0.6rem;
-    margin-left: -0.6rem;
     scrollbar-width: thin;
+  }
+
+  /* the group's panel: its name, who's in, you, and the invite */
+  .group-head.group-head--split {
+    display: grid;
+    gap: 0.9rem;
+    padding: 1.25rem;
+    border-radius: var(--radius);
+    background: var(--card);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .group-head h1 {
+    margin: 0 0 0.5rem;
+    font-size: 1.85rem;
+  }
+
+  .group-head .you {
+    margin-top: 0.6rem;
+  }
+
+  .invite {
+    position: relative;
+    justify-items: stretch;
+  }
+
+  .invite__open {
+    justify-content: center;
+  }
+
+  /* opened, the invite unfolds inside the panel (the column scrolls, so a
+     card floating out of it would be cut off) */
+  .invite .share {
+    position: static;
+    width: auto;
+    box-shadow: none;
+    padding: 0.25rem 0 0;
+  }
+
+  /* the tabs, under the panel: Our list is always here, so no tab for it */
+  .section-nav.tabs {
+    position: static;
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    width: 100%;
+    margin-top: 0.9rem;
+  }
+
+  .section-nav.tabs a {
+    justify-content: center;
+  }
+
+  .section-nav.tabs a[data-tab="list"] {
+    display: none;
+  }
+
+  #list h2 {
+    margin-top: 1.25rem;
+  }
+
+  .explore-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 0 1.25rem;
+    align-items: start;
+  }
+
+  .explore-wrap > .explore-head {
+    margin-top: 0;
+  }
+
+  .explore-grid {
+    display: contents;
+  }
+
+  .explore-wrap > .explore-head,
+  #explore {
+    grid-column: 1;
+  }
+
+  .map-wrap {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    top: 1rem;
+  }
+
+  #map {
+    height: calc(100vh - 2rem);
+  }
+
+  .group-page > .group-tools {
+    margin-top: 0;
+  }
+
+  /* (without the script every part is there: the tools under Explore) */
+  .group-page:not(.is-tabbed) > .group-tools {
+    grid-column: 2;
+  }
+
+  /* the leader, in the narrower column: a size up still, on fewer lines */
+  .group-side .pick--top {
+    grid-template-columns: 1.3rem 4rem minmax(0, 1fr) auto;
+  }
+
+  .group-side .pick--top .photo--small {
+    width: 4rem;
+  }
+
+  .group-side .pick--top h3 {
+    font-size: 1.08rem;
   }
 }
 
@@ -2681,11 +2792,10 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-size: 0.6rem;
 }
 
-/* The leader: Slopes' highlight, a wash of blue across the top row. */
+/* The leader, a size up. */
 .pick--top {
   grid-template-columns: 1.3rem 4.75rem minmax(0, 1fr) auto;
   padding: 1rem 0.9rem;
-  background: linear-gradient(120deg, #dcebff, var(--card) 75%);
 }
 
 .pick--top::before {
@@ -2745,7 +2855,12 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 
 .group-page.is-tabbed .group-tools {
   display: block;
-  margin-top: 1.5rem;
+}
+
+@media (max-width: 1179px) {
+  .group-page.is-tabbed .group-tools {
+    margin-top: 1.5rem;
+  }
 }
 
 .group-page.is-tabbed .group-tools > section {

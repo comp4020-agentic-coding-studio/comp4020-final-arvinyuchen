@@ -240,6 +240,9 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
   ) : (
   <>
   <div class="group-page">
+  {/* The group's own column: who and inviting, the tabs, and Our list. On a
+      wide screen it stands on the left beside Explore and the map. */}
+  <div class="group-side">
   <section class="group-head group-head--split">
     <div class="group-head__title">
       <h1>{group.name}</h1>
@@ -331,7 +334,6 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     )}
   </nav>
 
-  <div class="board">
   {/* Our list as a ranking: most keen first, the leader standing out, the
       rest compact rows, each with who's keen. */}
   <section id="list" class="board__list" aria-labelledby="list-title" data-panel="list">
@@ -385,10 +387,19 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     )}
   </section>
 
+  </div>
+
   <section id="explore-section" class="explore-wrap" aria-labelledby="explore-title" data-panel="explore">
     <div class="explore-head">
       <h2 id="explore-title">Explore</h2>
-      <p class="fine">Places every group on Spots has shared, each with a reason it's good.</p>
+      <div class="filters" role="group" aria-label="Show" hidden>
+        <button type="button" class="chip chip--on" data-filter="all" aria-pressed="true">All</button>
+        {kinds.map((k) => (
+          <button type="button" class={`chip chip--${k}`} data-filter={k} aria-pressed="false">
+            {KIND_LABEL[k]}
+          </button>
+        ))}
+      </div>
       <form class="ask" method="get" action={`/g/${group.link}#explore`} role="search" data-search>
         <label for="ask-q" class="sr-only">Describe what you're after</label>
         <input
@@ -401,14 +412,6 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         />
         <button class="btn btn--primary">Find</button>
       </form>
-      <div class="filters" role="group" aria-label="Show" hidden>
-        <button type="button" class="chip chip--on" data-filter="all" aria-pressed="true">All</button>
-        {kinds.map((k) => (
-          <button type="button" class={`chip chip--${k}`} data-filter={k} aria-pressed="false">
-            {KIND_LABEL[k]}
-          </button>
-        ))}
-      </div>
     </div>
     <div class="explore-grid">
       <div id="explore" data-q={q || undefined}>
@@ -469,7 +472,6 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
       </div>
     </div>
   </section>
-  </div>
 
   <div class="group-tools">
   {member && (
@@ -781,7 +783,8 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     // Tabs: one part of the group at a time (Our list, Explore, Share a
     // place, Settings), the open one in the URL's #, so a reload, the back
     // button or a form that lands on #settings opens the right one. On a
-    // wide screen Our list and Explore show together, side by side.
+    // wide screen Our list is always there in the left column, so the tabs
+    // choose what's beside it: Explore (with the map), Share or Settings.
     const page = document.querySelector(".group-page");
     const tabLinks = [...document.querySelectorAll(".tabs a[data-tab]")];
     const panels = [...document.querySelectorAll("[data-panel]")];
@@ -796,13 +799,13 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     function show(next, scroll) {
       tab = next;
       page.dataset.tab = tab;
-      const both = wide.matches && (tab === "list" || tab === "explore");
+      const beside = wide.matches && tab === "list" ? "explore" : tab;
       for (const panel of panels) {
         const kind = panel.dataset.panel;
-        panel.hidden = !(kind === tab || (both && (kind === "list" || kind === "explore")));
+        panel.hidden = !(kind === beside || (wide.matches && kind === "list"));
       }
       for (const a of tabLinks) {
-        if (a.dataset.tab === tab) a.setAttribute("aria-current", "page");
+        if (a.dataset.tab === beside) a.setAttribute("aria-current", "page");
         else a.removeAttribute("aria-current");
       }
       // (a map shown again takes its size)

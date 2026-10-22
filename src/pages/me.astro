@@ -89,10 +89,6 @@ const done = Astro.url.searchParams.get("done");
           </li>
         ))}
       </ul>
-      <p class="fine">
-        Using a device that doesn't share passkeys with this one, like an iPhone and a Windows laptop? Sign in there once
-        (choose to use a phone, and scan the code with this one), then add a passkey for it here.
-      </p>
       <div data-passkey-only class="stack-row">
         <button type="button" class="btn" data-passkey="register">Add a passkey on this device</button>
         <span class="passkey-msg" aria-live="polite"></span>
