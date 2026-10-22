@@ -535,9 +535,15 @@ if (fly && motion && gl) {
 
   map.on("load", () => {
     quiet(map);
-    look(map);
+    // (the shading and the hills' shape from elevation at zoom 12, about 30m
+    // to a pixel: the camera never comes down closer than the city, and
+    // finer than that was most of what the flight downloaded, megabytes of
+    // it, for hills that look the same)
+    look(map, 12);
     fine(map);
-    map.addSource("terrain", { type: "raster-dem", tiles: [TERRAIN], encoding: "terrarium", tileSize: 256, maxzoom: 14 });
+    // (and its shape a zoom coarser again, each tile taken as twice the
+    // size it is: the ground stood up needs less than the shading does)
+    map.addSource("terrain", { type: "raster-dem", tiles: [TERRAIN], encoding: "terrarium", tileSize: 512, maxzoom: 12 });
     map.setTerrain({ source: "terrain", exaggeration: 1 });
     // The photo's sky, deep teal over a pale haze at the hills.
     map.setSky({

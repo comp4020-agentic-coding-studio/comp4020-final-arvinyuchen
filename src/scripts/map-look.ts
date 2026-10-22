@@ -41,8 +41,12 @@ const PAINT: [string, PaintKey, string | number][] = [
 // Elevation for the relief: Mapzen's terrain tiles, open on AWS.
 const TERRAIN = "https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png";
 
-/** Recolours a loaded Positron map and shades its hills. */
-export function look(map: maplibregl.Map) {
+/**
+ * Recolours a loaded Positron map and shades its hills, from elevation down
+ * to `detail` (a zoom level: a map that only ever looks over the whole city
+ * needs less, and fetches a third as many tiles for it).
+ */
+export function look(map: maplibregl.Map, detail = 14) {
   for (const id of ["highway_path", "railway_dashline", "aeroway-taxiway"])
     if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
   for (const [id, key, value] of PAINT) if (map.getLayer(id)) map.setPaintProperty(id, key, value);
@@ -64,7 +68,7 @@ export function look(map: maplibregl.Map) {
     tiles: [TERRAIN],
     encoding: "terrarium",
     tileSize: 256,
-    maxzoom: 14,
+    maxzoom: detail,
   });
   map.addLayer(
     {
