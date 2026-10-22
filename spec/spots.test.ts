@@ -51,8 +51,9 @@ describe("a group", () => {
 
     await keen(ben); // voting again takes it back
     doc = await page(ana, path);
-    expect(doc.querySelector("#list")?.textContent).toContain("Keen: Ana");
-    expect(doc.querySelector("#list")?.textContent).not.toContain("Ben,");
+    expect(doc.querySelector("#list .keen__count")?.textContent).toBe("1");
+    expect(doc.querySelector("#list .keen")?.getAttribute("aria-pressed")).toBe("true");
+    expect((await page(ben, path)).querySelector("#list .keen")?.getAttribute("aria-pressed")).toBe("false");
   });
 
   it("shows someone with the link a preview to join, never the list or its votes", async () => {

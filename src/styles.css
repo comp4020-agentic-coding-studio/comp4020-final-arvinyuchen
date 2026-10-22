@@ -3846,28 +3846,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-size: 0.82rem;
 }
 
-.keen-who {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  min-width: 0;
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.pick .keen-who {
-  margin-top: 0.3rem;
-}
-
-.keen-who__names {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--ink);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* The leader, a size up. */
 .pick--top {
   grid-template-columns: 1.3rem 4.75rem minmax(0, 1fr) auto;
@@ -3886,11 +3864,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 
 .pick--top h3 {
   font-size: 1.2rem;
-}
-
-/* (the leader has room to say all its names) */
-.pick--top .keen-who__names {
-  white-space: normal;
 }
 
 .pick__lead {

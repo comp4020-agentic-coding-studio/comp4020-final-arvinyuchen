@@ -105,8 +105,6 @@ const preview = [...picks].sort((a, b) => a.id - b.id).slice(0, 3);
 // The note's words, each its own span so they can arrive one after another.
 const noteWords = group.note?.split(" ") ?? [];
 
-// The whole group keen (three or more of them) reads as "Everyone".
-const everyone = (keen: string[]) => members.length > 2 && keen.length === members.length;
 
 // Each member's initial in a colour of its own, the same on every visit.
 const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
@@ -407,7 +405,7 @@ const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
   </nav>
 
   {/* Our list as a ranking: most keen first, the leader standing out, the
-      rest compact rows, each with who's keen. */}
+      rest compact rows, each with its keen count on its button. */}
   <section id="list" class="board__list" aria-labelledby="list-title" data-panel="list" data-editing={editing ? "" : undefined}>
     <div class="list-card">
       <div class="list-head">
@@ -450,16 +448,6 @@ const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
                   {lead && <p class="pick__lead">Most keen</p>}
                   <h3>{place.name}</h3>
                   {place.area && <p class="area">{place.area}</p>}
-                  <p class="keen-who">
-                    {keen.length > 0 ? (
-                      <>
-                        <span class="sr-only">Keen: </span>
-                        <span class="keen-who__names">{everyone(keen) ? "Everyone" : keen.join(", ")}</span>
-                      </>
-                    ) : (
-                      "No one's keen yet"
-                    )}
-                  </p>
                 </div>
                 <form method="post" action={`/api/groups/${group.id}/keen`} data-keen>
                   <input type="hidden" name="pick" value={id} />

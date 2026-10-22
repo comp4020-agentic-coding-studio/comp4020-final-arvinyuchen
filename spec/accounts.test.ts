@@ -196,7 +196,9 @@ describe("the owner's tools", () => {
     // The new account is Ben now, his old keen came with him, and the old
     // account (whoever has its passkey) is out of the group.
     expect(await you(benAgain, id)).toBe("Ben");
-    expect((await page(owner, `/g/${id}`)).querySelector("#list .keen-who__names")?.textContent).toBe("Ben");
+    const mine = (await page(benAgain, `/g/${id}`)).querySelector("#list .keen");
+    expect(mine?.getAttribute("aria-pressed")).toBe("true");
+    expect(mine?.querySelector(".keen__count")?.textContent).toBe("1");
     expect(await you(ben, id)).toBe("");
   });
 
@@ -209,7 +211,7 @@ describe("the owner's tools", () => {
     const [ana, benMember] = await people();
     await act(owner, { action: "remove", member: benMember.id! });
     expect(await you(ben, id)).toBe("");
-    expect((await page(owner, `/g/${id}`)).querySelector("#list .keen-who")?.textContent).toBe("No one's keen yet");
+    expect((await page(owner, `/g/${id}`)).querySelector("#list .keen__count")?.textContent).toBe("0");
 
     // The owner can't be removed.
     await act(owner, { action: "remove", member: ana.id ?? "" });
