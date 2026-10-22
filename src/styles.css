@@ -1,32 +1,37 @@
 :root {
-  /* Colours taken from the invite's photo of Canberra: the sky and Lake
-     Burley Griffin give the blues, Anzac Parade's red the food colour and
-     the gums the outdoors green. Every text colour passes WCAG AA on white
-     and on the page tint. */
-  --bg: #f7fafb;
-  --bg-deep: #edf4f6;
+  /* After Apple's own apps (and Slopes, which speaks their language): the
+     grouped grey page, white cards, one blue tint, the system palette for
+     the kinds. Every text colour passes WCAG AA on white and on the page
+     grey; the plain blue (--accent) is for fills, pins and rings. */
+  --bg: #f2f2f7;
+  --bg-deep: #f2f2f7;
   --card: #ffffff;
-  --ink: #0d2b36;
-  --muted: #4a6470;
-  --line: #d3e3e8;
-  --line-strong: #b5ccd4;
-  /* teal: --accent for pins, rings and borders; the two darker ones for text
-     and filled buttons, so both read clearly (WCAG AA) on the tint and white */
-  --accent: #1795ae;
-  --accent-strong: #0b6e88;
-  --accent-ink: #0a6680;
-  --accent-soft: #d5ecf2;
-  /* the tint a card's action area sits on, a shade deeper than the page */
-  --tint: #eef6f8;
-  --shadow-sm: 0 1px 2px rgb(13 43 54 / 6%), 0 10px 30px -18px rgb(13 43 54 / 35%);
-  --shadow-md: 0 2px 4px rgb(13 43 54 / 6%), 0 28px 56px -28px rgb(13 43 54 / 50%);
-  --food: #b0472f;
-  --fun: #7a5cc7;
-  --outdoors: #5d7a3c;
-  --radius: 16px;
-  /* the system's own face: SF on Apple devices, Segoe on Windows, Roboto on Android */
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ink: #1d1d1f;
+  --muted: #6e6e73;
+  --line: #e3e3e8;
+  --line-strong: #d1d1d6;
+  --accent: #0071e3;
+  --accent-strong: #0071e3;
+  --accent-ink: #0066cc;
+  --accent-soft: #e6f0fc;
+  /* a grey fill, for fields and quiet buttons, as iOS fills them */
+  --fill: rgb(118 118 128 / 12%);
+  --fill-strong: rgb(118 118 128 / 20%);
+  /* the tint a card's action area sits on: none, it's all one white card */
+  --tint: #f7f7fa;
+  /* barely there for what sits on the page; real depth only for what floats */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 4%);
+  --shadow-md: 0 1px 2px rgb(0 0 0 / 4%), 0 6px 20px -8px rgb(0 0 0 / 10%);
+  --shadow-float: 0 2px 6px rgb(0 0 0 / 6%), 0 18px 48px -12px rgb(0 0 0 / 24%);
+  --food: #c93400;
+  --fun: #8944d4;
+  --outdoors: #2e7d32;
+  --radius: 18px;
+  /* the system's own face: SF on Apple devices, Segoe on Windows, Roboto on
+     Android; numbers in its rounded cut where there is one */
+  --font: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: var(--font);
+  --font-rounded: ui-rounded, "SF Pro Rounded", var(--font);
   color-scheme: light;
 }
 
@@ -42,10 +47,11 @@
 
 body {
   margin: 0;
-  background: linear-gradient(var(--bg-deep), var(--bg) 22rem) no-repeat, var(--bg);
+  background: var(--bg);
   color: var(--ink);
   font-family: var(--font);
-  line-height: 1.55;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Every page has one content width, --page, and the header and footer
@@ -105,19 +111,21 @@ h3,
 h4 {
   font-family: var(--font-display);
   line-height: 1.15;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
+/* a large title, as at the top of an iOS screen */
 h1 {
-  font-size: clamp(2.1rem, 6vw, 3.4rem);
-  font-weight: 800;
+  font-size: clamp(2.1rem, 6vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
   margin: 0.2rem 0 0.6rem;
 }
 
 h2 {
-  font-size: 1.45rem;
-  font-weight: 800;
-  margin: 2.2rem 0 0.9rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 2rem 0 0.8rem;
 }
 
 /* The site header scrolls away; on a group page its section links stick instead. */
@@ -135,7 +143,7 @@ h2 {
   align-items: center;
   gap: 0.45rem;
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 700;
   font-size: 1.25rem;
   color: var(--ink);
   text-decoration: none;
@@ -165,7 +173,7 @@ h2 {
 }
 
 .top nav a:hover {
-  background: var(--accent-soft);
+  background: var(--fill);
 }
 
 /* the one action in the header, so it's the one filled button */
@@ -173,7 +181,7 @@ h2 {
   margin-left: 0.3rem;
   background: var(--accent-strong);
   color: #fff;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .top nav a.top__cta:hover {
@@ -182,11 +190,9 @@ h2 {
 
 .eyebrow {
   margin: 0;
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--accent-ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .card {
@@ -194,7 +200,7 @@ h2 {
   border: 0;
   border-radius: var(--radius);
   padding: var(--pad);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   --pad: 1.5rem;
 }
 
@@ -208,15 +214,13 @@ h2 {
   margin-top: 0;
 }
 
-/* A card's action, as on the invite: the full width of the card, on a tint
-   of its own under a hairline, its fields white on the tint. It closes the
-   card, so it takes the card's own inset back. */
+/* A card's action, as on the invite: the full width of the card under a
+   hairline. It closes the card, so it takes the card's own inset back. */
 .card__actions {
   margin: 1.25rem calc(-1 * var(--pad)) calc(-1 * var(--pad));
   padding: 1.25rem var(--pad) var(--pad);
   border-top: 1px solid var(--line);
   border-radius: 0 0 var(--radius) var(--radius);
-  background: var(--tint);
 }
 
 .start {
@@ -239,13 +243,14 @@ h2 {
 
 label span {
   display: block;
-  margin-bottom: 0.4rem;
-  font-size: 0.95rem;
-  font-weight: 700;
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
-/* Fields as on the invite: white, a soft line, rounded to match the
-   buttons, and an accent ring while you're in one. */
+/* Fields as iOS fills them: grey, no outline, rounded, turning white with
+   a blue ring while you're in one. */
 input,
 select,
 textarea {
@@ -253,9 +258,9 @@ textarea {
   min-height: 3rem;
   font: inherit;
   padding: 0.65rem 1rem;
-  border: 1.5px solid var(--line);
-  border-radius: 14px;
-  background: #fff;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  background: var(--fill);
   color: var(--ink);
   transition:
     border-color 0.15s,
@@ -268,17 +273,12 @@ textarea::placeholder {
   opacity: 0.75;
 }
 
-input:hover,
-select:hover,
-textarea:hover {
-  border-color: var(--line-strong);
-}
-
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
   outline: none;
   border-color: var(--accent);
+  background: #fff;
   box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
@@ -298,50 +298,31 @@ input[type="radio"] {
   font-weight: 600;
   padding: 0.6rem 1.1rem;
   border-radius: 999px;
-  border: 1px solid var(--line);
-  background: #fff;
-  color: var(--ink);
+  border: 0;
+  background: var(--fill);
+  color: var(--accent-ink);
   text-decoration: none;
   cursor: pointer;
-  transition: transform 0.12s, box-shadow 0.15s, background 0.15s;
+  transition: transform 0.12s, background 0.15s;
 }
 
 .btn:hover {
-  border-color: var(--line-strong);
-  box-shadow: 0 8px 18px -12px rgb(13 43 54 / 55%);
+  background: var(--fill-strong);
 }
 
 .btn:active {
   transform: scale(0.97);
 }
 
-/* The invite's Join button, for every main action: a lit teal gradient
-   (white text is 4.5:1 or better on both its stops) that lifts a little
-   under the pointer. */
+/* The one main action: a flat blue capsule (white on it is 4.7:1). */
 .btn--primary {
   border: 0;
-  background: linear-gradient(180deg, #12809b, #0a6680);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 22%),
-    0 1px 2px rgb(10 102 128 / 30%),
-    0 10px 24px -10px rgb(10 102 128 / 70%);
+  background: var(--accent-strong);
   color: #fff;
 }
 
 .btn--primary:hover {
-  background: linear-gradient(180deg, #0f7a94, #095f78);
-  transform: translateY(-1px);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 22%),
-    0 2px 4px rgb(10 102 128 / 30%),
-    0 14px 28px -10px rgb(10 102 128 / 75%);
-}
-
-.btn--primary:active {
-  transform: translateY(0) scale(0.985);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 15%),
-    0 1px 2px rgb(10 102 128 / 30%);
+  background: #0062c4;
 }
 
 /* A form's own button is as tall and as rounded as its fields, so the two
@@ -349,15 +330,13 @@ input[type="radio"] {
 .stack > .btn,
 .stack > button.btn {
   min-height: 3.25rem;
-  border-radius: 16px;
   font-size: 1.02rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* A button beside a field (Copy, Find, Rename) stands as tall as it. */
 :is(.share__row, .finder__row, .settings__row) > .btn {
   min-height: 3rem;
-  border-radius: 14px;
 }
 
 .btn:focus-visible,
@@ -385,7 +364,7 @@ input[type="radio"] {
 
 .notice {
   padding: 0.7rem 1rem;
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--accent-soft);
 }
 
@@ -406,14 +385,13 @@ input[type="radio"] {
   padding: 1rem;
   border-radius: var(--radius);
   background: var(--card);
-  border: 1px solid var(--line);
-  border-top: 4px solid var(--kind);
+  box-shadow: var(--shadow-sm);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .spot:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px -22px rgb(13 43 54 / 60%);
+  box-shadow: var(--shadow-md);
 }
 
 .spot h3,
@@ -446,17 +424,16 @@ input[type="radio"] {
   --kind: var(--outdoors);
 }
 
+/* A place's kind: its system colour, in words, on a wash of it. */
 .tag {
   align-self: flex-start;
   justify-self: start;
-  padding: 0.1rem 0.55rem;
+  padding: 0.12rem 0.55rem;
   border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: color-mix(in srgb, var(--kind) 72%, black);
-  background: color-mix(in srgb, var(--kind) 12%, white);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--kind);
+  background: color-mix(in srgb, var(--kind) 10%, white);
 }
 
 /* The invite panel (src/pages/g/[link].astro): a heading, the link in one
@@ -468,8 +445,7 @@ input[type="radio"] {
 }
 
 .share--new {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow-md);
+  box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-md);
 }
 
 .share__title {
@@ -493,9 +469,9 @@ input[type="radio"] {
   align-items: center;
   gap: 0.4rem;
   padding: 0.3rem 0.3rem 0.3rem 0.95rem;
-  border: 1.5px solid var(--line);
+  border: 1.5px solid transparent;
   border-radius: 999px;
-  background: var(--tint);
+  background: var(--fill);
 }
 
 .share__link:focus-within {
@@ -522,16 +498,16 @@ input[type="radio"] {
   padding: 0.5rem 0.95rem;
   border: 0;
   border-radius: 999px;
-  background: var(--ink);
+  background: var(--accent-strong);
   color: #fff;
   font: inherit;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .share__copy:hover {
-  background: var(--accent-strong);
+  background: #0062c4;
 }
 
 /* Only where the browser has a system share sheet (set by the page script). */
@@ -610,25 +586,30 @@ input[type="radio"] {
   font-style: italic;
 }
 
+/* Keen, as the App Store's GET: a capsule on a wash of blue, filled
+   when it's yours. */
 .keen {
-  display: grid;
-  justify-items: center;
-  min-width: 3.9rem;
-  padding: 0.35rem 0.5rem;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.4rem 0.8rem;
   font: inherit;
-  font-size: 0.7rem;
-  font-weight: 700;
-  border-radius: 12px;
-  border: 2px solid var(--line);
-  background: #fff;
-  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 999px;
+  border: 0;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
   cursor: pointer;
-  transition: transform 0.12s, background 0.15s, border-color 0.15s;
+  transition: transform 0.12s, background 0.15s;
 }
 
 .keen__count {
-  font-size: 1.15rem;
-  line-height: 1.1;
+  font-family: var(--font-rounded);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .keen:active {
@@ -636,13 +617,12 @@ input[type="radio"] {
 }
 
 .keen:hover {
-  border-color: var(--line-strong);
+  background: color-mix(in srgb, var(--accent) 18%, white);
 }
 
 .keen--on,
 .keen--on:hover {
   background: var(--accent-strong);
-  border-color: var(--accent-strong);
   color: #fff;
 }
 
@@ -738,7 +718,7 @@ input[type="radio"] {
   width: 100%;
   height: 100%;
   font-size: 2.4rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--kind);
 }
 
@@ -871,19 +851,23 @@ input[type="radio"] {
 .chip {
   font: inherit;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 500;
   padding: 0.35rem 0.9rem;
   border-radius: 999px;
-  border: 1px solid var(--line);
-  background: #fff;
+  border: 0;
+  background: var(--fill);
   color: var(--ink);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
-.chip--on {
+.chip:hover {
+  background: var(--fill-strong);
+}
+
+.chip--on,
+.chip--on:hover {
   background: var(--ink);
-  border-color: var(--ink);
   color: #fff;
 }
 
@@ -1080,7 +1064,7 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   color: #fff;
   font-size: 11px;
   font-style: normal;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .map-pop__head i:empty {
@@ -1245,7 +1229,7 @@ html:not(.in-app) .no-passkey__app {
   padding: 0.05rem 0.5rem;
   border-radius: 999px;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--accent-ink);
   background: var(--accent-soft);
 }
@@ -2448,7 +2432,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     right: 0;
     z-index: 8;
     width: min(24rem, calc(100vw - 2rem));
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-float);
   }
 }
 
@@ -2477,7 +2461,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   color: hsl(var(--hue) 45% 28%);
   font-family: var(--font-display);
   font-size: 0.85rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .join {
@@ -2485,41 +2469,54 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 /* Section links: plain anchors that stay in reach while the page scrolls. */
+/* The group's parts as a segmented control, stuck under the top as the page
+   scrolls: a grey track, the open one a white segment lifted off it. (On a
+   phone they're a tab bar at the foot instead, below.) */
 .section-nav {
   position: sticky;
-  top: 0;
+  top: 0.5rem;
   z-index: 6;
   display: flex;
-  gap: 0.3rem;
-  min-height: var(--nav-h);
+  gap: 0.1rem;
+  width: fit-content;
+  max-width: 100%;
   align-items: center;
-  margin: 1.25rem -1rem 0;
-  padding: 0.45rem 1rem;
+  margin: 1.25rem 0 0;
+  padding: 0.2rem;
   overflow-x: auto;
   scrollbar-width: none;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, #e4e4ea 88%, transparent);
+  backdrop-filter: blur(16px) saturate(1.6);
 }
 
 .section-nav a {
+  display: inline-flex;
   flex: none;
-  padding: 0.45rem 0.95rem;
-  border-radius: 999px;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 1rem;
+  border-radius: 10px;
   color: var(--ink);
-  font-size: 0.92rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
 }
 
+.section-nav a svg {
+  display: none;
+}
+
 .section-nav a:hover {
-  background: var(--accent-soft);
+  background: rgb(255 255 255 / 50%);
 }
 
 .section-nav a[aria-current] {
-  background: var(--ink);
-  color: #fff;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%), 0 1px 1px rgb(0 0 0 / 4%);
 }
 
 /* Our list beside Explore on a wide screen; above it otherwise. */
@@ -2565,11 +2562,16 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 /* Most keen first, always: each row its rank, photo, name, who's keen, and
    the keen button. The leader (.pick--top, first with anyone keen) is a
    size up. */
+/* One inset grouped list, as in Settings or Music's charts: white, rounded,
+   its rows parted by hairlines that start where the words do. */
 .picks {
   display: grid;
-  gap: 0.5rem;
   margin: 0;
   padding: 0;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
   list-style: none;
   counter-reset: rank;
 }
@@ -2581,14 +2583,19 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   grid-template-columns: 1.3rem 3.25rem minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.7rem 0.8rem 0.8rem;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  padding: 0.75rem 0.9rem;
   background: var(--card);
-  box-shadow: var(--shadow-sm);
   counter-increment: rank;
   animation: rise 0.3s ease-out backwards;
+}
+
+.pick + .pick::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: calc(0.9rem + 1.3rem + 0.75rem);
+  border-top: 1px solid var(--line);
 }
 
 /* .pick sets the food colour above, so the other kinds say theirs again */
@@ -2603,9 +2610,9 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 .pick::before {
   content: counter(rank);
   color: var(--muted);
-  font-family: var(--font-display);
+  font-family: var(--font-rounded);
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 600;
   text-align: center;
 }
 
@@ -2674,15 +2681,15 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-size: 0.6rem;
 }
 
+/* The leader: Slopes' highlight, a wash of blue across the top row. */
 .pick--top {
   grid-template-columns: 1.3rem 4.75rem minmax(0, 1fr) auto;
-  padding: 0.9rem 0.9rem 1rem;
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
-  background: linear-gradient(135deg, var(--accent-soft), var(--card) 70%);
+  padding: 1rem 0.9rem;
+  background: linear-gradient(120deg, #dcebff, var(--card) 75%);
 }
 
 .pick--top::before {
-  color: var(--accent-strong);
+  color: var(--accent-ink);
   font-size: 1.45rem;
 }
 
@@ -2708,7 +2715,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 .pick__lead {
   color: var(--accent-strong);
   font-size: 0.68rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -2720,19 +2727,19 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 .tabs__n {
   display: inline-grid;
   place-items: center;
-  min-width: 1.35rem;
-  height: 1.35rem;
-  margin-left: 0.2rem;
+  min-width: 1.25rem;
+  height: 1.25rem;
   padding: 0 0.3rem;
   border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent-ink);
+  background: var(--fill-strong);
+  color: var(--ink);
+  font-family: var(--font-rounded);
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .section-nav a[aria-current] .tabs__n {
-  background: rgb(255 255 255 / 22%);
+  background: var(--accent-strong);
   color: #fff;
 }
 
@@ -2772,8 +2779,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     column-gap: 0.85rem;
     row-gap: 0.2rem;
     padding: 0.75rem;
-    border-top-width: 1px;
-    border-left: 4px solid var(--kind);
   }
 
   .spots--explore .spot > * {
@@ -2837,14 +2842,68 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     font-size: 0.86rem;
   }
 
-  .section-nav {
-    gap: 0.1rem;
-    padding-inline: 0.6rem;
+  /* On a phone the group's parts are a tab bar at the foot of the screen,
+     as in Slopes or any iOS app: a glyph over each name, frosted. */
+  .section-nav.tabs {
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    gap: 0;
+    width: auto;
+    margin: 0;
+    padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
+    border-radius: 0;
+    border-top: 0.5px solid rgb(0 0 0 / 14%);
+    background: rgb(249 249 251 / 86%);
+    backdrop-filter: blur(20px) saturate(1.8);
   }
 
-  .section-nav a {
-    padding: 0.4rem 0.65rem;
-    font-size: 0.86rem;
+  .section-nav.tabs a {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 0.1rem;
+    padding: 0.2rem 0;
+    border-radius: 0;
+    color: #8e8e93;
+    font-size: 0.66rem;
+    font-weight: 500;
+  }
+
+  .section-nav.tabs a svg {
+    display: block;
+  }
+
+  .section-nav.tabs a:hover,
+  .section-nav.tabs a[aria-current] {
+    background: none;
+    box-shadow: none;
+  }
+
+  .section-nav.tabs a[aria-current] {
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+
+  /* the list's count, a badge on its glyph */
+  .section-nav.tabs .tabs__n {
+    position: absolute;
+    top: 0;
+    left: calc(50% + 0.35rem);
+    min-width: 1.05rem;
+    height: 1.05rem;
+    font-size: 0.62rem;
+  }
+
+  /* (room at the foot of the page for the bar) */
+  body:has(.section-nav.tabs) {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -2964,7 +3023,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   margin: 0;
   color: #fff;
   font-size: clamp(2rem, 8vw, 2.7rem);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.02;
   letter-spacing: -0.03em;
   text-shadow: 0 2px 16px rgb(4 38 52 / 40%);
@@ -3062,7 +3121,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 .welcome__label {
   margin: 0 0 0.55rem;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* ---- The drawn map ------------------------------------------------------------ */
@@ -3245,7 +3304,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   color: #fff;
   font-size: 11px;
   font-style: normal;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* No number to show: a plain disc in the place's colour. */
@@ -3258,7 +3317,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 .map-chip b {
   color: var(--ink);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .map-dot {
@@ -3458,13 +3517,13 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 
 .minimap__n {
   fill: #fff;
-  font-weight: 800;
+  font-weight: 700;
   text-anchor: middle;
 }
 
 .minimap__name {
   fill: var(--ink);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* Once the map is in, the pins drop onto it one after another. */
@@ -3569,7 +3628,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   background: var(--kind, var(--food));
   color: #fff;
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 700;
   transform: translateY(-0.1rem);
 }
 
@@ -3910,7 +3969,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   gap: 0.5rem;
   border-radius: 16px;
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.01em;
 }
 

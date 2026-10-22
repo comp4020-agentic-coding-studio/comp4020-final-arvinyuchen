@@ -309,11 +309,26 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
 
   {/* One part of the group at a time: tabs, by the script below. Without
       it they're links down the page, and every part is there. */}
+  {/* (with a glyph each, for when they're the phone's tab bar) */}
   <nav class="section-nav tabs" aria-label="Group">
-    <a href="#list" data-tab="list">Our list <span class="tabs__n">{picks.length}</span></a>
-    <a href="#explore-section" data-tab="explore">Explore</a>
-    <a href="#add" data-tab="add">Share a place</a>
-    {isOwner && <a href="#settings" data-tab="settings">Settings</a>}
+    <a href="#list" data-tab="list">
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      <span>Our list</span> <span class="tabs__n">{picks.length}</span>
+    </a>
+    <a href="#explore-section" data-tab="explore">
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Zm0 0v14m6-12v14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      <span>Explore</span>
+    </a>
+    <a href="#add" data-tab="add">
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Zm0-13.5v5m-2.5-2.5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      <span>Share</span>
+    </a>
+    {isOwner && (
+      <a href="#settings" data-tab="settings">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-3a7.4 7.4 0 0 0-.1-1.2l2-1.6-2-3.4-2.4.9a7.5 7.5 0 0 0-2-1.2L14.5 3h-5l-.4 2.5a7.5 7.5 0 0 0-2 1.2l-2.4-.9-2 3.4 2 1.6a7.4 7.4 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-.9c.6.5 1.3.9 2 1.2l.4 2.5h5l.4-2.5c.7-.3 1.4-.7 2-1.2l2.4.9 2-3.4-2-1.6c.1-.4.1-.8.1-1.2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        <span>Settings</span>
+      </a>
+    )}
   </nav>
 
   <div class="board">
