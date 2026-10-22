@@ -1488,12 +1488,6 @@ body:has(.home) .top nav a:hover {
   margin: 1.25rem 0 0;
 }
 
-.hero__cta .fine {
-  margin: 0;
-  color: #fff;
-  text-shadow: 0 1px 8px rgb(4 38 52 / 70%);
-}
-
 .hero .start {
   position: relative;
   z-index: 1;
@@ -1708,8 +1702,7 @@ body:has(.home) .top nav a:hover {
   --pad: 1.1rem;
 }
 
-/* (the form a little tighter there, to leave the map more room: the
-   photo has already said it's free and needs no sign-up) */
+/* (the form a little tighter there, to leave the map more room) */
 .fly.is-live.is-under .fly__stage > .start > .fine {
   display: none;
 }
