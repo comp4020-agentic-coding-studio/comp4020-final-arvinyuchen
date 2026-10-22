@@ -464,9 +464,9 @@ input[type="radio"] {
   height: 1.2em;
 }
 
-/* The invite panel (src/pages/g/[link].astro): a heading, the link in one
-   pill with Copy inside it, Share… where there's a share sheet, the
-   private channels as a row of even tiles. */
+/* The invite panel (src/pages/g/[link].astro): a heading, the link as one
+   button that copies it, Share… where there's a share sheet, the private
+   channels as their apps' icons. */
 .share {
   display: grid;
   gap: 0.9rem;
@@ -483,22 +483,21 @@ input[type="radio"] {
   overflow-wrap: anywhere;
 }
 
-.share__say {
-  margin: -0.55rem 0 0;
-}
-
 .share__row {
   display: grid;
   gap: 0.9rem;
 }
 
+/* The link: a field to select it in, without a script; with one, the
+   field gives way to the copy button. */
 .share__link {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0.3rem 0.3rem 0.95rem;
+  gap: 0.7rem;
+  min-width: 0;
+  padding: 0.55rem 0.95rem 0.55rem 0.55rem;
   border: 1.5px solid transparent;
-  border-radius: 999px;
+  border-radius: 16px;
   background: var(--fill);
 }
 
@@ -510,6 +509,7 @@ input[type="radio"] {
 .share__link input {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   padding: 0;
   border: 0;
   background: none;
@@ -521,21 +521,140 @@ input[type="radio"] {
 }
 
 .share__copy {
-  flex: none;
-  min-width: 4.6rem;
-  padding: 0.5rem 0.95rem;
+  display: none;
+}
+
+.can-copy .share__link {
+  padding: 0;
   border: 0;
-  border-radius: 999px;
-  background: var(--accent-strong);
-  color: #fff;
+  background: none;
+  box-shadow: none;
+}
+
+.can-copy .share__link > :not(.share__copy) {
+  display: none;
+}
+
+/* The whole row is the button: what it does on top, the link under it. */
+.can-copy .share__copy {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  padding: 0.55rem 0.95rem 0.55rem 0.55rem;
+  border: 1.5px solid transparent;
+  border-radius: 16px;
+  background: var(--fill);
+  color: var(--ink);
   font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
+  text-align: left;
   cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
 }
 
 .share__copy:hover {
-  background: #0062c4;
+  background: var(--fill-strong);
+}
+
+.share__copy:active {
+  transform: scale(0.985);
+}
+
+.share__copy:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft), inset 0 0 0 1.5px var(--accent);
+}
+
+.share__glyph {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--accent-ink);
+  box-shadow: var(--shadow-sm);
+  transition: background 0.2s, color 0.2s;
+}
+
+.share__glyph svg {
+  grid-area: 1 / 1;
+}
+
+.share__words {
+  flex: 1;
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.share__do {
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+
+.share__url {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share__dup {
+  flex: none;
+  color: var(--accent-ink);
+  transition: opacity 0.2s;
+}
+
+.share__tick {
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.2s, transform 0.25s cubic-bezier(0.3, 1.5, 0.6, 1);
+}
+
+.share__chain {
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+/* Copied: a green tick where the link was, for a moment. */
+.share__copy.is-copied {
+  background: color-mix(in srgb, #34c759 14%, white);
+}
+
+.is-copied .share__glyph {
+  background: #34c759;
+  color: #fff;
+}
+
+.is-copied .share__chain {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.is-copied .share__tick {
+  opacity: 1;
+  transform: none;
+}
+
+.is-copied .share__do {
+  color: #1f8a3b;
+}
+
+.is-copied .share__dup {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share__copy,
+  .share__glyph,
+  .share__chain,
+  .share__tick,
+  .share__dup {
+    transition: none;
+  }
 }
 
 /* Only where the browser has a system share sheet (set by the page script). */
@@ -574,35 +693,69 @@ input[type="radio"] {
   background: var(--tint);
 }
 
+/* Four of a kind: the same circle, each in its app's colour, its mark in
+   white. */
 .share__icon {
   display: grid;
   place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 3.25rem;
+  height: 3.25rem;
   border-radius: 50%;
   background: var(--app);
-  color: #fff;
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 8%), 0 1px 3px rgb(0 0 0 / 10%);
   transition: transform 0.15s;
+}
+
+.share__icon svg {
+  width: var(--art, 62%);
+  height: var(--art, 62%);
 }
 
 .share__app:hover .share__icon {
   transform: translateY(-2px);
 }
 
+/* (Messages and Mail: lit from above, as the phone's own apps are) */
 .share__app--sms {
-  --app: #2fb84f;
+  --app: linear-gradient(#65f57f, #0cbd2a);
+  --art: 70%;
 }
 
 .share__app--whatsapp {
-  --app: #1faa5a;
+  --app: #25d366;
+  --art: 56%;
 }
 
+/* (the plane sits in the circle where Telegram's mark puts it) */
 .share__app--telegram {
-  --app: #2a9fd8;
+  --app: #26a5e4;
+  --art: 100%;
 }
 
 .share__app--email {
-  --app: var(--accent-strong);
+  --app: linear-gradient(#1cd0fb, #1b6ef0);
+}
+
+/* (on the narrowest phones, a little smaller, so the names keep apart) */
+@media (max-width: 22rem) {
+  .share__by {
+    gap: 0.2rem;
+  }
+
+  .share__app {
+    font-size: 0.7rem;
+  }
+
+  .share__icon {
+    width: 2.9rem;
+    height: 2.9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share__icon {
+    transition: none;
+  }
 }
 
 .join {
@@ -3266,12 +3419,15 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     padding-top: 0.35rem;
   }
 
+  /* (the button at the start; the panel, opened, the page's width however
+     short its words) */
   .invite {
     flex-basis: 100%;
-    justify-items: start;
+    justify-items: stretch;
   }
 
   .invite__open {
+    justify-self: start;
     padding: 0.5rem 0.95rem;
     font-size: 0.92rem;
   }

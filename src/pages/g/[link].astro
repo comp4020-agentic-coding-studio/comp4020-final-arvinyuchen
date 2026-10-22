@@ -34,34 +34,39 @@ const isNew = Astro.url.searchParams.has("new");
 // Instagram, WeChat...); these links work everywhere, script or not.
 const invite = `Join ${group.name} on Spots: we're picking places to go together.`;
 const enc = encodeURIComponent;
-// Each with a plain glyph of our own (a bubble, a plane, an envelope), not
-// the apps' logos.
+// Each as its app's icon: WhatsApp's and Telegram's own marks (their paths
+// from Simple Icons 16.30.0, CC0) in their brand colours, as both allow on a
+// share button; Messages and Email drawn here, a bubble and an envelope in
+// the spirit of the phone's own apps, not Apple's artwork.
 const sendBy = [
   {
     key: "sms",
     label: "Messages",
     href: `sms:?&body=${enc(`${invite} ${shareUrl}`)}`,
-    glyph: "M4 5.5h16a1.5 1.5 0 0 1 1.5 1.5v8.5a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V17H4a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 4 5.5Z",
+    art: `<path d="M12 5c-4.7 0-8.5 3.06-8.5 6.83 0 2.2 1.3 4.16 3.32 5.4-.17 1.06-.7 2.03-1.5 2.77 1.66.08 3.24-.5 4.43-1.5.73.17 1.48.26 2.25.26 4.7 0 8.5-3.06 8.5-6.83S16.7 5 12 5Z" fill="#fff"/>`,
   },
   {
     key: "whatsapp",
     label: "WhatsApp",
     href: `https://wa.me/?text=${enc(`${invite} ${shareUrl}`)}`,
-    glyph: "M12 3.5a8.5 8.5 0 0 0-7.3 12.8L3.5 20.5l4.3-1.1A8.5 8.5 0 1 0 12 3.5ZM9 8.2c.3 2.9 3.6 6.3 6.8 6.8l.9-1.4-1.9-1-1 .9c-1-.4-2-1.4-2.5-2.5l.9-1-1-1.9Z",
+    art: `<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" fill="#fff"/>`,
   },
   {
     key: "telegram",
     label: "Telegram",
     href: `https://t.me/share/url?url=${enc(shareUrl)}&text=${enc(invite)}`,
-    glyph: "M20.5 4.5 3.5 11.2l5.2 1.9 1.9 5.9 3-3.5 4.6 3.4 2.3-14.4ZM8.7 13.1l8.8-5.6-6.9 7.3",
+    // (the mark's plane alone: the button is its blue circle)
+    art: `<path d="M16.906 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" fill="#fff"/>`,
   },
   {
     key: "email",
     label: "Email",
     href: `mailto:?subject=${enc(`Join ${group.name} on Spots`)}&body=${enc(`${invite}\n\n${shareUrl}`)}`,
-    glyph: "M3.5 6.5h17v11h-17Zm0 0 8.5 6.5 8.5-6.5",
+    art: `<rect x="3.5" y="6.5" width="17" height="11.5" rx="2.2" fill="#fff"/><path d="m4.9 8 7.1 5.3L19.1 8" fill="none" stroke="#8ab8f2" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>`,
   },
 ];
+// The link as people say it, without the "https://".
+const shortUrl = shareUrl.replace(/^https?:\/\//, "");
 const error = Astro.url.searchParams.get("error");
 const done = Astro.url.searchParams.get("done");
 const DONE: Record<string, string> = {
@@ -282,29 +287,41 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         </svg>
         Invite friends
       </summary>
-      {/* The invite as one panel: what it's for, the link with Copy in it,
+      {/* The invite as one panel: the link as one button that copies it,
           Share… where there's a share sheet, and the private channels as
-          tiles. Never a public feed (CLAUDE.md). */}
+          their apps' icons. Never a public feed (CLAUDE.md). */}
       <div class={`share card${isNew ? " share--new" : ""}`}>
         <h2 class="share__title">{isNew ? "Your group is ready" : `Invite friends to ${group.name}`}</h2>
-        <p class="fine share__say">
-          {isNew ? "Send this link to everyone coming. " : ""}Anyone with it can join, so send it to people, not a feed.
-        </p>
         <div class="share__row">
+          {/* The link in a field to select, without a script or a clipboard;
+              with them, a button the width of the card that copies it. */}
           <div class="share__link">
+            <span class="share__glyph" aria-hidden="true">
+              <svg class="share__chain" viewBox="0 0 24 24" width="20" height="20"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </span>
             <label for="share-link" class="sr-only">Invite link</label>
             <input id="share-link" value={shareUrl} readonly />
-            <button type="button" class="share__copy" data-copy="#share-link">Copy</button>
+            <button type="button" class="share__copy" data-copy="#share-link">
+              <span class="share__glyph" aria-hidden="true">
+                <svg class="share__chain" viewBox="0 0 24 24" width="20" height="20"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                <svg class="share__tick" viewBox="0 0 24 24" width="20" height="20"><path d="m5.5 12.5 4.2 4.2L18.5 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </span>
+              <span class="share__words">
+                <span class="share__do" aria-live="polite">Copy link</span>
+                <span class="share__url">{shortUrl}</span>
+              </span>
+              <svg class="share__dup" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+            </button>
           </div>
           <button type="button" class="btn btn--primary share__native" data-share data-title={`Join ${group.name} on Spots`} data-text={invite}>
             Share…
           </button>
           <ul class="share__by" aria-label="Or send it by">
-            {sendBy.map(({ key, label, href, glyph }) => (
+            {sendBy.map(({ key, label, href, art }) => (
               <li>
                 <a class={`share__app share__app--${key}`} href={href} {...(href.startsWith("https:") ? { target: "_blank", rel: "noopener" } : {})}>
                   <span class="share__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="22" height="22"><path d={glyph} fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" /></svg>
+                    <svg viewBox="0 0 24 24" set:html={art} />
                   </span>
                   {label}
                 </a>
@@ -889,18 +906,29 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
       inviteBox.querySelector("summary").focus();
     });
 
-    // Delegated, since a reset invite link swaps the share row in live.
+    // The link copies with one tap where there's a clipboard; elsewhere it
+    // stays a field to select it in. Delegated, since a reset invite link
+    // swaps the share row in live.
+    if (navigator.clipboard?.writeText) document.documentElement.classList.add("can-copy");
     document.addEventListener("click", async (event) => {
       const button = event.target.closest("[data-copy]");
       if (!button) return;
       const input = document.querySelector(button.dataset.copy);
+      const say = button.querySelector(".share__do");
       try {
         await navigator.clipboard.writeText(input.value);
-        button.textContent = "Copied";
+        button.classList.add("is-copied");
+        say.textContent = "Copied";
+        setTimeout(() => {
+          button.classList.remove("is-copied");
+          say.textContent = "Copy link";
+        }, 2000);
       } catch {
+        // No clipboard after all: back to the field, with the link selected.
+        document.documentElement.classList.remove("can-copy");
+        input.focus();
         input.select();
       }
-      setTimeout(() => (button.textContent = "Copy"), 1500);
     });
 
     // The system share sheet, where there is one (phones, Safari, Edge): it
