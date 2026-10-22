@@ -991,97 +991,219 @@ input[type="file"]::file-selector-button {
 
 /* ---- Explore + map --------------------------------------------------------- */
 
-/* Explore's title with its kind filters beside it, the search under both. */
+/* Explore as one card, as the group's panel holds its name, people and
+   invite: the title, the search, and the six kinds. On a wide screen the
+   middle column then starts the way the left one does. */
 .explore-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 1rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
   margin-top: 1.6rem;
+  padding: 1rem 1rem 0.8rem;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+
+.explore-head__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 1.75rem;
 }
 
 .explore-head h2 {
   margin: 0;
+  font-size: 1.35rem;
 }
 
-/* (six kinds and All: one row beside the title that slides sideways when
-   they don't all fit, fading at its edge so it's plain there are more) */
+.show-all {
+  padding: 0.15rem 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.show-all[hidden] {
+  display: none;
+}
+
+/* The kinds as Maps' "Find Nearby" buttons: a round tint of each kind's
+   colour with its glyph, the name under it. The chosen one fills with its
+   colour and the rest step back. Six across, always one row. */
 .filters {
-  flex: 1 1 0;
-  display: flex;
-  gap: 0.4rem;
-  min-width: 0;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-  mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  padding-top: 0.15rem;
 }
 
-.filters::-webkit-scrollbar {
+.filters[hidden] {
   display: none;
 }
 
 .filters .chip {
-  flex: none;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.15rem 0 0.1rem;
+  border-radius: 12px;
+  background: none;
+  color: var(--ink);
+  font-size: 0.74rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: opacity 0.15s;
 }
 
-.filters .chip:last-child {
-  margin-right: 1.25rem;
+.filters .chip:hover,
+.filters .chip--on {
+  background: none;
+  color: var(--ink);
 }
 
-/* (with a mouse, where sliding sideways isn't something you'd think to do,
-   they wrap instead, all of them in sight) */
-@media (hover: hover) and (pointer: fine) {
-  .explore-head {
-    align-items: flex-start;
+.filters .chip--on {
+  font-weight: 600;
+}
+
+.filters .chip .kind-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+  margin: 0;
+}
+
+.chip--food { --kind: var(--food); }
+.chip--coffee { --kind: var(--coffee); }
+.chip--drinks { --kind: var(--drinks); }
+.chip--outdoors { --kind: var(--outdoors); }
+.chip--culture { --kind: var(--culture); }
+.chip--fun { --kind: var(--fun); }
+
+.chip__dot {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--kind) 11%, white);
+  color: var(--kind);
+  transition: background 0.15s, color 0.15s, transform 0.12s;
+}
+
+.filters .chip:hover .chip__dot {
+  background: color-mix(in srgb, var(--kind) 18%, white);
+}
+
+.filters .chip:active .chip__dot {
+  transform: scale(0.94);
+}
+
+.filters .chip--on .chip__dot,
+.filters .chip--on:hover .chip__dot {
+  background: var(--kind);
+  color: #fff;
+}
+
+/* (one chosen: the others step back, still there to tap) */
+.filters:not([data-sel="all"]) .chip:not(.chip--on) {
+  opacity: 0.5;
+}
+
+.filters:not([data-sel="all"]) .chip:not(.chip--on):hover {
+  opacity: 0.8;
+}
+
+/* (on a phone the six run nearly to the card's edges, for room between
+   their names) */
+@media (max-width: 1179px) {
+  .filters {
+    margin-inline: -0.65rem;
   }
 
-  .explore-head h2 {
-    line-height: 1.85rem;
+  .filters .chip {
+    font-size: 0.7rem;
+    letter-spacing: -0.005em;
+  }
+}
+
+@media (max-width: 359px) {
+  .explore-head {
+    padding-inline: 0.75rem;
   }
 
   .filters {
-    flex-wrap: wrap;
-    overflow: visible;
-    mask-image: none;
+    margin-inline: -0.6rem;
   }
 
-  .filters .chip:last-child {
-    margin-right: 0;
+  .chip__dot {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+
+  .filters .chip .kind-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+
+  .filters .chip {
+    font-size: 0.64rem;
+    letter-spacing: -0.015em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip__dot {
+    transition: none;
   }
 }
 
 /* a kind nobody has shared yet */
 .filter-empty {
-  flex: 1 0 100%;
-  margin: 0.5rem 0 0;
+  margin: 0;
   color: var(--muted);
+  font-size: 0.9rem;
 }
 
-/* Search by describing it: a wide prompt box, answered with cards. */
+/* Search by describing it: a grey field with the glass in it and Find at
+   its end, answered with cards. (16px type, so a phone doesn't zoom in) */
 .ask {
-  flex: 1 0 100%;
-  display: flex;
-  gap: 0.5rem;
-  margin: 0.6rem 0 0.4rem;
+  position: relative;
+  margin: 0;
 }
 
-/* (a search field's height, as in Apple's apps; 16px type, so a phone
-   doesn't zoom in on it) */
+.ask__glass {
+  position: absolute;
+  top: 50%;
+  left: 0.8rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--muted);
+  pointer-events: none;
+  translate: 0 -50%;
+}
+
 .ask input {
-  flex: 1;
-  min-width: 0;
-  min-height: 2.5rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.45rem 4.7rem 0.45rem 2.4rem;
+  border-radius: 12px;
   font-size: 1rem;
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
+  text-overflow: ellipsis;
 }
 
 .ask .btn {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  bottom: 0.35rem;
   min-height: 0;
-  border-radius: 999px;
-  padding: 0.45rem 1.15rem;
-  font-size: 0.95rem;
+  padding: 0 0.95rem;
+  border-radius: 9px;
+  font-size: 0.9rem;
 }
 
 .ask-meta {
@@ -2968,6 +3090,11 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 
   .explore-wrap > .explore-head {
     margin-top: 0;
+    padding: 1.1rem 1.25rem 0.9rem;
+  }
+
+  .explore-head h2 {
+    font-size: 1.5rem;
   }
 
   .explore-grid {

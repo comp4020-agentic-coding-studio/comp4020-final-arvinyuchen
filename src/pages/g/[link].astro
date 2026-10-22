@@ -459,21 +459,20 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
 
   <section id="explore-section" class="explore-wrap" aria-labelledby="explore-title" data-panel="explore">
     <div class="explore-head">
-      <h2 id="explore-title">Explore</h2>
-      <div class="filters" role="group" aria-label="Show" hidden>
-        <button type="button" class="chip chip--on" data-filter="all" aria-pressed="true">All</button>
-        {kinds.map((k) => (
-          <button type="button" class={`chip chip--${k}`} data-filter={k} aria-pressed="false">
-            <KindIcon kind={k} />
-            {KIND_LABEL[k]}
-          </button>
-        ))}
+      <div class="explore-head__top">
+        <h2 id="explore-title">Explore</h2>
+        <button type="button" class="show-all" data-show-all hidden>Show all</button>
       </div>
       <form class="ask" method="get" action={`/g/${group.link}#explore`} role="search" data-search>
         <label for="ask-q" class="sr-only">Describe what you're after</label>
+        <svg class="ask__glass" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M8.75 15a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Zm4.5-1.75 4.25 4.25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
+        </svg>
         <input
           id="ask-q"
           name="q"
+          type="search"
+          enterkeyhint="search"
           value={q}
           maxlength="200"
           autocomplete="off"
@@ -481,6 +480,15 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         />
         <button class="btn btn--primary">Find</button>
       </form>
+      {/* (the kinds need the script that filters by them, so it shows them) */}
+      <div class="filters" role="group" aria-label="Show only" data-sel="all" hidden>
+        {kinds.map((k) => (
+          <button type="button" class={`chip chip--${k}`} data-filter={k} aria-pressed="false">
+            <span class="chip__dot"><KindIcon kind={k} /></span>
+            <span>{KIND_LABEL[k]}</span>
+          </button>
+        ))}
+      </div>
       <p class="filter-empty" hidden>
         Nothing under <span data-empty-kind></span> yet. <a href="#add" data-tab="add">Share one</a>
       </p>

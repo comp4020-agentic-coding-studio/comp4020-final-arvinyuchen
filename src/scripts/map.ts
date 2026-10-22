@@ -357,21 +357,30 @@ if (container) {
     }
     place();
   }
+  // (tapping the chosen kind again, or Show all, shows every place again)
   const filters = document.querySelector<HTMLElement>(".filters");
+  const showAll = document.querySelector<HTMLButtonElement>("[data-show-all]");
+  function choose(kind: string) {
+    filter = kind;
+    if (filters) {
+      filters.dataset.sel = kind;
+      filters.querySelectorAll<HTMLButtonElement>("[data-filter]").forEach((c) => {
+        const on = c.dataset.filter === kind;
+        c.classList.toggle("chip--on", on);
+        c.setAttribute("aria-pressed", String(on));
+      });
+    }
+    if (showAll) showAll.hidden = kind === "all";
+    applyFilter();
+  }
   if (filters) {
     filters.hidden = false;
     filters.addEventListener("click", (event) => {
       const chip = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-filter]");
-      if (!chip) return;
-      filter = chip.dataset.filter ?? "all";
-      filters.querySelectorAll<HTMLButtonElement>("[data-filter]").forEach((c) => {
-        const on = c === chip;
-        c.classList.toggle("chip--on", on);
-        c.setAttribute("aria-pressed", String(on));
-      });
-      applyFilter();
+      if (chip) choose(chip.dataset.filter === filter ? "all" : (chip.dataset.filter ?? "all"));
     });
   }
+  showAll?.addEventListener("click", () => choose("all"));
 
   sync();
   document.addEventListener("spots:refreshed", () => {
