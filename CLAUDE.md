@@ -134,8 +134,12 @@ follow from it; every change has to hold to them.
   home page's share one language: tiles' lettering hidden (street names only
   once the camera is down in a street) and a few place names set in the
   page's font, fine line weights, white chips for the places on a list and
-  dots for the rest, a popup that is the chip grown into a card, and the
-  credit folded behind an "i" on the map. Pins, names and credit are placed
+  dots for the rest, and the credit folded behind an "i" on the map. On the
+  group's map (the only one with a card) a tapped place's chip becomes its
+  card: on a wide map a callout grown from the chip (its photo, name, kind
+  and suburb, its number on the list); on a phone's short map the chip
+  fills with its kind's colour and the same card sits at the map's foot,
+  with one action (keen, or Add). Pins, names and credit are placed
   by `src/scripts/map-marks.ts` and styled once ("Map marks" in
   `src/styles.css`); the drawn maps share `src/components/MapDrawing.astro`.
   Don't give a map its own pin or label style.

@@ -90,11 +90,12 @@ const removed = removedId ? places.find((p) => p.id === removedId && !onList.has
 const found = q ? await search(q, places) : null;
 const shown = found ? found.places : places;
 
-// What the map draws: every place in Explore that has a location. Carried as
+// What the map draws: every place in Explore that has a location, with its
+// photo for the card the map opens on it (src/scripts/map.ts). Carried as
 // JSON inside #explore, so a live refresh of Explore refreshes the pins too.
 const pins = shown
   .filter((p) => p.lat !== null && p.lon !== null)
-  .map(({ id, name, kind, area, lat, lon }) => ({ id, name, kind, area, lat, lon }));
+  .map(({ id, name, kind, area, lat, lon, photo }) => ({ id, name, kind, area, lat, lon, photo: photo?.src ?? null }));
 const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
 
 // Before joining, the link shows a preview and nothing more: who's in, who

@@ -1546,7 +1546,7 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   scale: 1.35;
 }
 
-/* While its popup is open, the popup is the place's chip. */
+/* While its callout is open, the callout is the place's chip. */
 .map-mark.is-open .map-chip {
   visibility: hidden;
 }
@@ -1569,18 +1569,31 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
     0 4px 10px rgb(13 43 54 / 16%);
 }
 
-/* A place's popup: its chip grown into a small card, the number (or disc)
-   in its colour, its name, its kind and suburb. */
+/* A place's card (src/scripts/map.ts): its chip grown into one. Its photo
+   (or its kind's picture) as a small rounded square with the kind's icon in
+   its corner, as on Our list; its name; its kind and suburb; and for a place
+   on the list, the chip's number disc. Where the map is big it's a callout
+   on the place's dot, in its chip's place, with a soft-tipped tail; card
+   and tail cast one shadow, so the shadow is a filter on the pair. */
 .maplibregl-popup {
   z-index: 4;
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 10%)) drop-shadow(0 10px 18px rgb(13 43 54 / 18%));
 }
 
 .maplibregl-popup-content {
-  padding: 0.5rem 0.8rem 0.55rem 0.5rem;
-  border-radius: 14px;
-  box-shadow:
-    0 1px 2px rgb(13 43 54 / 14%),
-    0 12px 28px -10px rgb(13 43 54 / 40%);
+  padding: 0;
+  border-radius: var(--radius);
+  background: #fff;
+  box-shadow: none;
+}
+
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  width: 22px;
+  height: 9px;
+  margin-top: -1px;
+  border: 0;
+  background: #fff;
+  clip-path: path("M0 0H22C16.5 0 13.6 8.4 11 8.4S5.5 0 0 0Z");
 }
 
 :where(.map-pop) {
@@ -1588,50 +1601,240 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
 }
 
 .map-pop {
-  display: grid;
-  gap: 0.25rem;
+  display: flex;
+  align-items: center;
   color: var(--ink);
 }
 
-.map-pop__head {
+.map-pop__main {
   display: flex;
+  flex: 1;
   align-items: center;
-  gap: 0.45rem;
+  gap: 12px;
+  width: 17rem;
+  min-width: 0;
+  padding: 8px 10px 8px 8px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.map-pop__head i {
-  display: grid;
+.map-pop__main:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: -3px;
+}
+
+.map-pop__photo {
+  position: relative;
   flex: none;
+  width: 60px;
+  height: 60px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--kind) 14%, white);
+}
+
+.map-pop__photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.map-pop__badge {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  display: grid;
   place-items: center;
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: var(--kind);
-  color: #fff;
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 700;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+  color: var(--kind);
 }
 
-.map-pop__head i:empty {
-  width: 14px;
-  height: 14px;
-  margin: 3px;
+.map-pop__badge .kind-icon {
+  width: 12px;
+  height: 12px;
 }
 
-.map-pop strong {
-  font-size: 0.92rem;
-  line-height: 1.25;
+/* (a kind without a picture: its icon on its colour, larger, in the middle) */
+.map-pop__photo:not(:has(img)) .map-pop__badge {
+  inset: 0;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.map-pop__photo:not(:has(img)) .map-pop__badge .kind-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.map-pop__text {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.map-pop__name {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.22;
+  letter-spacing: -0.012em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .map-pop__meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-  padding-left: calc(20px + 0.45rem);
+  overflow: hidden;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.map-pop__kind {
+  color: var(--kind);
+  font-weight: 600;
+}
+
+.map-pop__status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* the chip's number disc */
+.map-pop__status i {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--kind);
+  color: #fff;
+  font:
+    700 11px/1 var(--font-rounded);
+}
+
+.map-pop__go {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  color: #c7c7cc;
+}
+
+/* On a phone's short map the card sits inside the map's foot instead, 8px
+   in from its edges and clear of the tab bar (--map-clear, from the
+   script), with the one thing to do there beside it: your keen, or Add. */
+.map-card {
+  position: absolute;
+  right: 8px;
+  bottom: calc(8px + var(--map-clear, 0px));
+  left: 8px;
+  z-index: 3;
+  gap: 4px;
+  padding-right: 10px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 10%),
+    0 8px 24px -6px rgb(13 43 54 / 30%);
+}
+
+.map-card .map-pop__main {
+  width: auto;
+  gap: 11px;
+  padding-right: 4px;
+  border-radius: 14px;
+}
+
+.map-card .map-pop__photo {
+  width: 58px;
+  height: 58px;
+  border-radius: 8px;
+}
+
+.map-card .map-pop__status {
+  margin-top: 2px;
+  font-size: 12px;
+}
+
+.map-pop__act {
+  flex: none;
+  margin: 0;
+}
+
+.map-pop__act .btn {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .map-card.is-rising {
+    animation: map-card-rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
+@keyframes map-card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* The credit's "i" steps up out of the card's way. */
+.map-frame.has-card .fold-credit {
+  bottom: calc(var(--map-card, 0px) + 8px + var(--map-clear, 0px));
+}
+
+/* Above its card, the place's chip stays on its dot, filled with its
+   kind's colour, its number (or disc) white: the card's twin on the map. */
+.map-mark.is-picked .map-chip {
+  display: flex;
+  padding-right: 10px;
+  background: var(--kind, var(--food));
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 18%),
+    0 6px 14px -4px rgb(13 43 54 / 40%);
+}
+
+.map-mark.is-picked .map-chip::after {
+  background: var(--kind, var(--food));
+}
+
+.map-mark.is-picked .map-chip i {
+  background: #fff;
+  color: var(--kind, var(--food));
+}
+
+.map-mark.is-picked .map-chip b {
+  max-width: 13rem;
+  overflow: hidden;
+  color: #fff;
+  text-overflow: ellipsis;
+}
+
+#map .map-mark.is-picked {
+  z-index: 4;
 }
 
 /* ---- sharing a place --------------------------------------------------------- */
