@@ -28,8 +28,7 @@ const error = Astro.url.searchParams.get("error");
         </div>
         {/* (with the flight only: it plays it for you) */}
         <button class="fly__go" type="button">
-          Explore fun places
-          <svg viewBox="0 0 12 14" width="12" height="14" aria-hidden="true"><path d="M6 1.5v11M1.5 8 6 12.5 10.5 8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          Explore fun <span class="fly__go-end">places<svg viewBox="0 0 12 14" width="12" height="14" aria-hidden="true"><path d="M6 1.5v11M1.5 8 6 12.5 10.5 8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
         </button>
       </div>
       <div class="fly__card"><HeroMap /></div>
