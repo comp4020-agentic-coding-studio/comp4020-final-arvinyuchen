@@ -7,10 +7,10 @@ import { buildings, fine, letters, look, quiet, STYLE } from "./map-look";
 import { around, type Box, chipFont, chips, dress, fold, mark, measure, names, type Name } from "./map-marks";
 
 // The Explore map. Every shared place with a location gets a pin; clicking a
-// card (or its name, the card's way in from a keyboard, or a place on our
-// list) flies the map to that place: a zoom and a tilt into the street, then
-// its popup opens. The pins come from the #pins JSON inside #explore, so
-// when the page refreshes itself live (a new shared place), the pins follow.
+// card (or a place on our list) flies the map to that place: a zoom and a
+// tilt into the street, then its popup opens. The pins come from the #pins
+// JSON inside #explore, so when the page refreshes itself live (a new shared
+// place), the pins follow.
 //
 // It wears the invite map's look (map-look.ts) and its marks (map-marks.ts):
 // a place on the group's list is a white chip with its number on the list
@@ -322,16 +322,11 @@ if (container) {
     });
   }
 
-  // Cards, list items and cards' names, by delegation so cards a live
-  // refresh swapped in still work. A click on a card's own button, link
-  // or form does what that control does, not a fly.
+  // Cards and list items, by delegation so cards a live refresh swapped in
+  // still work. A click on a card's own button, link or form does what that
+  // control does, not a fly.
   document.addEventListener("click", (event) => {
     const target = event.target as HTMLElement;
-    const flyButton = target.closest<HTMLElement>("[data-fly]");
-    if (flyButton) {
-      fly(Number(flyButton.dataset.fly));
-      return;
-    }
     if (target.closest("button, a, form, input, select, label")) return;
     const card = target.closest<HTMLElement>("[data-place]");
     if (card?.dataset.place) fly(Number(card.dataset.place));
