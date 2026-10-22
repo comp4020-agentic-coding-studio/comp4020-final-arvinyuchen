@@ -57,6 +57,9 @@ const KINDS: Record<Kind, string[]> = {
 };
 // (and everywhere to eat: the rest of food and drink, but not these)
 const NOT_FOOD = new Set(["airport_lounge", "internet_cafe", "cafeteria", "candy_store"]);
+// (a road filed as a park or a landmark, like Parkes Way: a street isn't a
+// place to go, though a café named for one is)
+const ROAD = /\b(street|st|road|rd|avenue|ave|way|terrace|tce|drive|dr|parade|circuit|cct|crescent|cres|highway|hwy)\.?$/i;
 
 function kindOf(primary: string, top: string): Kind | null {
   for (const [kind, names] of Object.entries(KINDS) as [Kind, string[]][]) if (names.includes(primary)) return kind;
@@ -108,6 +111,7 @@ const rows = (
 const index = rows
   .map((r) => ({ ...r, kind: kindOf(r.kind ?? "", r.top ?? "") }))
   .filter((r): r is typeof r & { kind: Kind } => r.kind !== null)
+  .filter((r) => !((r.kind === "outdoors" || r.kind === "culture") && ROAD.test(r.name.trim())))
   .map((r) => ({
     id: r.id,
     name: r.name.trim(),

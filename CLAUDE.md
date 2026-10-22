@@ -78,8 +78,9 @@ follow from it; every change has to hold to them.
   Schema changes are additive only; never drop or rewrite data a group made.
   A place's kind is stored by its key (`src/lib/kinds.ts`), so a key is never
   renamed: relabel it instead, as Fun became Activities.
-  The exceptions: a place without a photo is deleted, with its keens and
-  its place on every list (`src/lib/db.ts`); and the site admin
+  The exceptions: a place without a photo, or a starter place taken off the
+  list in `src/lib/catalogue.ts`, is deleted, with its keens and its place
+  on every list (`src/lib/db.ts`); and the site admin
   (`src/lib/admin.ts`) archives a group first (closed, restorable), and only
   an archived group can be deleted for good, by an admin, after a confirm.
   An admin can hide a shared place. An admin is a passkey account that once entered

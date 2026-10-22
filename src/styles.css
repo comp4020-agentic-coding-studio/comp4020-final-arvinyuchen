@@ -2149,8 +2149,19 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 /* On a small frame (the home page's map over its form on a phone) a
-   place's card is a size smaller, so it doesn't cover half the map. */
+   place's card is a size smaller, so it doesn't cover half the map, and a
+   long name in a chip is cut short rather than run out of the frame. */
 @container (max-width: 300px) {
+  .hero-map .hero-map__chip {
+    max-width: calc(100cqw - 12px);
+  }
+
+  .hero-map .hero-map__chip b {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .hero-map .hero-map__card {
     width: 8.75rem;
     padding: 0.45rem 0.6rem;

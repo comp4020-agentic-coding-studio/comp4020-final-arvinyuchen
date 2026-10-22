@@ -56,7 +56,7 @@ describe("a group", () => {
 
   it("shows someone with the link a preview to join, never the list or its votes", async () => {
     const { jar: ana, path, api } = await started("Preview crew");
-    for (const key of ["questacon", "arboretum", "nga", "lonsdale-st"]) await request(ana, `${api}/picks`, { form: { key } });
+    for (const key of ["questacon", "arboretum", "nga", "haig-park"]) await request(ana, `${api}/picks`, { form: { key } });
     const doc = await page(ana, path);
     const last = [...doc.querySelectorAll<HTMLInputElement>('#list input[name="pick"]')].map((i) => i.value).at(-1) ?? "";
     await request(ana, `${api}/keen`, { form: { pick: last, keen: "on" } }); // the newest pick now ranks first
@@ -278,7 +278,6 @@ describe("search", () => {
 
   it("takes 'near' literally: only places within a few kilometres", async () => {
     const { cards } = await ask("somewhere near Braddon");
-    expect(cards).toContain("Lonsdale Street");
     expect(cards).toContain("Haig Park");
     expect(cards).not.toContain("Tidbinbilla Nature Reserve");
     expect(cards).not.toContain("National Arboretum");

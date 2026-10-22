@@ -193,15 +193,18 @@ for (const pick of db.prepare("SELECT * FROM picks WHERE place_id IS NULL").all(
   db.prepare("UPDATE picks SET place_id = ? WHERE id = ?").run(placeId, pick.id);
 }
 
-// Every place has a photo (src/lib/photos.ts). One without, shared before
-// that was the rule, is deleted with all that points at it: its keens, its
-// place on every group's list, and its search vector.
+// Every place has a photo (src/lib/photos.ts), and every starter place is
+// one on the list in catalogue.ts. One without a photo, shared before that
+// was the rule, or a starter place taken off the list (a street, say, which
+// isn't a place to go), is deleted with all that points at it: its keens,
+// its place on every group's list, and its search vector.
 db.transaction(() => {
-  const bare = "SELECT id FROM places WHERE photo_src IS NULL";
+  const starters = CATALOGUE.map((s) => `'${s.key.replace(/'/g, "''")}'`).join(", ");
+  const bare = `SELECT id FROM places WHERE photo_src IS NULL OR (seed_key IS NOT NULL AND seed_key NOT IN (${starters}))`;
   db.prepare(`DELETE FROM votes WHERE pick_id IN (SELECT id FROM picks WHERE place_id IN (${bare}))`).run();
   db.prepare(`DELETE FROM picks WHERE place_id IN (${bare})`).run();
   db.prepare(`DELETE FROM place_vectors WHERE place_id IN (${bare})`).run();
-  db.prepare("DELETE FROM places WHERE photo_src IS NULL").run();
+  db.prepare(`DELETE FROM places WHERE id IN (${bare})`).run();
 })();
 
 export interface Group {
