@@ -291,14 +291,26 @@ if (container) {
   });
 
   let active: number | null = null;
+  // The place the map is on: its card in Explore and its row on Our list
+  // wear it (in their kind's colour, "The place the map has flown to" in
+  // styles.css), and say so to a screen reader.
+  function markActive(id: number) {
+    document.querySelectorAll(`[data-place="${id}"]`).forEach((card) => {
+      card.classList.add("spot--active");
+      card.setAttribute("aria-current", "true");
+    });
+  }
   function fly(id: number) {
     const entry = markers.get(id);
     if (!entry) return;
     const { pin, el } = entry;
     popup.remove();
     for (const { el: other } of markers.values()) other.classList.remove("is-active");
-    document.querySelectorAll(".spot--active").forEach((card) => card.classList.remove("spot--active"));
-    document.querySelectorAll(`[data-place="${id}"]`).forEach((card) => card.classList.add("spot--active"));
+    document.querySelectorAll(".spot--active").forEach((card) => {
+      card.classList.remove("spot--active");
+      card.removeAttribute("aria-current");
+    });
+    markActive(id);
     el.classList.add("is-active");
     active = id;
 
@@ -382,7 +394,7 @@ if (container) {
     sync();
     // (fresh cards keep to the kind that's chosen)
     applyFilter();
-    if (active !== null) document.querySelectorAll(`[data-place="${active}"]`).forEach((el) => el.classList.add("spot--active"));
+    if (active !== null) markActive(active);
   });
 
   // A search's answer is its cards; the map frames just their pins. One
