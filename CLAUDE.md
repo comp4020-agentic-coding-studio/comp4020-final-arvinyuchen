@@ -56,10 +56,13 @@ follow from it; every change has to hold to them.
   (`src/pages/api/events.ts` + the page's refresh script). A new kind of
   change has to call `changed(groupId)`; a change to the shared places also
   calls `placesChanged()` so every group's Explore catches up.
-- **Nothing moves under someone's thumb.** While someone is on a group's page,
-  live changes update the list's counts and names but keep its order; when
-  the ranking has moved, a "New order" bar offers it (PROCESS.md, "Several
-  people voting at once"). Don't make a live update reorder cards on its own.
+- **The list is always the ranking, and you can see it move.** A live
+  change re-ranks Our list straight away, most keen first, and each card
+  glides from its old place to its new one (under reduced motion it just
+  swaps), so the group sees what moved. For a moment after a move a keen
+  tap is ignored, since it was aimed at the card that was there before
+  (PROCESS.md, "Several people voting at once"). Never jump cards without
+  the glide, and never replay the cards' entrance on a refresh.
 - **Nothing is lost.** All state lives in the one SQLite file on `/data`.
   Schema changes are additive only; never drop or rewrite data a group made.
   The one exception is the site admin (`src/lib/admin.ts`): a group is

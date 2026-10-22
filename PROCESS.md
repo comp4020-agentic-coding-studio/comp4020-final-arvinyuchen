@@ -128,6 +128,16 @@ the same" means a keen has to land where the person meant it, and a vote on
 the wrong card is a voice miscounted. Option 4 keeps the second without losing
 the first: every count is still live within a second, and the ranking is one
 tap away. The person who decides when the list moves is the one looking at it.
+
+**Revisited (October 2026).** Using it, the held order read as a list that
+was wrong until you tapped a bar, and the bar was one more thing on the
+screen. The list is now always the ranking (option 2): a live change
+re-ranks it at once, and each card glides from its old place to its new
+one (a FLIP animation; under reduced motion they just swap), so everyone
+sees what moved and why. A keen tap within about half a second of a move
+is ignored, since it was aimed at whatever card was there before, and the
+keen button still sends the state it shows, so a tap that does land never
+undoes a vote. The New order bar and the held state are gone.
 Sending the shown state fixes the same problem from the other side: the vote
 records what the person saw, not whatever the server held at that moment.
 

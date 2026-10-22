@@ -2449,13 +2449,11 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   margin-top: 0;
 }
 
-
 .empty {
   padding: 1rem 1.1rem;
   border: 1.5px dashed var(--line-strong);
   border-radius: var(--radius);
 }
-
 
 @media (min-width: 1180px) {
   .board {
@@ -2475,9 +2473,9 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 
 /* ---- Our list, a ranking ---------------------------------------------------- */
 
-/* Most keen first: each row its rank, photo, name, who's keen, and the keen
-   button, with a bar along its foot for how much of the group is keen. The
-   leader (.pick--top, first with anyone keen) is a size up. */
+/* Most keen first, always: each row its rank, photo, name, who's keen, and
+   the keen button. The leader (.pick--top, first with anyone keen) is a
+   size up. */
 .picks {
   display: grid;
   gap: 0.5rem;
@@ -2522,10 +2520,10 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   text-align: center;
 }
 
-/* Held out of rank order (see .reorder): the numbers would mislead, and so
-   would a leader in the middle. */
-.picks--held > .pick::before {
-  visibility: hidden;
+/* (once the page is live, a refresh doesn't replay the cards' entrance: they
+   glide to their new places instead, from the page's script) */
+#list[data-live] .pick {
+  animation: none;
 }
 
 .pick .photo--small {
@@ -2587,17 +2585,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-size: 0.6rem;
 }
 
-.pick__bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: calc(var(--keen, 0) * 100%);
-  height: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--kind);
-  transition: width 0.4s ease;
-}
-
 .pick--top {
   grid-template-columns: 1.3rem 4.75rem minmax(0, 1fr) auto;
   padding: 0.9rem 0.9rem 1rem;
@@ -2619,10 +2606,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-size: 1.2rem;
 }
 
-.pick--top .pick__bar {
-  height: 4px;
-}
-
 /* (the leader has room to say all its names) */
 .pick--top .keen-who {
   flex-wrap: wrap;
@@ -2639,29 +2622,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-}
-
-.picks--held > .pick--top {
-  grid-template-columns: 1.3rem 3.25rem minmax(0, 1fr) auto;
-  padding: 0.7rem 0.8rem 0.8rem;
-  border-color: var(--line);
-  background: var(--card);
-}
-
-.picks--held > .pick--top::before {
-  font-size: 1.05rem;
-}
-
-.picks--held > .pick--top .photo--small {
-  width: 3.25rem;
-}
-
-.picks--held > .pick--top h3 {
-  font-size: 1rem;
-}
-
-.picks--held .pick__lead {
-  display: none;
 }
 
 /* ---- Tabs ---------------------------------------------------------------------- */
@@ -2848,27 +2808,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 
 .foot__credits a {
   color: inherit;
-}
-
-/* Offers the list's new order without moving cards under anyone's thumb. */
-.reorder {
-  display: block;
-  width: 100%;
-  margin: 0 0 0.75rem;
-  padding: 0.55rem 0.9rem;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--accent-strong);
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-strong);
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.reorder:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  outline-offset: 2px;
 }
 
 /* The invite link's own page, for someone who hasn't joined yet: one card,

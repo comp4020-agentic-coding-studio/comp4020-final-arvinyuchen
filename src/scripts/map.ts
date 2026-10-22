@@ -84,20 +84,17 @@ if (container) {
   };
 
   // Where each place stands on our list, from #list, which a live refresh
-  // keeps current. A chip shows that number, unless the list is held out of
-  // rank order (see .picks--held): then the list shows no numbers, and
-  // nor do the chips.
+  // keeps current and in rank order: a chip shows that number.
   const readList = () => {
     const items = [...document.querySelectorAll<HTMLElement>("#list .picks > li")];
-    const held = document.querySelector("#list .picks--held") !== null;
     const order = new Map<number, number>();
     items.forEach((li, i) => {
       if (li.dataset.place) order.set(Number(li.dataset.place), i);
     });
-    return { order, held };
+    return { order };
   };
   let list = readList();
-  const number = (id: number) => (list.held || !list.order.has(id) ? null : list.order.get(id)! + 1);
+  const number = (id: number) => (list.order.has(id) ? list.order.get(id)! + 1 : null);
 
   // One popup, for the place the map has flown to. While it's open it takes
   // the place's chip's place, pointing at the same dot.
