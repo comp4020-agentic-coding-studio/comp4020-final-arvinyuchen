@@ -1683,7 +1683,7 @@ body:has(.home) .top nav a:hover {
    script (--form-h), leaves room for */
 .fly.is-live.is-under {
   --gap: 0.75rem;
-  --room: calc(100svh - var(--head) - 1rem);
+  --room: calc(100svh - var(--head) - var(--foot-h, 0px) - 1rem);
   --tall: min(min(100vw - 2rem, 46rem) * 493 / 560, var(--room) - var(--gap) - var(--form-h, 0px));
   --from: calc(var(--head) + (var(--room) - var(--tall) - var(--gap) - var(--form-h, 0px)) / 2);
 }
@@ -1700,6 +1700,44 @@ body:has(.home) .top nav a:hover {
   width: min(100vw - 2rem, 30rem);
   translate: -50% calc((1 - var(--card, 0)) * 1rem);
   --pad: 1.1rem;
+}
+
+/* and the footer under them, at the foot of the screen as it is with the
+   browser's bars showing, arriving with the form. Credits, opened, rises
+   over the screen's foot on paper, the map staying as it is. */
+.fly.is-live.is-under .fly__stage > .foot {
+  position: absolute;
+  right: 0;
+  bottom: calc(100lvh - 100svh);
+  left: 0;
+  z-index: 2;
+  justify-content: center;
+  max-width: none;
+  padding-top: 0.5rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  border-top: 0;
+  opacity: var(--card, 0);
+}
+
+.fly.is-live.is-under .fly__stage > .foot:not(.is-on) {
+  pointer-events: none;
+}
+
+.fly.is-live.is-under .fly__card.is-out ~ .foot {
+  visibility: hidden;
+}
+
+.fly.is-live.is-under .fly__stage > .foot:has(.foot__credits[open]) {
+  justify-content: flex-start;
+  padding-top: 1rem;
+  background: #f4f3ef;
+  box-shadow: 0 -14px 28px -18px rgb(13 43 54 / 35%);
+}
+
+/* (with nothing after the stage, nothing to scroll on to) */
+body:has(.fly.is-live.is-under) main,
+body:has(.fly.is-live.is-under) .hero {
+  padding-bottom: 0;
 }
 
 /* (the form a little tighter there, to leave the map more room) */
