@@ -1,4 +1,7 @@
 import type { APIRoute } from "astro";
+import { photoOfOsm } from "../../lib/db";
+import { nominatim } from "../../lib/nominatim";
+import { photoFromTags } from "../../lib/photos";
 
 // Finding a place to add: a search of OpenStreetMap through Nominatim, kept
 // to Canberra. The source only fills in the name, suburb and location; it
@@ -7,11 +10,10 @@ import type { APIRoute } from "astro";
 //
 // Nominatim's usage policy: an identifying User-Agent, at most one request a
 // second, and no search-as-you-type. So the browser asks only when someone
-// presses Find, the server spaces requests out, and answers are cached.
-const ENDPOINT = "https://nominatim.openstreetmap.org/search";
-const USER_AGENT = "Spots/1.0 (https://comp4020-final-arvinyuchen.fly.dev; COMP4020 student project)";
+// presses Find, the server spaces requests out (src/lib/nominatim.ts), and
+// answers are cached. Each answer brings its tags, and where they lead to a
+// reusable photo on Wikimedia Commons, it comes too (src/lib/photos.ts).
 const cache = new Map<string, { at: number; results: unknown[] }>();
-let last = 0;
 
 // A first guess at the kind from what OpenStreetMap calls the place; the
 // person sharing it can change it before they do.
@@ -43,6 +45,7 @@ interface Hit {
   category: string;
   display_name: string;
   address?: Record<string, string>;
+  extratags?: Record<string, string>;
 }
 
 export const GET: APIRoute = async ({ url }) => {
@@ -52,33 +55,34 @@ export const GET: APIRoute = async ({ url }) => {
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < 24 * 3600_000) return Response.json(hit.results);
 
-  const wait = last + 1100 - Date.now();
-  last = Date.now() + Math.max(0, wait);
-  if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
-
-  const params = new URLSearchParams({
-    q,
-    format: "jsonv2",
-    addressdetails: "1",
-    limit: "6",
-    countrycodes: "au",
-    viewbox: "148.76,-35.12,149.40,-35.92",
-    bounded: "1",
-  });
   try {
-    const res = await fetch(`${ENDPOINT}?${params}`, { headers: { "User-Agent": USER_AGENT } });
-    if (!res.ok) return Response.json({ error: "lookup unavailable" }, { status: 502 });
-    const results = ((await res.json()) as Hit[])
-      .filter((h) => h.name)
-      .map((h) => ({
-        osm: `${h.osm_type}/${h.osm_id}`,
-        name: h.name,
-        area: h.address?.suburb ?? h.address?.neighbourhood ?? h.address?.city_district ?? "",
-        lat: Number(h.lat),
-        lon: Number(h.lon),
-        kind: kindOf(h),
-        detail: h.display_name.split(",").slice(1, 3).join(",").trim(),
-      }));
+    const hits = await nominatim<Hit[]>("search", {
+      q,
+      addressdetails: "1",
+      extratags: "1",
+      limit: "6",
+      countrycodes: "au",
+      viewbox: "148.76,-35.12,149.40,-35.92",
+      bounded: "1",
+    });
+    const results = await Promise.all(
+      hits
+        .filter((h) => h.name)
+        .map(async (h) => {
+          const osm = `${h.osm_type}/${h.osm_id}`;
+          return {
+            osm,
+            name: h.name,
+            area: h.address?.suburb ?? h.address?.neighbourhood ?? h.address?.city_district ?? "",
+            lat: Number(h.lat),
+            lon: Number(h.lon),
+            kind: kindOf(h),
+            detail: h.display_name.split(",").slice(1, 3).join(",").trim(),
+            // (to show; sharing works the photo out again on the server)
+            photo: photoOfOsm(osm) ?? (await photoFromTags(osm, h.extratags)),
+          };
+        }),
+    );
     cache.set(key, { at: Date.now(), results });
     return Response.json(results);
   } catch {

@@ -1,4 +1,5 @@
 import { JSDOM } from "jsdom";
+import sharp from "sharp";
 import { inject } from "vitest";
 import { Authenticator, Jar } from "./authenticator";
 
@@ -7,7 +8,15 @@ import { Authenticator, Jar } from "./authenticator";
 export const baseUrl = inject("baseUrl");
 export const origin = new URL(baseUrl).origin;
 
-export const request = async (jar: Jar, path: string, init: { form?: Record<string, string>; json?: unknown } = {}) =>
+// (a form with a file in it posts as multipart, the way a page's would)
+const body = (form: Record<string, string | Blob>) => {
+  if (!Object.values(form).some((v) => v instanceof Blob)) return new URLSearchParams(form as Record<string, string>);
+  const data = new FormData();
+  for (const [key, value] of Object.entries(form)) data.append(key, value);
+  return data;
+};
+
+export const request = async (jar: Jar, path: string, init: { form?: Record<string, string | Blob>; json?: unknown } = {}) =>
   jar.take(
     await fetch(new URL(path, baseUrl), {
       method: init.form || init.json !== undefined ? "POST" : "GET",
@@ -16,10 +25,22 @@ export const request = async (jar: Jar, path: string, init: { form?: Record<stri
         cookie: jar.header,
         ...(init.json !== undefined ? { "content-type": "application/json" } : {}),
       },
-      body: init.form ? new URLSearchParams(init.form) : init.json !== undefined ? JSON.stringify(init.json) : undefined,
+      body: init.form ? body(init.form) : init.json !== undefined ? JSON.stringify(init.json) : undefined,
       redirect: "manual",
     }),
   );
+/** A photo as a phone takes one: a JPEG that says where it was taken. */
+export const photo = async () =>
+  new Blob(
+    [
+      await sharp({ create: { width: 1200, height: 900, channels: 3, background: "#4a7a3a" } })
+        .withExif({ IFD3: { GPSLatitudeRef: "S", GPSLatitude: "35/1 16/1 52/1", GPSLongitudeRef: "E", GPSLongitude: "149/1 7/1 44/1" } })
+        .jpeg()
+        .toBuffer(),
+    ],
+    { type: "image/jpeg" },
+  );
+
 export const page = async (jar: Jar, path: string) =>
   new JSDOM(await (await request(jar, path)).text()).window.document;
 

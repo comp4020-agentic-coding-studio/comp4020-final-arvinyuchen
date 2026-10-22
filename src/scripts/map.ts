@@ -1,5 +1,6 @@
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import type { Photo } from "../lib/catalogue";
 import { KIND_LABEL, type Kind } from "../lib/kinds";
 import { buildings, fine, letters, look, quiet, STYLE } from "./map-look";
 import { around, type Box, chipFont, chips, dress, fold, mark, measure, names, type Name } from "./map-marks";
@@ -414,8 +415,37 @@ if (container) {
     const field = (name: string) => form.querySelector<HTMLInputElement | HTMLSelectElement>(`[name="${name}"]`)!;
     let preview: maplibregl.Marker | null = null;
 
+    // Its photo: the one found for the place picked (a Commons photo, or the
+    // one it was shared with), which makes a photo of yours optional; or the
+    // one you choose, shown before you share it.
+    const own = form.querySelector<HTMLInputElement>('input[name="photo"]')!;
+    const shown = form.querySelector<HTMLElement>(".photo-pick__found")!;
+    const label = form.querySelector<HTMLElement>(".photo-pick__label")!;
+    let found: Photo | null = null;
+    let yours = "";
+    const showPhoto = () => {
+      const file = own.files?.[0];
+      if (yours) URL.revokeObjectURL(yours);
+      yours = file ? URL.createObjectURL(file) : "";
+      const photo = yours || found?.src;
+      shown.hidden = !photo;
+      if (!photo) return;
+      shown.querySelector("img")!.src = photo;
+      shown.querySelector("figcaption")!.textContent = yours
+        ? "Your photo"
+        : `Photo: ${found!.credit}${found!.license ? `, ${found!.license}` : ""}`;
+    };
+    const showFound = (photo: Photo | null) => {
+      found = photo;
+      own.required = !photo;
+      label.textContent = photo ? "Or use a photo of yours" : "Photo (required)";
+      showPhoto();
+    };
+    own.addEventListener("change", showPhoto);
+
     const clearLocation = () => {
       for (const name of ["osm", "lat", "lon"]) field(name).value = "";
+      showFound(null);
       located.hidden = true;
       preview?.remove();
       preview = null;
@@ -453,6 +483,7 @@ if (container) {
             field("name").value = r.name;
             field("area").value = r.area;
             field("kind").value = r.kind;
+            showFound(r.photo ?? null);
             located.hidden = false;
             located.textContent = `📍 Found on the map: ${r.name}${r.area ? `, ${r.area}` : ""}. Now say why it's good.`;
             list.replaceChildren();

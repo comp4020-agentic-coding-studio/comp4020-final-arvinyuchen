@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Jar } from "./authenticator";
-import { page, request, signUp, startGroup, you } from "./browser";
+import { page, photo, request, signUp, startGroup, you } from "./browser";
 
 // Site admin: archive and restore groups, delete archived ones for good,
 // hide shared places. The app under test needs ADMIN_CODE, and the spec the
@@ -69,7 +69,7 @@ describe("site admin", () => {
     const sharer = new Jar();
     const ours = await startGroup(sharer, "Sharing crew", "Di");
     const name = `Admin test place ${Date.now()}`;
-    await request(sharer, `/api/groups/${ours}/places`, { form: { name, kind: "food", why: "testing the admin page" } });
+    await request(sharer, `/api/groups/${ours}/places`, { form: { name, kind: "food", why: "testing the admin page", photo: await photo() } });
     const viewer = new Jar();
     const theirs = await startGroup(viewer, "Looking crew", "Ed");
     expect(await explore(viewer, theirs)).toContain(name);

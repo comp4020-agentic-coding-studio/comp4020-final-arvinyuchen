@@ -18,7 +18,13 @@ follow from it; every change has to hold to them.
   (`src/pages/g/[link].astro`, checked in `spec/`).
 - **A place gets in with a reason.** Adding a place needs a "why it's good"
   from the person sharing it, shown with their name. That sentence is the
-  filter: no reason, no place. Never import places in bulk from a directory or
+  filter: no reason, no place.
+- **Every card has a photo.** A place gets in only with one
+  (`src/lib/photos.ts`): a photo on Wikimedia Commons that its OpenStreetMap
+  tags lead to, under a licence that allows reuse and credited on the card,
+  or else one the sharer uploads, re-encoded with all its metadata (GPS
+  among it) stripped and credited to them. The server finds the Commons
+  photo itself; it never takes a photo's address from the browser. Never import places in bulk from a directory or
   an API to pad the pool.
 - **Look places up politely.** `src/pages/api/lookup.ts` asks OpenStreetMap's
   Nominatim only when someone presses Find, at most once a second, with the
@@ -67,10 +73,11 @@ follow from it; every change has to hold to them.
   Schema changes are additive only; never drop or rewrite data a group made.
   A place's kind is stored by its key (`src/lib/kinds.ts`), so a key is never
   renamed: relabel it instead, as Fun became Activities.
-  The one exception is the site admin (`src/lib/admin.ts`): a group is
-  archived first (closed, restorable), and only an archived group can be
-  deleted for good, by an admin, after a confirm. Shared places are hidden,
-  never deleted. An admin is a passkey account that once entered
+  The exceptions: a place without a photo is deleted, with its keens and
+  its place on every list (`src/lib/db.ts`); and the site admin
+  (`src/lib/admin.ts`) archives a group first (closed, restorable), and only
+  an archived group can be deleted for good, by an admin, after a confirm.
+  An admin can hide a shared place. An admin is a passkey account that once entered
   `ADMIN_CODE` (a Fly secret); never add another way to become one.
 - **Signed in, it works without JavaScript**, as plain forms posting and
   redirecting. The live layer, the map and the place finder are additions on

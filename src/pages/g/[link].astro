@@ -489,6 +489,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         It goes into Explore for every group, so only add somewhere you'd actually send a friend, and say why.
       </p>
       {error === "place" && <p class="notice" role="alert">A place needs a name, a kind and a reason it's good.</p>}
+      {error === "photo" && <p class="notice" role="alert">A place needs a photo. Add one of yours (a JPEG, PNG or WebP, under 15 MB).</p>}
       <div class="finder" hidden>
         <label for="find-q"><span>Find it on the map</span></label>
         <div class="finder__row">
@@ -497,7 +498,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         </div>
         <ul class="finder__results" aria-live="polite"></ul>
       </div>
-      <form method="post" action={`/api/groups/${group.id}/places`} class="grid-form" id="add-form">
+      <form method="post" action={`/api/groups/${group.id}/places`} class="grid-form" id="add-form" enctype="multipart/form-data">
         <input type="hidden" name="osm" />
         <input type="hidden" name="lat" />
         <input type="hidden" name="lon" />
@@ -519,6 +520,18 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
           <span>Why it's good (required)</span>
           <input name="why" required maxlength="160" placeholder="Best chilli oil in Canberra, and open late" />
         </label>
+        {/* Every place has a photo: one found for it (src/scripts/map.ts shows
+            it once a place is picked on the map), or else the sharer's own. */}
+        <div class="photo-pick wide">
+          <figure class="photo-pick__found" hidden>
+            <img alt="" />
+            <figcaption></figcaption>
+          </figure>
+          <label class="photo-pick__own">
+            <span class="photo-pick__label">Photo (required)</span>
+            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/*" required />
+          </label>
+        </div>
         <p class="located wide" hidden></p>
         <button class="btn btn--primary wide">Share it and add to our list</button>
       </form>

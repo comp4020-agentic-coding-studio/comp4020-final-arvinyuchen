@@ -10,6 +10,8 @@ import { CATALOGUE, KIND_LABEL, type Kind, type Photo } from "./catalogue";
 const path =
   process.env.DATABASE_PATH ?? (process.env.NODE_ENV === "production" ? "/data/spots.db" : "./.data/spots.db");
 mkdirSync(dirname(path), { recursive: true });
+// (uploaded photos live beside it, on the same volume)
+export const dataDir = dirname(path);
 export const db = new Database(path);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
@@ -186,6 +188,17 @@ for (const pick of db.prepare("SELECT * FROM picks WHERE place_id IS NULL").all(
   db.prepare("UPDATE picks SET place_id = ? WHERE id = ?").run(placeId, pick.id);
 }
 
+// Every place has a photo (src/lib/photos.ts). One without, shared before
+// that was the rule, is deleted with all that points at it: its keens, its
+// place on every group's list, and its search vector.
+db.transaction(() => {
+  const bare = "SELECT id FROM places WHERE photo_src IS NULL";
+  db.prepare(`DELETE FROM votes WHERE pick_id IN (SELECT id FROM picks WHERE place_id IN (${bare}))`).run();
+  db.prepare(`DELETE FROM picks WHERE place_id IN (${bare})`).run();
+  db.prepare(`DELETE FROM place_vectors WHERE place_id IN (${bare})`).run();
+  db.prepare("DELETE FROM places WHERE photo_src IS NULL").run();
+})();
+
 export interface Group {
   id: string;
   name: string;
@@ -209,7 +222,8 @@ export interface Place {
   lat: number | null;
   lon: number | null;
   source: string;
-  photo: Photo | null;
+  /** (every place has one: one without is deleted on boot, above) */
+  photo: Photo;
   addedBy: string;
   /** How many groups have it on their list. */
   groups: number;
@@ -388,10 +402,7 @@ type PlaceRow = Omit<Place, "photo" | "addedBy"> & {
 const toPlace = ({ added_by, photo_src, photo_page, photo_credit, photo_license, ...row }: PlaceRow): Place => ({
   ...row,
   addedBy: added_by,
-  photo:
-    photo_src && photo_page
-      ? { src: photo_src, page: photo_page, credit: photo_credit ?? "", license: photo_license ?? "" }
-      : null,
+  photo: { src: photo_src ?? "", page: photo_page ?? photo_src ?? "", credit: photo_credit ?? "", license: photo_license ?? "" },
 });
 const PLACE_COLUMNS = `p.id, p.name, p.kind, p.area, p.why, p.lat, p.lon, p.source, p.photo_src, p.photo_page,
   p.photo_credit, p.photo_license, p.added_by,
@@ -450,22 +461,38 @@ export interface NewPlace {
   lat: number | null;
   lon: number | null;
   source: string;
+  photo: Photo;
+}
+
+/** The place already shared from this OpenStreetMap place, if there is one. */
+export const placeIdForOsm = (osmId: string): number | undefined =>
+  (db.prepare("SELECT id FROM places WHERE osm_id = ?").get(osmId) as { id: number } | undefined)?.id;
+
+/** The photo of the place already shared from this OpenStreetMap place. */
+export function photoOfOsm(osmId: string): Photo | null {
+  const row = db.prepare("SELECT photo_src, photo_page, photo_credit, photo_license FROM places WHERE osm_id = ?").get(osmId) as
+    | { photo_src: string | null; photo_page: string | null; photo_credit: string | null; photo_license: string | null }
+    | undefined;
+  return row?.photo_src && row.photo_page
+    ? { src: row.photo_src, page: row.photo_page, credit: row.photo_credit ?? "", license: row.photo_license ?? "" }
+    : null;
 }
 
 /** Adds a place everyone can see, or, if that OpenStreetMap place is already
  *  shared, returns the one that's there. */
 export function addPlace(place: NewPlace, addedBy: Member): number {
   if (!(place.kind in KIND_LABEL)) throw new Error("bad kind");
-  if (place.osmId) {
-    const existing = db.prepare("SELECT id FROM places WHERE osm_id = ?").get(place.osmId) as { id: number } | undefined;
-    if (existing) return existing.id;
-  }
+  if (!place.photo?.src) throw new Error("no photo");
+  const existing = place.osmId ? placeIdForOsm(place.osmId) : undefined;
+  if (existing) return existing;
+  const { src, page, credit, license } = place.photo;
   return Number(
     db
       .prepare(
-        "INSERT INTO places (osm_id, name, kind, area, why, lat, lon, source, added_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        `INSERT INTO places (osm_id, name, kind, area, why, lat, lon, source, photo_src, photo_page, photo_credit, photo_license, added_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run(place.osmId, place.name, place.kind, place.area, place.why, place.lat, place.lon, place.source, addedBy.name)
+      .run(place.osmId, place.name, place.kind, place.area, place.why, place.lat, place.lon, place.source, src, page, credit, license, addedBy.name)
       .lastInsertRowid,
   );
 }

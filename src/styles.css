@@ -653,6 +653,60 @@ input[type="radio"] {
   grid-column: 1 / -1;
 }
 
+/* A place's photo in the Share form: the one found for it, or the one you
+   chose, beside the button to choose one. */
+.photo-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.photo-pick__found {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+.photo-pick__found img {
+  display: block;
+  width: 8rem;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: 12px;
+  background: var(--fill);
+}
+
+.photo-pick__found figcaption {
+  max-width: 8rem;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.photo-pick__own {
+  flex: 1 1 14rem;
+}
+
+input[type="file"] {
+  cursor: pointer;
+  color: var(--muted);
+}
+
+input[type="file"]::file-selector-button {
+  margin-right: 0.75rem;
+  padding: 0.3rem 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .readme {
   max-width: 44rem;
   margin: 0 auto;
@@ -728,26 +782,12 @@ input[type="radio"] {
   text-decoration: underline;
 }
 
-.photo__none {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  font-size: 2.4rem;
-  font-weight: 700;
-  color: var(--kind);
-}
-
 .photo--small {
   flex: none;
   width: 5.5rem;
   margin: 0;
   border-radius: 12px;
   aspect-ratio: 1;
-}
-
-.photo--small .photo__none {
-  font-size: 1.6rem;
 }
 
 .photo--fun {
