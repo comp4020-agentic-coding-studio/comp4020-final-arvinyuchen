@@ -2654,6 +2654,114 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     grid-column: 2;
   }
 
+  /* With the script (the tabs work), the page is the screen: each column is
+     its height and scrolls on its own. The group's panel, the tabs, and
+     Explore's title and search stay put; Our list and the cards scroll
+     under them; the map fills its column. */
+  body:has(.group-page.is-tabbed) {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body:has(.group-page.is-tabbed) > .top {
+    width: 100%;
+  }
+
+  body:has(.group-page.is-tabbed) > main {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 0;
+    padding-bottom: 1rem;
+  }
+
+  body:has(.group-page.is-tabbed) > .foot {
+    width: 100%;
+    padding-top: 0.6rem;
+    padding-bottom: calc(0.6rem + env(safe-area-inset-bottom));
+  }
+
+  .group-page.is-tabbed {
+    height: 100%;
+    margin-top: 0;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .group-page.is-tabbed .group-side {
+    display: flex;
+    flex-direction: column;
+    grid-row: 1;
+    position: static;
+    height: 100%;
+    max-height: none;
+    padding-bottom: 0;
+  }
+
+  .group-page.is-tabbed .group-side > * {
+    flex: none;
+  }
+
+  /* (a short screen with the invite open: then the whole column scrolls) */
+  .group-page.is-tabbed #list {
+    flex: 1 1 auto;
+    min-height: 14rem;
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem 1rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  .group-page.is-tabbed .explore-wrap {
+    grid-row: 1;
+    height: 100%;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .group-page.is-tabbed #explore {
+    min-height: 0;
+    height: 100%;
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem 1rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  .group-page.is-tabbed .map-wrap {
+    position: static;
+    height: 100%;
+  }
+
+  .group-page.is-tabbed .map-frame {
+    height: 100%;
+    margin: 0;
+  }
+
+  .group-page.is-tabbed #map {
+    height: 100%;
+    min-height: 0;
+  }
+
+  /* (Share and Settings take Explore's place; with neither open the tools
+     aren't there at all, so they don't lie over Explore) */
+  .group-page.is-tabbed > .group-tools:not(:has(> section:not([hidden]))) {
+    display: none;
+  }
+
+  .group-page.is-tabbed > .group-tools {
+    grid-row: 1;
+    grid-column: 2;
+    height: 100%;
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem 1rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
   /* the leader, in the narrower column: a size up still, on fewer lines */
   .group-side .pick--top {
     grid-template-columns: 1.3rem 4rem minmax(0, 1fr) auto;
