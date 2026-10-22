@@ -105,7 +105,10 @@ if (fly && motion && gl) {
   // and there's nothing more to scroll for: beside it on a wide screen,
   // under it on a narrow one. On a screen too short for both (a phone on
   // its side), it follows the stage, as it stands without the script.
+  // Under it, the footer comes too, About and Credits at the screen's
+  // foot, so on a phone the landing is the whole page.
   const form = document.querySelector<HTMLElement>("#start");
+  const foot = document.querySelector<HTMLElement>(".foot");
   const beside = matchMedia("(min-width: 64rem)");
   const under = matchMedia("(min-height: 36rem)");
   const place = () => {
@@ -115,6 +118,8 @@ if (fly && motion && gl) {
     fly.classList.toggle("is-under", !beside.matches && into);
     if (into) stage.append(form);
     else fly.after(form);
+    if (foot && !beside.matches && into) stage.append(foot);
+    else if (foot) document.querySelector("main")?.after(foot);
   };
   place();
   // The header stays at the top through it all, so the landing has the
@@ -198,6 +203,9 @@ if (fly && motion && gl) {
     // room for)
     fly.style.setProperty("--head", `${top?.offsetHeight ?? 0}px`);
     fly.style.setProperty("--form-h", `${form?.parentElement === stage ? form.offsetHeight : 0}px`);
+    // (the footer's height as a line, not with Credits opened over it)
+    if (foot?.parentElement !== stage) fly.style.setProperty("--foot-h", "0px");
+    else if (!foot.querySelector("details[open]")) fly.style.setProperty("--foot-h", `${foot.offsetHeight}px`);
     const s = stage.getBoundingClientRect();
     const c = card.getBoundingClientRect();
     const f = fly.getBoundingClientRect();
@@ -280,6 +288,7 @@ if (fly && motion && gl) {
     cardBox.classList.toggle("is-on", cardIn > 0.5);
     cardBox.classList.toggle("is-out", cardIn === 0);
     form?.classList.toggle("is-on", cardIn > 0.5);
+    foot?.classList.toggle("is-on", cardIn > 0.5);
     if (!ready || !landing || !track) return;
     // (the camera's still out on the flight it's flown unseen to warm up,
     // until someone scrolls)
