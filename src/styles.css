@@ -3035,67 +3035,22 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-weight: 700;
 }
 
-/* Who's in, on the group's panel: a row of faces, each with its name under
-   it. The owner's wears a crown, yours a blue ring and a YOU; past six,
-   five and "+N more" until See all unfolds them all. */
+/* Who's in, on the group's panel: a grid of faces, each with its name under
+   it, straight under the group's name. The owner's wears a crown, yours a
+   blue ring and a YOU; past six, five and a grey "+N more" that unfolds
+   them all, the last cell then a grey "less" that folds them again. The
+   faces' list and the fold (a <details>) share the one grid. */
 .who {
   /* (the gap around a face's ring and badges: the page, or the panel's white) */
   --ring-gap: var(--bg);
-  margin-top: 0.75rem;
-}
-
-.who__top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.55rem;
-}
-
-.who__count {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.who__count b {
-  color: var(--ink);
-  font-weight: 600;
-}
-
-/* (See all only when there's more than fits) */
-.who:not(:has(.who__cell--more)) .who__toggle {
-  display: none;
-}
-
-.who__toggle > summary {
-  list-style: none;
-  color: var(--accent-ink);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.who__toggle > summary::-webkit-details-marker {
-  display: none;
-}
-
-.who__less,
-.who__toggle[open] .who__see {
-  display: none;
-}
-
-.who__toggle[open] .who__less {
-  display: inline;
-}
-
-.who__grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 3.75rem));
   gap: 0.7rem 0.2rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  margin-top: 0.9rem;
+}
+
+.who__grid {
+  display: contents;
 }
 
 .who__cell {
@@ -3105,13 +3060,50 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   min-width: 0;
 }
 
+/* (the fold only when there's more than fits: five faces and "+N more") */
 .who__cell--extra,
-.who:has(.who__toggle[open]) .who__cell--more {
+.who:not(:has(.who__cell--extra)) .who__toggle {
   display: none;
 }
 
 .who:has(.who__toggle[open]) .who__cell--extra {
   display: grid;
+}
+
+.who__toggle {
+  min-width: 0;
+}
+
+.who__toggle > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.who__toggle > summary::-webkit-details-marker {
+  display: none;
+}
+
+.who__toggle > summary:focus-visible {
+  outline: none;
+}
+
+.who__toggle > summary:focus-visible .face--more {
+  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.who__fold,
+.who__unfold {
+  display: contents;
+}
+
+.who__unfold,
+.who__toggle[open] .who__fold {
+  display: none;
+}
+
+.who__toggle[open] .who__unfold {
+  display: contents;
 }
 
 .who__cell .face {
@@ -3133,12 +3125,16 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-family: var(--font-rounded);
 }
 
-.who__cell--more {
-  cursor: pointer;
-}
-
 .who__cell .face--more {
   font-size: 0.9rem;
+}
+
+.face--more svg {
+  display: block;
+}
+
+.who__toggle > summary:hover .face--more {
+  background: rgb(118 118 128 / 28%);
 }
 
 .crown {
@@ -3191,7 +3187,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 .who__name.is-you,
-.who__cell--more .who__name {
+.who__toggle .who__name {
   color: var(--accent-ink);
   font-weight: 600;
 }

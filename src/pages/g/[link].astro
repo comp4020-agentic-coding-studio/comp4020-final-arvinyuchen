@@ -113,7 +113,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
 
 // Who's in, on the group's panel: the owner first, then you, then the rest
 // in the order they joined. Up to six fit a row; more, and it's five and
-// "+N more" until See all.
+// a "+N more" face that unfolds them all.
 const firstOf = (id: number) => (id === group.ownerId ? 0 : id === member?.id ? 1 : 2);
 const crew = [...members].sort((a, b) => firstOf(a.id) - firstOf(b.id));
 const crewMore = crew.length > 6 ? crew.length - 5 : 0;
@@ -273,19 +273,16 @@ const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
         </p>
       )}
       {/* Who's in, as faces with names: the owner's has a crown, yours a
-          ring. See all is a <details>, so it unfolds without a script; it
-          sits outside what a live refresh redraws, so it stays open. */}
+          ring. Past six, the last face is "+N more", the summary of a
+          <details>, so it unfolds everyone without a script, and folds
+          them again as "less". The <details> sits outside what a live
+          refresh redraws (the count, the faces, the "+N"), so it stays
+          open. How many and whose group is said to a screen reader. */}
       <div class="who">
-        <div class="who__top">
-          <p class="who__count">
-            <b>{members.length} {members.length === 1 ? "person" : "people"}</b>
-            {owner && ` · ${owner.name}'s group`}
-          </p>
-          <details class="who__toggle">
-            <summary><span class="who__see">See all</span><span class="who__less">Show less</span></summary>
-          </details>
-        </div>
-        <ul class="who__grid">
+        <p class="who__count sr-only">
+          {members.length} {members.length === 1 ? "person" : "people"}{owner && `, ${owner.name}'s group`}
+        </p>
+        <ul class="who__grid" role="list">
           {crew.map((m, i) => {
             const mine = m.id === member.id;
             const owns = m.id === group.ownerId;
@@ -305,13 +302,23 @@ const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
               </li>
             );
           })}
-          {crewMore > 0 && (
-            <li class="who__cell who__cell--more" aria-hidden="true">
-              <span class="face face--more">+{crewMore}</span>
-              <span class="who__name">more</span>
-            </li>
-          )}
         </ul>
+        <details class="who__toggle">
+          <summary class="who__cell">
+            <span class="who__fold">
+              <span class="face face--more" aria-hidden="true">+{crewMore}</span>
+              <span class="who__name" aria-hidden="true">more</span>
+              <span class="sr-only">Show all {members.length} people</span>
+            </span>
+            <span class="who__unfold">
+              <span class="face face--more" aria-hidden="true">
+                <svg viewBox="0 0 16 16" width="16" height="16"><path d="M3.5 10 8 5.5l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </span>
+              <span class="who__name" aria-hidden="true">less</span>
+              <span class="sr-only">Show fewer</span>
+            </span>
+          </summary>
+        </details>
       </div>
     </div>
     {/* (on a wide screen, where this is the group's panel: the home page's
@@ -739,7 +746,7 @@ const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
     // reload by the viewer. The page asks the server for itself again and
     // swaps in the changed parts, keeping the scroll position, the map and
     // anything typed in the forms.
-    const regions = [".group-head h1", ".group-head .who__count", ".group-head .who__grid", ".share__row", ".tabs__n", "#list", "#explore", "#settings .people"];
+    const regions = [".group-head h1", ".group-head .who__count", ".group-head .who__grid", ".group-head .who__fold", ".share__row", ".tabs__n", "#list", "#explore", "#settings .people"];
     // The page as it is now, search included, without one-off notices.
     const current = () => {
       const q = new URLSearchParams(location.search).get("q");
@@ -1053,12 +1060,6 @@ const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
       if (event.key !== "Escape" || !floating()) return;
       inviteBox.open = false;
       inviteBox.querySelector("summary").focus();
-    });
-
-    // The "+N more" face unfolds everyone too, as See all does.
-    document.addEventListener("click", (event) => {
-      const more = event.target.closest(".who__cell--more");
-      if (more) more.closest(".who").querySelector(".who__toggle").open = true;
     });
 
     // The link copies with one tap where there's a clipboard; elsewhere it
