@@ -67,7 +67,9 @@ follow from it; every change has to hold to them.
   of that group within about a second, without the viewer reloading
   (`src/pages/api/events.ts` + the page's refresh script). A new kind of
   change has to call `changed(groupId)`; a change to the shared places also
-  calls `placesChanged()` so every group's Explore catches up.
+  calls `placesChanged()` so every group's Explore catches up. The stream
+  answers only a signed-in member of that group (`me()`), and one open when
+  its account stops being a member ends at the next change.
 - **Taking a place off the list is for whoever put it there.** In Edit
   mode (`?edit`), the member who added a place can take it off until
   someone else is keen on it; the owner can take any off, asked first when

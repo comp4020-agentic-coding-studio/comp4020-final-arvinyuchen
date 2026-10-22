@@ -258,7 +258,7 @@ describe("a group", () => {
 
   it("streams changes to the group's open pages", async () => {
     const { jar: ana, id, api } = await started("Live crew");
-    const stream = await fetch(new URL(`/api/events?group=${id}`, baseUrl));
+    const stream = await fetch(new URL(`/api/events?group=${id}`, baseUrl), { headers: { cookie: ana.header } });
     expect(stream.headers.get("content-type")).toContain("text/event-stream");
     const reader = stream.body!.getReader();
     await request(ana, `${api}/picks`, { form: { key: "arboretum" } });
@@ -271,6 +271,36 @@ describe("a group", () => {
     }
     await reader.cancel();
     expect(got).toContain("event: change");
+  }, 10_000);
+
+  it("streams only to the group's members, and stops for one removed", async () => {
+    const { jar: ana, id } = await started("Quiet crew");
+    const events = (jar?: Jar) => fetch(new URL(`/api/events?group=${id}`, baseUrl), { headers: jar ? { cookie: jar.header } : {} });
+    // (nobody signed in, and someone signed in who isn't in it)
+    expect((await events()).status).toBe(403);
+    const outsider = new Jar();
+    await startGroup(outsider, "Elsewhere", "Olly");
+    expect((await events(outsider)).status).toBe(403);
+
+    const ben = new Jar();
+    await join(ben, id, id, "Ben");
+    const stream = await events(ben);
+    expect(stream.status).toBe(200);
+    const reader = stream.body!.getReader();
+    await reader.read(); // (connected)
+    const benId = [...(await page(ana, `/g/${id}`)).querySelectorAll("#settings .people li")]
+      .find((li) => li.textContent?.includes("Ben"))
+      ?.querySelector<HTMLInputElement>('input[name="member"]')?.value ?? "";
+    await request(ana, `/api/groups/${id}/owner`, { form: { action: "remove", member: benId } });
+    // Removed, the change that says so is the last thing Ben's stream hears: it ends.
+    let got = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      got += new TextDecoder().decode(value);
+    }
+    expect(got).not.toContain("event: change");
+    expect((await events(ben)).status).toBe(403);
   }, 10_000);
 });
 
@@ -349,8 +379,8 @@ describe("taking a place off the list", () => {
   });
 
   it("tells the group's open pages, and every group's Explore", async () => {
-    const { ben, id, api, pick } = await crew("Live remove crew");
-    const stream = await fetch(new URL(`/api/events?group=${id}`, baseUrl));
+    const { ana, ben, id, api, pick } = await crew("Live remove crew");
+    const stream = await fetch(new URL(`/api/events?group=${id}`, baseUrl), { headers: { cookie: ana.header } });
     const reader = stream.body!.getReader();
     const decoder = new TextDecoder();
     let got = "";
