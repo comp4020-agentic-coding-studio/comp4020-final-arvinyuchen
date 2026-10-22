@@ -621,7 +621,7 @@ if (fly && motion && gl) {
   sizes.observe(stage);
   if (form) sizes.observe(form);
   // Played for you: the page scrolls itself through the flight, so it's the
-  // same flight as by hand. "See it from above" stops on the card; "Start a
+  // same flight as by hand. "Explore fun places" stops on the card; "Start a
   // group" carries on to the form and puts the cursor in it. Any wheel,
   // touch, key or click of the visitor's own stops it where it is.
   let playing = 0;
