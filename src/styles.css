@@ -3525,6 +3525,14 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     scrollbar-width: thin;
   }
 
+  /* (a box that scrolls can take focus, so a link to #explore, as a search
+     or "Show every place" makes, lands focus on it: there it stays, for
+     the arrow keys to scroll the cards, but without a ring round the
+     column, which nobody tabbed to) */
+  .group-page.is-tabbed #explore:target:focus {
+    outline: none;
+  }
+
   .group-page.is-tabbed .map-wrap {
     position: static;
     height: 100%;
