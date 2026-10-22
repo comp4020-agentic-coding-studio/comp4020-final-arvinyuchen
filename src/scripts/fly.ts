@@ -223,7 +223,7 @@ if (fly && motion && gl) {
   let queued = false;
   const draw = (now = performance.now()) => {
     queued = false;
-    const target = clamp((scrollY - span.top) / (span.height - span.stage));
+    const target = held ? 1 : clamp((scrollY - span.top) / (span.height - span.stage));
     // (a frame's worth of easing when it sets off again after resting)
     const dt = settled ? 1 / 60 : Math.min(0.05, (now - drew) / 1000);
     drew = now;
@@ -271,6 +271,7 @@ if (fly && motion && gl) {
       map.jumpTo({ ...landing, bearing: NORTH + spun });
       if (onScreen) spin();
       else halt();
+      if (settled) hold();
       return;
     }
     halt();
@@ -540,6 +541,39 @@ if (fly && motion && gl) {
     map.once("idle", go);
     setTimeout(go, 4000);
   });
+
+  // Landed, it stays landed: once the page has come to rest there, the
+  // scroll the flight ran on goes, the stage with the form at the top of
+  // the page and the footer under it, so a swipe back up (meant for the
+  // page, or by mistake) doesn't fly it all back. (Not while a finger's
+  // still down or the page is still moving: the page shortens above where
+  // it's scrolled to, and it's scrolled up by as much at the same moment,
+  // which is only seamless when nothing else is scrolling it.)
+  let held = false;
+  let resting = 0;
+  let touching = 0;
+  const hold = () => {
+    clearTimeout(resting);
+    resting = window.setTimeout(() => {
+      if (held || touching || flown < 1) return;
+      held = true;
+      stop();
+      const before = fly.offsetHeight;
+      fly.classList.add("is-held");
+      scrollTo({ top: Math.max(0, scrollY - (before - fly.offsetHeight)), behavior: "instant" });
+      frame();
+      later();
+    }, 250);
+  };
+  for (const kind of ["touchstart", "touchend", "touchcancel"])
+    addEventListener(
+      kind,
+      (e) => {
+        touching = (e as TouchEvent).touches.length;
+        if (!touching && flown === 1) hold();
+      },
+      { passive: true, capture: true },
+    );
 
   frame();
   draw();

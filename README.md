@@ -76,7 +76,7 @@ other's taste.
   the camera in the photographer's place, so the two line up. The camera
   climbs away round the city and comes down at a tilt over the whole of it,
   in the card where the starter places are pinned, and there it keeps
-  turning slowly. Without WebGL or with reduced motion, the card holds a
+  turning slowly. Landed, it stays: scrolling back up doesn't fly it back. Without WebGL or with reduced motion, the card holds a
   drawn map instead, OpenStreetMap too: its lake, reserves, parks, rivers,
   roads, side streets and suburb names come from one Overpass query, built
   into the page (and one streets picture beside it) by
