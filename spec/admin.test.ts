@@ -30,7 +30,7 @@ describe("site admin", () => {
     const id = await startGroup(owner, "Not yours", "Bo");
     const nobody = await account("Cy");
     await groupsAct(nobody, "archive", [id]);
-    expect(await you(owner, id)).toContain("You're in as Bo");
+    expect(await you(owner, id)).toBe("Bo");
   });
 
   it.skipIf(!code)("makes an account admin only with the right code", async () => {
@@ -48,7 +48,7 @@ describe("site admin", () => {
     await request(owner, `/api/groups/${id}/picks`, { form: { key: "nma" } });
 
     await groupsAct(boss, "purge", [id]);
-    expect(await you(owner, id)).toContain("You're in as Bo");
+    expect(await you(owner, id)).toBe("Bo");
 
     await groupsAct(boss, "archive", [id]);
     expect((await page(owner, `/g/${id}`)).querySelector("h1")?.textContent).toBe("This group has been closed");
@@ -56,7 +56,7 @@ describe("site admin", () => {
     expect(vote.headers.get("location")).toBe("/");
 
     await groupsAct(boss, "restore", [id]);
-    expect(await you(owner, id)).toContain("You're in as Bo");
+    expect(await you(owner, id)).toBe("Bo");
 
     await groupsAct(boss, "archive", [id]);
     await groupsAct(boss, "purge", [id]);

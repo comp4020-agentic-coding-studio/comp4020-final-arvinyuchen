@@ -159,8 +159,8 @@ describe("a group", () => {
     const tried = await request(drifter, `/api/groups/${id}/join`, { form: { link: id, name: "Ana" } });
     expect(tried.headers.get("location")).toContain("error=account");
     // Typing a member's name gets nobody in as them.
-    expect((await page(drifter, path)).querySelector(".you")).toBeNull();
-    expect((await page(jar, path)).querySelector(".members")?.textContent).toContain("1 person");
+    expect((await page(drifter, path)).querySelector(".who")).toBeNull();
+    expect((await page(jar, path)).querySelector(".who__count")?.textContent).toContain("1 person");
   });
 
   it("shares a new place with every group, with its reason, and keeps it on the sharer's list", async () => {

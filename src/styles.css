@@ -31,6 +31,9 @@
   --culture: #8944d4;
   --fun: #007385;
   --radius: 18px;
+  /* the owner's crown: gold, so it reads apart from the blue of you */
+  --crown: #ffcc00;
+  --crown-ink: #7a5200;
   /* the system's own face: SF on Apple devices, Segoe on Windows, Roboto on
      Android; numbers in its rounded cut where there is one */
   --font: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -360,8 +363,7 @@ input[type="radio"] {
 .fine,
 .empty,
 .members,
-.area,
-.you {
+.area {
   color: var(--muted);
   font-size: 0.9rem;
 }
@@ -1758,10 +1760,6 @@ html:not(.in-app) .no-passkey__app {
   background: var(--accent-soft);
 }
 
-.you {
-  margin: 1.2rem 0 0;
-}
-
 .settings {
   margin: 0;
 }
@@ -3017,6 +3015,167 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-weight: 700;
 }
 
+/* Who's in, on the group's panel: a row of faces, each with its name under
+   it. The owner's wears a crown, yours a blue ring and a YOU; past six,
+   five and "+N more" until See all unfolds them all. */
+.who {
+  /* (the gap around a face's ring and badges: the page, or the panel's white) */
+  --ring-gap: var(--bg);
+  margin-top: 0.75rem;
+}
+
+.who__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.55rem;
+}
+
+.who__count {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.who__count b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* (See all only when there's more than fits) */
+.who:not(:has(.who__cell--more)) .who__toggle {
+  display: none;
+}
+
+.who__toggle > summary {
+  list-style: none;
+  color: var(--accent-ink);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.who__toggle > summary::-webkit-details-marker {
+  display: none;
+}
+
+.who__less,
+.who__toggle[open] .who__see {
+  display: none;
+}
+
+.who__toggle[open] .who__less {
+  display: inline;
+}
+
+.who__grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 3.75rem));
+  gap: 0.7rem 0.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.who__cell {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.who__cell--extra,
+.who:has(.who__toggle[open]) .who__cell--more {
+  display: none;
+}
+
+.who:has(.who__toggle[open]) .who__cell--extra {
+  display: grid;
+}
+
+.who__cell .face {
+  position: relative;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0;
+  border: 0;
+  font-size: 1.05rem;
+}
+
+.who__cell .face.is-you {
+  box-shadow: 0 0 0 2px var(--ring-gap), 0 0 0 4px var(--accent);
+}
+
+.face--more {
+  background: var(--fill-strong);
+  color: var(--ink);
+  font-family: var(--font-rounded);
+}
+
+.who__cell--more {
+  cursor: pointer;
+}
+
+.who__cell .face--more {
+  font-size: 0.9rem;
+}
+
+.crown {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--crown);
+  color: var(--crown-ink);
+  box-shadow: 0 0 0 2px var(--ring-gap);
+}
+
+.crown svg {
+  width: 11px;
+  height: 11px;
+}
+
+.who__you {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.45;
+  box-shadow: 0 0 0 2px var(--ring-gap);
+  transform: translateX(-50%);
+}
+
+.who__name {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.who__name.is-owner {
+  font-weight: 600;
+}
+
+.who__name.is-you,
+.who__cell--more .who__name {
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
 .join {
   margin-top: 1.25rem;
 }
@@ -3141,6 +3300,10 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     overflow: hidden;
   }
 
+  .group-head .who {
+    --ring-gap: var(--card);
+  }
+
   .group-head__photo {
     display: block;
     order: -1;
@@ -3154,10 +3317,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     height: 100%;
     object-fit: cover;
     object-position: 50% 58%;
-  }
-
-  .group-head .you {
-    margin-top: 0.6rem;
   }
 
   .invite {

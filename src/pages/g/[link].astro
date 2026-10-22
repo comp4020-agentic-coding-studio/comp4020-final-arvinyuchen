@@ -110,6 +110,14 @@ const everyone = (keen: string[]) => members.length > 2 && keen.length === membe
 
 // Each member's initial in a colour of its own, the same on every visit.
 const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
+
+// Who's in, on the group's panel: the owner first, then you, then the rest
+// in the order they joined. Up to six fit a row; more, and it's five and
+// "+N more" until See all.
+const firstOf = (id: number) => (id === group.ownerId ? 0 : id === member?.id ? 1 : 2);
+const crew = [...members].sort((a, b) => firstOf(a.id) - firstOf(b.id));
+const crewMore = crew.length > 6 ? crew.length - 5 : 0;
+const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
 ---
 
 <Base
@@ -264,20 +272,47 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
           “{group.note}” <span class="fine">{owner ? `${owner.name}, to the group` : ""}</span>
         </p>
       )}
-      <p class="members">
-        <span class="faces" aria-hidden="true">
-          {members.slice(0, 6).map((m) => (
-            <span class="face" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span>
-          ))}
-        </span>
-        <span>
-          {members.length} {members.length === 1 ? "person" : "people"}: {members.map((m) => m.name).join(", ")}
-        </span>
-      </p>
-      <p class="you">
-        You're in as <strong>{member.name}</strong>
-        {isOwner && <span class="owner-tag">owner</span>}
-      </p>
+      {/* Who's in, as faces with names: the owner's has a crown, yours a
+          ring. See all is a <details>, so it unfolds without a script; it
+          sits outside what a live refresh redraws, so it stays open. */}
+      <div class="who">
+        <div class="who__top">
+          <p class="who__count">
+            <b>{members.length} {members.length === 1 ? "person" : "people"}</b>
+            {owner && ` · ${owner.name}'s group`}
+          </p>
+          <details class="who__toggle">
+            <summary><span class="who__see">See all</span><span class="who__less">Show less</span></summary>
+          </details>
+        </div>
+        <ul class="who__grid">
+          {crew.map((m, i) => {
+            const mine = m.id === member.id;
+            const owns = m.id === group.ownerId;
+            return (
+              <li class={`who__cell${i >= 5 && crewMore ? " who__cell--extra" : ""}`}>
+                <span class={`face${mine ? " is-you" : ""}`} style={`--hue: ${hue(m.name)}`} aria-hidden="true">
+                  {[...m.name][0]?.toUpperCase()}
+                  {owns && (
+                    <span class="crown"><svg viewBox="0 0 16 16"><path fill="currentColor" d={crown} /></svg></span>
+                  )}
+                  {mine && <span class="who__you">YOU</span>}
+                </span>
+                <span class={`who__name${mine ? " is-you" : ""}${owns ? " is-owner" : ""}`}>
+                  {m.name}
+                  {(owns || mine) && <span class="sr-only"> ({[owns && "owner", mine && "you"].filter(Boolean).join(", ")})</span>}
+                </span>
+              </li>
+            );
+          })}
+          {crewMore > 0 && (
+            <li class="who__cell who__cell--more" aria-hidden="true">
+              <span class="face face--more">+{crewMore}</span>
+              <span class="who__name">more</span>
+            </li>
+          )}
+        </ul>
+      </div>
     </div>
     {/* (on a wide screen, where this is the group's panel: the home page's
         Canberra across its top) */}
@@ -704,7 +739,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     // reload by the viewer. The page asks the server for itself again and
     // swaps in the changed parts, keeping the scroll position, the map and
     // anything typed in the forms.
-    const regions = [".group-head h1", ".group-head .members", ".share__row", ".tabs__n", "#list", "#explore", "#settings .people"];
+    const regions = [".group-head h1", ".group-head .who__count", ".group-head .who__grid", ".share__row", ".tabs__n", "#list", "#explore", "#settings .people"];
     // The page as it is now, search included, without one-off notices.
     const current = () => {
       const q = new URLSearchParams(location.search).get("q");
@@ -1018,6 +1053,12 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
       if (event.key !== "Escape" || !floating()) return;
       inviteBox.open = false;
       inviteBox.querySelector("summary").focus();
+    });
+
+    // The "+N more" face unfolds everyone too, as See all does.
+    document.addEventListener("click", (event) => {
+      const more = event.target.closest(".who__cell--more");
+      if (more) more.closest(".who").querySelector(".who__toggle").open = true;
     });
 
     // The link copies with one tap where there's a clipboard; elsewhere it

@@ -82,4 +82,6 @@ export async function signInWith(jar: Jar, passkey: Authenticator) {
   const response = passkey.get(options, origin);
   return { res: await request(jar, "/api/passkeys/signin/verify", { json: { response } }), response };
 }
-export const you = async (jar: Jar, link: string) => (await page(jar, `/g/${link}`)).querySelector(".you")?.textContent ?? "";
+// The name a group's page knows the viewer by (the face marked YOU), or "".
+export const you = async (jar: Jar, link: string) =>
+  (await page(jar, `/g/${link}`)).querySelector(".who__name.is-you")?.firstChild?.textContent?.trim() ?? "";
