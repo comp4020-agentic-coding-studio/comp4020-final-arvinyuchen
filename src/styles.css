@@ -1776,8 +1776,10 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   z-index: 1;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.6rem 1.1rem;
+  /* (the arrow drawn edge to edge in its box, as tall as the capitals and
+     as heavy as the letters, so the gap and the two ends measure true) */
+  gap: 0.4rem;
+  padding: 0.65rem 1.1rem;
   border: 1px solid rgb(255 255 255 / 45%);
   border-radius: 999px;
   background: rgb(255 255 255 / 16%);
