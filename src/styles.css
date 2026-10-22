@@ -1376,12 +1376,22 @@ input[type="file"]::file-selector-button {
   color: #fff;
 }
 
-.explore-grid {
+/* Explore's title and search across the top, then the cards beside the
+   map. Title, search and cards are one box (.explore-scroll), which only
+   on a phone's Explore tab is a box of its own ("Explore on a phone"). */
+.explore-wrap {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 1.25rem;
+  gap: 1rem 1.25rem;
   align-items: start;
-  margin-top: 1rem;
+}
+
+.explore-scroll {
+  display: contents;
+}
+
+.explore-head {
+  grid-column: 1 / -1;
 }
 
 .spots--explore {
@@ -1480,6 +1490,8 @@ input[type="file"]::file-selector-button {
 .map-wrap {
   position: sticky;
   top: calc(var(--nav-h) + 0.75rem);
+  grid-column: 2;
+  grid-row: 2;
 }
 
 #map {
@@ -1892,12 +1904,18 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
 }
 
 @media (max-width: 860px) {
-  .explore-grid {
-    grid-template-columns: 1fr;
+  .explore-wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* (the title and search, the map, then the cards) */
+  #explore {
+    order: 1;
   }
 
   .map-wrap {
-    order: -1;
+    grid-column: auto;
+    grid-row: auto;
     position: sticky;
     top: var(--nav-h);
     z-index: 4;
@@ -1910,6 +1928,123 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   #map {
     height: 30vh;
     min-height: 13rem;
+  }
+}
+
+/* ---- Explore on a phone ------------------------------------------------------ */
+
+/* With the script (the tabs work), Explore's tab on a phone or a narrow
+   tablet is the screen, and the page itself doesn't scroll: the site's bar,
+   the map under it, and from the map's foot to the tab bar a box of its own
+   (.explore-scroll) where Explore's title, search and kinds scroll away
+   first, then the cards. What scrolls is cut off at the box's top edge, so
+   nothing passes behind the map. The group's header (its name, people and
+   invite) stays on Our list, where it doesn't take the cards' room. (A
+   phone on its side is too short for a box under the map: there the page
+   scrolls, as it does without the script.) */
+@media (max-width: 860px) and (min-height: 30rem) {
+  body:has(.group-page.is-tabbed[data-tab="explore"]) {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body:has(.group-page.is-tabbed[data-tab="explore"]) > .top {
+    flex: none;
+    width: 100%;
+  }
+
+  body:has(.group-page.is-tabbed[data-tab="explore"]) > main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  body:has(.group-page.is-tabbed[data-tab="explore"]) > .foot,
+  .group-page.is-tabbed[data-tab="explore"] .group-head,
+  .group-page.is-tabbed[data-tab="explore"] > .group-tools {
+    display: none;
+  }
+
+  .group-page.is-tabbed[data-tab="explore"] {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* (on a tablet the tabs are a segmented control above the map) */
+  .group-page.is-tabbed[data-tab="explore"] .section-nav {
+    flex: none;
+    margin: 0 0 0.75rem;
+  }
+
+  .group-page.is-tabbed[data-tab="explore"] .explore-wrap {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 0;
+  }
+
+  .group-page.is-tabbed[data-tab="explore"] .map-wrap {
+    position: static;
+    flex: none;
+    order: -1;
+    padding: 0 0 0.15rem;
+    background: none;
+    box-shadow: none;
+  }
+
+  /* The box runs to the screen's edges, so a card's shadow isn't cut at
+     its sides, and fades what scrolls out at its top edge rather than
+     slicing it square (its first 0.6rem is that fade, empty at rest). */
+  .group-page.is-tabbed[data-tab="explore"] .explore-scroll {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-right: calc(-1 * max(1rem, env(safe-area-inset-right)));
+    margin-left: calc(-1 * max(1rem, env(safe-area-inset-left)));
+    padding: 0.6rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    mask-image: linear-gradient(transparent, #000 0.6rem);
+  }
+
+  .group-page.is-tabbed[data-tab="explore"] .explore-head {
+    margin-top: 0;
+  }
+
+  .group-page.is-tabbed[data-tab="explore"] #explore {
+    margin-top: 1rem;
+  }
+
+  /* (a card brought into view lands just under the fade) */
+  .group-page.is-tabbed[data-tab="explore"] .explore-scroll .spot {
+    scroll-margin-top: 0.6rem;
+  }
+}
+
+/* On a phone the tab bar is the screen's foot here, not floating over it,
+   so the box ends exactly on it. */
+@media (max-width: 600px) and (min-height: 30rem) {
+  body:has(.group-page.is-tabbed[data-tab="explore"]) {
+    padding-bottom: 0;
+  }
+
+  .group-page.is-tabbed[data-tab="explore"] .section-nav.tabs {
+    position: static;
+    order: 1;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-right: calc(-1 * max(1rem, env(safe-area-inset-right)));
+    margin-left: calc(-1 * max(1rem, env(safe-area-inset-left)));
   }
 }
 
@@ -3585,7 +3720,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     align-items: start;
   }
 
-  .explore-wrap > .explore-head {
+  .explore-head {
     margin-top: 0;
     padding: 1.1rem 1.25rem 0.9rem;
   }
@@ -3594,11 +3729,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     font-size: 1.5rem;
   }
 
-  .explore-grid {
-    display: contents;
-  }
-
-  .explore-wrap > .explore-head,
+  .explore-head,
   #explore {
     grid-column: 1;
   }

@@ -482,43 +482,46 @@ const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
 
   </div>
 
+  {/* Explore's title, search and cards, then the map. On a phone, in the
+      Explore tab, the first two are one box that scrolls under the map
+      (src/styles.css, "Explore on a phone"). */}
   <section id="explore-section" class="explore-wrap" aria-labelledby="explore-title" data-panel="explore">
-    <div class="explore-head">
-      <div class="explore-head__top">
-        <h2 id="explore-title">Explore</h2>
-        <button type="button" class="show-all" data-show-all hidden>Show all</button>
+    <div class="explore-scroll">
+      <div class="explore-head">
+        <div class="explore-head__top">
+          <h2 id="explore-title">Explore</h2>
+          <button type="button" class="show-all" data-show-all hidden>Show all</button>
+        </div>
+        <form class="ask" method="get" action={`/g/${group.link}#explore`} role="search" data-search>
+          <label for="ask-q" class="sr-only">Describe what you're after</label>
+          <svg class="ask__glass" viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M8.75 15a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Zm4.5-1.75 4.25 4.25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
+          </svg>
+          <input
+            id="ask-q"
+            name="q"
+            type="search"
+            enterkeyhint="search"
+            value={q}
+            maxlength="200"
+            autocomplete="off"
+            placeholder="Describe it: “cheap dumplings near Dickson”, “a walk with a view”"
+          />
+          <button class="btn btn--primary">Find</button>
+        </form>
+        {/* (the kinds need the script that filters by them, so it shows them) */}
+        <div class="filters" role="group" aria-label="Show only" data-sel="all" hidden>
+          {kinds.map((k) => (
+            <button type="button" class={`chip chip--${k}`} data-filter={k} aria-pressed="false">
+              <span class="chip__dot"><KindIcon kind={k} /></span>
+              <span>{KIND_LABEL[k]}</span>
+            </button>
+          ))}
+        </div>
+        <p class="filter-empty" hidden>
+          Nothing under <span data-empty-kind></span> yet. <a href="#add" data-tab="add">Share one</a>
+        </p>
       </div>
-      <form class="ask" method="get" action={`/g/${group.link}#explore`} role="search" data-search>
-        <label for="ask-q" class="sr-only">Describe what you're after</label>
-        <svg class="ask__glass" viewBox="0 0 20 20" aria-hidden="true">
-          <path d="M8.75 15a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Zm4.5-1.75 4.25 4.25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
-        </svg>
-        <input
-          id="ask-q"
-          name="q"
-          type="search"
-          enterkeyhint="search"
-          value={q}
-          maxlength="200"
-          autocomplete="off"
-          placeholder="Describe it: “cheap dumplings near Dickson”, “a walk with a view”"
-        />
-        <button class="btn btn--primary">Find</button>
-      </form>
-      {/* (the kinds need the script that filters by them, so it shows them) */}
-      <div class="filters" role="group" aria-label="Show only" data-sel="all" hidden>
-        {kinds.map((k) => (
-          <button type="button" class={`chip chip--${k}`} data-filter={k} aria-pressed="false">
-            <span class="chip__dot"><KindIcon kind={k} /></span>
-            <span>{KIND_LABEL[k]}</span>
-          </button>
-        ))}
-      </div>
-      <p class="filter-empty" hidden>
-        Nothing under <span data-empty-kind></span> yet. <a href="#add" data-tab="add">Share one</a>
-      </p>
-    </div>
-    <div class="explore-grid">
       <div id="explore" data-q={q || undefined}>
         <script type="application/json" id="pins" is:inline set:html={pinsJson} />
         {found && (
@@ -560,17 +563,17 @@ const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
           ))}
         </ul>
       </div>
-      <div class="map-wrap">
-        <figure class="map-frame">
-          <div id="map" role="region" aria-label="Map of the places in Explore"></div>
-          <figcaption class="fold-credit">
-            <span class="fold-credit__sources">
-              © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>{" · "}<a href="https://openfreemap.org">OpenFreeMap</a>{" · relief "}<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Mapzen</a>
-            </span>
-            <button type="button" class="fold-credit__info" aria-label="Map credits" aria-expanded="false">i</button>
-          </figcaption>
-        </figure>
-      </div>
+    </div>
+    <div class="map-wrap">
+      <figure class="map-frame">
+        <div id="map" role="region" aria-label="Map of the places in Explore"></div>
+        <figcaption class="fold-credit">
+          <span class="fold-credit__sources">
+            © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>{" · "}<a href="https://openfreemap.org">OpenFreeMap</a>{" · relief "}<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Mapzen</a>
+          </span>
+          <button type="button" class="fold-credit__info" aria-label="Map credits" aria-expanded="false">i</button>
+        </figcaption>
+      </figure>
     </div>
   </section>
 

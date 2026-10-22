@@ -202,13 +202,16 @@ if (container) {
   };
 
   // Its card in Explore, brought into view: in its column on a wide screen,
-  // under the stuck map on a phone.
+  // at the top of the box under the map on a phone (the page doesn't scroll
+  // there), and without the script's tabs under the stuck map.
   function reveal(id: number) {
     const target = spot(id);
     if (!target) return;
     const behavior = reducedMotion.matches ? "auto" : "smooth";
-    if (!narrow.matches) {
-      target.scrollIntoView({ behavior, block: "nearest" });
+    const box = target.closest<HTMLElement>(".explore-scroll");
+    const boxed = box !== null && getComputedStyle(box).overflowY !== "visible";
+    if (!narrow.matches || boxed) {
+      target.scrollIntoView({ behavior, block: boxed ? "start" : "nearest" });
       return;
     }
     const under = frame.closest(".map-wrap")?.getBoundingClientRect().bottom ?? 0;
