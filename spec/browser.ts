@@ -23,21 +23,42 @@ export const request = async (jar: Jar, path: string, init: { form?: Record<stri
 export const page = async (jar: Jar, path: string) =>
   new JSDOM(await (await request(jar, path)).text()).window.document;
 
-/** Starts a group from this browser; returns its id (also its first link). */
-export async function startGroup(jar: Jar, group: string, name: string): Promise<string> {
-  const res = await request(jar, "/api/groups", { form: { group, name } });
-  return (res.headers.get("location") ?? "").split("?")[0].replace("/g/", "");
-}
-export const join = (jar: Jar, id: string, link: string, name: string) =>
-  request(jar, `/api/groups/${id}/join`, { form: { name, link } });
+// Everyone in Spots is an account, so a browser that starts or joins a
+// group signs up first: a name and a new passkey. Each browser's passkey is
+// kept, so a test can sign in with it somewhere else.
+const passkeys = new WeakMap<Jar, Authenticator>();
+export const passkeyOf = (jar: Jar) => passkeys.get(jar)!;
 
-export async function savePasskey(jar: Jar, passkey: Authenticator, group?: string) {
-  const options = await (await request(jar, "/api/passkeys/register/options", { json: { group } })).json();
+/** Makes an account from this browser: a name and a passkey. */
+export async function signUp(jar: Jar, name: string, passkey = new Authenticator()) {
+  const options = await (await request(jar, "/api/passkeys/register/options", { json: { name } })).json();
+  passkeys.set(jar, passkey);
   return request(jar, "/api/passkeys/register/verify", { json: passkey.create(options, origin) });
 }
-export async function signInWith(jar: Jar, passkey: Authenticator, group?: string) {
+const ensureAccount = async (jar: Jar, name: string) => {
+  if (!jar.has("spots_session")) await signUp(jar, name);
+};
+
+/** Starts a group from this browser (an account named `name`, made if need be); returns its id. */
+export async function startGroup(jar: Jar, group: string, name: string): Promise<string> {
+  await ensureAccount(jar, name);
+  const res = await request(jar, "/api/groups", { form: { group } });
+  return (res.headers.get("location") ?? "").split("?")[0].replace("/g/", "");
+}
+/** Joins by a link from this browser, as its account (made as `name` if need be). */
+export async function join(jar: Jar, id: string, link: string, name: string) {
+  await ensureAccount(jar, name);
+  return request(jar, `/api/groups/${id}/join`, { form: { link } });
+}
+
+/** Adds another passkey to the signed-in account. */
+export async function savePasskey(jar: Jar, passkey: Authenticator) {
+  const options = await (await request(jar, "/api/passkeys/register/options", { json: {} })).json();
+  return request(jar, "/api/passkeys/register/verify", { json: passkey.create(options, origin) });
+}
+export async function signInWith(jar: Jar, passkey: Authenticator) {
   const options = await (await request(jar, "/api/passkeys/signin/options", { json: {} })).json();
   const response = passkey.get(options, origin);
-  return { res: await request(jar, "/api/passkeys/signin/verify", { json: { response, group } }), response };
+  return { res: await request(jar, "/api/passkeys/signin/verify", { json: { response } }), response };
 }
 export const you = async (jar: Jar, link: string) => (await page(jar, `/g/${link}`)).querySelector(".you")?.textContent ?? "";

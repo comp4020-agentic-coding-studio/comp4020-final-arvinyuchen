@@ -1,33 +1,43 @@
 import { describe, expect, it } from "vitest";
 import { Authenticator, Jar } from "./authenticator";
-import { baseUrl, join, origin, page, request, savePasskey, signInWith, startGroup, you } from "./browser";
+import {
+  baseUrl,
+  join,
+  origin,
+  page,
+  passkeyOf,
+  request,
+  savePasskey,
+  signInWith,
+  signUp,
+  startGroup,
+  you,
+} from "./browser";
 
-// Accounts by passkey, and the owner's tools. Joining stays a link and a
-// name; a passkey is optional and lets a member be themselves on any device.
-// Each Jar is one browser; one Authenticator is one person's synced passkey.
+// Accounts by passkey, and the owner's tools. Everyone is an account: a
+// name and one or more passkeys, made without any group, and the only way
+// to be someone in one. Each Jar is one browser; one Authenticator is one
+// person's synced passkey.
 describe("accounts by passkey", () => {
-  it("saves a passkey from a group, then signs in on another device with no username", async () => {
+  it("makes an account from a name and a passkey, then signs in on another device with no username", async () => {
     const phone = new Jar();
-    const id = await startGroup(phone, "Passkey crew", "Ana");
-    const passkey = new Authenticator();
-    expect((await savePasskey(phone, passkey, id)).status).toBe(200);
+    expect((await signUp(phone, "Ana")).status).toBe(200);
     expect(phone.has("spots_session")).toBe(true);
-    expect((await page(phone, "/me")).body.textContent).toContain("Passkey crew");
+    expect((await page(phone, "/me")).querySelector("h1")?.textContent).toBe("Ana's groups");
+    const id = await startGroup(phone, "Passkey crew", "Ana");
 
     // A laptop that has never seen the group: no cookie, no name typed.
     const laptop = new Jar();
     expect(await you(laptop, id)).toBe("");
-    const { res } = await signInWith(laptop, passkey);
+    const { res } = await signInWith(laptop, passkeyOf(phone));
     expect(res.status).toBe(200);
     expect(await you(laptop, id)).toContain("You're in as Ana");
     expect((await page(laptop, "/me")).body.textContent).toContain("Passkey crew");
   });
 
   it("refuses a passkey it never stored, a forged signature, and a replayed one", async () => {
-    const jar = new Jar();
-    const id = await startGroup(jar, "Guarded crew", "Ana");
     const real = new Authenticator();
-    await savePasskey(jar, real, id);
+    await signUp(new Jar(), "Ana", real);
 
     expect((await signInWith(new Jar(), stranger())).res.status).toBe(400);
 
@@ -46,23 +56,70 @@ describe("accounts by passkey", () => {
     expect(replay.status).toBe(400);
   });
 
-  it("only lets someone already in a group make an account", async () => {
-    const res = await request(new Jar(), "/api/passkeys/register/options", { json: {} });
-    expect(res.status).toBe(401);
+  it("won't make an account without a name", async () => {
+    const res = await request(new Jar(), "/api/passkeys/register/options", { json: { name: "   " } });
+    expect(res.status).toBe(400);
   });
 
-  it("joins a signed-in person to a new group as themselves", async () => {
+  it("joins a signed-in person to a group as themselves, with one tap", async () => {
     const jar = new Jar();
-    const first = await startGroup(jar, "First crew", "Ana");
-    await savePasskey(jar, new Authenticator(), first);
+    await startGroup(jar, "First crew", "Ana");
     const host = new Jar();
     const second = await startGroup(host, "Second crew", "Ben");
-    const form = (await page(jar, `/g/${second}`)).querySelector<HTMLInputElement>('form input[name="name"]');
-    expect(form?.value).toBe("Ana");
-    await join(jar, second, second, "Ana");
+    const invite = await page(jar, `/g/${second}`);
+    expect(invite.querySelector('form#join input[name="name"]')).toBeNull();
+    expect(invite.querySelector("form#join")?.textContent).toContain("as Ana");
+    await join(jar, second, second, "ignored");
+    expect(await you(jar, second)).toContain("You're in as Ana");
     const mine = (await page(jar, "/me")).body.textContent ?? "";
     expect(mine).toContain("First crew");
     expect(mine).toContain("Second crew");
+  });
+
+  it("has one name: renaming the account renames it in every group", async () => {
+    const ana = new Jar();
+    const first = await startGroup(ana, "Rename crew", "Ana");
+    const ben = new Jar();
+    const second = await startGroup(ben, "Ben's crew", "Ben");
+    await join(ana, second, second, "Ana");
+
+    await request(ana, "/api/account", { form: { name: "Annie" } });
+    expect(await you(ana, first)).toContain("You're in as Annie");
+    expect((await page(ben, `/g/${second}`)).querySelector(".members")?.textContent).toContain("Annie");
+    // An empty name changes nothing.
+    await request(ana, "/api/account", { form: { name: " " } });
+    expect(await you(ana, first)).toContain("You're in as Annie");
+  });
+
+  it("keeps several passkeys, removes one, and never the last", async () => {
+    const phone = new Jar();
+    const iphone = new Authenticator();
+    await signUp(phone, "Ana", iphone);
+    const windows = new Authenticator();
+    expect((await savePasskey(phone, windows)).status).toBe(200);
+    const keys = async () => (await page(phone, "/me")).querySelectorAll("#keys .keys li");
+    expect(await keys()).toHaveLength(2);
+    expect((await signInWith(new Jar(), windows)).res.status).toBe(200);
+
+    const idOf = (passkey: Authenticator) => Buffer.from(passkey.credentials[0].id).toString("base64url");
+    await request(phone, "/api/passkeys/remove", { form: { id: idOf(iphone) } });
+    expect(await keys()).toHaveLength(1);
+    expect((await signInWith(new Jar(), iphone)).res.status).toBe(400);
+
+    const last = await request(phone, "/api/passkeys/remove", { form: { id: idOf(windows) } });
+    expect(last.headers.get("location")).toContain("error=last");
+    expect(await keys()).toHaveLength(1);
+    expect((await page(phone, "/me")).querySelector('#keys form[action="/api/passkeys/remove"]')).toBeNull();
+  });
+
+  it("only removes the signed-in account's own passkeys", async () => {
+    const ana = new Authenticator();
+    await signUp(new Jar(), "Ana", ana);
+    const eve = new Jar();
+    await signUp(eve, "Eve");
+    await savePasskey(eve, new Authenticator());
+    await request(eve, "/api/passkeys/remove", { form: { id: Buffer.from(ana.credentials[0].id).toString("base64url") } });
+    expect((await signInWith(new Jar(), ana)).res.status).toBe(200);
   });
 });
 
@@ -79,7 +136,7 @@ describe("the owner's tools", () => {
     const id = await startGroup(owner, "Tools crew", "Ana");
     const ben = new Jar();
     await join(ben, id, id, "Ben");
-    const benAgain = new Jar(); // Ben on his phone, before passkeys
+    const benAgain = new Jar(); // Ben, after losing every passkey: a new account
     await join(benAgain, id, id, "Ben");
     const people = async () =>
       [...(await page(owner, `/g/${id}`)).querySelectorAll("#settings .people li")].map((li) => ({
@@ -125,20 +182,22 @@ describe("the owner's tools", () => {
     expect(await invitee()).toBeNull();
   });
 
-  it("merges a duplicate into the person they are, keeping their keens", async () => {
-    const { owner, benAgain, id, people, act } = await crew();
+  it("gives someone who lost every passkey their old self back, by merging it into their new account", async () => {
+    const { owner, ben, benAgain, id, people, act } = await crew();
     await request(owner, `/api/groups/${id}/picks`, { form: { key: "questacon" } });
-    const pick = (await page(benAgain, `/g/${id}`)).querySelector<HTMLInputElement>('#list input[name="pick"]')?.value ?? "";
-    await request(benAgain, `/api/groups/${id}/keen`, { form: { pick } });
+    const pick = (await page(ben, `/g/${id}`)).querySelector<HTMLInputElement>('#list input[name="pick"]')?.value ?? "";
+    await request(ben, `/api/groups/${id}/keen`, { form: { pick } });
 
-    const [, ben, dupe] = await people();
-    await act(owner, { action: "merge", member: dupe.id!, into: ben.id! });
+    const [, old, fresh] = await people();
+    await act(owner, { action: "merge", member: old.id!, into: fresh.id! });
 
     const names = (await people()).map((p) => p.name);
     expect(names).toEqual(["Ana", "Ben"]);
-    // The phone that was the duplicate is now Ben, and his keen came with him.
+    // The new account is Ben now, his old keen came with him, and the old
+    // account (whoever has its passkey) is out of the group.
     expect(await you(benAgain, id)).toContain("You're in as Ben");
     expect((await page(owner, `/g/${id}`)).querySelector("#list .keen-who")?.textContent).toBe("Keen: Ben");
+    expect(await you(ben, id)).toBe("");
   });
 
   it("removes someone: they can't act any more, and their keens go", async () => {
@@ -169,7 +228,7 @@ describe("the owner's tools", () => {
 
     const stranger = new Jar();
     expect((await page(stranger, `/g/${id}`)).querySelector("h1")?.textContent).toBe("This link has been reset");
-    await join(stranger, id, id, "Eve");
+    await join(stranger, id, id, "Cat");
     expect(await you(stranger, fresh)).toBe("");
 
     await join(stranger, id, fresh, "Cat");

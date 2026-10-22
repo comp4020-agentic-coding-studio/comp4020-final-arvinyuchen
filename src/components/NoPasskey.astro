@@ -1,0 +1,23 @@
+---
+// What shows instead of the passkey buttons where this browser can't make
+// or use a passkey (no html.passkeys, from the check in Base.astro): another
+// app's built-in browser, an old browser, or no JavaScript. Signing in to
+// Spots needs one, so it says where to go: the same page in Safari or Chrome.
+interface Props {
+  /** What they came to do: "join", "start a group", "sign in". */
+  to: string;
+}
+const { to } = Astro.props;
+---
+
+<div class="no-passkey" data-no-passkey>
+  <p>
+    <strong>Open this page in Safari or Chrome to {to}.</strong> Spots signs you in with a passkey (your face,
+    fingerprint or phone PIN), and this browser can't make one.
+  </p>
+  <p class="fine no-passkey__app">You're in another app's browser: look for <strong>Open in browser</strong> in its ⋯ menu.</p>
+  <p class="no-passkey__copy" data-copy-page hidden>
+    <button type="button" class="btn btn--small">Copy this page's link</button>
+    <span class="passkey-msg" aria-live="polite"></span>
+  </p>
+</div>

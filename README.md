@@ -2,8 +2,8 @@
 
 Spots is a shared list of places for one group of friends: the food spots, fun
 places and things to do you might go to together. Someone starts a group and
-shares the link; everyone joins with just a name, explores places, adds the
-ones they're keen on, and votes. Votes show up live as people make them, the
+shares the link; everyone joins with their name and a passkey, explores
+places, adds the ones they're keen on, and votes. Votes show up live as people make them, the
 list re-ranks when you ask it to, and it's still there next time the group
 wants to go out.
 
@@ -35,19 +35,25 @@ other's taste.
   walk with a view" should find places, and the answer should be places: cards
   and pins, not a paragraph. Places are matched on meaning, using the reasons
   people wrote, so the better the reasons, the better the search.
-- **Joining costs nothing.** A link and a name. No app to install, no sign-up
-  wall between the group chat and the decision. The link goes wherever the
+- **Joining costs almost nothing.** A link, your name and your face or
+  fingerprint: no app to install, no password, no email. The link goes wherever the
   group already talks: one Share button opens the phone's own share sheet
   (Messages, WhatsApp, Instagram, WeChat), and there are direct links and a QR
   code for everywhere else. It never goes to a public feed, since anyone who
   has it can join. Opening the link shows one invite card: the group, who
   started it, who's in, a line from whoever started it if they wrote one,
-  and a name field to join. Under it, the first few places on a small street
+  and one button to join. Under it, the first few places on a small street
   map. The full list and its votes are for the group.
-- **You stay you, without a password.** Anyone who wants to be themselves on
-  their phone and their laptop can save a passkey (face, fingerprint or PIN)
-  and find all their groups in one place. It's optional, there's no
-  password or email, and it never stands between someone and joining.
+- **You're you, on every device, without a password.** Everyone is an
+  account: a name and a passkey (face, fingerprint or PIN), made in the same
+  tap that starts or joins a group. Signed in, joining another group is one
+  button. Nobody can vote as someone else by typing their name, a friend on a
+  second device is still the same person, and all your groups are in one
+  place. One account has one name, and can have several passkeys (an iPhone's
+  and a Windows laptop's), never none. Lose every passkey and there's no
+  reset: make a new account, join again, and the group's owner merges your
+  old name into it. Inside Instagram's or Facebook's own browser, where
+  passkeys don't work, the invite says to open it in Safari or Chrome.
 - **Whoever starts a group can look after it.** Rename it, write a line to
   the people they invite, take someone out, merge someone who joined twice,
   and reset the invite link if it spread too far, without losing anything
@@ -103,10 +109,14 @@ other's taste.
 
 ## What I chose not to build
 
-- **Passwords, email sign-up and profiles.** An account is a passkey and a
-  name, nothing more, and only for people who want one. I first left accounts
-  out entirely, then found the cost: a friend on a second device became a
-  second person. Passkeys fix that without a sign-up wall.
+- **Passwords, email sign-up, "sign in with" and profiles.** An account is a
+  passkey and a name, nothing more. I first left accounts out entirely, then
+  made them optional, and found the cost both times: a friend on a second
+  device became a second person, and a name typed into a form proved nothing.
+  So every member is an account now, and a passkey keeps that to one tap.
+  There's no email, so there's no account recovery either; the owner's merge
+  is the way back. Passkeys belong to the site that made them, so there's no
+  "sign in with WhatsApp or Instagram" to offer, and I wouldn't want one.
 - **Public reviews and star ratings.** Spots is about what this group thinks.
 - **A directory of every place in Canberra.** A short checked starter list,
   plus the places people share with a reason. Nothing is imported in bulk.
@@ -124,8 +134,10 @@ share a new one by looking it up on OpenStreetMap and saying why it's good; it
 appears in every group's Explore. Vote "keen" and the count changes live in
 every open page. Cards hold their place while you're looking, and a "New
 order" bar re-ranks the list when you tap it. Search Explore by describing what you're after: the answer is
-the matching cards, best first, and the map frames their pins. Save a passkey
-to be yourself on any device and see all your groups; the person who started a
+the matching cards, best first, and the map frames their pins. Everyone signs
+in with a passkey, is themselves on any device, and sees all their groups in
+one place; your account page renames you everywhere and adds or removes
+passkeys. The person who started a
 group can rename it, write a note for the people they invite, remove or merge
 members, and reset its invite link. Next:
 deciding a date and time, and a "who's coming" for the chosen spot.

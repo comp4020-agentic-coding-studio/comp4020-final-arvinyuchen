@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { Authenticator, Jar } from "./authenticator";
-import { page, request, savePasskey, startGroup, you } from "./browser";
+import { Jar } from "./authenticator";
+import { page, request, signUp, startGroup, you } from "./browser";
 
 // Site admin: archive and restore groups, delete archived ones for good,
 // hide shared places. The app under test needs ADMIN_CODE, and the spec the
@@ -10,8 +10,7 @@ const code = process.env.ADMIN_CODE;
 /** A browser signed in with a passkey, not (yet) an admin. */
 async function account(name = "Ada") {
   const jar = new Jar();
-  const id = await startGroup(jar, `${name}'s own crew`, name);
-  await savePasskey(jar, new Authenticator(), id);
+  await signUp(jar, name);
   return jar;
 }
 async function admin() {

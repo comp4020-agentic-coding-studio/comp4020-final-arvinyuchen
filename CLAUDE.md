@@ -28,20 +28,25 @@ follow from it; every change has to hold to them.
 - **One person, one keen.** A member can vote "keen" on a spot once. The
   button sends the state it shows ("on" or "off") and the server sets exactly
   that (`setKeen`), so a double-tap or a second device never undoes a vote.
-  Never let a vote be cast for someone else: identity is the per-group cookie
-  (`src/lib/me.ts`), never a name typed into a form.
-- **Joining stays a link and a name.** An account is optional and never stands
-  between someone and joining or voting.
+  Never let a vote be cast for someone else: identity is the signed-in
+  account (`me()` in `src/lib/me.ts`), never a name typed into a form.
+- **Everyone is a passkey account.** Starting or joining a group needs one,
+  made in the same step from a name and a passkey (the home page's form, the
+  invite, `/signin`); signed in, joining is one button. One account has one
+  name, the same in every group, and one or more passkeys, never none. There's
+  no recovery but the owner's merge: someone who lost every passkey makes a
+  new account, joins again by the link, and the owner merges their old
+  member into it. Never add a way in that isn't a passkey.
 - **The invite goes person to person.** Whoever holds the link can join, so
   it's shared through private channels only: the system share sheet, Messages,
   WhatsApp, Telegram, email, a QR code. Never add a button that posts it to a
   public feed (a Facebook post, X, a story). A link preview may name the group
   (Open Graph, `src/layouts/Base.astro`), never its members or votes.
 - **Accounts are passkeys only.** No passwords, no email, no "sign in with"
-  providers. An account starts from a member who's already in a group
+  providers. An account is made from a name and a passkey
   (`src/pages/api/passkeys/`), its sessions store only a hash of their token,
-  and `me()` in `src/lib/me.ts` is the one place that decides who someone is:
-  their account's member first, then the group cookie.
+  and `me()` in `src/lib/me.ts` is the one place that decides who someone is
+  in a group: the signed-in account's member there, and nothing else.
 - **The owner's tools keep what the group made.** Removing or merging a member
   marks them, never deletes them: what they added keeps their name. Only a
   removed member's keens go. Resetting the invite link retires the old one;
@@ -62,9 +67,12 @@ follow from it; every change has to hold to them.
   deleted for good, by an admin, after a confirm. Shared places are hidden,
   never deleted. An admin is a passkey account that once entered
   `ADMIN_CODE` (a Fly secret); never add another way to become one.
-- **It works without JavaScript**, as plain forms posting and redirecting. The
-  live layer, the map and the place finder are additions on top, not the only
-  way to act.
+- **Signed in, it works without JavaScript**, as plain forms posting and
+  redirecting. The live layer, the map and the place finder are additions on
+  top, not the only way to act. Making an account and signing in need a
+  passkey, so they need JavaScript and a browser that has passkeys; where
+  there's none (another app's built-in browser, an old one), the page says
+  to open it in Safari or Chrome (`src/components/NoPasskey.astro`).
 - **Search answers with cards, never prose.** A prompt comes back as the
   matching places, best first, and their pins: no generated text, nothing
   said about a place that its card doesn't say. Ranking is cosine similarity
