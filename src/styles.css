@@ -23,9 +23,13 @@
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 4%);
   --shadow-md: 0 1px 2px rgb(0 0 0 / 4%), 0 6px 20px -8px rgb(0 0 0 / 10%);
   --shadow-float: 0 2px 6px rgb(0 0 0 / 6%), 0 18px 48px -12px rgb(0 0 0 / 24%);
+  /* the kinds, each AA as a tag's text on its own tint */
   --food: #c93400;
-  --fun: #8944d4;
+  --coffee: #8b5a2b;
+  --drinks: #b4235a;
   --outdoors: #2e7d32;
+  --culture: #8944d4;
+  --fun: #007385;
   --radius: 18px;
   /* the system's own face: SF on Apple devices, Segoe on Windows, Roboto on
      Android; numbers in its rounded cut where there is one */
@@ -424,6 +428,18 @@ input[type="radio"] {
   --kind: var(--outdoors);
 }
 
+.spot--coffee {
+  --kind: var(--coffee);
+}
+
+.spot--drinks {
+  --kind: var(--drinks);
+}
+
+.spot--culture {
+  --kind: var(--culture);
+}
+
 /* A place's kind: its system colour, in words, on a wash of it. */
 .tag {
   align-self: flex-start;
@@ -742,6 +758,18 @@ input[type="radio"] {
   --kind: var(--outdoors);
 }
 
+.photo--coffee {
+  --kind: var(--coffee);
+}
+
+.photo--drinks {
+  --kind: var(--drinks);
+}
+
+.photo--culture {
+  --kind: var(--culture);
+}
+
 .photo--food {
   --kind: var(--food);
 }
@@ -771,10 +799,58 @@ input[type="radio"] {
   margin: 0;
 }
 
+/* (six kinds and All: one row beside the title that slides sideways when
+   they don't all fit, fading at its edge so it's plain there are more) */
 .filters {
+  flex: 1 1 0;
   display: flex;
-  flex-wrap: wrap;
   gap: 0.4rem;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+}
+
+.filters::-webkit-scrollbar {
+  display: none;
+}
+
+.filters .chip {
+  flex: none;
+}
+
+.filters .chip:last-child {
+  margin-right: 1.25rem;
+}
+
+/* (with a mouse, where sliding sideways isn't something you'd think to do,
+   they wrap instead, all of them in sight) */
+@media (hover: hover) and (pointer: fine) {
+  .explore-head {
+    align-items: flex-start;
+  }
+
+  .explore-head h2 {
+    line-height: 1.85rem;
+  }
+
+  .filters {
+    flex-wrap: wrap;
+    overflow: visible;
+    mask-image: none;
+  }
+
+  .filters .chip:last-child {
+    margin-right: 0;
+  }
+}
+
+/* a kind nobody has shared yet */
+.filter-empty {
+  flex: 1 0 100%;
+  margin: 0.5rem 0 0;
+  color: var(--muted);
 }
 
 /* Search by describing it: a wide prompt box, answered with cards. */
@@ -2203,6 +2279,18 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   --kind: var(--outdoors);
 }
 
+.hero-map__card.spot--coffee {
+  --kind: var(--coffee);
+}
+
+.hero-map__card.spot--drinks {
+  --kind: var(--drinks);
+}
+
+.hero-map__card.spot--culture {
+  --kind: var(--culture);
+}
+
 /* where a card opens from its pin, so it stays inside the frame */
 .hero-map__card--above {
   translate: -50% calc(-100% - 16px);
@@ -2871,6 +2959,18 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 
 .pick.spot--outdoors {
   --kind: var(--outdoors);
+}
+
+.pick.spot--coffee {
+  --kind: var(--coffee);
+}
+
+.pick.spot--drinks {
+  --kind: var(--drinks);
+}
+
+.pick.spot--culture {
+  --kind: var(--culture);
 }
 
 .pick::before {

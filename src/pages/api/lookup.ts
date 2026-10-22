@@ -13,8 +13,25 @@ const USER_AGENT = "Spots/1.0 (https://comp4020-final-arvinyuchen.fly.dev; COMP4
 const cache = new Map<string, { at: number; results: unknown[] }>();
 let last = 0;
 
-const FOOD = new Set(["restaurant", "cafe", "fast_food", "bar", "pub", "food_court", "ice_cream", "bakery", "biergarten"]);
+// A first guess at the kind from what OpenStreetMap calls the place; the
+// person sharing it can change it before they do.
+const FOOD = new Set(["restaurant", "fast_food", "food_court"]);
+const COFFEE = new Set(["cafe", "ice_cream", "bakery", "pastry", "confectionery", "tea"]);
+const DRINKS = new Set(["bar", "pub", "biergarten", "nightclub", "brewery", "wine_bar"]);
 const OUTDOORS = new Set(["park", "nature_reserve", "garden", "viewpoint", "peak", "beach", "playground", "picnic_site"]);
+const CULTURE = new Set(["museum", "gallery", "arts_centre", "theatre", "artwork", "library", "memorial", "monument", "planetarium"]);
+const kindOf = (h: { type: string; category: string }) =>
+  FOOD.has(h.type)
+    ? "food"
+    : COFFEE.has(h.type)
+      ? "coffee"
+      : DRINKS.has(h.type)
+        ? "drinks"
+        : OUTDOORS.has(h.type) || (h.category === "leisure" && h.type !== "sports_centre" && h.type !== "bowling_alley")
+          ? "outdoors"
+          : CULTURE.has(h.type)
+            ? "culture"
+            : "fun";
 
 interface Hit {
   osm_type: string;
@@ -59,7 +76,7 @@ export const GET: APIRoute = async ({ url }) => {
         area: h.address?.suburb ?? h.address?.neighbourhood ?? h.address?.city_district ?? "",
         lat: Number(h.lat),
         lon: Number(h.lon),
-        kind: FOOD.has(h.type) ? "food" : OUTDOORS.has(h.type) || h.category === "leisure" ? "outdoors" : "fun",
+        kind: kindOf(h),
         detail: h.display_name.split(",").slice(1, 3).join(",").trim(),
       }));
     cache.set(key, { at: Date.now(), results });

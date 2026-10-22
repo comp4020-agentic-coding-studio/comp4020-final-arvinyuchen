@@ -417,6 +417,9 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         />
         <button class="btn btn--primary">Find</button>
       </form>
+      <p class="filter-empty" hidden>
+        Nothing under <span data-empty-kind></span> yet. <a href="#add" data-tab="add">Share one</a>
+      </p>
     </div>
     <div class="explore-grid">
       <div id="explore" data-q={q || undefined}>
@@ -838,7 +841,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
       show(next, true);
     }
     document.addEventListener("click", (event) => {
-      const link = event.target.closest(".tabs a[data-tab]");
+      const link = event.target.closest("a[data-tab]");
       if (!link || event.metaKey || event.ctrlKey || event.shiftKey) return;
       event.preventDefault();
       go(link.dataset.tab, link.hash);

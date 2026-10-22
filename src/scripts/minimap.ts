@@ -1,5 +1,6 @@
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import type { Kind } from "../lib/kinds";
 import { look, quiet, STYLE, WIDTH } from "./map-look";
 import { chipFont, chips, dress, fold, mark, measure, names, type Name } from "./map-marks";
 
@@ -15,7 +16,7 @@ import { chipFont, chips, dress, fold, mark, measure, names, type Name } from ".
 interface Pin {
   n: number;
   name: string;
-  kind: "food" | "fun" | "outdoors";
+  kind: Kind;
   lat: number;
   lon: number;
 }

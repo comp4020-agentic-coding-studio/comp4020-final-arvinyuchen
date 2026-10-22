@@ -14,7 +14,9 @@
 // Photos are from Wikimedia Commons under the licence named, hotlinked as
 // 800px thumbnails, and credited on the card with a link to the file page,
 // which is what CC BY and CC BY-SA ask for.
-export type Kind = "food" | "fun" | "outdoors";
+import type { Kind } from "./kinds";
+
+export { KIND_LABEL, type Kind } from "./kinds";
 
 export interface Photo {
   src: string;
@@ -35,19 +37,13 @@ export interface CatalogueSpot {
   photo: Photo;
 }
 
-export const KIND_LABEL: Record<Kind, string> = {
-  food: "Food",
-  fun: "Fun",
-  outdoors: "Outdoors",
-};
-
 export const CATALOGUE: CatalogueSpot[] = [
   {
     key: "lonsdale-st",
     lat: -35.2759125,
     lon: 149.1324111,
     name: "Lonsdale Street",
-    kind: "food",
+    kind: "drinks",
     area: "Braddon",
     blurb: "A strip of cafés, bars and late food, the default for a night out near ANU.",
     source: "https://en.wikipedia.org/wiki/Braddon,_Australian_Capital_Territory",
@@ -80,7 +76,7 @@ export const CATALOGUE: CatalogueSpot[] = [
     lat: -35.2985062,
     lon: 149.1312548,
     name: "Questacon",
-    kind: "fun",
+    kind: "culture",
     area: "Parkes",
     blurb: "The science centre: hands-on exhibits that are more fun with friends than you'd admit.",
     source: "https://en.wikipedia.org/wiki/Questacon",
@@ -91,7 +87,7 @@ export const CATALOGUE: CatalogueSpot[] = [
     lat: -35.3003,
     lon: 149.1364,
     name: "National Gallery of Australia",
-    kind: "fun",
+    kind: "culture",
     area: "Parkes",
     blurb: "The national art collection, plus the sculpture garden outside.",
     source: "https://en.wikipedia.org/wiki/National_Gallery_of_Australia",
@@ -102,7 +98,7 @@ export const CATALOGUE: CatalogueSpot[] = [
     lat: -35.293056,
     lon: 149.120833,
     name: "National Museum of Australia",
-    kind: "fun",
+    kind: "culture",
     area: "Acton",
     blurb: "On Acton Peninsula right next to ANU, an easy afternoon.",
     source: "https://en.wikipedia.org/wiki/National_Museum_of_Australia",
@@ -113,7 +109,7 @@ export const CATALOGUE: CatalogueSpot[] = [
     lat: -35.2805,
     lon: 149.1491,
     name: "Australian War Memorial",
-    kind: "fun",
+    kind: "culture",
     area: "Campbell",
     blurb: "The memorial and its galleries, at the end of Anzac Parade.",
     source: "https://en.wikipedia.org/wiki/Australian_War_Memorial",
@@ -124,7 +120,7 @@ export const CATALOGUE: CatalogueSpot[] = [
     lat: -35.3115975,
     lon: 149.1436952,
     name: "Canberra Glassworks",
-    kind: "fun",
+    kind: "culture",
     area: "Kingston",
     blurb: "Glass art studios and a gallery in the old Kingston Powerhouse.",
     source: "https://en.wikipedia.org/wiki/Canberra_Glassworks",

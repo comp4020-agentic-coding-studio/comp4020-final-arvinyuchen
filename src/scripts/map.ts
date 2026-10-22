@@ -1,5 +1,6 @@
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { KIND_LABEL, type Kind } from "../lib/kinds";
 import { buildings, fine, letters, look, quiet, STYLE } from "./map-look";
 import { around, type Box, chipFont, chips, dress, fold, mark, measure, names, type Name } from "./map-marks";
 
@@ -19,7 +20,7 @@ import { around, type Box, chipFont, chips, dress, fold, mark, measure, names, t
 interface Pin {
   id: number;
   name: string;
-  kind: "food" | "fun" | "outdoors";
+  kind: Kind;
   area: string;
   lat: number;
   lon: number;
@@ -29,7 +30,6 @@ interface Pin {
 maplibregl.setWorkerUrl("/vendor/maplibre/maplibre-gl-worker.mjs");
 
 const CANBERRA: [number, number] = [149.128, -35.285];
-const KIND_LABEL = { food: "Food", fun: "Fun", outdoors: "Outdoors" } as const;
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const container = document.getElementById("map");
 
@@ -337,10 +337,19 @@ if (container) {
 
   // Kind filters: the chips show and hide cards and their pins together.
   let filter = "all";
+  const empty = document.querySelector<HTMLElement>(".filter-empty");
   function applyFilter() {
+    let shown = 0;
     document.querySelectorAll<HTMLElement>(".spots--explore [data-kind]").forEach((card) => {
       card.hidden = filter !== "all" && card.dataset.kind !== filter;
+      if (!card.hidden) shown++;
     });
+    // (a kind nobody has shared yet says so, and where to share one)
+    if (empty) {
+      empty.hidden = filter === "all" || shown > 0;
+      const said = empty.querySelector("[data-empty-kind]");
+      if (said) said.textContent = KIND_LABEL[filter as Kind] ?? "";
+    }
     for (const { el, pin } of markers.values()) {
       el.style.display = filter === "all" || pin.kind === filter ? "" : "none";
     }
@@ -365,6 +374,8 @@ if (container) {
   sync();
   document.addEventListener("spots:refreshed", () => {
     sync();
+    // (fresh cards keep to the kind that's chosen)
+    applyFilter();
     if (active !== null) document.querySelectorAll(`[data-place="${active}"]`).forEach((el) => el.classList.add("spot--active"));
   });
 

@@ -65,6 +65,8 @@ follow from it; every change has to hold to them.
   the glide, and never replay the cards' entrance on a refresh.
 - **Nothing is lost.** All state lives in the one SQLite file on `/data`.
   Schema changes are additive only; never drop or rewrite data a group made.
+  A place's kind is stored by its key (`src/lib/kinds.ts`), so a key is never
+  renamed: relabel it instead, as Fun became Activities.
   The one exception is the site admin (`src/lib/admin.ts`): a group is
   archived first (closed, restorable), and only an archived group can be
   deleted for good, by an admin, after a confirm. Shared places are hidden,
