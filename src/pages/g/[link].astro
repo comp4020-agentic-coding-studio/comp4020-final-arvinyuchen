@@ -6,7 +6,7 @@ import NoPasskey from "../../components/NoPasskey.astro";
 import SpotPhoto from "../../components/SpotPhoto.astro";
 import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
-import { groupByLink, listMembers, listPicks, listPlaces, NOTE_MAX } from "../../lib/db";
+import { canRemovePick, groupByLink, listMembers, listPicks, listPlaces, NOTE_MAX } from "../../lib/db";
 import { clean, me, signedIn } from "../../lib/me";
 import { search } from "../../lib/search";
 
@@ -80,6 +80,13 @@ const DONE: Record<string, string> = {
 // A search answers with cards only: Explore shows the matching places, best
 // first, and the map shows just their pins.
 const q = clean(Astro.url.searchParams.get("q"), 200);
+
+// Our list in Edit mode (?edit, or the Edit button): Remove where this
+// member may take a place off, in place of the keen button. After a plain
+// form's remove, the place that went, to put back.
+const editing = Astro.url.searchParams.has("edit");
+const removedId = Number(Astro.url.searchParams.get("removed"));
+const removed = removedId ? places.find((p) => p.id === removedId && !onList.has(p.id)) : undefined;
 const found = q ? await search(q, places) : null;
 const shown = found ? found.places : places;
 
@@ -359,20 +366,41 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
 
   {/* Our list as a ranking: most keen first, the leader standing out, the
       rest compact rows, each with who's keen. */}
-  <section id="list" class="board__list" aria-labelledby="list-title" data-panel="list">
-    <h2 id="list-title">Our list</h2>
+  <section id="list" class="board__list" aria-labelledby="list-title" data-panel="list" data-editing={editing ? "" : undefined}>
+    <div class="list-head">
+      <h2 id="list-title">Our list</h2>
+      {picks.length > 0 && (
+        <a class="list-edit" href={editing ? `/g/${group.link}#list` : `/g/${group.link}?edit#list`} data-edit-toggle>
+          <span class="list-edit__edit">Edit</span><span class="list-edit__done">Done</span>
+        </a>
+      )}
+    </div>
+    {removed && (
+      <form class="notice notice--ok list-note" method="post" action={`/api/groups/${group.id}/picks`} role="status">
+        <input type="hidden" name="place" value={removed.id} />
+        <span>Took {removed.name} off the list.</span>
+        <button class="list-note__undo">Undo</button>
+      </form>
+    )}
+    {error === "remove" && (
+      <p class="notice list-note" role="alert">That one stays: someone else is keen on it now. Only the owner can take it off.</p>
+    )}
     {picks.length === 0 ? (
       <p class="empty">Nothing on the list yet. Add something from Explore.</p>
     ) : (
       <ol class="picks">
-        {picks.map(({ id, place, keen }, i) => {
+        {picks.map((pick, i) => {
+          const { id, place, keen } = pick;
           const mine = keen.includes(member.name);
+          // (others' keens go with it: the owner is asked first)
+          const othersKeen = keen.filter((name) => name !== member.name).length;
           const lead = i === 0 && keen.length > 0;
           return (
             <li
               id={`pick-${id}`}
               class={`pick spot--${place.kind}${lead ? " pick--top" : ""}`}
               data-place={place.lat !== null ? place.id : undefined}
+              data-place-id={place.id}
             >
               <SpotPhoto photo={place.photo} name={place.name} kind={place.kind} small />
               <div class="pick__main">
@@ -406,6 +434,20 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
                   <span>{mine ? "Keen!" : "I'm keen"}</span>
                 </button>
               </form>
+              {canRemovePick(group, pick, member) ? (
+                <form
+                  method="post"
+                  action={`/api/groups/${group.id}/picks`}
+                  class="pick__remove"
+                  data-remove={place.name}
+                  data-confirm={othersKeen > 0 ? `Take ${place.name} off the list? ${othersKeen === 1 ? "1 keen goes" : `${othersKeen} keens go`} with it.` : undefined}
+                >
+                  <input type="hidden" name="remove" value={id} />
+                  <button class="remove">Remove<span class="sr-only"> {place.name}</span></button>
+                </form>
+              ) : (
+                <p class="pick__remove pick__by">{pick.addedById === member.id ? "Others are keen" : `${pick.addedBy}'s`}</p>
+              )}
             </li>
           );
         })}
@@ -652,6 +694,11 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
   </div>
   </div>
 
+  <div id="toast" class="toast" role="status" hidden>
+    <span class="toast__text"></span>
+    <button type="button" class="toast__undo" hidden>Undo</button>
+  </div>
+
   <script is:inline define:vars={{ groupId: group.id }}>
     // Live: anyone joining, picking or voting in this group, or any group
     // sharing a new place, reaches every open page within a moment, with no
@@ -699,6 +746,8 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     }
     let pending = false;
     let again = false;
+    // (a card on its way out finishes leaving before the list is redrawn)
+    let leaving = null;
     async function refresh() {
       // A change that lands mid-refresh gets its own pass afterwards, so the
       // last vote is never the one that's missed.
@@ -708,6 +757,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
       }
       pending = true;
       try {
+        await leaving;
         const res = await fetch(current(), { cache: "no-store" });
         // A reset invite link sends members on to the new one: follow it.
         const landed = new URL(res.url);
@@ -733,18 +783,67 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         }
       }
     }
-    // A keen posts in the background, so the page (and its order) stays put.
-    // If that fails, the form posts the plain way.
+    // A note at the foot of the screen for a moment, with an action in it
+    // (Undo) or none.
+    const toast = document.querySelector("#toast");
+    let toastTimer;
+    function say(text, action) {
+      clearTimeout(toastTimer);
+      toast.querySelector(".toast__text").textContent = text;
+      const button = toast.querySelector(".toast__undo");
+      button.hidden = !action;
+      button.onclick = action ? () => { toast.hidden = true; action(); } : null;
+      toast.hidden = false;
+      toastTimer = setTimeout(() => (toast.hidden = true), 6000);
+    }
+    const post = (action, body) => fetch(action, { method: "POST", body, headers: { "x-spots": "in-page" } });
+    // A card taken off the list folds away, then the rest close up.
+    function fold(li) {
+      if (!li || still.matches) return Promise.resolve();
+      li.style.overflow = "hidden";
+      const h = li.getBoundingClientRect().height;
+      return li
+        .animate(
+          [{ opacity: 1, height: `${h}px` }, { opacity: 0, height: "0px", paddingTop: "0px", paddingBottom: "0px" }],
+          { duration: 260, easing: "ease-in", fill: "forwards" },
+        )
+        .finished.catch(() => {});
+    }
+    // A keen, or a Remove, posts in the background, so the page (and its
+    // order) stays put. If that fails, the form posts the plain way.
     document.addEventListener("submit", async (event) => {
-      const form = event.target.closest("[data-keen]");
+      const form = event.target.closest("[data-keen], [data-remove]");
       if (!form) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       // Busy rather than disabled: disabling would drop the keyboard focus.
       if (form.dataset.busy || performance.now() - movedAt < 450) return;
+      // (this handler comes first, so it asks what the owner's confirm would)
+      if (form.dataset.confirm && !window.confirm(form.dataset.confirm)) return;
       form.dataset.busy = "true";
       try {
-        const res = await fetch(form.action, { method: "POST", body: new FormData(form), headers: { "x-spots": "in-page" } });
+        const res = await post(form.getAttribute("action"), new FormData(form));
+        if (form.matches("[data-remove]")) {
+          if (res.status === 409) {
+            say("That one stays: someone else is keen on it now.");
+            await refresh();
+            return;
+          }
+          if (!res.ok) throw new Error(String(res.status));
+          const name = form.dataset.remove;
+          const li = form.closest("li");
+          const place = li?.dataset.placeId;
+          leaving = fold(li);
+          await refresh();
+          leaving = null;
+          say(`Took ${name} off the list.`, place && (async () => {
+            const body = new FormData();
+            body.set("place", place);
+            await post(form.getAttribute("action"), body);
+            await refresh();
+          }));
+          return;
+        }
         if (!res.ok) throw new Error(String(res.status));
         await refresh();
       } catch {
@@ -753,6 +852,22 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         delete form.dataset.busy;
       }
     }, true);
+    // Edit and Done switch the list in place (the link loads ?edit without
+    // a script).
+    document.addEventListener("click", (event) => {
+      const toggle = event.target.closest("[data-edit-toggle]");
+      if (!toggle) return;
+      event.preventDefault();
+      const list = document.querySelector("#list");
+      const on = !list.hasAttribute("data-editing");
+      list.toggleAttribute("data-editing", on);
+      const url = new URL(location.href);
+      url.searchParams.delete("removed");
+      url.searchParams.delete("error");
+      if (on) url.searchParams.set("edit", "");
+      else url.searchParams.delete("edit");
+      history.replaceState(null, "", url.pathname + url.search.replace("edit=", "edit") + url.hash);
+    });
     const source = new EventSource(`/api/events?group=${encodeURIComponent(groupId)}`);
     source.addEventListener("change", refresh);
     source.addEventListener("places", refresh);
@@ -779,7 +894,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     document.addEventListener(
       "submit",
       (event) => {
-        if (!event.target.matches("[data-search], [data-keen]")) source.close();
+        if (!event.target.matches("[data-search], [data-keen], [data-remove]")) source.close();
       },
       true,
     );

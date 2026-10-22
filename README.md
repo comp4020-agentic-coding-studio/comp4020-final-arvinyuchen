@@ -141,7 +141,9 @@ click a card and the map flies to it. Add a place to your group's list, or
 share a new one by looking it up on OpenStreetMap and saying why it's good; it
 appears in every group's Explore. Vote "keen" and the count changes live in
 every open page, and the list re-ranks itself, each card gliding to its new
-place. The group's page is in tabs (Our list, Explore, Share a place, and
+place. Our list's Edit takes a place off again: yours until someone else is
+keen on it, any for the owner, with Undo; put back, it starts from no keens.
+The group's page is in tabs (Our list, Explore, Share a place, and
 Settings for whoever started it), and the invite folds behind one button. Search Explore by describing what you're after: the answer is
 the matching cards, best first, and the map frames their pins. Everyone signs
 in with a passkey, is themselves on any device, and sees all their groups in

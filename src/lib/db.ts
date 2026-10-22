@@ -240,7 +240,11 @@ export interface Pick {
   id: number;
   place: Place;
   addedBy: string;
+  /** the member who put it on the list */
+  addedById: number;
   keen: string[];
+  /** how many besides the one who added it are keen */
+  othersKeen: number;
 }
 
 const token = (bytes: number) => randomBytes(bytes).toString("base64url");
@@ -428,19 +432,22 @@ export function listPlaces(): Place[] {
 export function listPicks(groupId: string): Pick[] {
   const rows = db
     .prepare(
-      `SELECT k.id AS pickId, m.name AS pickedBy, ${PLACE_COLUMNS},
-              (SELECT json_group_array(vm.name) FROM votes v JOIN members vm ON vm.id = v.member_id WHERE v.pick_id = k.id) AS keenJson
+      `SELECT k.id AS pickId, m.name AS pickedBy, k.added_by AS addedById, ${PLACE_COLUMNS},
+              (SELECT json_group_array(vm.name) FROM votes v JOIN members vm ON vm.id = v.member_id WHERE v.pick_id = k.id) AS keenJson,
+              (SELECT count(*) FROM votes v WHERE v.pick_id = k.id AND v.member_id != k.added_by) AS othersKeen
          FROM picks k JOIN places p ON p.id = k.place_id JOIN members m ON m.id = k.added_by
         WHERE k.group_id = ?
         ORDER BY k.created_at, k.id`,
     )
-    .all(groupId) as (PlaceRow & { pickId: number; pickedBy: string; keenJson: string })[];
+    .all(groupId) as (PlaceRow & { pickId: number; pickedBy: string; addedById: number; keenJson: string; othersKeen: number })[];
   return rows
-    .map(({ pickId, pickedBy, keenJson, ...place }) => ({
+    .map(({ pickId, pickedBy, addedById, keenJson, othersKeen, ...place }) => ({
       id: pickId,
       place: toPlace(place),
       addedBy: pickedBy,
+      addedById,
       keen: (JSON.parse(keenJson) as string[]).filter(Boolean),
+      othersKeen,
     }))
     .sort((a, b) => b.keen.length - a.keen.length);
 }
@@ -455,6 +462,32 @@ export function addPick(groupId: string, placeId: number, member: Member): boole
     "INSERT OR IGNORE INTO picks (group_id, place_id, name, kind, area, added_by) VALUES (?, ?, ?, ?, ?, ?)",
   ).run(groupId, place.id, place.name, place.kind, place.area, member.id);
   return true;
+}
+
+/** Whether this member may take a place off the list: the owner always,
+ *  the one who added it until someone else is keen on it. */
+export const canRemovePick = (group: Group, pick: { addedById: number; othersKeen: number }, member: Member): boolean =>
+  member.id === group.ownerId || (member.id === pick.addedById && pick.othersKeen === 0);
+
+/**
+ * Takes a place off a group's list, if this member may. It's deleted with
+ * its keens, so putting it back starts from none. The place stays in
+ * Explore. Returns the place's id, or undefined if nothing was removed.
+ */
+export function removePick(group: Group, pickId: number, member: Member): number | undefined {
+  return db.transaction(() => {
+    const pick = db
+      .prepare(
+        `SELECT k.place_id AS placeId, k.added_by AS addedById,
+                (SELECT count(*) FROM votes v WHERE v.pick_id = k.id AND v.member_id != k.added_by) AS othersKeen
+           FROM picks k WHERE k.id = ? AND k.group_id = ?`,
+      )
+      .get(pickId, group.id) as { placeId: number; addedById: number; othersKeen: number } | undefined;
+    if (!pick || !canRemovePick(group, pick, member)) return undefined;
+    db.prepare("DELETE FROM votes WHERE pick_id = ?").run(pickId);
+    db.prepare("DELETE FROM picks WHERE id = ?").run(pickId);
+    return pick.placeId;
+  })();
 }
 
 export const placeIdForSeed = (key: string): number | undefined =>

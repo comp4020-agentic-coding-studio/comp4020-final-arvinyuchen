@@ -3057,7 +3057,8 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     min-height: 14rem;
   }
 
-  .group-page.is-tabbed #list > h2 {
+  .group-page.is-tabbed #list > .list-head,
+  .group-page.is-tabbed #list > .list-note {
     flex: none;
   }
 
@@ -3205,6 +3206,168 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-size: 1.05rem;
   font-weight: 600;
   text-align: center;
+}
+
+/* Our list's title, with Edit at its right, as in an iOS list. */
+.list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.list-edit {
+  padding: 0.2rem 0;
+  color: var(--accent-ink);
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.list-edit:hover {
+  text-decoration: underline;
+}
+
+.list-edit__done,
+#list[data-editing] .list-edit__edit {
+  display: none;
+}
+
+#list[data-editing] .list-edit__done {
+  display: inline;
+  font-weight: 600;
+}
+
+.list-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  margin: 0 0 0.75rem;
+}
+
+.list-note__undo {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Edit mode: Remove, in red, takes the keen button's place where this
+   member may take the place off; elsewhere, whose it is. */
+.pick > form,
+.pick > .pick__remove {
+  grid-column: 4;
+  grid-row: 1;
+}
+
+.pick__remove,
+#list[data-editing] .pick > [data-keen] {
+  display: none;
+}
+
+#list[data-editing] .pick__remove {
+  display: block;
+}
+
+.remove {
+  padding: 0.4rem 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, #d70015 10%, white);
+  color: #c4000f;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.remove:hover {
+  background: color-mix(in srgb, #d70015 16%, white);
+}
+
+.remove:focus-visible {
+  outline: 3px solid color-mix(in srgb, #d70015 45%, transparent);
+  outline-offset: 2px;
+}
+
+.pick__by {
+  max-width: 7rem;
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A note for a moment at the foot of the screen (Took X off the list,
+   Undo), above the phone's tab bar. */
+.toast {
+  position: fixed;
+  bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  /* (its own width, not what's left right of the middle) */
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  padding: 0.7rem 0.8rem 0.7rem 1.1rem;
+  border-radius: 14px;
+  background: rgb(29 29 31 / 92%);
+  color: #fff;
+  font-size: 0.92rem;
+  box-shadow: var(--shadow-float);
+  backdrop-filter: blur(20px);
+  transform: translateX(-50%);
+  animation: toast-in 0.25s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+.toast[hidden] {
+  display: none;
+}
+
+.toast__text {
+  min-width: 0;
+}
+
+.toast__undo {
+  flex: none;
+  padding: 0.3rem 0.6rem;
+  border: 0;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 14%);
+  color: #6cb4ff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  body:has(.section-nav.tabs) .toast {
+    bottom: calc(4.6rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
 }
 
 /* (once the page is live, a refresh doesn't replay the cards' entrance: they

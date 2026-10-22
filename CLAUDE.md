@@ -62,11 +62,17 @@ follow from it; every change has to hold to them.
   marks them, never deletes them: what they added keeps their name. Only a
   removed member's keens go. Resetting the invite link retires the old one;
   members who follow it land on the new one, nobody new gets in.
-- **Live means live.** Any join, add or vote must reach every other open page
+- **Live means live.** Any join, add, removal or vote must reach every other open page
   of that group within about a second, without the viewer reloading
   (`src/pages/api/events.ts` + the page's refresh script). A new kind of
   change has to call `changed(groupId)`; a change to the shared places also
   calls `placesChanged()` so every group's Explore catches up.
+- **Taking a place off the list is for whoever put it there.** In Edit
+  mode (`?edit`), the member who added a place can take it off until
+  someone else is keen on it; the owner can take any off, asked first when
+  others are keen (`removePick` in `src/lib/db.ts`). It goes with its
+  keens, so adding it back starts from none; it stays in Explore, and the
+  page offers Undo.
 - **The list is always the ranking, and you can see it move.** A live
   change re-ranks Our list straight away, most keen first, and each card
   glides from its old place to its new one (under reduced motion it just
@@ -80,7 +86,8 @@ follow from it; every change has to hold to them.
   renamed: relabel it instead, as Fun became Activities.
   The exceptions: a place without a photo, or a starter place taken off the
   list in `src/lib/catalogue.ts`, is deleted, with its keens and its place
-  on every list (`src/lib/db.ts`); and the site admin
+  on every list (`src/lib/db.ts`); a place a member takes off their group's
+  list goes from that list with its keens; and the site admin
   (`src/lib/admin.ts`) archives a group first (closed, restorable), and only
   an archived group can be deleted for good, by an admin, after a confirm.
   An admin can hide a shared place. An admin is a passkey account that once entered

@@ -249,6 +249,100 @@ describe("a group", () => {
   }, 10_000);
 });
 
+// Taking a place off Our list: whoever added it can, until someone else is
+// keen; the owner can, always. It goes with its keens, so adding it back
+// starts from none, and it stays in Explore.
+describe("taking a place off the list", () => {
+  /** A group of Ana (the owner), Ben and Cy, with Ben's Arboretum on its list. */
+  async function crew(name: string) {
+    const { jar: ana, id, path, api } = await started(name);
+    const ben = new Jar();
+    const cy = new Jar();
+    await join(ben, id, id, "Ben");
+    await join(cy, id, id, "Cy");
+    await request(ben, `${api}/picks`, { form: { key: "arboretum" } });
+    const doc = await page(ben, path);
+    const pick = doc.querySelector<HTMLInputElement>('#list [data-keen] input[name="pick"]')?.value ?? "";
+    return { ana, ben, cy, id, path, api, pick };
+  }
+  const remove = (jar: Jar, api: string, pick: string) => request(jar, `${api}/picks`, { form: { remove: pick } });
+  const onList = async (jar: Jar, path: string) => (await page(jar, path)).querySelector("#list")?.textContent ?? "";
+
+  it("lets whoever added it take it off, and it comes back from no keens", async () => {
+    const { ben, path, api, pick } = await crew("Remove crew");
+    await request(ben, `${api}/keen`, { form: { pick, keen: "on" } });
+    const doc = await page(ben, `${path}?edit`);
+    expect(doc.querySelector("#list")?.hasAttribute("data-editing")).toBe(true);
+    expect(doc.querySelector(`#list form[data-remove] input[name="remove"][value="${pick}"]`)).not.toBeNull();
+
+    const res = await remove(ben, api, pick);
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toMatch(/\?edit&removed=\d+#list$/);
+    expect(await onList(ben, path)).not.toContain("National Arboretum");
+    // Undo, without a script: the notice's form puts it back, from no keens
+    const back = await page(ben, res.headers.get("location")!);
+    expect(back.querySelector(".list-note")?.textContent).toContain("Took National Arboretum off the list.");
+    const place = back.querySelector<HTMLInputElement>('.list-note input[name="place"]')?.value ?? "";
+    await request(ben, `${api}/picks`, { form: { place } });
+    const again = await page(ben, path);
+    expect(again.querySelector("#list")?.textContent).toContain("National Arboretum");
+    expect(again.querySelector("#list .keen__count")?.textContent).toBe("0");
+    // (and it never left Explore)
+    expect(again.querySelector("#explore")?.textContent).toContain("National Arboretum");
+  });
+
+  it("doesn't let anyone else take it off, nor anyone from another group", async () => {
+    const { cy, path, api, pick } = await crew("Not yours crew");
+    const doc = await page(cy, `${path}?edit`);
+    expect(doc.querySelector("#list form[data-remove]")).toBeNull();
+    expect(doc.querySelector("#list .pick__by")?.textContent).toBe("Ben's");
+    const res = await remove(cy, api, pick);
+    expect(res.headers.get("location")).toContain("error=remove");
+
+    const other = await started("Elsewhere crew", "Dee");
+    await remove(other.jar, other.api, pick); // (another group's pick id)
+    expect(await onList(cy, path)).toContain("National Arboretum");
+  });
+
+  it("keeps it for the group once someone else is keen, but the owner can still take it off", async () => {
+    const { ana, ben, cy, path, api, pick } = await crew("Keen lock crew");
+    await request(cy, `${api}/keen`, { form: { pick, keen: "on" } });
+    const inPage = await fetch(new URL(`${api}/picks`, baseUrl), {
+      method: "POST",
+      headers: { origin, cookie: ben.header, "x-spots": "in-page" },
+      body: new URLSearchParams({ remove: pick }),
+      redirect: "manual",
+    });
+    expect(inPage.status).toBe(409);
+    expect((await page(ben, `${path}?edit`)).querySelector("#list .pick__by")?.textContent).toBe("Others are keen");
+
+    // The owner is asked first (one keen goes with it), then it's gone.
+    const owner = await page(ana, `${path}?edit`);
+    expect(owner.querySelector("#list form[data-remove]")?.getAttribute("data-confirm")).toContain("1 keen goes");
+    await remove(ana, api, pick);
+    expect(await onList(cy, path)).not.toContain("National Arboretum");
+  });
+
+  it("tells the group's open pages, and every group's Explore", async () => {
+    const { ben, id, api, pick } = await crew("Live remove crew");
+    const stream = await fetch(new URL(`/api/events?group=${id}`, baseUrl));
+    const reader = stream.body!.getReader();
+    const decoder = new TextDecoder();
+    let got = "";
+    // (once the stream has said hello, so the change can't come before it)
+    got += decoder.decode((await reader.read()).value, { stream: true });
+    await remove(ben, api, pick);
+    while (!(got.includes("event: change") && got.includes("event: places"))) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      got += decoder.decode(value, { stream: true });
+    }
+    await reader.cancel();
+    expect(got).toContain("event: change");
+    expect(got).toContain("event: places");
+  }, 10_000);
+});
+
 // Searching Explore by describing what you're after. The answer is cards
 // and pins only. These hold whether the app is matching on meaning (with a
 // Voyage key) or falling back to words (without one, as in CI).
