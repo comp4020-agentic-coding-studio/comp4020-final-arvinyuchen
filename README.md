@@ -38,8 +38,8 @@ other's taste.
 - **Joining costs almost nothing.** A link, your name and your face or
   fingerprint: no app to install, no password, no email. The link goes wherever the
   group already talks: one Share button opens the phone's own share sheet
-  (Messages, WhatsApp, Instagram, WeChat), and there are direct links and a QR
-  code for everywhere else. It never goes to a public feed, since anyone who
+  (Messages, WhatsApp, Instagram, WeChat), and there are direct links for
+  everywhere else. It never goes to a public feed, since anyone who
   has it can join. Opening the link shows one invite card: the group, who
   started it, who's in, a line from whoever started it if they wrote one,
   and one button to join. Under it, the first few places on a small street

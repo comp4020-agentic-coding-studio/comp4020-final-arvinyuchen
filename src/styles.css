@@ -461,7 +461,7 @@ input[type="radio"] {
 
 /* The invite panel (src/pages/g/[link].astro): a heading, the link in one
    pill with Copy inside it, Share… where there's a share sheet, the
-   private channels as a row of even tiles, and the QR code for the room. */
+   private channels as a row of even tiles. */
 .share {
   display: grid;
   gap: 0.9rem;
@@ -599,46 +599,6 @@ input[type="radio"] {
 
 .share__app--email {
   --app: var(--accent-strong);
-}
-
-.share__qr {
-  margin: 0 -0.2rem;
-  border-top: 1px solid var(--line);
-}
-
-.share__qr summary {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 0.2rem 0;
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-weight: 600;
-  list-style: none;
-  cursor: pointer;
-}
-
-.share__qr summary::-webkit-details-marker {
-  display: none;
-}
-
-.share__qr summary:hover {
-  color: var(--ink);
-}
-
-.share__qr-code {
-  width: 11rem;
-  margin: 0.75rem auto 0.25rem;
-  padding: 0.5rem;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: #fff;
-}
-
-.share__qr-code svg {
-  display: block;
-  width: 100%;
-  height: auto;
 }
 
 .join {

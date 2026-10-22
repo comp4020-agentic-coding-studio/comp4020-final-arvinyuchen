@@ -118,9 +118,6 @@ describe("a group", () => {
     expect(hrefs.some((h) => h.startsWith("https://t.me/share/url"))).toBe(true);
     for (const href of hrefs) expect(decodeURIComponent(href)).toContain(link);
     expect(doc.body.innerHTML).not.toMatch(/facebook\.com\/sharer|twitter\.com\/intent|x\.com\/intent/);
-
-    // A QR code for friends in the same room, drawn on the server.
-    expect(doc.querySelector(".share__qr svg")).toBeTruthy();
   });
 
   it("folds the invite away once someone else is in, and puts every part of the group behind its tab", async () => {
@@ -130,7 +127,7 @@ describe("a group", () => {
     await join(new Jar(), id, id, "Ben");
     expect((await invite(path))?.hasAttribute("open")).toBe(false);
     expect((await invite(`${path}?new=1`))?.hasAttribute("open")).toBe(true);
-    // Folded, the invite is still all there, links and QR code included.
+    // Folded, the invite is still all there, its links included.
     expect((await invite(path))?.querySelector(".share__by a[href^='https://wa.me/']")).toBeTruthy();
 
     // Each tab is a link to its part, and without a script every part is on the page.

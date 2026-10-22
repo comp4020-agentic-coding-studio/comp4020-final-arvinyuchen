@@ -1,5 +1,4 @@
 ---
-import QRCode from "qrcode";
 import CityPhoto from "../../components/CityPhoto.astro";
 import MiniMap from "../../components/MiniMap.astro";
 import NoPasskey from "../../components/NoPasskey.astro";
@@ -31,7 +30,7 @@ const isNew = Astro.url.searchParams.has("new");
 // The invite goes person to person, never to a public feed: whoever holds the
 // link can join, so there's no Facebook post or X button (see CLAUDE.md). On a
 // phone the Share button opens the system sheet (Messages, WhatsApp, Messenger,
-// Instagram, WeChat...); these links and the QR code work everywhere, script or not.
+// Instagram, WeChat...); these links work everywhere, script or not.
 const invite = `Join ${group.name} on Spots: we're picking places to go together.`;
 const enc = encodeURIComponent;
 // Each with a plain glyph of our own (a bubble, a plane, an envelope), not
@@ -62,7 +61,6 @@ const sendBy = [
     glyph: "M3.5 6.5h17v11h-17Zm0 0 8.5 6.5 8.5-6.5",
   },
 ];
-const qr = await QRCode.toString(shareUrl, { type: "svg", margin: 1, color: { dark: "#241c15", light: "#ffffff" } });
 const error = Astro.url.searchParams.get("error");
 const done = Astro.url.searchParams.get("done");
 const DONE: Record<string, string> = {
@@ -276,8 +274,8 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         Invite friends
       </summary>
       {/* The invite as one panel: what it's for, the link with Copy in it,
-          Share… where there's a share sheet, the private channels as tiles,
-          and a QR code for the room. Never a public feed (CLAUDE.md). */}
+          Share… where there's a share sheet, and the private channels as
+          tiles. Never a public feed (CLAUDE.md). */}
       <div class={`share card${isNew ? " share--new" : ""}`}>
         <h2 class="share__title">{isNew ? "Your group is ready" : `Invite friends to ${group.name}`}</h2>
         <p class="fine share__say">
@@ -304,15 +302,6 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
               </li>
             ))}
           </ul>
-          <details class="share__qr">
-            <summary>
-              <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-                <path d="M3 3h5v5H3zM12 3h5v5h-5zM3 12h5v5H3zM12 12h2v2h-2zM15 15h2v2h-2zM12 16h1M16 12h1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
-              </svg>
-              QR code, for friends in the room
-            </summary>
-            <div class="share__qr-code" role="img" aria-label="QR code for the invite link" set:html={qr} />
-          </details>
         </div>
       </div>
     </details>
