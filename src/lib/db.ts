@@ -3,6 +3,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import Database from "better-sqlite3";
 import { CATALOGUE, KIND_LABEL, type Kind, type Photo } from "./catalogue";
+import { today } from "./when";
 
 // One SQLite file on the Fly volume is the app's whole persistent state: it
 // survives restarts and redeploys because /data does (fly.toml). Locally it
@@ -157,6 +158,51 @@ db.exec(`
      WHERE NOT EXISTS (SELECT 1 FROM group_links l WHERE l.group_id = g.id AND l.retired_at IS NULL);
 `);
 
+// Plans: the owner picks a place on the list and a day; everyone marks when
+// they're busy that day; the owner sets the time (src/lib/plans.ts). A day
+// is a local date and times are minutes since its local midnight, in
+// 5-minute steps (src/lib/when.ts), never instants. An answer with no busy
+// times is "free all day"; no answer is "hasn't said". A plan whose day
+// changed is called off and points at the one that replaced it, so nobody's
+// answers are lost. Times kept to the millisecond, so a change just after
+// the time was set still counts as after it.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_id TEXT NOT NULL REFERENCES groups(id),
+    place_id INTEGER NOT NULL REFERENCES places(id),
+    created_by INTEGER NOT NULL REFERENCES members(id),
+    day TEXT NOT NULL,
+    range_start INTEGER NOT NULL,
+    range_end INTEGER NOT NULL,
+    set_start INTEGER,
+    set_end INTEGER,
+    set_at TEXT,
+    reviewed_at TEXT,
+    called_off_at TEXT,
+    replaced_by INTEGER REFERENCES plans(id),
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    CHECK (range_start % 5 = 0 AND range_end % 5 = 0 AND range_start >= 360 AND range_start < range_end AND range_end <= 1440),
+    CHECK (set_start IS NULL OR (set_start % 5 = 0 AND set_end % 5 = 0 AND set_start >= range_start AND set_start < set_end AND set_end <= range_end))
+  );
+  CREATE INDEX IF NOT EXISTS plans_group ON plans (group_id, day);
+  CREATE TABLE IF NOT EXISTS plan_answers (
+    plan_id INTEGER NOT NULL REFERENCES plans(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    answered_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    PRIMARY KEY (plan_id, member_id)
+  );
+  CREATE TABLE IF NOT EXISTS plan_busy (
+    plan_id INTEGER NOT NULL REFERENCES plans(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    start_min INTEGER NOT NULL,
+    end_min INTEGER NOT NULL,
+    CHECK (start_min % 5 = 0 AND end_min % 5 = 0 AND 0 <= start_min AND start_min < end_min AND end_min <= 1440)
+  );
+  CREATE INDEX IF NOT EXISTS plan_busy_answer ON plan_busy (plan_id, member_id);
+`);
+
 // The checked starter places, upserted by key so a corrected coordinate,
 // blurb or photo reaches the live database on the next deploy.
 const seed = db.prepare(`
@@ -203,6 +249,12 @@ db.transaction(() => {
   db.prepare(`DELETE FROM votes WHERE pick_id IN (SELECT id FROM picks WHERE place_id IN (${bare}))`).run();
   db.prepare(`DELETE FROM picks WHERE place_id IN (${bare})`).run();
   db.prepare(`DELETE FROM place_vectors WHERE place_id IN (${bare})`).run();
+  // (and any plan to go there, with its answers)
+  const gone = `SELECT id FROM plans WHERE place_id IN (${bare})`;
+  db.prepare(`UPDATE plans SET replaced_by = NULL WHERE replaced_by IN (${gone})`).run();
+  db.prepare(`DELETE FROM plan_busy WHERE plan_id IN (${gone})`).run();
+  db.prepare(`DELETE FROM plan_answers WHERE plan_id IN (${gone})`).run();
+  db.prepare(`DELETE FROM plans WHERE place_id IN (${bare})`).run();
   db.prepare(`DELETE FROM places WHERE id IN (${bare})`).run();
 })();
 
@@ -349,7 +401,8 @@ export function setNote(groupId: string, note: string): void {
   db.prepare("UPDATE groups SET note = ? WHERE id = ?").run(note || null, groupId);
 }
 
-/** Takes someone out of the group: they can't act any more, and their keens go. */
+/** Takes someone out of the group: they can't act any more, and their keens go.
+ *  (Their answers to plans stay, but count for nothing: plans count members.) */
 export function removeMember(group: Group, memberId: number): boolean {
   if (memberId === group.ownerId) return false;
   return db.transaction(() => {
@@ -381,6 +434,11 @@ export function mergeMembers(group: Group, fromId: number, intoId: number): bool
     );
     db.prepare("DELETE FROM votes WHERE member_id = ?").run(fromId);
     db.prepare("UPDATE picks SET added_by = ? WHERE added_by = ?").run(intoId, fromId);
+    // Their answers to plans move over where the one they really are hasn't answered.
+    const unanswered = "plan_id NOT IN (SELECT plan_id FROM plan_answers WHERE member_id = ?)";
+    db.prepare(`UPDATE plan_busy SET member_id = ? WHERE member_id = ? AND ${unanswered}`).run(intoId, fromId, intoId);
+    db.prepare(`UPDATE plan_answers SET member_id = ? WHERE member_id = ? AND ${unanswered}`).run(intoId, fromId, intoId);
+    db.prepare("UPDATE plans SET created_by = ? WHERE created_by = ?").run(intoId, fromId);
     if (into.account_id === null && from.account_id !== null) {
       db.prepare("UPDATE members SET account_id = ? WHERE id = ?").run(from.account_id, intoId);
     }
@@ -485,6 +543,11 @@ export function removePick(group: Group, pickId: number, member: Member): number
     if (!pick || !canRemovePick(group, pick, member)) return undefined;
     db.prepare("DELETE FROM votes WHERE pick_id = ?").run(pickId);
     db.prepare("DELETE FROM picks WHERE id = ?").run(pickId);
+    // A plan to go there is called off, and kept.
+    db.prepare(
+      `UPDATE plans SET called_off_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+        WHERE group_id = ? AND place_id = ? AND called_off_at IS NULL AND day >= ?`,
+    ).run(group.id, pick.placeId, today());
     return pick.placeId;
   })();
 }
