@@ -24,6 +24,7 @@ const steps = Array.from({ length: (end - start) / 5 + 1 }, (_, i) => start + i 
 // (busy times kept from before the hours changed still show, clipped)
 const rows = (view.mine ?? []).map(([a, b]) => [Math.max(a, start), Math.min(b, end)]).filter(([a, b]) => a < b);
 const timeline = JSON.stringify({
+  day: plan.day,
   start,
   end,
   busy: rows,
@@ -34,7 +35,7 @@ const timeline = JSON.stringify({
 }).replace(/</g, "\\u003c");
 ---
 
-<dialog id="busy" class="sheet sheet--busy" open={open} aria-labelledby="busy-title">
+<dialog id="busy" class="sheet sheet--busy" open={open} tabindex="-1" aria-labelledby="busy-title">
   <form method="post" action={`/api/groups/${group.id}/busy`} class="sheet__form" data-busy data-busy-sheet>
     <input type="hidden" name="plan" value={plan.id} />
     <div class="sheet__bar">

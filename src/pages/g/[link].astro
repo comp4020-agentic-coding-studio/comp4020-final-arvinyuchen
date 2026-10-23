@@ -828,19 +828,22 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
   </div>
 
   {/* The plan's two sheets: the owner's (start it, or change its day), and
-      everyone's busy times. */}
-  {isOwner && (plan || picks.length > 0) && (
-    <PlanStart group={group} picks={picks} plan={plan} open={planParam === "new" || planParam === "change"} error={error === "plan-start"} />
-  )}
-  {view && <BusySheet group={group} view={view} open={Astro.url.searchParams.has("busy")} error={error === "busy"} isOwner={isOwner} />}
+      everyone's busy times. Always there, even empty, so a live refresh can
+      bring them in; it leaves them be while one is open. */}
+  <div id="plan-sheets">
+    {isOwner && (plan || picks.length > 0) && (
+      <PlanStart group={group} picks={picks} plan={plan} open={planParam === "new" || planParam === "change"} error={error === "plan-start"} />
+    )}
+    {view && <BusySheet group={group} view={view} open={Astro.url.searchParams.has("busy")} error={error === "busy"} isOwner={isOwner} />}
+  </div>
 
-  <script is:inline define:vars={{ groupId: group.id }}>
+  <script is:inline define:vars={{ groupId: group.id, isOwner }}>
     // Live: anyone joining, picking or voting in this group, or any group
     // sharing a new place, reaches every open page within a moment, with no
     // reload by the viewer. The page asks the server for itself again and
     // swaps in the changed parts, keeping the scroll position, the map and
     // anything typed in the forms.
-    const regions = [".group-head h1", ".next-up-slot", ".group-head .who__count", ".group-head .who__grid", ".group-head .who__fold", ".share__row", ".tabs__n", ".tabs__flag", "#plans", "#list", "#past-plans", "#explore", "#settings .people"];
+    const regions = [".group-head h1", ".next-up-slot", ".group-head .who__count", ".group-head .who__grid", ".group-head .who__fold", ".share__row", ".tabs__n", ".tabs__flag", "#plans", "#list", "#past-plans", "#explore", "#settings .people", "#plan-sheets"];
     // The page as it is now, search included, without one-off notices.
     const current = () => {
       const q = new URLSearchParams(location.search).get("q");
@@ -879,6 +882,33 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         if (dy) li.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: 450, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" });
       }
     }
+    // A part redrawn keeps what the viewer had open in it (a fold, the
+    // plan's menu) and the start the owner chose. The plan's card changing
+    // height moves the list under it, so a keen tap waits, as after a move.
+    let sheetsBehind = false;
+    function swap(now, next) {
+      const open = [...now.querySelectorAll("details[data-keep-open][open]")].map((d) => d.dataset.keepOpen);
+      const pick = now.querySelector(".plan__pick[data-chosen]");
+      const at = pick?.querySelector("input[name=at]:checked")?.value;
+      const other = pick?.querySelector("select[name=other]")?.value;
+      const tall = now.offsetHeight;
+      now.innerHTML = next.innerHTML;
+      for (const key of open) now.querySelector(`details[data-keep-open="${CSS.escape(key)}"]`)?.setAttribute("open", "");
+      const fresh = now.querySelector(".plan__pick");
+      if (pick && fresh) {
+        const radio = at && [...fresh.querySelectorAll("input[name=at]")].find((r) => r.value === at);
+        const select = fresh.querySelector("select[name=other]");
+        if (other && select && [...select.options].some((o) => o.value === other)) {
+          select.value = other;
+          for (const r of fresh.querySelectorAll("input[name=at]")) r.checked = false;
+          fresh.dataset.chosen = "";
+        } else if (radio) {
+          radio.checked = true;
+          fresh.dataset.chosen = "";
+        }
+      }
+      if (now.id === "plans" && now.offsetHeight !== tall) movedAt = performance.now();
+    }
     let pending = false;
     let again = false;
     // (a card on its way out finishes leaving before the list is redrawn)
@@ -902,11 +932,15 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         for (const selector of regions) {
           const now = document.querySelector(selector);
           const next = fresh.querySelector(selector);
-          if (!now || !next) continue;
-          if (selector === "#list") {
-            if (now.innerHTML !== next.innerHTML) rerank(now, next);
-          } else if (now.innerHTML !== next.innerHTML) now.innerHTML = next.innerHTML;
+          if (!now || !next || now.innerHTML === next.innerHTML) continue;
+          // (a sheet open over the page isn't redrawn under the finger: it
+          // catches up when it closes)
+          if (selector === "#plan-sheets" && now.querySelector("dialog[open]")) sheetsBehind = true;
+          else if (selector === "#list") rerank(now, next);
+          else swap(now, next);
         }
+        planLabel();
+        noticePlan();
         document.dispatchEvent(new Event("spots:refreshed"));
       } catch {
         location.reload();
@@ -919,13 +953,14 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       }
     }
     // A note at the foot of the screen for a moment, with an action in it
-    // (Undo) or none.
+    // (Undo, Fill in) or none.
     const toast = document.querySelector("#toast");
     let toastTimer;
-    function say(text, action) {
+    function say(text, action, label = "Undo") {
       clearTimeout(toastTimer);
       toast.querySelector(".toast__text").textContent = text;
       const button = toast.querySelector(".toast__undo");
+      button.textContent = label;
       button.hidden = !action;
       button.onclick = action ? () => { toast.hidden = true; action(); } : null;
       toast.hidden = false;
@@ -944,20 +979,43 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         )
         .finished.catch(() => {});
     }
-    // A keen, or a Remove, posts in the background, so the page (and its
-    // order) stays put. If that fails, the form posts the plain way.
+    // A keen, a Remove, or anything for the plan posts in the background, so
+    // the page (and its order) stays put. If that fails, the form posts the
+    // plain way.
+    const inPage = "[data-keen], [data-remove], [data-plan], [data-busy], [data-plan-start]";
+    // (moving the plan to another day starts its answers afresh: asked
+    // first, but only when the day really changes)
+    const asks = (form) => {
+      if (!form.dataset.confirm) return false;
+      if (!form.matches("[data-plan-start]") || !form.dataset.day) return true;
+      const day = form.querySelector("input[name=date]")?.value || form.querySelector("input[name=day]:checked")?.value;
+      return day !== form.dataset.day;
+    };
     document.addEventListener("submit", async (event) => {
-      const form = event.target.closest("[data-keen], [data-remove]");
+      const form = event.target.closest(inPage);
       if (!form) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      // Busy rather than disabled: disabling would drop the keyboard focus.
-      if (form.dataset.busy || performance.now() - movedAt < 450) return;
+      // Sending rather than disabled: disabling would drop the keyboard focus.
+      if (form.dataset.sending || (form.matches("[data-keen], [data-remove]") && performance.now() - movedAt < 450)) return;
       // (this handler comes first, so it asks what the owner's confirm would)
-      if (form.dataset.confirm && !window.confirm(form.dataset.confirm)) return;
-      form.dataset.busy = "true";
+      if (asks(form) && !window.confirm(form.dataset.confirm)) return;
+      // (the button pressed is part of what's sent: "I'm free all day")
+      const body = new FormData(form);
+      const by = event.submitter;
+      if (by?.name) body.set(by.name, by.value);
+      form.dataset.sending = "true";
       try {
-        const res = await post(form.getAttribute("action"), new FormData(form));
+        const res = await post(form.getAttribute("action"), body);
+        if (form.matches("[data-plan], [data-busy], [data-plan-start]")) {
+          if (res.status !== 204 && res.status !== 409) throw new Error(String(res.status));
+          form.closest("dialog")?.close();
+          form.closest("details")?.removeAttribute("open");
+          await refresh();
+          if (res.status === 409) say(form.matches("[data-plan-start]") ? "That didn't work: pick a place on the list and a day from today on." : "The plan changed meanwhile. Here it is as it is now.");
+          else if (form.matches("[data-busy]")) say("Your times are in. The others see how many are free, never when you're busy.");
+          return;
+        }
         if (form.matches("[data-remove]")) {
           if (res.status === 409) {
             say("That one stays: someone else is keen on it now.");
@@ -982,9 +1040,10 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         if (!res.ok) throw new Error(String(res.status));
         await refresh();
       } catch {
+        if (by?.name) form.insertAdjacentHTML("beforeend", `<input type="hidden" name="${by.name}" value="${by.value}">`);
         form.submit();
       } finally {
-        delete form.dataset.busy;
+        delete form.dataset.sending;
       }
     }, true);
     // Edit and Done switch the list in place (the link loads ?edit without
@@ -1029,7 +1088,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     document.addEventListener(
       "submit",
       (event) => {
-        if (!event.target.matches("[data-search], [data-keen], [data-remove]")) source.close();
+        if (!event.target.matches("[data-search], [data-keen], [data-remove], [data-plan], [data-busy], [data-plan-start]")) source.close();
       },
       true,
     );
@@ -1143,6 +1202,114 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       true,
     );
 
+    // The plan's sheets open over the page in place (each link loads the
+    // page with the sheet open, without a script), and Cancel, Escape or a
+    // save closes them. Closed, the address loses its ?busy or ?plan, and
+    // what changed while one was open catches up.
+    function openSheet(dialog) {
+      if (!dialog) return false;
+      if (dialog.open && !dialog.matches(":modal")) dialog.close();
+      if (!dialog.open) dialog.showModal();
+      // (the sheet itself takes the focus, so a screen reader starts at its title)
+      dialog.focus();
+      dialog.dispatchEvent(new Event("spots:sheet-open"));
+      return true;
+    }
+    for (const dialog of document.querySelectorAll("#plan-sheets dialog[open]")) openSheet(dialog);
+    document.addEventListener("click", (event) => {
+      const link = event.target.closest("[data-open-busy], [data-open-start]");
+      if (link && !event.metaKey && !event.ctrlKey && !event.shiftKey) {
+        if (openSheet(document.querySelector(link.matches("[data-open-busy]") ? "#busy" : "#plan-start"))) {
+          event.preventDefault();
+          link.closest("details")?.removeAttribute("open");
+        }
+        return;
+      }
+      const cancel = event.target.closest("dialog [data-close]");
+      if (cancel) {
+        event.preventDefault();
+        cancel.closest("dialog").close();
+      }
+    });
+    document.addEventListener(
+      "close",
+      (event) => {
+        if (!event.target.matches?.("#plan-sheets dialog")) return;
+        const url = new URL(location.href);
+        for (const key of ["busy", "plan", "error"]) url.searchParams.delete(key);
+        history.replaceState(null, "", url.pathname + url.search + (/^#(busy|plan-start)$/.test(url.hash) ? "#list" : url.hash));
+        if (sheetsBehind) {
+          sheetsBehind = false;
+          refresh();
+        }
+      },
+      true,
+    );
+
+    // The owner's choice of start says itself on the button ("Set it: Sat 24
+    // Oct, 2:15pm") and rings its window on the strip. "Other" is one choice
+    // more: picking it lets go of the start chips, and back.
+    function planLabel() {
+      const pick = document.querySelector(".plan__pick");
+      if (!pick) return;
+      const other = pick.querySelector("select[name=other]");
+      const radio = pick.querySelector("input[name=at]:checked");
+      const button = pick.querySelector(".plan__set");
+      const when = other?.value ? other.selectedOptions[0].textContent : radio?.dataset.when;
+      button.textContent = when ? `${button.dataset.setLabel}, ${when}` : "Set it";
+      const heat = document.querySelector("#plans .heat");
+      const mark = heat?.querySelector(".heat__mark");
+      const win = (radio?.dataset.win ?? other?.value)?.split("-").map(Number);
+      if (!mark || !win) return;
+      const from = Number(heat.dataset.from);
+      const span = Number(heat.dataset.to) - from;
+      mark.style.left = `${((win[0] - from) / span) * 100}%`;
+      mark.style.width = `${((win[1] - win[0]) / span) * 100}%`;
+    }
+    planLabel();
+    document.addEventListener("change", (event) => {
+      const pick = event.target.closest(".plan__pick");
+      if (!pick) return;
+      pick.dataset.chosen = "";
+      const other = pick.querySelector("select[name=other]");
+      if (event.target === other) {
+        for (const r of pick.querySelectorAll("input[name=at]")) r.checked = !other.value && r.id.endsWith("-0-0");
+      } else if (event.target.name === "at") other.value = "";
+      planLabel();
+    });
+
+    // What the plan newly needs from you, said once at the foot of the
+    // screen as it arrives (the card says it too, and the dot on Our list):
+    // the owner asking when you're busy, everyone in for the owner, someone
+    // changing their times after the time was set; and to the others, the
+    // time once it's set.
+    const planCard = () => document.querySelector("#plans .plan[data-plan-id]");
+    const needsOf = (card) => (card?.dataset.needs ? `${card.dataset.planId}:${card.dataset.needs}` : "");
+    const setOf = (card) => (card?.dataset.set ? `${card.dataset.planId}:${card.dataset.set}` : "");
+    let needsWas = needsOf(planCard());
+    let setWas = setOf(planCard());
+    function showPlan() {
+      const card = planCard();
+      if (!card) return;
+      go("list", "#plans");
+      card.scrollIntoView({ block: "nearest", behavior: still.matches ? "instant" : "smooth" });
+    }
+    function noticePlan() {
+      const card = planCard();
+      const needs = needsOf(card);
+      const set = setOf(card);
+      if (needs && needs !== needsWas) {
+        const { needs: what, owner, place, day } = card.dataset;
+        if (what === "answer") say(`${owner} is planning ${place} on ${day}. When are you busy?`, () => openSheet(document.querySelector("#busy")), "Fill in");
+        else if (what === "pick") say(`Everyone's in for ${place}. Pick the time.`, showPlan, "Show");
+        else if (what === "changed") say(`${card.querySelector(".plan__changed strong")?.textContent ?? "Someone changed their times"}.`, showPlan, "Show");
+      } else if (set && set !== setWas && !isOwner) {
+        say(`${card.dataset.owner} set ${card.dataset.place}: ${card.dataset.set}.`, showPlan, "Show");
+      }
+      needsWas = needs;
+      setWas = set;
+    }
+
     // Where the invite opens over the page (beside the name, wider than a
     // phone), a click outside it or Escape closes it, as a popover would.
     const inviteBox = document.querySelector("#invite");
@@ -1202,5 +1369,6 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     import "../../scripts/map";
     import "../../scripts/passkeys";
     import "../../scripts/welcome";
+    import "../../scripts/busy";
   </script>
 </Base>

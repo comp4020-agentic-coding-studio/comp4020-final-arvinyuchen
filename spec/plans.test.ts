@@ -210,6 +210,21 @@ describe("the plan on the group's page", () => {
     expect(html).not.toContain("545-620");
   });
 
+  it("has its places on the page before there's a plan, so one can arrive live", async () => {
+    const c = await crew("Live plan crew");
+    let doc = await page(c.ben, c.path);
+    // (a live refresh only swaps parts that are there already)
+    for (const part of ["#plans", "#plan-sheets", ".next-up-slot", ".tabs__flag", "#past-plans"]) expect(doc.querySelector(part)).toBeTruthy();
+    expect(doc.querySelector("#busy")).toBeNull();
+    const plan = await planned(c);
+    doc = await page(c.ben, c.path);
+    // the sheet is in its place, with what the timeline draws from
+    const data = JSON.parse(doc.querySelector("#plan-sheets #busy [data-timeline-data]")?.textContent ?? "{}");
+    expect(data).toMatchObject({ start: 480, end: 1380, busy: [], set: null });
+    expect(data.day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(doc.querySelector(`#plan-${plan}`)?.getAttribute("data-day")).toMatch(/^\w{3} \d{1,2} \w{3}$/);
+  });
+
   it("isn't shown to someone who isn't in the group", async () => {
     const c = await crew("Secret plan crew");
     await planned(c);

@@ -28,12 +28,13 @@ const starts = Array.from({ length: 36 }, (_, i) => 360 + i * 30);
 const ends = Array.from({ length: 36 }, (_, i) => 390 + i * 30);
 ---
 
-<dialog id="plan-start" class="sheet" open={open} aria-labelledby="plan-start-title">
+<dialog id="plan-start" class="sheet" open={open} tabindex="-1" aria-labelledby="plan-start-title">
   <form
     method="post"
     action={`/api/groups/${group.id}/plans`}
     class="sheet__form"
     data-plan-start
+    data-day={plan?.day}
     data-confirm={changing ? "If the day changes, everyone marks their times again for the new day. Go ahead?" : undefined}
   >
     <input type="hidden" name="action" value={changing ? "change" : "start"} />

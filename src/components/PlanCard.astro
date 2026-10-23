@@ -53,8 +53,9 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
   data-needs={needs || undefined}
   data-plan-id={plan.id}
   data-place={plan.place.name}
-  data-day={`${weekday} ${date}`}
+  data-day={formatDay(plan.day)}
   data-owner={view.owner}
+  data-set={setWhen || undefined}
   aria-labelledby={`plan-${plan.id}-title`}
 >
   {needs === "pick" && view.windows.length > 0 && (
@@ -207,7 +208,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
                       <span class="starts__list" role="radiogroup" aria-labelledby={`starts-${plan.id}-${i}`}>
                         {startsIn(w).map((s, j) => (
                           <label class="st">
-                            <input type="radio" name="at" id={`at-${plan.id}-${i}-${j}`} value={`${s}-${w.to}`} checked={i === 0 && j === 0} data-when={formatMinute(s)} />
+                            <input type="radio" name="at" id={`at-${plan.id}-${i}-${j}`} value={`${s}-${w.to}`} checked={i === 0 && j === 0} data-when={formatMinute(s)} data-win={`${w.from}-${w.to}`} />
                             <span>{formatMinute(s)}</span>
                           </label>
                         ))}

@@ -25,7 +25,7 @@ const hours = [];
 for (let m = Math.ceil(range.start / 60) * 60 + 60; m < range.end; m += 60) hours.push(m);
 ---
 
-<div class="heat" aria-hidden="true">
+<div class="heat" aria-hidden="true" data-from={range.start} data-to={range.end}>
   <div class="heat__bar">
     <div class="heat__fill">
       {heat.map((s) => (
