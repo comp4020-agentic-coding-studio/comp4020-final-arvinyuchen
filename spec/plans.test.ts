@@ -142,3 +142,89 @@ describe("a plan", () => {
     await reader.cancel();
   }, 10_000);
 });
+
+describe("the plan on the group's page", () => {
+  it("asks each member for their times until they've given them, and works without a script", async () => {
+    const c = await crew("Page crew");
+    const plan = await planned(c);
+    let doc = await page(c.ben, c.path);
+    const card = doc.querySelector(`#plan-${plan}`);
+    expect(card?.textContent).toContain("Questacon");
+    expect(card?.textContent).toContain("Needs your answer");
+    expect(card?.getAttribute("data-needs")).toBe("answer");
+    expect(doc.querySelector(".tabs__dot")).toBeTruthy();
+    // the plain form: rows of from/to in 5-minute steps, and "I'm free all day"
+    const sheet = doc.querySelector("#busy form");
+    expect(sheet?.getAttribute("action")).toBe(`${c.api}/busy`);
+    const from = [...(sheet?.querySelector('select[name="from"]')?.querySelectorAll("option") ?? [])].map((o) => o.getAttribute("value"));
+    expect(from.slice(0, 3)).toEqual(["", "480", "485"]);
+    expect(sheet?.querySelector('button[name="free"][value="all"]')).toBeTruthy();
+    // the place on the list says it's being planned
+    expect(doc.querySelector("#list .pick__plan")?.textContent).toContain("Planning");
+
+    await request(c.ben, `${c.api}/busy`, { form: { plan, from: "540", to: "620" } });
+    doc = await page(c.ben, c.path);
+    expect(doc.querySelector(`#plan-${plan}`)?.getAttribute("data-needs")).toBeNull();
+    expect(doc.querySelector(`#plan-${plan} .plan__mine`)?.textContent).toContain("busy 9–10:20am");
+    expect(doc.querySelector(".tabs__dot")).toBeNull();
+  });
+
+  it("shows the owner when everyone's free, lets them set it, then shows everyone the time", async () => {
+    const c = await crew("Results crew");
+    const plan = await planned(c);
+    await request(c.ana, `${c.api}/busy`, { form: { plan, from: "545", to: "620" } });
+    await request(c.ben, `${c.api}/busy`, { form: { plan, from: "690", to: "855" } });
+    let doc = await page(c.ana, c.path);
+    const card = doc.querySelector(`#plan-${plan}`);
+    expect(card?.getAttribute("data-needs")).toBe("pick");
+    expect(card?.textContent).toContain("Everyone's in");
+    // longest first: 2:15–11pm, everyone free
+    expect(card?.querySelector(".win__when")?.textContent).toContain("2:15–11pm");
+    expect(card?.querySelector(".win__who")?.textContent).toBe("Everyone free");
+    const first = card?.querySelector<HTMLInputElement>('input[name="at"]:checked')?.value;
+    expect(first).toBe("855-1380");
+    await request(c.ana, `${c.api}/plans`, { form: { action: "set", plan, at: first ?? "" } });
+
+    doc = await page(c.ben, c.path);
+    expect(doc.querySelector(".next-up")?.textContent).toContain("2:15pm");
+    expect(doc.querySelector(`#plan-${plan} .plan__when`)?.textContent).toContain("2:15pm");
+    expect(doc.querySelector(`#plan-${plan} .plan__going`)?.textContent).toContain("Everyone's free till 11pm");
+    expect(doc.querySelector("#list .pick__plan")?.textContent).toContain("2:15pm");
+  });
+
+  it("never shows anyone else's busy times, only counts and who can't", async () => {
+    const c = await crew("Private crew");
+    const plan = await planned(c);
+    await request(c.ana, `${c.api}/busy`, { form: { plan, from: "545", to: "620" } });
+    await request(c.ben, `${c.api}/busy`, { form: { plan, from: "840", to: "1020" } });
+    const html = await (await request(c.ben, c.path)).text();
+    const doc = await page(c.ben, c.path);
+    // Ben's sheet holds Ben's times alone
+    const rows = [...doc.querySelectorAll("#busy select option[selected]")].map((o) => o.getAttribute("value"));
+    expect(rows).toEqual(["840", "1020"]);
+    const data = JSON.parse(doc.querySelector("#busy [data-timeline-data]")?.textContent ?? "{}");
+    expect(data.busy).toEqual([[840, 1020]]);
+    // one other answered: their counts would be their times, so none
+    expect(data.others).toEqual([]);
+    expect(html).not.toContain("busy 9:05–10:20am");
+    expect(html).not.toContain("545-620");
+  });
+
+  it("isn't shown to someone who isn't in the group", async () => {
+    const c = await crew("Secret plan crew");
+    await planned(c);
+    const stranger = await page(new Jar(), c.path);
+    expect(stranger.querySelector(".plan, #plans, #busy, #plan-start, .next-up")).toBeNull();
+    expect(stranger.body.textContent).not.toContain("Needs your answer");
+  });
+
+  it("keeps a called-off plan under Past plans", async () => {
+    const c = await crew("Past crew");
+    const plan = await planned(c);
+    await request(c.ana, `${c.api}/plans`, { form: { action: "off", plan } });
+    const doc = await page(c.ben, c.path);
+    expect(doc.querySelector(".plan")).toBeNull();
+    expect(doc.querySelector("#past-plans")?.textContent).toContain("Called off");
+    expect(doc.querySelector("#past-plans")?.textContent).toContain("Questacon");
+  });
+});

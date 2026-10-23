@@ -1,14 +1,19 @@
 ---
 import CityPhoto from "../../components/CityPhoto.astro";
 import KindIcon from "../../components/KindIcon.astro";
+import BusySheet from "../../components/BusySheet.astro";
 import MiniMap from "../../components/MiniMap.astro";
 import NoPasskey from "../../components/NoPasskey.astro";
+import PlanCard from "../../components/PlanCard.astro";
+import PlanStart from "../../components/PlanStart.astro";
 import SpotPhoto from "../../components/SpotPhoto.astro";
 import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
 import { canRemovePick, groupByLink, listMembers, listPicks, listPlaces, NOTE_MAX } from "../../lib/db";
 import { clean, me, signedIn } from "../../lib/me";
+import { currentPlan, pastPlans, planView } from "../../lib/plans";
 import { search } from "../../lib/search";
+import { dayParts, formatDay, formatMinute } from "../../lib/when";
 
 // The link is the invite. After the owner resets it, the old one still
 // brings members back (to the new link), but lets nobody new in.
@@ -117,6 +122,37 @@ const firstOf = (id: number) => (id === group.ownerId ? 0 : id === member?.id ? 
 const crew = [...members].sort((a, b) => firstOf(a.id) - firstOf(b.id));
 const crewMore = crew.length > 6 ? crew.length - 5 : 0;
 const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
+
+// The group's plan (src/lib/plans.ts), for members only: the one on now,
+// and those behind it. What it needs from this member puts a dot on Our
+// list's tab and rings its card: their busy times, or (the owner) the
+// time to pick once everyone's in, or a look at who changed theirs.
+const plan = member ? currentPlan(group.id) : undefined;
+const view = plan && member ? planView(plan, members, member, group.ownerId) : undefined;
+const past = member ? pastPlans(group.id) : [];
+const needs = !view
+  ? ""
+  : !plan!.set && view.mine === null
+    ? "answer"
+    : isOwner && !plan!.set && view.everyoneIn
+      ? "pick"
+      : isOwner && view.changed
+        ? "changed"
+        : "";
+const planParam = Astro.url.searchParams.get("plan");
+const PLAN_ERROR: Record<string, string> = {
+  "plan-exists": "There's a plan on already. Call it off first to start another.",
+  "plan-gone": "That plan has changed since this page loaded: here it is now.",
+  "plan-set": "That time doesn't fit the plan's hours. Pick one of the starts offered.",
+  "plan-change": "That day or those hours don't work: a day from today on, hours between 6am and midnight.",
+};
+const planLine = (placeId: number) =>
+  plan && plan.placeId === placeId
+    ? plan.set
+      ? `${formatDay(plan.day)}, ${formatMinute(plan.set.start)}`
+      : `Planning ${dayParts(plan.day).weekday} ${dayParts(plan.day).date}`
+    : "";
+const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 8.5h14M7 2.8v3M13 2.8v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>`;
 ---
 
 <Base
@@ -266,6 +302,18 @@ const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
   <section class="group-head group-head--split">
     <div class="group-head__title">
       <h1>{group.name}</h1>
+      {/* The time set for the group's plan, on every tab's header. */}
+      <p class="next-up-slot">
+        {plan?.set && view?.set && (
+          <a class="next-up" href={`#plan-${plan.id}`} data-tab="list">
+            <span class="next-up__cal" aria-hidden="true"><svg viewBox="0 0 20 20" width="15" height="15" set:html={calendar} /></span>
+            <span class="next-up__text">
+              {formatDay(plan.day)}, {formatMinute(plan.set.start)} · {plan.place.name}
+              <span> · {view.set.busy.length === 0 && view.set.unknown.length === 0 ? "everyone's free" : `${view.set.free.length} free`}</span>
+            </span>
+          </a>
+        )}
+      </p>
       {group.note && (
         <p class="group-note">
           “{group.note}” <span class="fine">{owner ? `${owner.name}, to the group` : ""}</span>
@@ -388,6 +436,7 @@ const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
     <a href="#list" data-tab="list">
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
       <span>Our list</span> <span class="tabs__n">{picks.length}</span>
+      <span class="tabs__flag">{needs && <span class="tabs__dot"><span class="sr-only">: the plan needs you</span></span>}</span>
     </a>
     <a href="#explore-section" data-tab="explore">
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Zm0 0v14m6-12v14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -404,6 +453,24 @@ const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
       </a>
     )}
   </nav>
+
+  {/* The group's plan, above Our list: on a phone the top of its tab, on a
+      wide screen between the tabs and the list. Always there, even empty,
+      so a live refresh can bring one in. */}
+  <section id="plans" class="plans" aria-label="Plan" data-panel="list">
+    {error && PLAN_ERROR[error] && <p class="notice" role="alert">{PLAN_ERROR[error]}</p>}
+    {view ? (
+      <PlanCard view={view} group={group} member={member} isOwner={isOwner} needs={needs} />
+    ) : (
+      isOwner && picks.length > 0 && (
+        <div class="plan plan--empty">
+          <span class="plan__icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20" set:html={calendar} /></span>
+          <p><strong>Plan a day out</strong> Pick a place and a day; everyone marks when they're busy, and you set the time.</p>
+          <a class="btn btn--small" href={`/g/${group.link}?plan=new#plan-start`} data-open-start>Plan a day</a>
+        </div>
+      )
+    )}
+  </section>
 
   {/* Our list as a ranking: most keen first, the leader standing out, the
       rest compact rows, each with its keen count on its button. */}
@@ -449,6 +516,9 @@ const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
                   {lead && <p class="pick__lead">Most keen</p>}
                   <h3>{place.name}</h3>
                   {place.area && <p class="area">{place.area}</p>}
+                  {planLine(place.id) && (
+                    <p class="pick__plan"><svg viewBox="0 0 20 20" width="13" height="13" aria-hidden="true" set:html={calendar} />{planLine(place.id)}</p>
+                  )}
                 </div>
                 <form method="post" action={`/api/groups/${group.id}/keen`} data-keen>
                   <input type="hidden" name="pick" value={id} />
@@ -478,6 +548,31 @@ const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
         </ol>
       )}
     </div>
+  </section>
+
+  {/* Plans behind the group, folded at the foot of Our list. */}
+  <section id="past-plans" class="past-plans" aria-label="Past plans" data-panel="list">
+    {past.length > 0 && (
+      <details class="past card" data-keep-open="past">
+        <summary><h2>Past plans</h2><span>{past.length}</span></summary>
+        <ol>
+          {past.map((p) => {
+            const { weekday, date } = dayParts(p.day);
+            const off = p.calledOffAt !== null;
+            return (
+              <li class:list={{ "is-off": off || !p.set }}>
+                <span class="cal cal--small" aria-hidden="true"><b>{weekday}</b><span>{date}</span></span>
+                <span>
+                  <strong>{p.place.name}</strong>
+                  {off ? <span class="past__tag">Called off</span> : !p.set && <span class="past__tag">No time set</span>}
+                  <span class="past__when">{formatDay(p.day)}{p.set && !off && `, ${formatMinute(p.set.start)}`}</span>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </details>
+    )}
   </section>
 
   </div>
@@ -732,13 +827,20 @@ const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
     <button type="button" class="toast__undo" hidden>Undo</button>
   </div>
 
+  {/* The plan's two sheets: the owner's (start it, or change its day), and
+      everyone's busy times. */}
+  {isOwner && (plan || picks.length > 0) && (
+    <PlanStart group={group} picks={picks} plan={plan} open={planParam === "new" || planParam === "change"} error={error === "plan-start"} />
+  )}
+  {view && <BusySheet group={group} view={view} open={Astro.url.searchParams.has("busy")} error={error === "busy"} isOwner={isOwner} />}
+
   <script is:inline define:vars={{ groupId: group.id }}>
     // Live: anyone joining, picking or voting in this group, or any group
     // sharing a new place, reaches every open page within a moment, with no
     // reload by the viewer. The page asks the server for itself again and
     // swaps in the changed parts, keeping the scroll position, the map and
     // anything typed in the forms.
-    const regions = [".group-head h1", ".group-head .who__count", ".group-head .who__grid", ".group-head .who__fold", ".share__row", ".tabs__n", "#list", "#explore", "#settings .people"];
+    const regions = [".group-head h1", ".next-up-slot", ".group-head .who__count", ".group-head .who__grid", ".group-head .who__fold", ".share__row", ".tabs__n", ".tabs__flag", "#plans", "#list", "#past-plans", "#explore", "#settings .people"];
     // The page as it is now, search included, without one-off notices.
     const current = () => {
       const q = new URLSearchParams(location.search).get("q");

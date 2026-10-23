@@ -1,0 +1,48 @@
+---
+import { formatMinute } from "../lib/when";
+
+// How many are free through the plan's hours, as one strip: deeper blue
+// where more are free, grey where nobody is, a ring round the best window.
+// Counts only, never whose. The strip is a picture of the windows listed
+// under it, so a screen reader reads those instead.
+interface Props {
+  heat: { from: number; to: number; free: number }[];
+  range: { start: number; end: number };
+  total: number;
+  mark?: { from: number; to: number };
+}
+const { heat, range, total, mark } = Astro.props;
+const span = range.end - range.start;
+const at = (m: number) => `${(((m - range.start) / span) * 100).toFixed(3)}%`;
+const wide = (a: number, b: number) => `${(((b - a) / span) * 100).toFixed(3)}%`;
+// (more free, more blue, rising slowly so "all" stands out from "most")
+const tint = (free: number) => (free && total ? Math.round(((free / total) ** 1.6) * 100) : 0);
+// a time every three hours from the start, and the end
+const ticks = [];
+for (let m = range.start; m < range.end - 60; m += 180) ticks.push(m);
+ticks.push(range.end);
+const hours = [];
+for (let m = Math.ceil(range.start / 60) * 60 + 60; m < range.end; m += 60) hours.push(m);
+---
+
+<div class="heat" aria-hidden="true">
+  <div class="heat__bar">
+    <div class="heat__fill">
+      {heat.map((s) => (
+        <i style={`left: ${at(s.from)}; width: ${wide(s.from, s.to)}; background: color-mix(in srgb, var(--accent) ${tint(s.free)}%, var(--line))`}></i>
+      ))}
+      {hours.map((m) => <b style={`left: ${at(m)}`}></b>)}
+    </div>
+    {mark && <span class="heat__mark" style={`left: ${at(mark.from)}; width: ${wide(mark.from, mark.to)}`}></span>}
+  </div>
+  <div class="heat__axis">
+    {ticks.map((m, i) => (
+      <span class:list={{ "is-first": i === 0, "is-last": i === ticks.length - 1 }} style={`left: ${at(m)}`}>{formatMinute(m)}</span>
+    ))}
+  </div>
+  <div class="heat__key">
+    <i style="background: var(--accent)"></i>all {total} free
+    <i style={`background: color-mix(in srgb, var(--accent) ${tint(Math.max(total - 1, 1))}%, var(--line))`}></i>fewer
+    <i style="background: var(--line)"></i>nobody
+  </div>
+</div>

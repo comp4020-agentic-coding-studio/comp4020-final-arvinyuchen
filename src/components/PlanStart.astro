@@ -1,0 +1,106 @@
+---
+import type { Group, Pick } from "../lib/db";
+import { DEFAULT_RANGE, PLAN_DAYS_AHEAD, type Plan } from "../lib/plans";
+import { addDays, dayParts, formatMinute, today } from "../lib/when";
+import SpotPhoto from "./SpotPhoto.astro";
+
+// The owner's sheet for a plan: where (a place on Our list), which day, and
+// the hours to count (8am to 11pm unless they say). With a plan already on,
+// the same sheet moves it to another day or other hours. A <dialog>, open
+// from the server when the URL asks (?plan=new, ?plan=change), so it works
+// without a script; the page's script opens it in place. It sits outside
+// what a live refresh redraws while it's open.
+interface Props {
+  group: Group;
+  picks: Pick[];
+  plan?: Plan;
+  open: boolean;
+  error: boolean;
+}
+const { group, picks, plan, open, error } = Astro.props;
+const changing = plan !== undefined;
+const first = today();
+const days = Array.from({ length: 14 }, (_, i) => addDays(first, i));
+const chosenDay = plan?.day ?? addDays(first, 1);
+const range = plan?.range ?? DEFAULT_RANGE;
+// the hours, on the half hour: from 6am, to midnight
+const starts = Array.from({ length: 36 }, (_, i) => 360 + i * 30);
+const ends = Array.from({ length: 36 }, (_, i) => 390 + i * 30);
+---
+
+<dialog id="plan-start" class="sheet" open={open} aria-labelledby="plan-start-title">
+  <form
+    method="post"
+    action={`/api/groups/${group.id}/plans`}
+    class="sheet__form"
+    data-plan-start
+    data-confirm={changing ? "If the day changes, everyone marks their times again for the new day. Go ahead?" : undefined}
+  >
+    <input type="hidden" name="action" value={changing ? "change" : "start"} />
+    {plan && <input type="hidden" name="plan" value={plan.id} />}
+    <div class="sheet__bar">
+      <a class="sheet__cancel" href={`/g/${group.link}#list`} data-close>Cancel</a>
+      <h2 id="plan-start-title">{changing ? "Change the plan" : "Plan a day"}</h2>
+      <span></span>
+    </div>
+    <div class="sheet__body">
+      {error && <p class="notice" role="alert">That didn't work: pick a place on the list and a day from today on.</p>}
+      {changing ? (
+        <p class="fine">{plan.place.name}. On another day, it starts afresh: everyone marks their times for that day.</p>
+      ) : (
+        <fieldset class="sheet__group">
+          <legend class="sheet__label">Where · from Our list</legend>
+          <div class="card where-list">
+            {picks.map((pick, i) => (
+              <label class={`where spot--${pick.place.kind}`}>
+                <SpotPhoto photo={pick.place.photo} name={pick.place.name} kind={pick.place.kind} small />
+                <span class="where__text">
+                  <strong>{pick.place.name}</strong>
+                  <span>{[pick.place.area, `${pick.keen.length} keen`].filter(Boolean).join(" · ")}</span>
+                </span>
+                <input type="radio" name="place" value={pick.place.id} checked={i === 0} required />
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
+      <fieldset class="sheet__group">
+        <legend class="sheet__label">Which day</legend>
+        <div class="days" role="radiogroup">
+          {days.map((day) => {
+            const { weekday, date, month } = dayParts(day);
+            return (
+              <label class="days__day">
+                <input type="radio" name="day" value={day} checked={day === chosenDay} />
+                <span class="cal"><b>{day === first ? "Today" : weekday}</b><span>{date}</span><i>{month}</i></span>
+              </label>
+            );
+          })}
+        </div>
+        <label class="days__other">
+          <span>Or another date</span>
+          <input type="date" name="date" min={first} max={addDays(first, PLAN_DAYS_AHEAD)} value={days.includes(chosenDay) ? "" : chosenDay} />
+        </label>
+      </fieldset>
+      <fieldset class="sheet__group">
+        <legend class="sheet__label">Options</legend>
+        <div class="card sheet__rows">
+          <div class="sheet__row">
+            <span><strong>Count from</strong><span class="fine">Night isn't "free"</span></span>
+            <span class="range">
+              <label><span class="sr-only">From</span><select name="from">{starts.map((m) => <option value={m} selected={m === range.start}>{formatMinute(m)}</option>)}</select></label>
+              <span aria-hidden="true">–</span>
+              <label><span class="sr-only">To</span><select name="to">{ends.map((m) => <option value={m} selected={m === range.end}>{formatMinute(m)}</option>)}</select></label>
+            </span>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+    <div class="sheet__foot">
+      <button class="btn btn--primary btn--block">{changing ? "Save" : "Ask when everyone's busy"}</button>
+      <p class="fine">
+        {changing ? "The group sees the change straight away." : "Everyone, you too, marks when they're busy that day. You pick the time."}
+      </p>
+    </div>
+  </form>
+</dialog>

@@ -4208,6 +4208,1192 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   text-transform: uppercase;
 }
 
+/* ---- Plans ---------------------------------------------------------------------- */
+
+/* The group's plan (src/components/PlanCard.astro), above Our list: a white
+   card like the list's, its day a calendar page. What it needs from you
+   (your busy times, the time to pick) rings it in blue. Its parts are an
+   inset list, parted by hairlines, as the list's rows are. */
+.plans {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.plans:not(:has(*)) {
+  display: none;
+}
+
+/* (the list under it closes up) */
+.plans:has(*) + .board__list .list-card {
+  margin-top: 0.9rem;
+}
+
+.plan {
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  scroll-margin-top: 5rem;
+}
+
+.plan--needs {
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow-sm);
+}
+
+.plan__nudge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  background: var(--accent-strong);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.plan__top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.9rem 0.9rem 0.7rem;
+}
+
+.plan__title h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.plan__eyebrow {
+  margin: 0 0 0.1rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.plan__eyebrow.is-blue {
+  color: var(--accent-ink);
+}
+
+.plan__sub {
+  margin: 0.1rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.plan__when {
+  margin: 0.15rem 0 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+/* A day as a calendar page: the weekday on a blue band, the date large. */
+.cal {
+  display: grid;
+  justify-items: center;
+  overflow: hidden;
+  width: 3.25rem;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line), var(--shadow-sm);
+  line-height: 1;
+}
+
+.cal b {
+  width: 100%;
+  padding: 0.22rem 0 0.2rem;
+  background: var(--accent-strong);
+  color: #fff;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.cal span {
+  padding: 0.2rem 0 0.08rem;
+  font-family: var(--font-rounded);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.cal i {
+  padding-bottom: 0.28rem;
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cal--big {
+  width: 4.1rem;
+  border-radius: 14px;
+}
+
+.cal--big b {
+  padding: 0.3rem 0 0.25rem;
+  font-size: 0.68rem;
+}
+
+.cal--big span {
+  padding: 0.3rem 0 0.15rem;
+  font-size: 1.85rem;
+}
+
+.cal--big i {
+  padding-bottom: 0.35rem;
+  font-size: 0.66rem;
+}
+
+.cal--small {
+  width: 2.6rem;
+  border-radius: 10px;
+}
+
+.cal--small b {
+  background: var(--fill-strong);
+  color: var(--muted);
+  font-size: 0.55rem;
+}
+
+.cal--small span {
+  padding: 0.15rem 0 0.25rem;
+  font-size: 1.1rem;
+}
+
+/* The owner's "···": a menu folded behind a round button (a <details>). */
+.plan__menu {
+  position: relative;
+  align-self: start;
+}
+
+.plan__more {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--accent-ink);
+  list-style: none;
+  cursor: pointer;
+}
+
+.plan__more::-webkit-details-marker {
+  display: none;
+}
+
+.plan__menu-list {
+  position: absolute;
+  top: 2.4rem;
+  right: 0;
+  z-index: 8;
+  display: grid;
+  min-width: 13rem;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow-float);
+}
+
+.plan__menu-list > a,
+.plan__menu-list button {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.plan__menu-list > :first-child,
+.plan__menu-list > :first-child button {
+  border-top: 0;
+}
+
+.plan__menu-list .is-danger {
+  color: var(--food);
+}
+
+/* Not answered yet: the two ways to, full width. */
+.plan__ask {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0 0.9rem 0.8rem;
+}
+
+.plan__ask .btn {
+  width: 100%;
+  min-height: 2.9rem;
+}
+
+/* Who has said when they're busy (a tick), and who hasn't (a dashed ring). */
+.plan__filled,
+.plan__going {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0 0.9rem 0.8rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.plan__going {
+  color: var(--ink);
+  font-size: 0.88rem;
+}
+
+.plan__filled strong,
+.plan__going strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.plan .faces {
+  flex: none;
+  padding-left: 0.35rem;
+}
+
+.plan .faces .face {
+  position: relative;
+  width: 1.7rem;
+  height: 1.7rem;
+  margin-left: -0.35rem;
+  border-color: var(--card);
+  font-size: 0.7rem;
+}
+
+.face--done::after {
+  content: "";
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 0.72rem;
+  height: 0.72rem;
+  border: 1.5px solid var(--card);
+  border-radius: 50%;
+  background: var(--accent-strong) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6.2 5 8l4-4.2' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100%;
+}
+
+.plan .faces .face--waiting {
+  border: 1.5px dashed #aeaeb2;
+  background: var(--card);
+  color: #8e8e93;
+}
+
+/* When people are free: the strip, then the windows, best first. */
+.plan__results {
+  border-top: 1px solid var(--line);
+}
+
+.plan__label {
+  margin: 0;
+  padding: 0.7rem 0.9rem 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.heat {
+  padding: 0.75rem 0.9rem 0.4rem;
+}
+
+.heat__bar {
+  position: relative;
+  height: 1.7rem;
+}
+
+.heat__fill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 7px;
+  background: var(--line);
+}
+
+.heat__fill i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+/* (a white hairline on each hour) */
+.heat__fill b {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  background: rgb(255 255 255 / 85%);
+}
+
+.heat__mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  margin-left: -3px;
+  padding-right: 6px;
+  box-sizing: content-box;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.heat__axis {
+  position: relative;
+  height: 1.1rem;
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.heat__axis span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.heat__axis .is-first {
+  transform: none;
+}
+
+.heat__axis .is-last {
+  transform: translateX(-100%);
+}
+
+.heat__key {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.heat__key i {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 3px;
+}
+
+.heat__key i + i,
+.heat__key i:not(:first-child) {
+  margin-left: 0.45rem;
+}
+
+.wins {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wins__tier {
+  padding: 0.65rem 0.9rem 0.15rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.wins__rest {
+  padding-bottom: 0.8rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.win {
+  position: relative;
+}
+
+.win + .starts + .win::before,
+.wins--read .win + .win::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 4.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.win__row {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+}
+
+.wins--read .win__row {
+  cursor: auto;
+}
+
+.frac {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 10px;
+  background: var(--tint);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-family: var(--font-rounded);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.frac small {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.win--all .frac {
+  background: var(--accent-strong);
+  box-shadow: none;
+  color: #fff;
+}
+
+.win--all .frac small {
+  color: rgb(255 255 255 / 80%);
+}
+
+.win__text {
+  display: grid;
+  min-width: 0;
+}
+
+.win__when {
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.win__when small {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* (a window under half an hour says so, in gold) */
+.win__when small.is-short {
+  color: var(--crown-ink);
+}
+
+.win__who {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.win__radio {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px var(--line-strong);
+}
+
+/* The window picked: its start chips open under it, its circle filled. */
+.win:has(+ .starts :checked),
+.starts:has(:checked) {
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--card));
+}
+
+.win:has(+ .starts :checked) .win__radio {
+  background: var(--accent-strong);
+  box-shadow: inset 0 0 0 5px var(--accent-strong), inset 0 0 0 9px #fff;
+}
+
+.starts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.9rem 0.75rem 4.25rem;
+}
+
+.starts:not(:has(:checked)) {
+  display: none;
+}
+
+.starts__label {
+  width: 100%;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.starts__list {
+  display: contents;
+}
+
+.st {
+  position: relative;
+  cursor: pointer;
+}
+
+.st input {
+  position: absolute;
+  opacity: 0;
+}
+
+.st span {
+  display: inline-block;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.st input:checked + span {
+  background: var(--accent-strong);
+  box-shadow: none;
+  color: #fff;
+}
+
+.st input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.plan__other {
+  padding: 0.3rem 0.9rem 0.2rem;
+}
+
+.plan__other label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.plan__other select {
+  width: auto;
+  min-height: 2.2rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  color: var(--accent-ink);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.plan__pick .plan__set {
+  display: flex;
+  width: calc(100% - 1.8rem);
+  min-height: 2.9rem;
+  margin: 0.5rem 0.9rem 0.9rem;
+}
+
+.plan__fine {
+  margin: -0.4rem 0.9rem 0.8rem;
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+.plan__none {
+  margin: 0;
+  padding: 0.2rem 0.9rem 0.9rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.plan__acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0 0.9rem 0.9rem;
+}
+
+/* After the time's set: someone's changed theirs, for the owner. */
+.plan__changed {
+  margin: 0 0.9rem 0.8rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--crown) 16%, var(--card));
+  color: var(--crown-ink);
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.plan__changed p {
+  margin: 0;
+}
+
+.plan__changed strong {
+  color: #4d3400;
+}
+
+.plan__changed-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.plan__changed .btn:not(.btn--primary) {
+  background: var(--card);
+}
+
+/* Your own answer, one line, and the way back into it. */
+.plan__mine {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.65rem 0.9rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.88rem;
+}
+
+.plan__mine strong {
+  font-weight: 600;
+}
+
+.plan__mine a {
+  flex: none;
+  color: var(--accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* No plan yet: the owner's way to start one, one quiet row. */
+.plan--empty {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.8rem 0.9rem;
+}
+
+.plan--empty p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.plan--empty strong {
+  display: block;
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.plan__icon {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+/* The set time, a pill under the group's name on every tab. */
+.next-up-slot {
+  margin: 0;
+}
+
+.next-up-slot:empty {
+  display: none;
+}
+
+.next-up {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 0.8rem;
+  padding: 0.35rem 0.8rem 0.35rem 0.45rem;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.next-up__cal {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.next-up__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.next-up__text span {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* A place with a plan says when, under its suburb on Our list. */
+.pick .pick__plan {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+  color: var(--accent-ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pick__plan svg {
+  flex: none;
+}
+
+/* Plans behind the group, folded at the foot of Our list. */
+.past-plans:not(:has(*)) {
+  display: none;
+}
+
+.past {
+  margin-top: 0.9rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.past summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.9rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.past summary::-webkit-details-marker {
+  display: none;
+}
+
+.past summary h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.past summary span {
+  color: var(--accent-ink);
+  font-weight: 500;
+}
+
+.past ol {
+  margin: 0;
+  padding: 0 0 0.4rem;
+  list-style: none;
+}
+
+.past li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+}
+
+.past li + li::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 4.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.past li > span:last-child {
+  display: grid;
+}
+
+.past strong {
+  font-weight: 600;
+}
+
+.past li.is-off strong {
+  color: var(--muted);
+}
+
+.past__when {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.past__tag {
+  justify-self: start;
+  margin: 0.1rem 0;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* "The plan needs you": a dot on Our list's tab. */
+.tabs__flag {
+  display: contents;
+}
+
+.tabs__dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--accent-strong);
+}
+
+/* ---- The plan's sheets ---------------------------------------------------------- */
+
+/* The owner's sheet and everyone's busy times: on a phone a sheet risen from
+   the foot of the screen, wider a card in the middle. <dialog>s: the
+   script opens them over the page; without it, the server opens them (a
+   link with ?plan=new or ?busy) and they sit over the page the same. */
+dialog.sheet {
+  position: fixed;
+  inset: 2.75rem 0 0;
+  z-index: 40;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 14px 14px 0 0;
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: var(--shadow-float);
+}
+
+dialog.sheet::backdrop {
+  background: rgb(0 0 0 / 32%);
+}
+
+/* (opened without the script there's no backdrop: its shadow is one) */
+dialog.sheet[open]:not(:modal) {
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 32%), var(--shadow-float);
+}
+
+@media (min-width: 601px) {
+  dialog.sheet {
+    inset: 0;
+    width: min(30rem, calc(100% - 2rem));
+    height: min(54rem, calc(100% - 3rem));
+    margin: auto;
+    border-radius: 22px;
+  }
+}
+
+.sheet__form {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sheet__bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 0.5rem;
+  padding: 0.9rem max(1rem, env(safe-area-inset-right)) 0.6rem max(1rem, env(safe-area-inset-left));
+  text-align: center;
+}
+
+.sheet__bar h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.sheet__sub {
+  margin: 0.05rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.sheet__cancel {
+  justify-self: start;
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+
+.sheet__body {
+  display: grid;
+  flex: 1 1 auto;
+  align-content: start;
+  gap: 0.6rem;
+  min-height: 0;
+  padding: 0 max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sheet__foot {
+  display: grid;
+  flex: none;
+  gap: 0.4rem;
+  padding: 0.6rem max(1rem, env(safe-area-inset-right)) calc(0.9rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  border-top: 0.5px solid rgb(0 0 0 / 10%);
+}
+
+.sheet__foot .btn--block,
+.btn--block {
+  width: 100%;
+  min-height: 3rem;
+}
+
+.sheet__foot .fine {
+  margin: 0;
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+.sheet__group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.sheet__label {
+  margin: 0.4rem 0.2rem 0.35rem;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Where: the places on Our list, one to choose. */
+.where-list,
+.sheet__rows {
+  overflow: hidden;
+  padding: 0;
+}
+
+.where {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr) auto;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+}
+
+.where + .where::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 4.1rem;
+  border-top: 1px solid var(--line);
+}
+
+.where .photo--small {
+  width: 2.6rem;
+  border-radius: 8px;
+}
+
+.where__text {
+  display: grid;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.where__text strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.where input {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+/* Which day: the next two weeks as calendar pages, the chosen one ringed. */
+.days {
+  display: flex;
+  gap: 0.45rem;
+  margin: 0 -1rem;
+  padding: 0.2rem 1rem 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.days__day {
+  position: relative;
+  flex: none;
+  cursor: pointer;
+}
+
+.days__day input {
+  position: absolute;
+  opacity: 0;
+}
+
+.days__day .cal {
+  width: 3.1rem;
+}
+
+.days__day .cal b {
+  background: var(--fill-strong);
+  color: var(--ink);
+}
+
+.days__day input:checked + .cal {
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow-sm);
+}
+
+.days__day input:checked + .cal b {
+  background: var(--accent-strong);
+  color: #fff;
+}
+
+.days__day input:focus-visible + .cal {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.days__other {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.days__other input {
+  width: auto;
+  min-height: 2.4rem;
+  padding: 0.3rem 0.7rem;
+}
+
+.sheet__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.6rem 0.8rem;
+}
+
+.sheet__row > span:first-child {
+  display: grid;
+  font-size: 0.92rem;
+}
+
+.sheet__row .fine {
+  font-size: 0.74rem;
+}
+
+.range {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.range select {
+  width: auto;
+  min-height: 2.2rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* Busy times as a plain form: a row of From and To for each. */
+.busy__rows {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.busy__rows .fine {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.busy__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.busy__row label {
+  display: grid;
+  gap: 0.15rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.busy__row select {
+  min-height: 2.6rem;
+  padding: 0.4rem 0.7rem;
+}
+
+.busy__set {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--crown) 16%, var(--card));
+  color: var(--crown-ink);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.busy__set strong {
+  color: #4d3400;
+}
+
+.busy__sum {
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+.busy__sum:empty {
+  display: none;
+}
+
 /* ---- Tabs ---------------------------------------------------------------------- */
 
 /* With the script, the section links are tabs: one part showing at a time
@@ -4397,6 +5583,16 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   .section-nav.tabs a[aria-current] {
     color: var(--accent-ink);
     font-weight: 600;
+  }
+
+  /* the plan needs you: a dot on the list's glyph, left of its count */
+  .section-nav.tabs .tabs__dot {
+    position: absolute;
+    top: 0.15rem;
+    left: calc(50% - 1.05rem);
+    width: 0.6rem;
+    height: 0.6rem;
+    box-shadow: 0 0 0 2px rgb(249 249 251);
   }
 
   /* the list's count, a badge on its glyph */

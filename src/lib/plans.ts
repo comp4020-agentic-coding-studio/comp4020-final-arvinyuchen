@@ -251,6 +251,8 @@ export interface PlanView {
   othersAnswered: number;
   windows: PlanWindow[];
   hiddenWindows: number;
+  /** the windows not listed (the best few), for "Other" */
+  rest: PlanWindow[];
   /** once set: who's free all through the set time, who isn't, who hasn't said */
   set: { free: Member[]; busy: Member[]; unknown: Member[] } | null;
   /** for the owner, once set: who has since changed their times so they can't make it */
@@ -299,7 +301,10 @@ export function planView(plan: Plan, members: Member[], viewer: Member, ownerId:
         ),
       );
       const names = set.busy.filter((m) => late.has(m.id)).map((m) => m.name);
-      const best = windows[0] && !(windows[0].from === start && windows[0].to === end) ? toWindow(windows[0]) : null;
+      // (the next best: of the windows with the most free, the one starting nearest the set time)
+      const most = windows.filter((w) => w.free.length === windows[0]?.free.length);
+      const near = most.sort((x, y) => Math.abs(x.from - start) - Math.abs(y.from - start))[0];
+      const best = near && !(near.from === start && near.to === end) ? toWindow(near) : null;
       if (names.length) changed = { names, best };
     }
   }
@@ -316,6 +321,7 @@ export function planView(plan: Plan, members: Member[], viewer: Member, ownerId:
     othersAnswered: others.answered.length,
     windows: rows.map(toWindow),
     hiddenWindows: hidden,
+    rest: windows.filter((w) => !rows.includes(w)).slice(0, 8).map(toWindow),
     set,
     changed,
   };
