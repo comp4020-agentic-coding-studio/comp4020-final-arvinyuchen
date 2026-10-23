@@ -23,6 +23,12 @@ other's taste.
   group agrees on in minutes, not a 200-message thread. Votes show up on
   everyone's screen within a second, so a group in the same room decides
   together, live.
+- **Settling when is quick too, and nobody's diary is on show.** Once the
+  group has a favourite, whoever started it picks a day; everyone marks only
+  when they're busy that day (free all day is one tap), and the page shows
+  when everyone's free, best first. The others see how many are free when,
+  and who can't make each time, never anyone's busy times. Nobody votes on a
+  time: the owner sets it.
 - **The list is the group's own; the good places are everyone's.** A friend's
   "best chilli oil in Canberra" beats a star rating from a stranger. Every
   group explores one shared pool of places, and a place only gets in when
@@ -113,6 +119,13 @@ other's taste.
   Canberra, from Unsplash and credited in the footer, opens the home page,
   every invite and a Spots link shared in a chat, so all three look like the
   same place.
+- Picking a time: Doodle polls a few times someone guessed, and When2meet
+  has everyone paint when they're free on a week's grid, which shows
+  everyone's diary to everyone and fights the page's scroll on a phone.
+  Phone calendars draw an event with a hold, then a drag, so a swipe still
+  scrolls. Spots asks about one day, the owner's, for busy times (most of a
+  Saturday is free, so there's less to mark), on a timeline drawn the
+  calendar way.
 - Voyage AI's embeddings turn each card and each search prompt into a
   vector; cards are ranked by how close they are in meaning (cosine
   similarity). Only card text and prompts are sent, nothing about a group.
@@ -133,6 +146,10 @@ other's taste.
 - **A chatbot that writes recommendations.** Generated text would say things
   about places that nobody here vouched for. Search hands back people's own
   cards, in the words they wrote.
+- **Notifications, calendar invites and a share button for plans.** A plan
+  lives on the group's page: a dot on Our list's tab, a note at the foot of
+  an open page, and the card asking for your times. The group already has a
+  chat for nudging each other.
 - **Booking and directions.** The map shows where a place is; getting there
   and booking a table are for the apps that already do them well.
 
@@ -152,5 +169,11 @@ in with a passkey, is themselves on any device, and sees all their groups in
 one place; your account page renames you everywhere and adds or removes
 passkeys. The person who started a
 group can rename it, write a note for the people they invite, remove or merge
-members, and reset its invite link. Next:
-deciding a date and time, and a "who's coming" for the chosen spot.
+members, and reset its invite link. They can also plan a day out: a place
+from the list and a day. Everyone marks when they're busy on that day's
+hours, in 5-minute steps (tap for an hour, hold and drag to draw; without a
+script, rows of From and To), and the plan's card shows when everyone's
+free, longest first, as counts and who can't make it. The owner sets the
+time; it shows under the group's name as Next up and on the place's row in
+the list, and if someone's times change after that, only the owner hears,
+with a time to move to. Next: saying who's coming once the time is set.

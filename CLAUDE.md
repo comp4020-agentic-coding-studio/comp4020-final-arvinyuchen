@@ -83,13 +83,27 @@ follow from it; every change has to hold to them.
   tap is ignored, since it was aimed at the card that was there before
   (PROCESS.md, "Several people voting at once"). Never jump cards without
   the glide, and never replay the cards' entrance on a refresh.
+- **A plan is the owner's to decide, from busy times nobody else sees.** The
+  owner starts one plan at a time, for a place on Our list and a day
+  (`src/lib/plans.ts`); each member marks only their own busy times
+  (`me()`), and the owner sets the time. Times are Canberra's wall clock:
+  a local date and minutes since its midnight in 5-minute steps
+  (`src/lib/when.ts`), never the server's zone. Nobody sees anyone else's
+  busy times: the page shows how many are free when and who can't make a
+  window (`src/lib/free.ts`), and the timeline gets the others' counts only
+  once two others have answered. Never send another member's busy times to
+  the browser. There's no push, email or share button for a plan: a dot on
+  Our list's tab, a note on an open page, the card. Once the time is set, a
+  member's change tells only the owner. A plan moved to another day is a
+  new plan, the old one called off and kept; one whose place leaves the
+  list is called off and kept.
 - **Nothing is lost.** All state lives in the one SQLite file on `/data`.
   Schema changes are additive only; never drop or rewrite data a group made.
   A place's kind is stored by its key (`src/lib/kinds.ts`), so a key is never
   renamed: relabel it instead, as Fun became Activities.
   The exceptions: a starter place taken off the
-  list in `src/lib/catalogue.ts` is deleted, with its keens and its place
-  on every list (`src/lib/db.ts`); a place a member takes off their group's
+  list in `src/lib/catalogue.ts` is deleted, with its keens, its place
+  on every list and any plans for it (`src/lib/db.ts`); a place a member takes off their group's
   list goes from that list with its keens; and the site admin
   (`src/lib/admin.ts`) archives a group first (closed, restorable), and only
   an archived group can be deleted for good, by an admin, after a confirm.
