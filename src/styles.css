@@ -5573,7 +5573,7 @@ dialog.sheet[open]:not(:modal) {
 
 .tl__band span {
   position: absolute;
-  right: 0.45rem;
+  right: 0.75rem;
   bottom: 0.1rem;
   color: var(--accent-ink);
   font-size: 0.62rem;
@@ -5581,9 +5581,11 @@ dialog.sheet[open]:not(:modal) {
   white-space: nowrap;
 }
 
+/* (the set time stays in sight over a busy stretch; a selected one covers it) */
 .tl__set {
-  z-index: 2;
+  z-index: 3;
   border-top: 2px solid var(--accent);
+  pointer-events: none;
 }
 
 .tl__set::before,
