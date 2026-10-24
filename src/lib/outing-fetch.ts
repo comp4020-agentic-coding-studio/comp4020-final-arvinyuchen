@@ -1,3 +1,4 @@
+import { getDefaultAutoSelectFamilyAttemptTimeout, setDefaultAutoSelectFamilyAttemptTimeout } from "node:net";
 import { USER_AGENT } from "./agent";
 import { score } from "./finder";
 import { type Forecast } from "./outing";
@@ -19,6 +20,13 @@ import { stubFetch } from "./outing-stub";
 // With OUTING_STUB set, nothing leaves the machine: the same requests go to
 // src/lib/outing-stub.ts, which answers from a fixed table and keeps a log
 // of what it was asked, for the spec.
+
+// Overpass's servers are in Germany. Node tries each of a host's addresses
+// for only 250 ms before the next (happy eyeballs), and from Canberra a
+// connection there can take a second, so every address timed out in turn
+// and nothing was ever asked. Each address gets 2.5 s instead (for every
+// connection the server makes: Photon's, in Germany too, gains as well).
+if (getDefaultAutoSelectFamilyAttemptTimeout() < 2500) setDefaultAutoSelectFamilyAttemptTimeout(2500);
 
 export const OVERPASS = "https://overpass-api.de/api/interpreter";
 export const OPEN_METEO = "https://api.open-meteo.com/v1/forecast";
@@ -80,7 +88,8 @@ export async function fetchHours(
     method: "POST",
     headers: { ...headers, "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ data: overpassQuery(place) }).toString(),
-    signal: AbortSignal.timeout(25_000),
+    // (Overpass can queue a request half a minute before it answers; nobody waits on it)
+    signal: AbortSignal.timeout(60_000),
   });
   if (!res.ok) throw new Error(`overpass ${res.status}`);
   const { elements = [] } = (await res.json()) as { elements?: Element[] };

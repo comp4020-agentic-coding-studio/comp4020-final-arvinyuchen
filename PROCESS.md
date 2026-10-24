@@ -350,7 +350,12 @@ plan on, there's no chip and the address does nothing.
 **Trade-offs.** OpenStreetMap's hours are only as good as its mappers;
 plenty of Canberra's places have none, and those say nothing. The first
 person to open a card for a new stop sees it without hours, then the card
-fills in a moment later.
+fills in when the answer lands. Trying it against the real services showed
+how late that can be: the public Overpass server queued even a tiny query
+for half a minute, so its timeout is a minute (nobody waits on it), and
+Node's fetch gave each of Overpass's addresses only 250 ms to connect from
+Canberra before giving up on all of them, so the server now gives each
+2.5 s.
 
 ## How I worked with the agent
 
