@@ -5212,6 +5212,11 @@ dialog.sheet[open]:not(:modal) {
   padding: 0;
 }
 
+/* (a time field's wheel may reach past the card) */
+.sheet__rows {
+  overflow: visible;
+}
+
 .where {
   position: relative;
   display: grid;
@@ -5474,26 +5479,164 @@ dialog.sheet[open]:not(:modal) {
   padding: 0.6rem 0.8rem;
 }
 
-.sheet__row > span:first-child {
+.sheet__row > :first-child {
   display: grid;
+  margin: 0;
+  color: var(--ink);
   font-size: 0.92rem;
+}
+
+.sheet__row > :first-child span {
+  margin: 0;
 }
 
 .sheet__row .fine {
   font-size: 0.74rem;
 }
 
-.range {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
+.sheet__row + .sheet__row {
+  border-top: 1px solid var(--line);
 }
 
-.range select {
+.sheet__row input[type="time"] {
   width: auto;
   min-height: 2.2rem;
   padding: 0.3rem 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+}
+
+/* A time to type or turn (src/scripts/timefield.ts): a grey chip as iOS
+   draws a compact time, each part of it its own; the part being dragged
+   opens into a little wheel of the times around it. Only the parts take a
+   vertical drag, so the sheet scrolls everywhere else. */
+.tf {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.3rem;
+  border-radius: 10px;
+  background: var(--fill);
+  color: var(--ink);
+  font-family: var(--font-rounded);
+  font-size: 1.02rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.tf__part {
+  position: relative;
+  display: inline-block;
+  margin: 0;
+  touch-action: none;
+  cursor: ns-resize;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tf .tf__in {
+  width: 2.2ch;
+  min-height: 0;
+  margin: 0;
+  padding: 0.2rem 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  caret-color: var(--accent);
+  cursor: ns-resize;
+  transition: none;
+}
+
+.tf [data-part="h"] .tf__in {
+  text-align: right;
+}
+
+.tf--length [data-part="h"] .tf__in {
+  width: 2.6ch;
+}
+
+.tf .tf__ap {
+  width: auto;
+  margin-left: 0.15rem;
+  padding: 0.2rem 0.25rem;
+  font-size: 0.9em;
+}
+
+.tf .tf__in:focus,
+.tf .tf__in:focus-visible,
+.tf__part.is-turning .tf__in {
+  border: 0;
+  outline: none;
+  background: var(--accent-soft);
+  box-shadow: none;
+  color: var(--accent-ink);
+}
+
+.tf .tf__ap:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+.tf__colon,
+.tf__unit {
+  display: inline;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.tf__unit {
+  margin-right: 0.15rem;
+}
+
+.tf .tf__wheel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 20;
+  display: none;
+  overflow: hidden;
+  width: max(100%, 3.2rem);
+  height: 9rem;
+  margin: 0;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow-float);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.tf__part.is-turning .tf__wheel {
+  display: block;
+}
+
+.tf__wheel b {
+  display: grid;
+  padding-top: 0.5rem;
+  font-weight: 500;
+  -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+  mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+}
+
+.tf__wheel i {
+  height: 1.6rem;
+  color: var(--muted);
+  font-style: normal;
+  line-height: 1.6rem;
+  text-align: center;
+}
+
+.tf__wheel i.is-on {
+  margin: 0 0.25rem;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 1.15rem;
+  font-weight: 700;
 }
 
 /* Busy times as a plain form: a row of From and To for each. */
@@ -6101,7 +6244,7 @@ dialog.sheet[open]:not(:modal) {
 }
 
 .tl-ed__rows {
-  overflow: hidden;
+  overflow: visible;
   padding: 0;
 }
 

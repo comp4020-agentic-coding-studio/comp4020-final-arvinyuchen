@@ -1,14 +1,15 @@
 ---
 import type { Group, Pick } from "../lib/db";
 import { DEFAULT_RANGE, PLAN_DAYS_AHEAD, type Plan } from "../lib/plans";
-import { addDays, dayParts, formatMinute, today } from "../lib/when";
+import { addDays, clockOf, dayParts, today } from "../lib/when";
 import SpotPhoto from "./SpotPhoto.astro";
 
 // The owner's sheet for a plan: where (a place on Our list), which day (a
 // chip for the next two weeks, or another date: the browser's date field,
 // which the script turns into a calendar in the sheet's own look,
 // src/scripts/plan-start.ts), and the hours to count (8am to 11pm unless
-// they say). With a plan already on,
+// they say: time fields to the minute, which the script makes fields you
+// type or swipe, src/scripts/timefield.ts). With a plan already on,
 // the same sheet moves it to another day or other hours. A <dialog>, open
 // from the server when the URL asks (?plan=new, ?plan=change), so it works
 // without a script; the page's script opens it in place. It sits outside
@@ -26,9 +27,6 @@ const first = today();
 const days = Array.from({ length: 14 }, (_, i) => addDays(first, i));
 const chosenDay = plan?.day ?? addDays(first, 1);
 const range = plan?.range ?? DEFAULT_RANGE;
-// the hours, on the half hour: from 6am, to midnight
-const starts = Array.from({ length: 36 }, (_, i) => 360 + i * 30);
-const ends = Array.from({ length: 36 }, (_, i) => 390 + i * 30);
 ---
 
 <dialog id="plan-start" class="sheet" open={open} tabindex="-1" aria-labelledby="plan-start-title">
@@ -89,13 +87,13 @@ const ends = Array.from({ length: 36 }, (_, i) => 390 + i * 30);
       <fieldset class="sheet__group">
         <legend class="sheet__label">Options</legend>
         <div class="card sheet__rows">
-          <div class="sheet__row">
-            <span><strong>Count from</strong><span class="fine">Night isn't "free"</span></span>
-            <span class="range">
-              <label><span class="sr-only">From</span><select name="from">{starts.map((m) => <option value={m} selected={m === range.start}>{formatMinute(m)}</option>)}</select></label>
-              <span aria-hidden="true">–</span>
-              <label><span class="sr-only">To</span><select name="to">{ends.map((m) => <option value={m} selected={m === range.end}>{formatMinute(m)}</option>)}</select></label>
-            </span>
+          <div class="sheet__row" data-range>
+            <label for="plan-from"><strong>Count from</strong><span class="fine">Night isn't "free"</span></label>
+            <input id="plan-from" type="time" name="from" step="60" min="06:00" max="23:59" value={clockOf(range.start)} required />
+          </div>
+          <div class="sheet__row" data-range>
+            <label for="plan-to"><strong>Until</strong><span class="fine">12:00am is midnight</span></label>
+            <input id="plan-to" type="time" name="to" step="60" value={clockOf(range.end)} required />
           </div>
         </div>
       </fieldset>

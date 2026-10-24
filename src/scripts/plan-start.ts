@@ -7,7 +7,10 @@
 // out of reach. A chip and the calendar are one choice: the chips keep a
 // day of theirs (the date field emptied), and a day further off is the
 // date field's, with no chip chosen; the form posts as it always did.
-import { addDays, formatDay, isDay } from "../lib/when";
+// The hours to count are fields to type or swipe (src/scripts/timefield.ts).
+import { EARLIEST, LATEST } from "../lib/free";
+import { addDays, formatDay, isDay, parseMinute } from "../lib/when";
+import { fieldInstead, type TimeField } from "./timefield";
 
 const asDate = (day: string) => new Date(`${day}T12:00:00Z`);
 const monthOf = (day: string) => day.slice(0, 7);
@@ -175,11 +178,39 @@ function calendar(form: HTMLFormElement) {
   render();
 }
 
+// "Count from" as two fields to type or swipe, 6am to midnight, the end
+// after the start: moving one past the other takes the other along.
+function countFrom(form: HTMLFormElement) {
+  const from = form.querySelector<HTMLInputElement>('[data-range] input[name="from"]');
+  const to = form.querySelector<HTMLInputElement>('[data-range] input[name="to"]');
+  if (!from || !to) return;
+  const fields: { from?: TimeField; to?: TimeField } = {};
+  fields.from = fieldInstead(from, {
+    value: parseMinute(from.value) ?? 480,
+    min: EARLIEST,
+    max: LATEST - 1,
+    label: "Count from",
+    onChange: (v) => {
+      if (fields.to && v >= fields.to.value) fields.to.set(Math.min(LATEST, v + 60), true);
+    },
+  });
+  fields.to = fieldInstead(to, {
+    value: parseMinute(to.value, true) ?? 1380,
+    min: EARLIEST + 1,
+    max: LATEST,
+    label: "Until",
+    onChange: (v) => {
+      if (fields.from && v <= fields.from.value) fields.from.set(Math.max(EARLIEST, v - 60), true);
+    },
+  });
+}
+
 function enhance(dialog: HTMLDialogElement) {
   const form = dialog.querySelector<HTMLFormElement>("form[data-plan-start]");
   if (!form || form.dataset.enhanced !== undefined) return;
   form.dataset.enhanced = "";
   calendar(form);
+  countFrom(form);
 }
 
 function enhanceAll() {

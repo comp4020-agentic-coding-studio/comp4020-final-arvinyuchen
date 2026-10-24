@@ -12,7 +12,8 @@
 // - a hold (400ms, the finger still within 8px) then a drag draws a
 //   stretch, or moves the one held;
 // - a selected stretch has a dot at each end to drag, and a tap on it
-//   opens its exact times (and Delete).
+//   opens its exact times (fields to type or swipe, src/scripts/
+//   timefield.ts, and Delete).
 // Drawing and dragging go to the minute, and the stretch being moved says
 // its from–to on itself as it goes; a tap's hour lands on 5 minutes, since a
 // fingertip can't mean one minute. With a mouse, a drag draws straight away.
@@ -24,6 +25,7 @@
 // hide. Never whose times.
 import { mergeIntervals, STEP, type Interval } from "../lib/free";
 import { formatDay, formatMinute, formatSpan, localNow } from "../lib/when";
+import { timeField } from "./timefield";
 
 interface Data {
   day: string;
@@ -219,38 +221,45 @@ function enhance(dialog: HTMLDialogElement) {
   function openEditor(i: number, before = S.busy.map(([p, q]): Interval => [p, q]), focus = false) {
     closeEditor();
     const [a, b] = S.busy[i];
-    // (every 5 minutes, and the time it's at, which may be any minute)
-    const options = (from: number, to: number, value: number) =>
-      [...new Set([value, ...Array.from({ length: Math.floor((to - from) / 5) + 1 }, (_, k) => from + k * 5)])]
-        .sort((p, q) => p - q)
-        .map((m) => `<option value="${m}"${m === value ? " selected" : ""}>${formatMinute(m)}</option>`)
-        .join("");
     form!.insertAdjacentHTML(
       "beforeend",
       `<div class="tl-ed__dim"></div><div class="tl-ed" role="group" aria-labelledby="tl-ed-title">
         <div class="tl-ed__bar"><button type="button" data-ed-cancel>Cancel</button><h3 id="tl-ed-title">Busy time</h3><button type="button" class="is-done" data-ed-done>Done</button></div>
         <div class="card tl-ed__rows">
-          <label class="tl-ed__row"><span>Starts</span><select data-ed-from>${options(start, end - 1, a)}</select></label>
-          <label class="tl-ed__row"><span>Ends</span><select data-ed-to>${options(start + 1, end, b)}</select></label>
+          <div class="tl-ed__row"><span>Starts</span><span data-ed-from></span></div>
+          <div class="tl-ed__row"><span>Ends</span><span data-ed-to></span></div>
         </div>
         <button type="button" class="tl-ed__del" data-ed-del>Delete this busy time</button>
-        <p class="tl-ed__note">${formatSpan(start, end)}</p>
+        <p class="tl-ed__note">Type a time, or swipe it up or down · ${formatSpan(start, end)}</p>
       </div>`,
     );
     editor = form!.querySelector<HTMLElement>(".tl-ed");
     const ed = editor!;
-    const from = ed.querySelector<HTMLSelectElement>("[data-ed-from]")!;
-    const to = ed.querySelector<HTMLSelectElement>("[data-ed-to]")!;
-    from.addEventListener("change", () => {
-      S.busy[i][0] = Number(from.value);
-      if (S.busy[i][1] <= S.busy[i][0]) to.value = String((S.busy[i][1] = Math.min(end, S.busy[i][0] + 60)));
-      render();
+    // (the same fields as the plan's hours: moving one past the other takes the other along)
+    const from = timeField({
+      value: a,
+      min: start,
+      max: end - STEP,
+      label: "Starts",
+      onChange: (v) => {
+        S.busy[i][0] = v;
+        if (S.busy[i][1] <= v) to.set((S.busy[i][1] = Math.min(end, v + 60)));
+        render();
+      },
     });
-    to.addEventListener("change", () => {
-      S.busy[i][1] = Number(to.value);
-      if (S.busy[i][0] >= S.busy[i][1]) from.value = String((S.busy[i][0] = Math.max(start, S.busy[i][1] - 60)));
-      render();
+    const to = timeField({
+      value: b,
+      min: start + STEP,
+      max: end,
+      label: "Ends",
+      onChange: (v) => {
+        S.busy[i][1] = v;
+        if (S.busy[i][0] >= v) from.set((S.busy[i][0] = Math.max(start, v - 60)));
+        render();
+      },
     });
+    ed.querySelector("[data-ed-from]")!.replaceWith(from.el);
+    ed.querySelector("[data-ed-to]")!.replaceWith(to.el);
     const done = () => {
       S.sel = normalize(S.busy[i][0]);
       closeEditor();

@@ -62,6 +62,9 @@ describe("a plan", () => {
     // the owner's sheet keeps that date in its plain date field (past the two weeks' chips), from today to a year on
     const date = (await page(c.ana, c.path)).querySelector('#plan-start input[type="date"][name="date"]');
     expect([date?.getAttribute("value"), date?.getAttribute("min"), date?.getAttribute("max")]).toEqual([addDays(today(), 20), today(), addDays(today(), 365)]);
+    // and its hours as plain time fields, to the minute (12:00am the midnight it ends on)
+    const hours = [...(await page(c.ana, c.path)).querySelectorAll('#plan-start input[type="time"]')].map((i) => [i.getAttribute("name"), i.getAttribute("value")]);
+    expect(hours).toEqual([["from", "08:07"], ["to", "00:00"]]);
     // other hours, as the script sends them
     expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, from: "421", to: "1379" })).status).toBe(204);
     expect(await data()).toMatchObject({ start: 421, end: 1379 });
