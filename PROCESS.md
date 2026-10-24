@@ -151,6 +151,13 @@ still works but reloads into the current ranking, as before. Two devices, one
 showing keen and one not, can still disagree for up to a second. Whichever
 tap arrives last wins, but it can no longer undo a vote by accident.
 
+On a wide screen the group's page first made each column a screen tall,
+scrolling on its own, like an app's panes. With a long list that put Our
+list in a small box under the plan; now the list is as long as it is and
+the page scrolls it, the header and Explore with the map staying put
+beside it, so a re-rank still glides in the page's own flow and the map
+is always there for a tapped place.
+
 ## Deciding when
 
 **Context.** Spots got a group to "where", then left "when" to the group

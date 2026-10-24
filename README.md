@@ -163,7 +163,9 @@ every open page, and the list re-ranks itself, each card gliding to its new
 place. Our list's Edit takes a place off again: yours until someone else is
 keen on it or while it's in the plan on now (a grey lock where the red minus would be), any for the owner, with Undo; put back, it starts from no keens.
 The group's page is in tabs (Our list, Explore, Share a place, and
-Settings for whoever started it), and the invite folds behind one button. Search Explore by describing what you're after: the answer is
+Settings for whoever started it), and the invite folds behind one button. On a
+wide screen they're side by side: Our list, every row of it, scrolls with the
+page, while Explore and the map stay in view beside it. Search Explore by describing what you're after: the answer is
 the matching cards, best first, and the map frames their pins. Everyone signs
 in with a passkey, is themselves on any device, and sees all their groups in
 one place; your account page renames you everywhere and adds or removes

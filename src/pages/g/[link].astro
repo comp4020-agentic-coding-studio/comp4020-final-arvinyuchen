@@ -874,11 +874,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       const was = new Map([...now.querySelectorAll(".picks > li")].map((li) => [li.id, li.getBoundingClientRect().top]));
       const order = [...was.keys()].join();
       const focused = document.activeElement?.closest(".picks > li")?.id;
-      // (on a wide screen the list scrolls inside its column: stay where you were)
-      const scrolled = now.querySelector(".picks")?.scrollTop ?? 0;
       now.innerHTML = next.innerHTML;
-      const picks = now.querySelector(".picks");
-      if (picks) picks.scrollTop = scrolled;
       // (no entrance replayed: only cards that are new arrive)
       now.dataset.live = "";
       const cards = [...now.querySelectorAll(".picks > li")];
@@ -1185,14 +1181,26 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       // (a map shown again takes its size)
       window.dispatchEvent(new Event("resize"));
       // The tab opens at its top, under the tabs, never scrolled half way.
+      // (On a wide screen what's beside the list stays in view as the page
+      // scrolls, so the page stays where it is.)
       const top = document.querySelector(".group-head").getBoundingClientRect().bottom + scrollY;
-      if (scroll && scrollY > top) scrollTo({ top, behavior: "instant" });
+      if (scroll && !wide.matches && scrollY > top) scrollTo({ top, behavior: "instant" });
     }
+    // (on a wide screen the header stays at the top, and what's beside the
+    // list stays under it: the stylesheet needs its height)
+    const bar = document.querySelector("body > .top");
+    const barHeight = () => document.documentElement.style.setProperty("--top-h", `${bar?.offsetHeight ?? 0}px`);
+    barHeight();
+    if (bar) new ResizeObserver(barHeight).observe(bar);
     page.classList.add("is-tabbed");
     show(tab, false);
-    // (a link to one card, like a vote without the script, still lands on it)
+    // (a link to one card, like a vote without the script, still lands on
+    // it; on a wide screen one to what's beside the list is already in
+    // view, and the page stays at its top)
     try {
-      if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+      const target = location.hash && document.querySelector(location.hash);
+      if (target && wide.matches && target.closest(".explore-wrap, .group-tools")) scrollTo({ top: 0, behavior: "instant" });
+      else target?.scrollIntoView();
     } catch {
       // (a # that isn't an id)
     }

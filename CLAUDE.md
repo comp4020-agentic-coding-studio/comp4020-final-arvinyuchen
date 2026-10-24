@@ -179,6 +179,15 @@ follow from it; every change has to hold to them.
   `src/styles.css`); the drawn maps share `src/components/MapDrawing.astro`.
   Don't give a map its own pin or label style.
 - **Phones first.** Every page works at 375px wide with no sideways scroll.
+- **On a wide screen, Our list is as long as it is.** The group's page is
+  three columns (from 1180px, with the script): the left one (the group's
+  panel, the tabs, the plan, Our list) shows every row and the page scrolls
+  it; the header and, beside the list, Explore with the map (or Share, or
+  Settings) are sticky, a screen tall under the header (`--top-h`, kept by
+  the page's script), and only Explore's cards scroll inside, held so they
+  don't hand on to the page. This replaced each column a screen tall
+  scrolling on its own (#41), which put a long list in a box. Phones and
+  tablets are one column, unchanged.
 
 ## The work
 

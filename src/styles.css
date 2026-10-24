@@ -3765,90 +3765,57 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     grid-column: 2;
   }
 
-  /* With the script (the tabs work), the page is the screen: each column is
-     its height and scrolls on its own. The group's panel, the tabs, and
-     Explore's title and search stay put; Our list and the cards scroll
-     under them; the map fills its column. */
-  body:has(.group-page.is-tabbed) {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    height: 100dvh;
-    overflow: hidden;
-  }
-
+  /* With the script (the tabs work), the left column (the group's panel,
+     the tabs, the plan and Our list) is as long as it is, every row of the
+     list showing, and the page scrolls it. The header stays at the top,
+     and beside the list, Explore and the map (or Share, or Settings) stay
+     put under it, a screen tall: anything in them longer than that (the
+     cards) scrolls inside, held there so it never hands on to the page.
+     --top-h is the header's height, kept by the page's script. */
   body:has(.group-page.is-tabbed) > .top {
-    width: 100%;
-  }
-
-  body:has(.group-page.is-tabbed) > main {
-    flex: 1 1 auto;
-    width: 100%;
-    min-height: 0;
-    padding-bottom: 1rem;
-  }
-
-  body:has(.group-page.is-tabbed) > .foot {
-    width: 100%;
-    padding-top: 0.6rem;
-    padding-bottom: calc(0.6rem + env(safe-area-inset-bottom));
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter: blur(20px) saturate(1.8);
+    /* (the bar runs to the screen's edges, the header's content as ever) */
+    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--bg) 86%, transparent);
+    clip-path: inset(0 -100vmax);
   }
 
   .group-page.is-tabbed {
-    height: 100%;
+    --stay: calc(var(--top-h, 4.4rem) + 1.5rem);
     margin-top: 0;
-    grid-template-rows: minmax(0, 1fr);
   }
 
   .group-page.is-tabbed .group-side {
-    display: flex;
-    flex-direction: column;
     grid-row: 1;
     position: static;
-    height: 100%;
     max-height: none;
-    padding-bottom: 0;
+    overflow: visible;
   }
 
-  .group-page.is-tabbed .group-side > * {
-    flex: none;
+  /* (a link to what's beside the list, #explore, #add, #settings, finds it
+     already in view: the page, landing on it, stays at its top) */
+  .group-page.is-tabbed :is(#explore-section, #explore, #add, #settings) {
+    scroll-margin-top: 100vh;
   }
 
-  /* Our list's title stays at the top of its card; the rows scroll under
-     it, so what scrolls out of sight goes behind the card's rounded
-     corners. (A short screen with the invite open: then the whole column
-     scrolls.) */
-  .group-page.is-tabbed #list {
-    display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
-    min-height: 14rem;
+  /* (a row the page lands on, a vote without the script, clear of the bar) */
+  .group-page.is-tabbed .picks > li {
+    scroll-margin-top: calc(var(--top-h, 4.4rem) + 1rem);
   }
 
-  .group-page.is-tabbed .list-card {
-    display: flex;
-    flex: 0 1 auto;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .group-page.is-tabbed .list-card > .list-head,
-  .group-page.is-tabbed .list-card > .list-note {
-    flex: none;
-  }
-
-  .group-page.is-tabbed .picks {
-    flex: 0 1 auto;
-    align-content: start;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
+  .group-page.is-tabbed .explore-wrap,
+  .group-page.is-tabbed > .group-tools {
+    grid-row: 1;
+    position: sticky;
+    top: var(--stay);
+    height: calc(100vh - var(--stay) - 1rem);
+    height: calc(100dvh - var(--stay) - 1rem);
   }
 
   .group-page.is-tabbed .explore-wrap {
-    grid-row: 1;
-    height: 100%;
     grid-template-rows: auto minmax(0, 1fr);
   }
 
@@ -3897,9 +3864,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   }
 
   .group-page.is-tabbed > .group-tools {
-    grid-row: 1;
     grid-column: 2;
-    height: 100%;
     border-radius: var(--radius);
     overflow-y: auto;
     overscroll-behavior: contain;
