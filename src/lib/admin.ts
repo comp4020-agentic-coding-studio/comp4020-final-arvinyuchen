@@ -44,6 +44,8 @@ export interface AdminGroup {
   owner: string | null;
   people: number;
   picks: number;
+  /** how many messages in its Talk, deleted ones aside: a count, never their words */
+  messages: number;
   createdAt: string;
   lastActive: string;
   archivedAt: string | null;
@@ -57,6 +59,7 @@ export function adminGroups(): AdminGroup[] {
               (SELECT name FROM members o WHERE o.id = g.owner_member_id) AS owner,
               (SELECT COUNT(*) FROM members m WHERE m.group_id = g.id AND m.removed_at IS NULL) AS people,
               (SELECT COUNT(*) FROM picks k WHERE k.group_id = g.id) AS picks,
+              (SELECT COUNT(*) FROM comments c WHERE c.group_id = g.id AND c.deleted_at IS NULL) AS messages,
               MAX(g.created_at,
                   COALESCE((SELECT MAX(joined_at) FROM members m WHERE m.group_id = g.id), ''),
                   COALESCE((SELECT MAX(created_at) FROM picks k WHERE k.group_id = g.id), '')) AS lastActive
@@ -84,7 +87,7 @@ export function restoreGroups(ids: string[]): number {
 }
 
 /**
- * Deletes archived groups for good: their members, list, votes, plans and links.
+ * Deletes archived groups for good: their members, list, votes, plans, Talk and links.
  * Places they shared stay in the pool (hide those separately). A group that
  * isn't archived is left alone, so this can never be the first step.
  */
@@ -110,6 +113,8 @@ export function purgeGroups(ids: string[]): number {
     db.prepare(`DELETE FROM plan_answers WHERE plan_id IN (${plans})`).run(...archived);
     db.prepare(`UPDATE plans SET replaced_by = NULL WHERE group_id IN (${inGroups})`).run(...archived);
     db.prepare(`DELETE FROM plans WHERE group_id IN (${inGroups})`).run(...archived);
+    db.prepare(`DELETE FROM comment_reads WHERE group_id IN (${inGroups})`).run(...archived);
+    db.prepare(`DELETE FROM comments WHERE group_id IN (${inGroups})`).run(...archived);
     db.prepare(`DELETE FROM picks WHERE group_id IN (${inGroups})`).run(...archived);
     db.prepare(`DELETE FROM members WHERE group_id IN (${inGroups})`).run(...archived);
     db.prepare(`DELETE FROM group_links WHERE group_id IN (${inGroups})`).run(...archived);
