@@ -17,8 +17,8 @@ import {
   unsetPlanTime,
 } from "../../../../lib/plans";
 
-// The owner's side of a plan: start one (a place on the list, a day, the
-// hours to count, how long it takes), set the time (a start offered, one
+// The owner's side of a plan: start one (one to five places on the list,
+// its stops in order; a day; the hours to count; how long it takes), set the time (a start offered, one
 // from "Other", or an exact time), go back to picking, keep the time after
 // someone's changed theirs, move it to another day, or call it off. Only
 // the owner gets past the first check. The page's script posts in the
@@ -54,8 +54,14 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   const duration = (or: number) =>
     form.has("duration") ? whole("duration") : form.has("duration_h") ? whole("duration_h") * 60 + (clean(form.get("duration_m"), 4) ? whole("duration_m") : 0) : or;
 
+  // the stops, in order: as the script tapped them ("order"), then any
+  // ticked it doesn't name, in the list's order (a plain form's ticks)
+  const ticked = form.getAll("place").map((v) => Number(v));
+  const order = clean(form.get("order"), 200).split(",").filter(Boolean).map(Number).filter((id) => ticked.includes(id));
+  const stops = [...new Set(order), ...ticked.filter((id) => !order.includes(id))];
+
   if (action === "start") {
-    const id = startPlan(group, member, Number(form.get("place")), day, range(DEFAULT_RANGE), duration(DEFAULT_DURATION));
+    const id = startPlan(group, member, stops, day, range(DEFAULT_RANGE), duration(DEFAULT_DURATION));
     if (id === "exists") return refused("plan-exists");
     if (id === "invalid") return refused("plan-start", "&plan=new#plan-start");
     return done(id);
@@ -76,7 +82,8 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   // (the owner having seen a change is theirs alone: nobody else's page moves)
   if (action === "keep") return keepPlanTime(plan) ? done(plan.id, false) : refused("plan-set");
   if (action === "change") {
-    const id = changePlan(plan, member, day || plan.day, range(plan.range), duration(plan.duration));
+    // (the sheet sends its stops, "stops" saying so even when none are ticked)
+    const id = changePlan(plan, member, day || plan.day, range(plan.range), duration(plan.duration), form.has("stops") ? stops : undefined);
     return id === "invalid" ? refused("plan-change") : done(id);
   }
   if (action === "off") return callOffPlan(plan) ? done(plan.id) : refused("plan-gone");

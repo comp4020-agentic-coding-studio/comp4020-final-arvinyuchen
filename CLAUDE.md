@@ -84,8 +84,9 @@ follow from it; every change has to hold to them.
   (PROCESS.md, "Several people voting at once"). Never jump cards without
   the glide, and never replay the cards' entrance on a refresh.
 - **A plan is the owner's to decide, from busy times nobody else sees.** The
-  owner starts one plan at a time, for a place on Our list, a day and how
-  long it takes (`src/lib/plans.ts`); only times at least that long are
+  owner starts one plan at a time: one outing, to one to five places on Our
+  list in order (its stops, `plan_places`; `plans.place_id` is always the
+  first), on a day, with one length for all of it (`src/lib/plans.ts`); only times at least that long are
   offered, never a shorter one. The owner's sheet asks only how long; the
   hours it counts (8am to 11pm unless changed, and only time inside them
   is ever free, so never the night) fold away under it; each member marks only their own busy times
@@ -99,8 +100,9 @@ follow from it; every change has to hold to them.
   the browser. There's no push, email or share button for a plan: a dot on
   Our list's tab, a note on an open page, the card. Once the time is set, a
   member's change tells only the owner. A plan moved to another day is a
-  new plan, the old one called off and kept; one whose place leaves the
-  list is called off and kept.
+  new plan, the old one called off and kept. A stop whose place leaves the
+  list is dropped, the others moving up; a plan whose last stop goes is
+  called off and kept. Changing the stops keeps everyone's times.
 - **Nothing is lost.** All state lives in the one SQLite file on `/data`.
   Schema changes are additive only; never drop or rewrite data a group made.
   A place's kind is stored by its key (`src/lib/kinds.ts`), so a key is never

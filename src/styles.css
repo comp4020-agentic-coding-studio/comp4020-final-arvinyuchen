@@ -333,8 +333,15 @@ input[type="radio"] {
   color: #fff;
 }
 
-.btn--primary:hover {
+.btn--primary:hover:not(:disabled) {
   background: #0062c4;
+}
+
+/* (a button waiting for something first: the plan sheet's, with no place picked) */
+.btn--primary:disabled {
+  background: var(--fill-strong);
+  color: var(--muted);
+  cursor: default;
 }
 
 /* A form's own button is as tall and as rounded as its fields, so the two
@@ -5319,9 +5326,62 @@ dialog.sheet[open]:not(:modal) {
   white-space: nowrap;
 }
 
-.where input {
-  width: 1.3rem;
-  height: 1.3rem;
+/* (each chosen place's circle says its stop: 1, 2, 3, in the chips' blue;
+   ticked without the script, a tick) */
+.where .where__pick {
+  position: absolute;
+  right: 0.8rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: 0;
+  opacity: 0;
+}
+
+.where .where__n {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--line-strong);
+  color: transparent;
+  font-family: var(--font-rounded);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.where__pick:checked + .where__n {
+  background: var(--accent-strong);
+  box-shadow: none;
+  color: #fff;
+}
+
+.where__pick:checked + .where__n:empty::after {
+  content: "✓";
+}
+
+.where__pick:focus-visible + .where__n {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.where:has(.where__pick:disabled) {
+  cursor: default;
+}
+
+.where:has(.where__pick:disabled) .where__n {
+  opacity: 0.4;
+}
+
+.where__note {
+  margin: 0.35rem 0.2rem 0;
+  font-size: 0.78rem;
+}
+
+.sheet__group > .where__note:first-of-type {
+  margin: 0 0.2rem 0.4rem;
 }
 
 /* Which day: the next two weeks as calendar pages, the chosen one ringed. */

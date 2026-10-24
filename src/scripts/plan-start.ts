@@ -233,6 +233,48 @@ function howLong(form: HTMLFormElement) {
   return field;
 }
 
+// Where: the stops in the order tapped, each chosen place's circle saying
+// its number (1, 2, 3); letting one go numbers the rest again. At least
+// one (the button waits for it), at most five (the rest wait). The order
+// goes as "order"; the ticks are the plain form's, so without the script
+// they post in the list's order.
+function stops(form: HTMLFormElement) {
+  const list = form.querySelector<HTMLElement>("[data-stops]");
+  const orderField = form.querySelector<HTMLInputElement>("[data-stop-order]");
+  if (!list || !orderField) return;
+  const order: HTMLInputElement = orderField;
+  const boxes = [...list.querySelectorAll<HTMLInputElement>('input[name="place"]')];
+  const go = form.querySelector<HTMLButtonElement>(".sheet__foot .btn--primary");
+  const note = form.querySelector<HTMLElement>("[data-stops-note]");
+  const max = Number(list.dataset.max) || 5;
+  let chosen = order.value.split(",").filter((id) => boxes.some((b) => b.value === id && b.checked));
+  for (const b of boxes) if (b.checked && !chosen.includes(b.value)) chosen.push(b.value);
+  function render() {
+    order.value = chosen.join(",");
+    for (const b of boxes) {
+      const n = chosen.indexOf(b.value) + 1;
+      const dot = b.nextElementSibling;
+      if (dot) dot.textContent = n ? String(n) : "";
+      b.disabled = !n && chosen.length >= max;
+      b.setAttribute("aria-label", `${b.dataset.name}${n ? `, stop ${n} of ${chosen.length}` : ""}`);
+    }
+    if (go) go.disabled = chosen.length === 0;
+    if (note)
+      note.textContent = !chosen.length
+        ? "Pick where you're going: one place, or a few in order."
+        : chosen.length >= max
+          ? `That's ${max}, the most for one outing.`
+          : `Up to ${max} places, in the order you'll go.`;
+  }
+  list.addEventListener("change", (event) => {
+    const b = event.target as HTMLInputElement;
+    if (!boxes.includes(b)) return;
+    chosen = b.checked ? [...chosen.filter((id) => id !== b.value), b.value] : chosen.filter((id) => id !== b.value);
+    render();
+  });
+  render();
+}
+
 // The owner's exact time on the card, the same two fields: the start
 // moving takes the end with it, keeping how long it is.
 function exactTime(row: HTMLElement) {
@@ -268,6 +310,7 @@ function enhance(dialog: HTMLDialogElement) {
   const form = dialog.querySelector<HTMLFormElement>("form[data-plan-start]");
   if (!form || form.dataset.enhanced !== undefined) return;
   form.dataset.enhanced = "";
+  stops(form);
   calendar(form);
   const length = howLong(form);
   const now = form.querySelector<HTMLElement>("[data-hours-now]");

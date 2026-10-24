@@ -1,11 +1,11 @@
 import type { Photo } from "./catalogue";
-import { db, type Group, type Member } from "./db";
+import { db, setStops, type Group, type Member } from "./db";
 import { EARLIEST, freeDuring, freeTimes, isInterval, LATEST, mergeIntervals, shownWindows, type Interval, type Stretch } from "./free";
 import type { Kind } from "./kinds";
 import { addDays, isDay, today } from "./when";
 
-// Deciding when: the owner picks a place on the list, a day and how long it
-// takes; everyone, the owner too, marks when they're busy that day; the card
+// Deciding when: the owner picks one place on the list or several, in the
+// order the outing goes (its stops), a day and how long it all takes; everyone, the owner too, marks when they're busy that day; the card
 // works out when people are free together for that long, and the owner sets
 // the time whenever they like.
 // One plan at a time per group. Nobody sees anyone else's busy times: only
@@ -18,12 +18,20 @@ export const PLAN_DAYS_AHEAD = 365;
 export const DEFAULT_RANGE = { start: 480, end: 1380 };
 /** Unless the owner says otherwise, a plan takes two hours. */
 export const DEFAULT_DURATION = 120;
+/** One outing takes in this many places on the list, at most. */
+export const MAX_STOPS = 5;
+
+export type Stop = { id: number; name: string; kind: Kind; area: string; photo: Photo | null };
 
 export interface Plan {
   id: number;
   groupId: string;
+  /** the first stop's */
   placeId: number;
-  place: { name: string; kind: Kind; area: string; photo: Photo | null };
+  /** the first stop */
+  place: Stop;
+  /** where the outing goes, in order (one at least) */
+  stops: Stop[];
   createdBy: number;
   day: string;
   range: { start: number; end: number };
@@ -58,25 +66,43 @@ type PlanRow = {
   photo_credit: string | null;
   photo_license: string | null;
 };
-const toPlan = (r: PlanRow): Plan => ({
-  id: r.id,
-  groupId: r.group_id,
-  placeId: r.place_id,
-  place: {
-    name: r.name,
-    kind: r.kind,
-    area: r.area,
-    photo: r.photo_src ? { src: r.photo_src, page: r.photo_page ?? r.photo_src, credit: r.photo_credit ?? "", license: r.photo_license ?? "" } : null,
-  },
-  createdBy: r.created_by,
-  day: r.day,
-  range: { start: r.range_start, end: r.range_end },
-  duration: r.duration,
-  set: r.set_start !== null && r.set_end !== null && r.set_at ? { start: r.set_start, end: r.set_end, at: r.set_at } : null,
-  reviewedAt: r.reviewed_at,
-  calledOffAt: r.called_off_at,
-  createdAt: r.created_at,
+type PlaceRow = Pick<PlanRow, "name" | "kind" | "area" | "photo_src" | "photo_page" | "photo_credit" | "photo_license">;
+const toStop = (id: number, r: PlaceRow): Stop => ({
+  id,
+  name: r.name,
+  kind: r.kind,
+  area: r.area,
+  photo: r.photo_src ? { src: r.photo_src, page: r.photo_page ?? r.photo_src, credit: r.photo_credit ?? "", license: r.photo_license ?? "" } : null,
 });
+// (a plan's stops, in order; one made before stops has its place as stop 1)
+const stopsOf = (planId: number) =>
+  (
+    db
+      .prepare(
+        `SELECT p.id, p.name, p.kind, p.area, p.photo_src, p.photo_page, p.photo_credit, p.photo_license
+           FROM plan_places pp JOIN places p ON p.id = pp.place_id WHERE pp.plan_id = ? ORDER BY pp.position`,
+      )
+      .all(planId) as (PlaceRow & { id: number })[]
+  ).map((r) => toStop(r.id, r));
+const toPlan = (r: PlanRow): Plan => {
+  const place = toStop(r.place_id, r);
+  const stops = stopsOf(r.id);
+  return {
+    id: r.id,
+    groupId: r.group_id,
+    placeId: r.place_id,
+    place,
+    stops: stops.length ? stops : [place],
+    createdBy: r.created_by,
+    day: r.day,
+    range: { start: r.range_start, end: r.range_end },
+    duration: r.duration,
+    set: r.set_start !== null && r.set_end !== null && r.set_at ? { start: r.set_start, end: r.set_end, at: r.set_at } : null,
+    reviewedAt: r.reviewed_at,
+    calledOffAt: r.called_off_at,
+    createdAt: r.created_at,
+  };
+};
 const PLAN_SELECT = `SELECT pl.*, p.name, p.kind, p.area, p.photo_src, p.photo_page, p.photo_credit, p.photo_license
   FROM plans pl JOIN places p ON p.id = pl.place_id`;
 const NOW = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
@@ -115,6 +141,15 @@ export const isRange = (r: { start: number; end: number }) =>
 export const isDuration = (duration: number, r: { start: number; end: number }) =>
   Number.isInteger(duration) && duration >= 1 && duration <= r.end - r.start;
 
+/**
+ * The stops said in order: "National Gallery → Questacon"; with more than
+ * `room`, the first and how many more: "National Gallery + 2 more".
+ */
+export function stopNames(stops: { name: string }[], room = 3): string {
+  if (stops.length <= room) return stops.map((s) => s.name).join(" → ");
+  return `${stops[0].name} + ${stops.length - 1} more`;
+}
+
 /** Whether `day` can have a plan: today, or up to a year ahead. */
 export const isPlanDay = (day: string, now = new Date()) =>
   isDay(day) && day >= today(now) && day <= addDays(today(now), PLAN_DAYS_AHEAD);
@@ -122,29 +157,38 @@ export const isPlanDay = (day: string, now = new Date()) =>
 const onList = (groupId: string, placeId: number) =>
   db.prepare("SELECT 1 FROM picks WHERE group_id = ? AND place_id = ?").get(groupId, placeId) !== undefined;
 
+/** Whether `ids` can be a plan's stops: one to five places on the group's list, none twice. */
+export const areStops = (groupId: string, ids: number[]) =>
+  ids.length >= 1 &&
+  ids.length <= MAX_STOPS &&
+  new Set(ids).size === ids.length &&
+  ids.every((id) => Number.isInteger(id) && onList(groupId, id));
+
 /**
- * The owner starts a plan for a place on the list, on a day, taking so
- * long. One at a time: "exists" while the group has one. Returns its id,
- * or "invalid".
+ * The owner starts a plan for one or more places on the list (its stops,
+ * in order), on a day, taking so long all told. One at a time: "exists"
+ * while the group has one. Returns its id, or "invalid".
  */
 export function startPlan(
   group: Group,
   by: Member,
-  placeId: number,
+  stops: number[],
   day: string,
   range = DEFAULT_RANGE,
   duration = DEFAULT_DURATION,
   now = new Date(),
 ): number | "exists" | "invalid" {
-  if (by.id !== group.ownerId || !isPlanDay(day, now) || !isRange(range) || !isDuration(duration, range) || !onList(group.id, placeId))
+  if (by.id !== group.ownerId || !isPlanDay(day, now) || !isRange(range) || !isDuration(duration, range) || !areStops(group.id, stops))
     return "invalid";
   return db.transaction(() => {
     if (currentPlan(group.id, now)) return "exists" as const;
-    return Number(
+    const id = Number(
       db
         .prepare("INSERT INTO plans (group_id, place_id, created_by, day, range_start, range_end, duration) VALUES (?, ?, ?, ?, ?, ?, ?)")
-        .run(group.id, placeId, by.id, day, range.start, range.end, duration).lastInsertRowid,
+        .run(group.id, stops[0], by.id, day, range.start, range.end, duration).lastInsertRowid,
     );
+    setStops(id, stops);
+    return id;
   })();
 }
 
@@ -213,9 +257,9 @@ export function callOffPlan(plan: Plan): boolean {
 }
 
 /**
- * Another day, other hours to count, or another length. Other hours or
- * another length keep everyone's answers (the card just works it out
- * again); another day is a new plan for the same place (answers were about
+ * Another day, other hours to count, another length, or other stops. On
+ * the same day these keep everyone's answers (the card just works it out
+ * again); another day is a new plan for the same stops (answers were about
  * the old day), and the old one is called off and points at it, so
  * nothing's lost. Returns the plan's id now, or "invalid".
  */
@@ -225,20 +269,26 @@ export function changePlan(
   day: string,
   range: { start: number; end: number },
   duration = plan.duration,
+  stops = plan.stops.map((s) => s.id),
   now = new Date(),
 ): number | "invalid" {
-  if (plan.calledOffAt || !isRange(range) || !isDuration(duration, range) || !isPlanDay(day, now)) return "invalid";
+  if (plan.calledOffAt || !isRange(range) || !isDuration(duration, range) || !isPlanDay(day, now) || !areStops(plan.groupId, stops))
+    return "invalid";
   if (day === plan.day) {
-    if (plan.set && (plan.set.start < range.start || plan.set.end > range.end)) unsetPlanTime(plan);
-    db.prepare("UPDATE plans SET range_start = ?, range_end = ?, duration = ? WHERE id = ?").run(range.start, range.end, duration, plan.id);
-    return plan.id;
+    return db.transaction(() => {
+      if (plan.set && (plan.set.start < range.start || plan.set.end > range.end)) unsetPlanTime(plan);
+      db.prepare("UPDATE plans SET range_start = ?, range_end = ?, duration = ? WHERE id = ?").run(range.start, range.end, duration, plan.id);
+      if (stops.join() !== plan.stops.map((s) => s.id).join()) setStops(plan.id, stops);
+      return plan.id;
+    })();
   }
   return db.transaction(() => {
     const id = Number(
       db
         .prepare("INSERT INTO plans (group_id, place_id, created_by, day, range_start, range_end, duration) VALUES (?, ?, ?, ?, ?, ?, ?)")
-        .run(plan.groupId, plan.placeId, by.id, day, range.start, range.end, duration).lastInsertRowid,
+        .run(plan.groupId, stops[0], by.id, day, range.start, range.end, duration).lastInsertRowid,
     );
+    setStops(id, stops);
     db.prepare(`UPDATE plans SET called_off_at = ${NOW}, replaced_by = ? WHERE id = ?`).run(id, plan.id);
     return id;
   })();

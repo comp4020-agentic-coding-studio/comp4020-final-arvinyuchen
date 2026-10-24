@@ -112,6 +112,71 @@ describe("a plan", () => {
     expect(plain.headers.get("location")).toContain(`#plan-${plan}`);
   });
 
+  it("can take in several places on the list, in the order given, one to five", async () => {
+    const c = await crew("Stops crew");
+    for (const key of ["nga", "nma", "awm", "glassworks", "arboretum"]) await request(c.ana, `${c.api}/picks`, { form: { key } });
+    // the places by name, from the owner's sheet (one to pick for each place on the list)
+    const boxes = [...(await page(c.ana, c.path)).querySelectorAll<HTMLInputElement>('#plan-start input[name="place"]')];
+    const id: Record<string, string> = Object.fromEntries(boxes.map((b) => [b.dataset.name ?? "", b.value]));
+    const all = Object.values(id);
+    expect(all.length).toBe(6);
+    const start = (places: string[], order = "") =>
+      inPage(c.ana, `${c.api}/plans`, new URLSearchParams([["action", "start"], ["day", soon], ["stops", "1"], ["order", order], ...places.map((p): [string, string] => ["place", p])]));
+    // none, six, or one not on the list
+    expect((await start([])).status).toBe(409);
+    expect((await start(all)).status).toBe(409);
+    expect((await start([id.Questacon, "999999"])).status).toBe(409);
+    expect((await start([id.Questacon, id.Questacon])).status).toBe(409);
+    // two, in the order tapped (not the list's)
+    const q = id.Questacon;
+    const n = id["National Gallery of Australia"];
+    expect((await start([n, q], `${q},${n}`)).status).toBe(204);
+    let doc = await page(c.ben, c.path);
+    const plan = doc.querySelector<HTMLElement>(".plan")?.dataset.planId ?? "";
+    expect(doc.querySelector(".plan h3")?.textContent).toBe("Questacon → National Gallery of Australia");
+    expect(doc.querySelector("#busy .sheet__sub")?.textContent).toContain("Questacon → National Gallery of Australia · ");
+    const marks = [...doc.querySelectorAll("#list .pick__plan")].map((p) => p.textContent);
+    expect(marks.sort()).toEqual([expect.stringContaining("stop 1 of 2"), expect.stringContaining("stop 2 of 2")]);
+    // the owner's sheet has them ticked, in order
+    const sheet = (await page(c.ana, c.path)).querySelector("#plan-start");
+    expect(sheet?.querySelector<HTMLInputElement>('input[name="order"]')?.value).toBe(`${q},${n}`);
+
+    // other stops keep everyone's times; a plain form's ticks go in the list's order
+    await request(c.ben, `${c.api}/busy`, { form: { plan, from: "09:00", to: "10:00" } });
+    const plain = new URLSearchParams([["action", "change"], ["plan", plan], ["stops", "1"], ["place", id.Questacon], ["place", id["National Museum of Australia"] ?? all[2]]]);
+    expect((await inPage(c.ana, `${c.api}/plans`, plain)).status).toBe(204);
+    doc = await page(c.ben, c.path);
+    expect(doc.querySelector(".plan h3")?.textContent).toContain(" → ");
+    expect(doc.querySelector(`#plan-${plan} .plan__mine`)?.textContent).toContain("busy 9–10am");
+    // none ticked is refused, not "as it was"
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, stops: "1" })).status).toBe(409);
+
+    // a stop taken off the list leaves the plan, the rest moving up; the last one calls it off
+    const pickOf = async (name: string) =>
+      [...(await page(c.ana, c.path)).querySelectorAll("#list li")].find((li) => li.textContent?.includes(name))?.querySelector<HTMLInputElement>('input[name="pick"]')?.value ?? "";
+    const firstName = doc.querySelector(".plan h3")?.textContent?.split(" → ")[0] ?? "";
+    const secondName = doc.querySelector(".plan h3")?.textContent?.split(" → ")[1] ?? "";
+    await request(c.ana, `${c.api}/picks`, { form: { remove: await pickOf(firstName) } });
+    doc = await page(c.ben, c.path);
+    expect(doc.querySelector(".plan h3")?.textContent).toBe(secondName);
+    expect(doc.querySelector(`#plan-${plan} .plan__mine`)?.textContent).toContain("busy 9–10am");
+    await request(c.ana, `${c.api}/picks`, { form: { remove: await pickOf(secondName) } });
+    doc = await page(c.ben, c.path);
+    expect(doc.querySelector(".plan")).toBeNull();
+    expect(doc.querySelector("#past-plans")?.textContent).toContain("Called off");
+    expect(doc.querySelector("#past-plans")?.textContent).toContain(secondName);
+  });
+
+  it("still reads a plan with one place, as plans were before stops", async () => {
+    const c = await crew("One stop crew");
+    // the form as it was: one place, no order
+    const plan = await planned(c);
+    const doc = await page(c.ben, c.path);
+    expect(doc.querySelector(`#plan-${plan} h3`)?.textContent).toBe("Questacon");
+    expect(doc.querySelector("#list .pick__plan")?.textContent).not.toContain("stop");
+    expect(doc.querySelector("#busy .sheet__sub")?.textContent).toMatch(/^Questacon · /);
+  });
+
   it("is set by the owner only, inside the hours it counts", async () => {
     const c = await crew("Set crew");
     const plan = await planned(c);

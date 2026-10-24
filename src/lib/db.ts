@@ -226,6 +226,20 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS plan_busy_answer ON plan_busy (plan_id, member_id);
 `);
 addColumn("plans", "duration", "INTEGER NOT NULL DEFAULT 60");
+// A plan is one outing that may take in several places on the list, in
+// order: its stops. plans.place_id stays, always the first stop, so a plan
+// reads as it did; a plan made before stops has its one place as stop 1.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS plan_places (
+    plan_id INTEGER NOT NULL REFERENCES plans(id),
+    place_id INTEGER NOT NULL REFERENCES places(id),
+    position INTEGER NOT NULL CHECK (position >= 1),
+    PRIMARY KEY (plan_id, position),
+    UNIQUE (plan_id, place_id)
+  );
+  INSERT INTO plan_places (plan_id, place_id, position)
+    SELECT id, place_id, 1 FROM plans WHERE id NOT IN (SELECT plan_id FROM plan_places);
+`);
 
 // The checked starter places, upserted by key so a corrected coordinate,
 // blurb or photo reaches the live database on the next deploy.
@@ -273,12 +287,14 @@ db.transaction(() => {
   db.prepare(`DELETE FROM votes WHERE pick_id IN (SELECT id FROM picks WHERE place_id IN (${bare}))`).run();
   db.prepare(`DELETE FROM picks WHERE place_id IN (${bare})`).run();
   db.prepare(`DELETE FROM place_vectors WHERE place_id IN (${bare})`).run();
-  // (and any plan to go there, with its answers)
-  const gone = `SELECT id FROM plans WHERE place_id IN (${bare})`;
-  db.prepare(`UPDATE plans SET replaced_by = NULL WHERE replaced_by IN (${gone})`).run();
-  db.prepare(`DELETE FROM plan_busy WHERE plan_id IN (${gone})`).run();
-  db.prepare(`DELETE FROM plan_answers WHERE plan_id IN (${gone})`).run();
-  db.prepare(`DELETE FROM plans WHERE place_id IN (${bare})`).run();
+  // (and any plan with a stop there, with its stops and answers)
+  const gone = `SELECT id FROM plans WHERE place_id IN (${bare}) UNION SELECT plan_id FROM plan_places WHERE place_id IN (${bare})`;
+  const goneIds = (db.prepare(gone).all() as { id: number }[]).map((r) => r.id).join(", ");
+  if (goneIds) {
+    db.prepare(`UPDATE plans SET replaced_by = NULL WHERE replaced_by IN (${goneIds})`).run();
+    for (const table of ["plan_places", "plan_busy", "plan_answers"]) db.prepare(`DELETE FROM ${table} WHERE plan_id IN (${goneIds})`).run();
+    db.prepare(`DELETE FROM plans WHERE id IN (${goneIds})`).run();
+  }
   db.prepare(`DELETE FROM places WHERE id IN (${bare})`).run();
 })();
 
@@ -567,13 +583,37 @@ export function removePick(group: Group, pickId: number, member: Member): number
     if (!pick || !canRemovePick(group, pick, member)) return undefined;
     db.prepare("DELETE FROM votes WHERE pick_id = ?").run(pickId);
     db.prepare("DELETE FROM picks WHERE id = ?").run(pickId);
-    // A plan to go there is called off, and kept.
-    db.prepare(
-      `UPDATE plans SET called_off_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-        WHERE group_id = ? AND place_id = ? AND called_off_at IS NULL AND day >= ?`,
-    ).run(group.id, pick.placeId, today());
+    // A plan on now with a stop there loses that stop, the others moving
+    // up; one that has no other stop is called off, and kept.
+    const plans = db
+      .prepare(
+        `SELECT pl.id, (SELECT count(*) FROM plan_places s WHERE s.plan_id = pl.id) AS stops
+           FROM plans pl JOIN plan_places pp ON pp.plan_id = pl.id
+          WHERE pl.group_id = ? AND pp.place_id = ? AND pl.called_off_at IS NULL AND pl.day >= ?`,
+      )
+      .all(group.id, pick.placeId, today()) as { id: number; stops: number }[];
+    for (const plan of plans) {
+      if (plan.stops <= 1) {
+        db.prepare("UPDATE plans SET called_off_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(plan.id);
+        continue;
+      }
+      const rest = (
+        db.prepare("SELECT place_id FROM plan_places WHERE plan_id = ? AND place_id != ? ORDER BY position").all(plan.id, pick.placeId) as {
+          place_id: number;
+        }[]
+      ).map((r) => r.place_id);
+      setStops(plan.id, rest);
+    }
     return pick.placeId;
   })();
+}
+
+/** A plan's stops, in order (the first is plans.place_id too). */
+export function setStops(planId: number, placeIds: number[]) {
+  db.prepare("DELETE FROM plan_places WHERE plan_id = ?").run(planId);
+  const add = db.prepare("INSERT INTO plan_places (plan_id, place_id, position) VALUES (?, ?, ?)");
+  placeIds.forEach((id, i) => add.run(planId, id, i + 1));
+  db.prepare("UPDATE plans SET place_id = ? WHERE id = ?").run(placeIds[0], planId);
 }
 
 export const placeIdForSeed = (key: string): number | undefined =>

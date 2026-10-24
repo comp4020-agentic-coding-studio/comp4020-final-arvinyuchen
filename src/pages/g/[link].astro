@@ -11,7 +11,7 @@ import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
 import { canRemovePick, groupByLink, listMembers, listPicks, listPlaces, NOTE_MAX } from "../../lib/db";
 import { clean, me, signedIn } from "../../lib/me";
-import { currentPlan, pastPlans, planView } from "../../lib/plans";
+import { currentPlan, pastPlans, planView, stopNames } from "../../lib/plans";
 import { search } from "../../lib/search";
 import { dayParts, formatDay, formatMinute } from "../../lib/when";
 
@@ -146,12 +146,13 @@ const PLAN_ERROR: Record<string, string> = {
   "plan-set": "That time doesn't fit the plan's hours. Pick one of the starts offered.",
   "plan-change": "That day or those hours don't work: a day from today on, hours between 6am and midnight.",
 };
-const planLine = (placeId: number) =>
-  plan && plan.placeId === placeId
-    ? plan.set
-      ? `${formatDay(plan.day)}, ${formatMinute(plan.set.start)}`
-      : `Planning ${dayParts(plan.day).weekday} ${dayParts(plan.day).date}`
-    : "";
+// (on each stop's row: when, and which stop it is when there are several)
+const planLine = (placeId: number) => {
+  const at = plan ? plan.stops.findIndex((s) => s.id === placeId) : -1;
+  if (!plan || at < 0) return "";
+  const when = plan.set ? `${formatDay(plan.day)}, ${formatMinute(plan.set.start)}` : `Planning ${dayParts(plan.day).weekday} ${dayParts(plan.day).date}`;
+  return plan.stops.length > 1 ? `${when} · stop ${at + 1} of ${plan.stops.length}` : when;
+};
 const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 8.5h14M7 2.8v3M13 2.8v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>`;
 ---
 
@@ -308,7 +309,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           <a class="next-up" href={`#plan-${plan.id}`} data-tab="list">
             <span class="next-up__cal" aria-hidden="true"><svg viewBox="0 0 20 20" width="15" height="15" set:html={calendar} /></span>
             <span class="next-up__text">
-              {formatDay(plan.day)}, {formatMinute(plan.set.start)} · {plan.place.name}
+              {formatDay(plan.day)}, {formatMinute(plan.set.start)} · {stopNames(plan.stops, 1)}
               <span> · {view.set.busy.length === 0 && view.set.unknown.length === 0 ? "everyone's free" : `${view.set.free.length} free`}</span>
             </span>
           </a>
@@ -563,7 +564,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
               <li class:list={{ "is-off": off || !p.set }}>
                 <span class="cal cal--small" aria-hidden="true"><b>{weekday}</b><span>{date}</span></span>
                 <span>
-                  <strong>{p.place.name}</strong>
+                  <strong>{stopNames(p.stops)}</strong>
                   {off ? <span class="past__tag">Called off</span> : !p.set && <span class="past__tag">No time set</span>}
                   <span class="past__when">{formatDay(p.day)}{p.set && !off && `, ${formatMinute(p.set.start)}`}</span>
                 </span>
@@ -1012,7 +1013,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           form.closest("dialog")?.close();
           form.closest("details")?.removeAttribute("open");
           await refresh();
-          if (res.status === 409) say(form.matches("[data-plan-start]") ? "That didn't work: pick a place on the list, a day from today on, and how long it takes within the hours you count." : "The plan changed meanwhile. Here it is as it is now.");
+          if (res.status === 409) say(form.matches("[data-plan-start]") ? "That didn't work: pick one to five places on the list, a day from today on, and how long it takes within the hours you count." : "The plan changed meanwhile. Here it is as it is now.");
           else if (form.matches("[data-busy]")) say("Your times are in. The others see how many are free, never when you're busy.");
           return;
         }

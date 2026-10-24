@@ -218,6 +218,17 @@ timeline lands on 5 minutes (counted from the plan's start) and says its
 from–to on itself as it goes; exact minutes are typed in a stretch's exact
 times. A stretch at an odd minute keeps its length when moved.
 
+Later a plan became one outing that can take in several places, in order
+(the National Gallery, then Questacon), with one length for all of it
+rather than one each: the group still settles one time, and the stops
+just say where it goes. They're chosen by tapping, each numbered as
+tapped (without a script, ticked, in the list's order), one to five. A
+stop's place taken off the list drops that stop, the rest moving up,
+rather than calling off a whole outing for one part of it; the last one
+going calls it off. The stops live in their own table beside the plan,
+which keeps its first place as before, so plans from before read the
+same.
+
 ## How I worked with the agent
 
 - I chose the idea and the audience; the agent offered options and pushed

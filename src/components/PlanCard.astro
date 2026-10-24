@@ -1,7 +1,7 @@
 ---
 import type { Group, Member } from "../lib/db";
 import { startsIn } from "../lib/free";
-import type { PlanView, PlanWindow } from "../lib/plans";
+import { stopNames, type PlanView, type PlanWindow } from "../lib/plans";
 import { clockOf, dayParts, formatDay, formatDuration, formatMinute, formatSpan } from "../lib/when";
 import PlanHeat from "./PlanHeat.astro";
 
@@ -53,6 +53,8 @@ const otherStarts = (w: PlanWindow) => {
   return starts;
 };
 const lasts = formatDuration(long);
+// where the outing goes, its stops in order
+const where = stopNames(plan.stops);
 // (with nothing that long: the longest that two or more could do, said plainly)
 const noneFits = view.windows.length === 0 && view.longestShort > 0;
 const first = view.windows[0];
@@ -66,7 +68,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
   class:list={["plan", { "plan--needs": needs !== "", "plan--set": set }]}
   data-needs={needs || undefined}
   data-plan-id={plan.id}
-  data-place={plan.place.name}
+  data-place={where}
   data-day={formatDay(plan.day)}
   data-owner={view.owner}
   data-set={setWhen || undefined}
@@ -84,7 +86,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
       <p class:list={["plan__eyebrow", { "is-blue": needs === "answer" || (set && !isOwner) }]}>
         {needs === "answer" ? "Needs your answer" : set ? (isOwner ? "Your plan · set" : `Set by ${view.owner}`) : isOwner ? "Your plan" : `${view.owner}'s plan`}
       </p>
-      <h3 id={`plan-${plan.id}-title`}>{plan.place.name}</h3>
+      <h3 id={`plan-${plan.id}-title`}>{where}</h3>
       {set ? (
         <p class="plan__when">{setWhen}</p>
       ) : (
@@ -108,7 +110,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
               <button>Pick another time</button>
             </form>
           )}
-          <form method="post" action={action} data-plan data-confirm={`Call off ${plan.place.name} on ${formatDay(plan.day)}? It stays under Past plans.`}>
+          <form method="post" action={action} data-plan data-confirm={`Call off ${where} on ${formatDay(plan.day)}? It stays under Past plans.`}>
             <input type="hidden" name="action" value="off" />
             <input type="hidden" name="plan" value={plan.id} />
             <button class="is-danger">Call it off</button>
@@ -292,7 +294,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
           {view.windows.length === 0 && !noneFits && view.everyoneIn && isOwner && (
             <div class="plan__acts">
               <a class="btn btn--small" href={`/g/${group.link}?plan=change#plan-start`} data-open-start>Change the day</a>
-              <form method="post" action={action} data-plan data-confirm={`Call off ${plan.place.name} on ${formatDay(plan.day)}? It stays under Past plans.`}>
+              <form method="post" action={action} data-plan data-confirm={`Call off ${where} on ${formatDay(plan.day)}? It stays under Past plans.`}>
                 <input type="hidden" name="action" value="off" />
                 <input type="hidden" name="plan" value={plan.id} />
                 <button class="btn btn--small">Call it off</button>
