@@ -59,6 +59,9 @@ describe("a plan", () => {
     const plan = /#plan-(\d+)$/.exec(res.headers.get("location") ?? "")?.[1] ?? "";
     const data = () => page(c.ben, c.path).then((doc) => JSON.parse(doc.querySelector("#busy [data-timeline-data]")?.textContent ?? "{}"));
     expect(await data()).toMatchObject({ day: addDays(today(), 20), start: 487, end: 1440 });
+    // the owner's sheet keeps that date in its plain date field (past the two weeks' chips), from today to a year on
+    const date = (await page(c.ana, c.path)).querySelector('#plan-start input[type="date"][name="date"]');
+    expect([date?.getAttribute("value"), date?.getAttribute("min"), date?.getAttribute("max")]).toEqual([addDays(today(), 20), today(), addDays(today(), 365)]);
     // other hours, as the script sends them
     expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, from: "421", to: "1379" })).status).toBe(204);
     expect(await data()).toMatchObject({ start: 421, end: 1379 });

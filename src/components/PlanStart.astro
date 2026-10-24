@@ -4,8 +4,11 @@ import { DEFAULT_RANGE, PLAN_DAYS_AHEAD, type Plan } from "../lib/plans";
 import { addDays, dayParts, formatMinute, today } from "../lib/when";
 import SpotPhoto from "./SpotPhoto.astro";
 
-// The owner's sheet for a plan: where (a place on Our list), which day, and
-// the hours to count (8am to 11pm unless they say). With a plan already on,
+// The owner's sheet for a plan: where (a place on Our list), which day (a
+// chip for the next two weeks, or another date: the browser's date field,
+// which the script turns into a calendar in the sheet's own look,
+// src/scripts/plan-start.ts), and the hours to count (8am to 11pm unless
+// they say). With a plan already on,
 // the same sheet moves it to another day or other hours. A <dialog>, open
 // from the server when the URL asks (?plan=new, ?plan=change), so it works
 // without a script; the page's script opens it in place. It sits outside
