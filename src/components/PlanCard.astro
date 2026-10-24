@@ -138,6 +138,11 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
           )}
         </span>
       </p>
+      {total > 0 && (
+        <div class="plan__results plan__results--set">
+          <PlanHeat heat={view.heat} range={plan.range} total={total} mark={{ from: set.start, to: set.end }} markLabel="the set time" />
+        </div>
+      )}
       {view.changed && (
         <div class="plan__changed" role="status">
           <p>
@@ -193,7 +198,13 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
       {total > 0 && (
         <div class="plan__results">
           {!view.everyoneIn && <p class="plan__label">So far · {total} answered</p>}
-          <PlanHeat heat={view.heat} range={plan.range} total={total} mark={view.windows[0]} />
+          <PlanHeat
+            heat={view.heat}
+            range={plan.range}
+            total={total}
+            mark={isOwner && first ? { from: first.from, to: first.from + long } : first}
+            markLabel={isOwner ? "your pick" : "the best time"}
+          />
           {noneFits ? (
             <div class="plan__none plan__none--short">
               <p>

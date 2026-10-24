@@ -1269,9 +1269,10 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       const button = pick.querySelector(".plan__set");
       const when = other?.value ? other.selectedOptions[0].textContent : radio?.dataset.when;
       button.textContent = when ? `${button.dataset.setLabel}, ${when}` : "Set it";
-      const heat = document.querySelector("#plans .heat");
+      // (the strip's ring follows the start chosen, as long as the plan takes)
+      const heat = pick.closest(".plan")?.querySelector(".heat");
       const mark = heat?.querySelector(".heat__mark");
-      const win = (radio?.dataset.win ?? other?.value)?.split("-").map(Number);
+      const win = (other?.value || radio?.value)?.split("-").map(Number);
       if (!mark || !win) return;
       const from = Number(heat.dataset.from);
       const span = Number(heat.dataset.to) - from;

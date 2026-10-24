@@ -309,6 +309,9 @@ describe("the plan on the group's page", () => {
     expect(doc.querySelector(`#plan-${plan}`)?.getAttribute("data-needs")).toBeNull();
     expect(doc.querySelector(`#plan-${plan} .plan__mine`)?.textContent).toContain("busy 9–10:20am");
     expect(doc.querySelector(".tabs__dot")).toBeNull();
+    // one answer singles nothing out: the strip has no ring
+    expect(doc.querySelector(`#plan-${plan} .heat`)).toBeTruthy();
+    expect(doc.querySelector(`#plan-${plan} .heat__mark`)).toBeNull();
   });
 
   it("shows the owner when everyone's free, lets them set it, then shows everyone the time", async () => {
@@ -326,6 +329,8 @@ describe("the plan on the group's page", () => {
     // the start offered ends two hours on, as long as the plan takes
     const first = card?.querySelector<HTMLInputElement>('input[name="at"]:checked')?.value;
     expect(first).toBe("855-975");
+    // the ring round the owner's pick: 2:15 to 4:15pm of 8am to 11pm
+    expect(card?.querySelector<HTMLElement>(".heat__mark")?.getAttribute("style")).toBe("left: 41.667%; width: 13.333%");
     await request(c.ana, `${c.api}/plans`, { form: { action: "set", plan, at: first ?? "" } });
 
     doc = await page(c.ben, c.path);
@@ -333,6 +338,8 @@ describe("the plan on the group's page", () => {
     expect(doc.querySelector(`#plan-${plan} .plan__when`)?.textContent).toContain("2:15pm");
     expect(doc.querySelector(`#plan-${plan} .plan__going`)?.textContent).toContain("Everyone's free till 4:15pm");
     expect(doc.querySelector("#list .pick__plan")?.textContent).toContain("2:15pm");
+    // once set, the strip rings the set time
+    expect(doc.querySelector(`#plan-${plan} .plan__results--set .heat__mark`)?.getAttribute("style")).toBe("left: 41.667%; width: 13.333%");
   });
 
   it("works out when everyone's free to the minute", async () => {

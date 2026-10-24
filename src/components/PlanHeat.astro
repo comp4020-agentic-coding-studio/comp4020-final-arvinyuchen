@@ -2,7 +2,10 @@
 import { formatMinute } from "../lib/when";
 
 // How many are free through the plan's hours, as one strip: deeper blue
-// where more are free, grey where nobody is, a ring round the best window.
+// where more are free, grey where nobody is. A thin blue ring singles out
+// one stretch (the set time, the owner's pick, or the best window), only
+// when there's something to single out: two answers or more, and less
+// than the whole strip.
 // Counts only, never whose. The strip is a picture of the windows listed
 // under it, so a screen reader reads those instead.
 interface Props {
@@ -10,8 +13,11 @@ interface Props {
   range: { start: number; end: number };
   total: number;
   mark?: { from: number; to: number };
+  /** what the ring is: "the set time", "your pick", "the best time" */
+  markLabel?: string;
 }
-const { heat, range, total, mark } = Astro.props;
+const { heat, range, total, markLabel } = Astro.props;
+const mark = Astro.props.mark && total >= 2 && (Astro.props.mark.from > range.start || Astro.props.mark.to < range.end) ? Astro.props.mark : undefined;
 const span = range.end - range.start;
 const at = (m: number) => `${(((m - range.start) / span) * 100).toFixed(3)}%`;
 const wide = (a: number, b: number) => `${(((b - a) / span) * 100).toFixed(3)}%`;
