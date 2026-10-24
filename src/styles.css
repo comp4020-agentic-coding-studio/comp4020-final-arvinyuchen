@@ -4867,27 +4867,94 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   outline-offset: 2px;
 }
 
-.plan__other {
-  padding: 0.3rem 0.9rem 0.2rem;
+/* (the earliest start, picked, unless a start is typed: then the field's) */
+.st small {
+  font-weight: 500;
+  opacity: 0.8;
 }
 
-.plan__other label {
+.starts.is-typed .st input:checked + span {
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--ink);
+}
+
+.starts.is-typed .tf,
+.starts.is-typed .starts__at > input {
+  box-shadow: inset 0 0 0 2px var(--accent-strong);
+}
+
+/* (a window just as long as the plan: its one start, said) */
+.st--only {
+  cursor: auto;
+}
+
+.st--only span {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.st--only input:checked + span {
+  background: none;
+  color: var(--ink);
+}
+
+.starts__at {
+  display: inline-flex;
+}
+
+.starts__at > input {
+  width: auto;
+  min-height: 2rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+/* The windows past the best few, behind "N more windows" (a box to tick,
+   so it works without a script); one picked stays in view. */
+.wins__more label {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
-.plan__other select {
-  width: auto;
-  min-height: 2.2rem;
-  padding: 0.3rem 0.8rem;
-  border-radius: 999px;
+  gap: 0.35rem;
+  padding: 0.55rem 0.9rem;
   color: var(--accent-ink);
   font-size: 0.85rem;
   font-weight: 600;
+  cursor: pointer;
+}
+
+.wins__more input {
+  position: absolute;
+  opacity: 0;
+}
+
+.wins__more span::after {
+  content: "";
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-left: 0.45rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-0.15rem) rotate(45deg);
+  transition: transform 0.2s;
+}
+
+.wins__more input:checked + span::after {
+  transform: translateY(0.05rem) rotate(-135deg);
+}
+
+.wins__more input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.wins:not(:has(.wins__more-toggle:checked, .starts--more :checked)) .win--more {
+  display: none;
 }
 
 .plan__pick .plan__set {
@@ -5840,6 +5907,8 @@ dialog.sheet[open]:not(:modal) {
   position: relative;
   display: inline-block;
   margin: 0;
+  /* (in a label, not its muted spans' grey) */
+  color: inherit;
   touch-action: none;
   cursor: ns-resize;
   user-select: none;

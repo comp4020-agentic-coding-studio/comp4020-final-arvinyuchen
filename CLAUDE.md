@@ -100,7 +100,12 @@ follow from it; every change has to hold to them.
   new length (answers kept). The owner's sheet asks only how long; the
   hours it counts (8am to 11pm unless changed, and only time inside them
   is ever free, so never the night) fold away under it; each member marks only their own busy times
-  (`me()`), and the owner sets the time. Times are Canberra's wall clock:
+  (`me()`), and the owner sets the time: a window's earliest start (one
+  chip), or a later one typed or swiped in its time field, kept so the
+  whole length fits in the window (`start-` and the window's start, read
+  by the set route; a plain time input with min and max without a
+  script); the windows past the best few sit behind "N more windows", and
+  "Or set an exact time" stays for a time outside them or another end. Times are Canberra's wall clock:
   a local date and whole minutes since its midnight, to the minute
   (`src/lib/when.ts`), never the server's zone; on the timeline a drag
   lands on 5 minutes and exact minutes are typed. Nobody sees anyone else's

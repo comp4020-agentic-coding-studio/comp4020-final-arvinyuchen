@@ -18,8 +18,8 @@ import {
 } from "../../../../lib/plans";
 
 // The owner's side of a plan: start one (one to five places on the list,
-// its stops in order; a day; the hours to count; how long it takes), set the time (a start offered, one
-// from "Other", or an exact time), go back to picking, keep the time after
+// its stops in order; a day; the hours to count; how long it takes), set the time (a window's
+// earliest start, a later one typed in its field, or an exact time), go back to picking, keep the time after
 // someone's changed theirs, move it to another day, or call it off. Only
 // the owner gets past the first check. The page's script posts in the
 // background (a 204, or a 409 when it can't be done); a plain form post
@@ -72,10 +72,14 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   if (!plan || plan.id !== currentPlan(group.id)?.id) return refused("plan-gone");
 
   if (action === "set") {
-    // an exact time, typed; or a start among the offered, or one picked from "Other"
-    const at = form.get("exact")
+    // an exact time, typed; or a window's earliest start ("at"), or the
+    // start typed in that window's field ("start-" and the window's start),
+    // lasting as long
+    let at = form.get("exact")
       ? [parseMinute(clean(form.get("set_from"), 8)) ?? NaN, parseMinute(clean(form.get("set_to"), 8), true) ?? NaN]
-      : parseInterval(clean(form.get("other"), 12) || clean(form.get("at"), 12));
+      : parseInterval(clean(form.get("at"), 12));
+    const typed = at && !form.get("exact") ? parseMinute(clean(form.get(`start-${at[0]}`), 8)) : null;
+    if (at && typed !== null) at = [typed, typed + at[1] - at[0]];
     return at && setPlanTime(plan, at[0], at[1]) ? done(plan.id) : refused("plan-set");
   }
   if (action === "unset") return unsetPlanTime(plan) ? done(plan.id) : refused("plan-set");

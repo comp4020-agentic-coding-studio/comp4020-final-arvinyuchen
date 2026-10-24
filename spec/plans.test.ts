@@ -352,6 +352,44 @@ describe("the plan on the group's page", () => {
     expect(card?.querySelector(".win__who")?.textContent).toBe("Everyone free");
   });
 
+  it("offers each window's earliest start and any later one typed, the whole length inside it", async () => {
+    const c = await crew("Start crew");
+    const plan = await planned(c);
+    await request(c.ana, `${c.api}/busy`, { form: { plan, from: "545", to: "620" } });
+    await request(c.ben, `${c.api}/busy`, { form: { plan, from: "690", to: "855" } });
+    let card = (await page(c.ana, c.path)).querySelector(`#plan-${plan}`);
+    // 2:15 to 11pm, 2h long: one chip, the earliest, and a time field from it to 9pm
+    const starts = card?.querySelector(".starts");
+    expect([...(starts?.querySelectorAll('input[name="at"]') ?? [])].map((r) => r.getAttribute("value"))).toEqual(["855-975"]);
+    expect(starts?.querySelector(".st")?.textContent).toContain("2:15pm");
+    const field = starts?.querySelector('input[type="time"]');
+    expect([field?.getAttribute("name"), field?.getAttribute("value"), field?.getAttribute("min"), field?.getAttribute("max"), field?.getAttribute("step")]).toEqual([
+      "start-855",
+      "14:15",
+      "14:15",
+      "21:00",
+      "60",
+    ]);
+    // no list of starts to choose from, only the further windows
+    expect(card?.querySelector('select[name="other"]')).toBeNull();
+    // the start typed is the one set, as long as the plan takes
+    await request(c.ana, `${c.api}/plans`, { form: { action: "set", plan, at: "855-975", "start-855": "15:37" } });
+    card = (await page(c.ana, c.path)).querySelector(`#plan-${plan}`);
+    expect(card?.querySelector(".plan__when")?.textContent).toContain("3:37pm");
+    expect(card?.textContent).toContain("Everyone's free till 5:37pm");
+  });
+
+  it("says a window's one start when it's just as long as the plan", async () => {
+    const c = await crew("Snug crew");
+    const plan = await planned(c);
+    // free together only 10am to noon, and the plan takes 2h
+    const form = new URLSearchParams([["plan", plan], ["from", "480"], ["to", "600"], ["from", "720"], ["to", "1380"]]);
+    expect((await inPage(c.ana, `${c.api}/busy`, form)).status).toBe(204);
+    const starts = (await page(c.ana, c.path)).querySelector(`#plan-${plan} .starts`);
+    expect(starts?.querySelector(".st--only")?.textContent).toBe("Starts 10am, the one start that fits");
+    expect(starts?.querySelector('input[type="time"]')).toBeNull();
+  });
+
   it("shows the owner when everyone's free, lets them set it, then shows everyone the time", async () => {
     const c = await crew("Results crew");
     const plan = await planned(c);
@@ -401,9 +439,9 @@ describe("the plan on the group's page", () => {
     const card = (await page(c.ana, c.path)).querySelector(`#plan-${plan}`);
     expect(card?.querySelector(".win__when")?.textContent).toContain("2:13–11pm");
     expect(card?.querySelector<HTMLInputElement>('input[name="at"]:checked')?.value).toBe("853-973");
-    // "Other" offers the window's own start, then every 5 minutes
-    const other = [...(card?.querySelectorAll('select[name="other"] option') ?? [])].map((o) => o.getAttribute("value"));
-    expect(other.slice(0, 3)).toEqual(["", "853-973", "855-975"]);
+    // its start field begins on the window's own minute, and goes to the minute
+    const field = card?.querySelector('input[name="start-853"]');
+    expect([field?.getAttribute("value"), field?.getAttribute("step")]).toEqual(["14:13", "60"]);
     // or an exact time, typed
     expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, exact: "1", set_from: "14:13", set_to: "16:41" })).status).toBe(204);
     expect((await page(c.ben, c.path)).querySelector(`#plan-${plan} .plan__going`)?.textContent).toContain("till 4:41pm");

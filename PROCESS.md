@@ -191,7 +191,15 @@ works for all 7. All 7 are free 1–4:30pm (3h 30m)"), with "Make it
 3h 30m" for the owner, so the trade between length and everyone is in
 view rather than hidden. Only times when
 at least two are free count. A start the owner picks ends that long after;
-an exact time can still be typed. The sheet first asked for the hours to
+an exact time can still be typed. The starts were first a row of chips
+every half hour inside the chosen window, with "Other…" listing every 5
+minutes; that was a lot to scan and still not to the minute. Now a window
+offers its earliest start as one chip and, beside it, the same time field
+to type or swipe as the sheet's, held between that start and the latest
+that still fits; the ring on the strip and "Set it" follow it as it
+turns. "Other…" kept only its other half, the windows past the best few,
+now behind "N more windows"; "Or set an exact time" stays, as the only
+way to a time outside every window or a different end. The sheet first asked for the hours to
 count as well, a start and an end, but with how long asked that's one
 question too many: the hours fold away under it, 8am to 11pm (so night
 is never "free"), shown in grey with Change. The owner can set a time whenever they like,

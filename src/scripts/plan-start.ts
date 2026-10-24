@@ -306,6 +306,39 @@ function exactTime(row: HTMLElement) {
   });
 }
 
+// A window's start on the plan card: its plain time field (min and max
+// keeping the whole length inside the window) becomes one to type or
+// swipe. A change picks the window and says so to the page's script (the
+// button and the strip's ring follow); the window's "earliest" chip puts
+// the field back to its start.
+const startFields = new WeakMap<HTMLElement, TimeField>();
+function startField(plain: HTMLInputElement) {
+  if (plain.dataset.enhanced !== undefined) return;
+  plain.dataset.enhanced = "";
+  const starts = plain.closest<HTMLElement>(".starts");
+  const min = Number(plain.dataset.min);
+  const max = Number(plain.dataset.max);
+  if (!starts || !(min < max)) return;
+  const field = fieldInstead(plain, {
+    value: parseMinute(plain.value) ?? min,
+    min,
+    max,
+    label: "Start",
+    onChange: () => tell(),
+  });
+  const carrier = field.el.querySelector<HTMLInputElement>('input[type="hidden"]');
+  const tell = () => carrier?.dispatchEvent(new Event("change", { bubbles: true }));
+  startFields.set(starts, field);
+}
+document.addEventListener("click", (event) => {
+  const chip = (event.target as Element).closest?.(".starts .st:not(.st--only)");
+  const starts = chip?.closest<HTMLElement>(".starts");
+  const field = starts && startFields.get(starts);
+  if (!starts || !field) return;
+  field.set(Number(starts.querySelector<HTMLInputElement>("[data-start-field]")?.dataset.min), false);
+  starts.querySelector('input[type="hidden"][name^="start-"]')?.dispatchEvent(new Event("change", { bubbles: true }));
+});
+
 function enhance(dialog: HTMLDialogElement) {
   const form = dialog.querySelector<HTMLFormElement>("form[data-plan-start]");
   if (!form || form.dataset.enhanced !== undefined) return;
@@ -325,6 +358,7 @@ function enhanceAll() {
   const dialog = document.querySelector<HTMLDialogElement>("dialog#plan-start");
   if (dialog) enhance(dialog);
   for (const row of document.querySelectorAll<HTMLElement>("[data-set-range]")) exactTime(row);
+  for (const plain of document.querySelectorAll<HTMLInputElement>("input[data-start-field]")) startField(plain);
 }
 enhanceAll();
 // (a live refresh can bring the sheet, or the card, in anew)

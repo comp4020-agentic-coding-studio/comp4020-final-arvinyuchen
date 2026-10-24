@@ -904,22 +904,26 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       const open = [...now.querySelectorAll("details[data-keep-open][open]")].map((d) => d.dataset.keepOpen);
       const pick = now.querySelector(".plan__pick[data-chosen]");
       const at = pick?.querySelector("input[name=at]:checked")?.value;
-      const other = pick?.querySelector("select[name=other]")?.value;
+      const typed = at && pick.querySelector(`input[name="start-${at.split("-")[0]}"]:not(:disabled)`)?.value;
+      const more = pick?.querySelector(".wins__more-toggle")?.checked;
       const tall = now.offsetHeight;
       now.innerHTML = next.innerHTML;
       for (const key of open) now.querySelector(`details[data-keep-open="${CSS.escape(key)}"]`)?.setAttribute("open", "");
       const fresh = now.querySelector(".plan__pick");
       if (pick && fresh) {
         const radio = at && [...fresh.querySelectorAll("input[name=at]")].find((r) => r.value === at);
-        const select = fresh.querySelector("select[name=other]");
-        if (other && select && [...select.options].some((o) => o.value === other)) {
-          select.value = other;
-          for (const r of fresh.querySelectorAll("input[name=at]")) r.checked = false;
-          fresh.dataset.chosen = "";
-        } else if (radio) {
+        if (radio) {
           radio.checked = true;
           fresh.dataset.chosen = "";
+          // (and the start typed in it, which the field takes up as it's drawn)
+          const field = radio.closest(".starts").querySelector("input[data-start-field]");
+          if (field && typed) {
+            field.value = clockOf(minuteOf(typed));
+            radio.closest(".starts").classList.toggle("is-typed", minuteOf(typed) !== Number(field.dataset.min));
+          }
         }
+        const toggle = fresh.querySelector(".wins__more-toggle");
+        if (toggle && more) toggle.checked = true;
       }
       if (now.id === "plans" && now.offsetHeight !== tall) movedAt = performance.now();
     }
@@ -1264,24 +1268,44 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     );
 
     // The owner's choice of start says itself on the button ("Set it: Sat 24
-    // Oct, 2:15pm") and rings its window on the strip. "Other" is one choice
-    // more: picking it lets go of the start chips, and back.
+    // Oct, 2:15pm") and rings its window on the strip: a window's earliest
+    // start (its chip), or the start typed in its field, which picks that
+    // window and lets go of the chip (the field's script puts it back when
+    // the chip is tapped: src/scripts/plan-start.ts).
+    function minuteOf(value) {
+      if (/^\d+$/.test(value)) return Number(value);
+      const [h, m] = String(value).split(":").map(Number);
+      return h * 60 + m;
+    }
+    function clockOf(minute) {
+      return `${String(Math.floor(minute / 60) % 24).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+    }
+    function timeOf(minute) {
+      const h = Math.floor(minute / 60) % 24;
+      const m = minute % 60;
+      return `${h % 12 || 12}${m ? `:${String(m).padStart(2, "0")}` : ""}${h < 12 ? "am" : "pm"}`;
+    }
     function planLabel() {
       const pick = document.querySelector(".plan__pick");
       if (!pick) return;
-      const other = pick.querySelector("select[name=other]");
       const radio = pick.querySelector("input[name=at]:checked");
       const button = pick.querySelector(".plan__set");
-      const when = other?.value ? other.selectedOptions[0].textContent : radio?.dataset.when;
-      button.textContent = when ? `${button.dataset.setLabel}, ${when}` : "Set it";
+      const win = radio?.value.split("-").map(Number);
+      if (!win) {
+        button.textContent = "Set it";
+        return;
+      }
+      const field = pick.querySelector(`input[name="start-${win[0]}"]:not(:disabled)`);
+      const typed = field?.value ? minuteOf(field.value) : NaN;
+      const start = Number.isFinite(typed) ? typed : win[0];
+      button.textContent = `${button.dataset.setLabel}, ${timeOf(start)}`;
       // (the strip's ring follows the start chosen, as long as the plan takes)
       const heat = pick.closest(".plan")?.querySelector(".heat");
       const mark = heat?.querySelector(".heat__mark");
-      const win = (other?.value || radio?.value)?.split("-").map(Number);
-      if (!mark || !win) return;
+      if (!mark) return;
       const from = Number(heat.dataset.from);
       const span = Number(heat.dataset.to) - from;
-      mark.style.left = `${((win[0] - from) / span) * 100}%`;
+      mark.style.left = `${((start - from) / span) * 100}%`;
       mark.style.width = `${((win[1] - win[0]) / span) * 100}%`;
     }
     planLabel();
@@ -1289,10 +1313,12 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       const pick = event.target.closest(".plan__pick");
       if (!pick) return;
       pick.dataset.chosen = "";
-      const other = pick.querySelector("select[name=other]");
-      if (event.target === other) {
-        for (const r of pick.querySelectorAll("input[name=at]")) r.checked = !other.value && r.id.endsWith("-0-0");
-      } else if (event.target.name === "at") other.value = "";
+      if (event.target.name?.startsWith("start-")) {
+        const starts = event.target.closest(".starts");
+        const radio = starts.querySelector("input[name=at]");
+        radio.checked = true;
+        starts.classList.toggle("is-typed", minuteOf(event.target.value) !== Number(radio.value.split("-")[0]));
+      }
       planLabel();
     });
 

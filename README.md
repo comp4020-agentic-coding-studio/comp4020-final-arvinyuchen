@@ -180,6 +180,7 @@ says plainly that no stretch is that long). When every time that long
 leaves someone out but everyone's free for less, it says so too ("All 7
 are free 1–4:30pm (3h 30m)"), and the owner can make the plan that long in
 one tap. The owner sets the
-time; it shows under the group's name as Next up and on the place's row in
+time: a window's earliest start in one tap, or any later start that still
+fits, typed or swiped to the minute (or an exact time of their own); it shows under the group's name as Next up and on the place's row in
 the list, and if someone's times change after that, only the owner hears,
 with a time to move to. Next: saying who's coming once the time is set.

@@ -1,6 +1,5 @@
 ---
 import type { Group, Member } from "../lib/db";
-import { startsIn } from "../lib/free";
 import { stopNames, type PlanView, type PlanWindow } from "../lib/plans";
 import { clockOf, dayParts, formatDay, formatDuration, formatMinute, formatSpan } from "../lib/when";
 import PlanHeat from "./PlanHeat.astro";
@@ -47,11 +46,6 @@ const tierOf = (w: PlanWindow) =>
 // minutes in it that leaves the plan's length (every minute would make a
 // list too long to look through).
 const long = plan.duration;
-const otherStarts = (w: PlanWindow) => {
-  const starts = [w.from];
-  for (let m = Math.floor(w.from / 5) * 5 + 5; m + long <= w.to; m += 5) starts.push(m);
-  return starts;
-};
 const lasts = formatDuration(long);
 // where the outing goes, its stops in order
 const where = stopNames(plan.stops);
@@ -251,52 +245,62 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
             <form method="post" action={action} class="plan__pick" data-plan data-day={formatDay(plan.day)}>
               <input type="hidden" name="action" value="set" />
               <input type="hidden" name="plan" value={plan.id} />
+              {/* (each window, then the rest behind "N more windows": picking
+                  one opens its start under it, the earliest as one chip and
+                  any later one, to the minute, in a time field) */}
               <ol class="wins">
-                {view.windows.map((w, i) => (
-                  <>
-                    {tiered && (i === 0 || tierOf(view.windows[i - 1]) !== tierOf(w)) && <li class="wins__tier">{tierOf(w)}</li>}
-                    <li class:list={["win", { "win--all": everyone(w) }]}>
-                      <label class="win__row" for={`at-${plan.id}-${i}-0`}>
-                        <span class="frac" aria-hidden="true">{w.free.length}<small>/{total}</small></span>
-                        <span class="win__text">
-                          <span class="win__when">
-                            {formatSpan(w.from, w.to)}{" "}
-                            <small>· {formatDuration(w.to - w.from)}</small>
-                          </span>
-                          <span class="win__who">{whoLine(w)}</span>
-                        </span>
-                        <span class="win__radio" aria-hidden="true"></span>
-                      </label>
-                    </li>
-                    <li class="starts">
-                      <span class="starts__label" id={`starts-${plan.id}-${i}`}>Start at</span>
-                      <span class="starts__list" role="radiogroup" aria-labelledby={`starts-${plan.id}-${i}`}>
-                        {startsIn(w, long).map((s, j) => (
-                          <label class="st">
-                            <input type="radio" name="at" id={`at-${plan.id}-${i}-${j}`} value={`${s}-${s + long}`} checked={i === 0 && j === 0} data-when={formatMinute(s)} data-win={`${w.from}-${w.to}`} />
-                            <span>{formatMinute(s)}</span>
+                {[...view.windows, ...view.rest].map((w, i) => {
+                  const more = i >= view.windows.length;
+                  const latest = w.to - long;
+                  const id = `at-${plan.id}-${i}`;
+                  return (
+                    <>
+                      {i === view.windows.length && (
+                        <li class="wins__more">
+                          <label>
+                            <input type="checkbox" class="wins__more-toggle" />
+                            <span>{view.rest.length} more {view.rest.length === 1 ? "window" : "windows"}</span>
                           </label>
-                        ))}
-                      </span>
-                    </li>
-                  </>
-                ))}
+                        </li>
+                      )}
+                      {!more && tiered && (i === 0 || tierOf(view.windows[i - 1]) !== tierOf(w)) && <li class="wins__tier">{tierOf(w)}</li>}
+                      <li class:list={["win", { "win--all": everyone(w), "win--more": more }]}>
+                        <label class="win__row" for={id}>
+                          <span class="frac" aria-hidden="true">{w.free.length}<small>/{total}</small></span>
+                          <span class="win__text">
+                            <span class="win__when">
+                              {formatSpan(w.from, w.to)}{" "}
+                              <small>· {formatDuration(w.to - w.from)}</small>
+                            </span>
+                            <span class="win__who">{whoLine(w)}</span>
+                          </span>
+                          <span class="win__radio" aria-hidden="true"></span>
+                        </label>
+                      </li>
+                      <li class:list={["starts", { "starts--more": more }]}>
+                        {latest === w.from ? (
+                          <label class="st st--only">
+                            <input type="radio" name="at" id={id} value={`${w.from}-${w.from + long}`} checked={i === 0} />
+                            <span>Starts {formatMinute(w.from)}, the one start that fits</span>
+                          </label>
+                        ) : (
+                          <>
+                            <span class="starts__label" id={`${id}-label`}>Start between {formatMinute(w.from)} and {formatMinute(latest)}</span>
+                            <label class="st">
+                              <input type="radio" name="at" id={id} value={`${w.from}-${w.from + long}`} checked={i === 0} aria-describedby={`${id}-label`} />
+                              <span>{formatMinute(w.from)}<small> · earliest</small></span>
+                            </label>
+                            <label class="starts__at">
+                              <span class="sr-only">Or a later start</span>
+                              <input type="time" name={`start-${w.from}`} step="60" min={clockOf(w.from)} max={clockOf(latest)} value={clockOf(w.from)} data-start-field data-min={w.from} data-max={latest} />
+                            </label>
+                          </>
+                        )}
+                      </li>
+                    </>
+                  );
+                })}
               </ol>
-              <div class="plan__other">
-                <label>
-                  <span>{view.hiddenWindows > 0 ? `${view.hiddenWindows} more windows, or another start:` : "Or another start:"}</span>
-                  <select name="other" class="plan__other-select">
-                    <option value="">Other…</option>
-                    {[...view.windows, ...view.rest].map((w) => (
-                      <optgroup label={`${formatSpan(w.from, w.to)} · ${whoLine(w)}`}>
-                        {otherStarts(w).map((s) => (
-                          <option value={`${s}-${s + long}`}>{formatMinute(s)}</option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </label>
-              </div>
               <button class="btn btn--primary btn--block plan__set" data-set-label={`Set it: ${formatDay(plan.day)}`}>
                 Set it
               </button>
