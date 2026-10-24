@@ -40,6 +40,11 @@ follow from it; every change has to hold to them.
 - **One person, one keen.** A member can vote "keen" on a spot once. The
   button sends the state it shows ("on" or "off") and the server sets exactly
   that (`setKeen`), so a double-tap or a second device never undoes a vote.
+  On Our list it's one fixed width and one label either way ("3 keen",
+  filled with a tick when it's yours, its accessible name the action:
+  "I'm keen on X" / "Not keen on X any more"), so a tap never moves the
+  row; every row's rank, photo and name sit in the same columns, and a
+  stop of the plan says so quietly after its suburb, in grey.
   Never let a vote be cast for someone else: identity is the signed-in
   account (`me()` in `src/lib/me.ts`), never a name typed into a form.
 - **Everyone is a passkey account.** Starting or joining a group needs one,
@@ -79,7 +84,7 @@ follow from it; every change has to hold to them.
   was (kept, unseen, so rows don't reflow), with exactly one thing in it:
   a red minus circle to take it off, a grey lock circle the same size on
   a stop of the plan on (labelled "In the plan, only the owner can take it
-  off"; the row's "Planning … · stop 1 of 2" says which), or, muted on one
+  off"; the row's "Thu 29, stop 1" after its suburb says which), or, muted on one
   line, whose it is. It goes with its keens, so adding it back starts from
   none; it stays in Explore, and the page offers Undo.
 - **The list is always the ranking, and you can see it move.** A live

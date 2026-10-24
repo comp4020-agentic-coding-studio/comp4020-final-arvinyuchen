@@ -136,7 +136,7 @@ describe("a plan", () => {
     expect(doc.querySelector(".plan h3")?.textContent).toBe("Questacon → National Gallery of Australia");
     expect(doc.querySelector("#busy .sheet__sub")?.textContent).toContain("Questacon → National Gallery of Australia · ");
     const marks = [...doc.querySelectorAll("#list .pick__plan")].map((p) => p.textContent);
-    expect(marks.sort()).toEqual([expect.stringContaining("stop 1 of 2"), expect.stringContaining("stop 2 of 2")]);
+    expect(marks.sort()).toEqual([expect.stringContaining("stop 1"), expect.stringContaining("stop 2")]);
     // the owner's sheet has them ticked, in order
     const sheet = (await page(c.ana, c.path)).querySelector("#plan-start");
     expect(sheet?.querySelector<HTMLInputElement>('input[name="order"]')?.value).toBe(`${q},${n}`);
@@ -302,7 +302,10 @@ describe("the plan on the group's page", () => {
     expect(sheet?.querySelector('input[type="time"][name="to"]')).toBeTruthy();
     expect(sheet?.querySelector('button[name="free"][value="all"]')).toBeTruthy();
     // the place on the list says it's being planned
-    expect(doc.querySelector("#list .pick__plan")?.textContent).toContain("Planning");
+    // (quietly, after its suburb: the day, a screen reader told what it is)
+    const mark = doc.querySelector("#list .pick__plan");
+    expect(mark?.closest(".area")).toBeTruthy();
+    expect(mark?.textContent).toContain("In the plan");
 
     await request(c.ben, `${c.api}/busy`, { form: { plan, from: "540", to: "620" } });
     doc = await page(c.ben, c.path);

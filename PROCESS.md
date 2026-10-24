@@ -158,6 +158,16 @@ the page scrolls it, the header and Explore with the map staying put
 beside it, so a re-rank still glides in the page's own flow and the map
 is always there for a tapped place.
 
+The rows themselves were tidied after. The keen button said "3 I'm keen",
+then "1 Keen!" once tapped, changing width under the finger and squeezing
+names onto two lines; it's now one fixed width saying "3 keen" either way,
+filled with a tick when it's yours, its spoken name the action ("I'm keen
+on Questacon" / "Not keen on Questacon any more"). The leader's bigger
+photo put its name at another x than the rest; now every row has the same
+columns and the leader says so with "Most keen" and a size-up name. And a
+stop of the plan was a bold blue line of its own competing with the
+button; it's now "Parkes · Thu 29, stop 1" in the suburb's grey.
+
 ## Deciding when
 
 **Context.** Spots got a group to "where", then left "when" to the group

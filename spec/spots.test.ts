@@ -52,8 +52,14 @@ describe("a group", () => {
     await keen(ben); // voting again takes it back
     doc = await page(ana, path);
     expect(doc.querySelector("#list .keen__count")?.textContent).toBe("1");
-    expect(doc.querySelector("#list .keen")?.getAttribute("aria-pressed")).toBe("true");
-    expect((await page(ben, path)).querySelector("#list .keen")?.getAttribute("aria-pressed")).toBe("false");
+    // one label either way, "1 keen", filled with a tick when it's yours;
+    // its name says what a tap would do
+    const mine = doc.querySelector("#list .keen");
+    expect([mine?.classList.contains("keen--on"), mine?.textContent?.replace(/\s+/g, ""), !!mine?.querySelector(".keen__tick")]).toEqual([true, "1keen", true]);
+    expect(mine?.getAttribute("aria-label")).toMatch(/^Not keen on .+ any more, 1 keen$/);
+    const theirs = (await page(ben, path)).querySelector("#list .keen");
+    expect([theirs?.classList.contains("keen--on"), theirs?.textContent?.replace(/\s+/g, ""), !!theirs?.querySelector(".keen__tick")]).toEqual([false, "1keen", false]);
+    expect(theirs?.getAttribute("aria-label")).toMatch(/^I'm keen on .+, 1 keen$/);
   });
 
   it("shows someone with the link a preview to join, never the list or its votes", async () => {
@@ -369,7 +375,7 @@ describe("taking a place off the list", () => {
       redirect: "manual",
     });
     expect(inPage.status).toBe(409);
-    expect((await page(ben, `${path}?edit`)).querySelector("#list .pick__by")?.textContent).toBe("Others are keen");
+    expect((await page(ben, `${path}?edit`)).querySelector("#list .pick__by")?.textContent).toBe("Others keen");
 
     // The owner is asked first (one keen goes with it), then it's gone.
     const owner = await page(ana, `${path}?edit`);
