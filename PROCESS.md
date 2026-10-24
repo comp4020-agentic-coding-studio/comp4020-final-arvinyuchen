@@ -151,6 +151,23 @@ still works but reloads into the current ranking, as before. Two devices, one
 showing keen and one not, can still disagree for up to a second. Whichever
 tap arrives last wins, but it can no longer undo a vote by accident.
 
+On a wide screen the group's page first made each column a screen tall,
+scrolling on its own, like an app's panes. With a long list that put Our
+list in a small box under the plan; now the list is as long as it is and
+the page scrolls it, the header and Explore with the map staying put
+beside it, so a re-rank still glides in the page's own flow and the map
+is always there for a tapped place.
+
+The rows themselves were tidied after. The keen button said "3 I'm keen",
+then "1 Keen!" once tapped, changing width under the finger and squeezing
+names onto two lines; it's now one fixed width saying "3 keen" either way,
+filled with a tick when it's yours, its spoken name the action ("I'm keen
+on Questacon" / "Not keen on Questacon any more"). The leader's bigger
+photo put its name at another x than the rest; now every row has the same
+columns and the leader says so with "Most keen" and a size-up name. And a
+stop of the plan was a bold blue line of its own competing with the
+button; it's now "Parkes · Thu 29, stop 1" in the suburb's grey.
+
 ## Deciding when
 
 **Context.** Spots got a group to "where", then left "when" to the group
@@ -186,8 +203,8 @@ doesn't fit in isn't a choice, so now it isn't offered, and when nothing is
 long enough the card says so ("No 2h stretch works for 2 or more"), with
 the longest there is, and the owner can make it shorter. Later a group
 saw only "6 of 7" times for its 4h plan while all seven were free for
-3h 30m: still never offered, but now named above the list ("No 4h time
-works for all 7. All 7 are free 1–4:30pm (3h 30m)"), with "Make it
+3h 30m: still never offered, but now named above the list ("Everyone's
+free 1–4:30pm, 30 min short"), with "Make it
 3h 30m" for the owner, so the trade between length and everyone is in
 view rather than hidden. Only times when
 at least two are free count. A start the owner picks ends that long after;
@@ -198,8 +215,14 @@ offers its earliest start as one chip and, beside it, the same time field
 to type or swipe as the sheet's, held between that start and the latest
 that still fits; the ring on the strip and "Set it" follow it as it
 turns. "Other…" kept only its other half, the windows past the best few,
-now behind "N more windows"; "Or set an exact time" stays, as the only
-way to a time outside every window or a different end. The sheet first asked for the hours to
+now behind "N more windows"; an exact time stays, as the only way to a
+time outside every window or a different end, but as "Set exact time" in
+the owner's ··· menu rather than a fold on the card. Then the card itself
+was cut to say each thing once: "Thu 29 Oct · 8am–11pm · 4h" under the
+title became "4h" (the tile has the date), "7 of 8 filled in · Ivy hasn't
+yet" became "Waiting on Ivy", "6 of 7 free · Kai can't" became "Kai
+can't" beside its 6/7, and the "So far" header, the ring's key and "Start
+between …" went, the last kept only for screen readers. The sheet first asked for the hours to
 count as well, a start and an end, but with how long asked that's one
 question too many: the hours fold away under it, 8am to 11pm (so night
 is never "free"), shown in grey with Change. The owner can set a time whenever they like,

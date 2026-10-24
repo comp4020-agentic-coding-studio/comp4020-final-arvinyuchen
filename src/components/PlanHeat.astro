@@ -16,10 +16,8 @@ interface Props {
   range: { start: number; end: number };
   total: number;
   mark?: { from: number; to: number };
-  /** what the ring is: "the set time", "your pick", "the best time" */
-  markLabel?: string;
 }
-const { heat, range, total, markLabel } = Astro.props;
+const { heat, range, total } = Astro.props;
 const mark = Astro.props.mark && total >= 2 && (Astro.props.mark.from > range.start || Astro.props.mark.to < range.end) ? Astro.props.mark : undefined;
 const span = range.end - range.start;
 const at = (m: number) => `${(((m - range.start) / span) * 100).toFixed(3)}%`;
@@ -63,11 +61,11 @@ for (let m = Math.ceil(range.start / 60) * 60 + 60; m < range.end; m += 60) hour
       <span class:list={{ "is-first": i === 0, "is-last": i === ticks.length - 1 }} style={`left: ${at(m)}`}>{formatMinute(m)}</span>
     ))}
   </div>
-  {/* (a key that reads as the scale it is, not kinds: grey to blue) */}
+  {/* (a key that reads as the scale it is, not kinds: grey to blue; the
+      ring needs none, always on the time picked or set) */}
   <div class="heat__key">
     <span>{total === 1 ? "busy" : "nobody"}</span>
     <i class="heat__scale"></i>
     <span>{total === 1 ? "free" : `all ${total}`}</span>
-    {mark && markLabel && <span class="heat__ringkey">Outlined: {markLabel}</span>}
   </div>
 </div>

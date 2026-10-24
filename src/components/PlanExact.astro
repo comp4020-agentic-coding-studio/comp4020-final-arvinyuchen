@@ -1,0 +1,43 @@
+---
+import type { Group } from "../lib/db";
+import type { PlanView } from "../lib/plans";
+import { clockOf } from "../lib/when";
+
+// The owner's exact time, from the plan's ··· menu: a start and an end of
+// their own, inside the hours the plan counts, whatever the windows say
+// (one outside them all, or another length). A sheet like the plan's
+// others, opened in place; without a script the menu's link loads the page
+// with it open (?plan=exact), and its Cancel goes back.
+interface Props {
+  group: Group;
+  view: PlanView;
+  open: boolean;
+}
+const { group, view, open } = Astro.props;
+const { plan } = view;
+const from = view.windows[0]?.from ?? plan.range.start;
+const to = Math.min(plan.range.end, from + plan.duration);
+---
+
+<dialog id="plan-exact" class="sheet" open={open} tabindex="-1" aria-labelledby="plan-exact-title">
+  <form method="post" action={`/api/groups/${group.id}/plans`} class="sheet__form" data-plan>
+    <input type="hidden" name="action" value="set" />
+    <input type="hidden" name="plan" value={plan.id} />
+    <input type="hidden" name="exact" value="1" />
+    <div class="sheet__bar">
+      <a class="sheet__cancel" href={`/g/${group.link}#list`} data-close>Cancel</a>
+      <h2 id="plan-exact-title">Set exact time</h2>
+      <span></span>
+    </div>
+    <div class="sheet__body">
+      <div class="plan__exact-row" data-set-range data-min={plan.range.start} data-max={plan.range.end}>
+        <label>From <input type="time" name="set_from" step="60" value={clockOf(from)} /></label>
+        <label>to <input type="time" name="set_to" step="60" value={clockOf(to)} /></label>
+      </div>
+    </div>
+    <div class="sheet__foot">
+      <button class="btn btn--primary btn--block">Set this time</button>
+      <p class="fine">Any time in the plan's hours, even outside the windows.</p>
+    </div>
+  </form>
+</dialog>
