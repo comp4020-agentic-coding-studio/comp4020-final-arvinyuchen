@@ -9,3 +9,7 @@ bus.setMaxListeners(0);
 
 export const changed = (groupId: string) => bus.emit("change", { groupId });
 export const placesChanged = () => bus.emit("places");
+// Something said, deleted or brought back in one of a group's Talk threads:
+// which place's, and nothing more. Never the words: the page asks for the
+// thread itself, from a route that checks a member is asking (src/lib/talk.ts).
+export const talked = (groupId: string, placeId: number) => bus.emit("talk", { groupId, placeId });

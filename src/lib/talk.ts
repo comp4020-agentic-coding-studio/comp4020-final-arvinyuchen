@@ -70,6 +70,10 @@ export const onList = (groupId: string, placeId: number): boolean =>
   Number.isInteger(placeId) &&
   db.prepare("SELECT 1 FROM picks WHERE group_id = ? AND place_id = ?").get(groupId, placeId) !== undefined;
 
+/** A place's name, for a thread's title. */
+export const placeName = (placeId: number): string =>
+  (db.prepare("SELECT name FROM places WHERE id = ?").pluck().get(placeId) as string | undefined) ?? "";
+
 /**
  * A message as it's kept: plain text, its lines kept (no more than one
  * empty line in a row), without control characters or the invisible ones
