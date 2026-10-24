@@ -184,7 +184,12 @@ first, then a longer time that most can make. At first there was no
 shortest time, a 15-minute overlap marked in gold; but a time the outing
 doesn't fit in isn't a choice, so now it isn't offered, and when nothing is
 long enough the card says so ("No 2h stretch works for 2 or more"), with
-the longest there is, and the owner can make it shorter. Only times when
+the longest there is, and the owner can make it shorter. Later a group
+saw only "6 of 7" times for its 4h plan while all seven were free for
+3h 30m: still never offered, but now named above the list ("No 4h time
+works for all 7. All 7 are free 1–4:30pm (3h 30m)"), with "Make it
+3h 30m" for the owner, so the trade between length and everyone is in
+view rather than hidden. Only times when
 at least two are free count. A start the owner picks ends that long after;
 an exact time can still be typed. The sheet first asked for the hours to
 count as well, a start and an end, but with how long asked that's one

@@ -93,7 +93,11 @@ follow from it; every change has to hold to them.
   owner starts one plan at a time: one outing, to one to five places on Our
   list in order (its stops, `plan_places`; `plans.place_id` is always the
   first), on a day, with one length for all of it (`src/lib/plans.ts`); only times at least that long are
-  offered, never a shorter one. The owner's sheet asks only how long; the
+  offered, never a shorter one; but when none of those has everyone who's
+  answered free and a shorter time does, the card says so above them,
+  naming the longest ("All 7 are free 1–4:30pm (3h 30m)", `allFree` in
+  `planView`), and gives the owner "Make it 3h 30m", the change route's
+  new length (answers kept). The owner's sheet asks only how long; the
   hours it counts (8am to 11pm unless changed, and only time inside them
   is ever free, so never the night) fold away under it; each member marks only their own busy times
   (`me()`), and the owner sets the time. Times are Canberra's wall clock:

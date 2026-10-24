@@ -176,7 +176,10 @@ Questacon"), a day, and how long it all takes (the hours it counts, 8am to
 hours, to the minute (tap for an hour, hold and drag to draw in 5-minute
 steps, type exact minutes; without a script, rows of From and To), and the plan's card shows when everyone's
 free for that long, longest first, as counts and who can't make it (or
-says plainly that no stretch is that long). The owner sets the
+says plainly that no stretch is that long). When every time that long
+leaves someone out but everyone's free for less, it says so too ("All 7
+are free 1–4:30pm (3h 30m)"), and the owner can make the plan that long in
+one tap. The owner sets the
 time; it shows under the group's name as Next up and on the place's row in
 the list, and if someone's times change after that, only the owner hears,
 with a time to move to. Next: saying who's coming once the time is set.

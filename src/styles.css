@@ -4925,6 +4925,44 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-weight: 600;
 }
 
+/* Everyone's free, but for less than the plan takes: a note above the
+   windows, with the owner's way to fit it. */
+.plan__allfree {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.75rem;
+  margin: 0.1rem 0.9rem 0.75rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 12px;
+  background: var(--fill);
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.plan__allfree p {
+  flex: 1 1 12rem;
+  margin: 0;
+}
+
+.plan__allfree strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.plan__allfree form {
+  margin: 0;
+}
+
+/* (a time and its length kept on one line) */
+.plan__span {
+  white-space: nowrap;
+}
+
+.plan__allfree .btn {
+  background: var(--card);
+}
+
 /* The owner's exact time, folded under Set it: the same fields to type or swipe. */
 .plan__exact {
   margin: -0.3rem 0.9rem 0.9rem;

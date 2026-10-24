@@ -316,6 +316,42 @@ describe("the plan on the group's page", () => {
     expect([...doc.querySelectorAll(`#plan-${plan} .heat__key span`)].map((k) => k.textContent)).toEqual(["busy", "free"]);
   });
 
+  it("says when everyone's free for less than it takes, and lets the owner make it that long", async () => {
+    const c = await crew("Shorter crew");
+    const [cat, dan] = [new Jar(), new Jar()];
+    await join(cat, c.id, c.id, "Cat");
+    await join(dan, c.id, c.id, "Dan");
+    const res = await request(c.ana, `${c.api}/plans`, { form: { action: "start", place: c.place, day: soon, duration: "240" } });
+    const plan = /#plan-(\d+)$/.exec(res.headers.get("location") ?? "")?.[1] ?? "";
+    // every 4h window leaves one out; all who've answered are free 10am to 1pm
+    await request(c.ana, `${c.api}/busy`, { form: { plan, from: "480", to: "600" } });
+    await request(c.ben, `${c.api}/busy`, { form: { plan, from: "780", to: "1380" } });
+    await request(cat, `${c.api}/busy`, { form: { plan, free: "all" } });
+    const text = (el: Element | null | undefined) => el?.textContent?.replace(/\s+/g, " ").trim();
+    let doc = await page(c.ben, c.path);
+    expect(text(doc.querySelector(`#plan-${plan} .plan__allfree p`))).toBe("No 4h time works for all 3 so far. All 3 so far are free 10am–1pm (3h).");
+    await request(dan, `${c.api}/busy`, { form: { plan, free: "all" } });
+    doc = await page(c.ben, c.path);
+    const note = doc.querySelector(`#plan-${plan} .plan__allfree`);
+    expect(text(note?.querySelector("p"))).toBe("No 4h time works for all 4. All 4 are free 10am–1pm (3h).");
+    // the ranking stays: only windows of 4h or more, none with all four
+    expect([...doc.querySelectorAll(`#plan-${plan} .win__when`)].every((w) => !w.textContent?.includes("10am–1pm"))).toBe(true);
+    // a member sees the note; only the owner can act on it
+    expect(note?.querySelector("button")).toBeNull();
+    doc = await page(c.ana, c.path);
+    const form = doc.querySelector(`#plan-${plan} .plan__allfree form`);
+    expect(form?.querySelector("button")?.textContent).toBe("Make it 3h");
+    const sent = new URLSearchParams([...(form?.querySelectorAll("input") ?? [])].map((i) => [i.getAttribute("name") ?? "", i.getAttribute("value") ?? ""]));
+    expect((await inPage(c.ana, form?.getAttribute("action") ?? "", sent)).status).toBe(204);
+    // it now takes 3h, everyone's answers kept, and that window comes first
+    doc = await page(c.ana, c.path);
+    const card = doc.querySelector(`#plan-${plan}`);
+    expect(card?.querySelector(".plan__sub")?.textContent).toContain("3h");
+    expect(card?.querySelector(".plan__allfree")).toBeNull();
+    expect(card?.querySelector(".win__when")?.textContent).toContain("10am–1pm");
+    expect(card?.querySelector(".win__who")?.textContent).toBe("Everyone free");
+  });
+
   it("shows the owner when everyone's free, lets them set it, then shows everyone the time", async () => {
     const c = await crew("Results crew");
     const plan = await planned(c);

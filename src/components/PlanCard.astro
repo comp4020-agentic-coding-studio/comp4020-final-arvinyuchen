@@ -217,6 +217,24 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
             mark={isOwner && first ? { from: first.from, to: first.from + long } : first}
             markLabel={isOwner ? "your pick" : "the best time"}
           />
+          {/* (every window long enough leaves someone out, but everyone's
+              free for less: said, and for the owner, one tap to fit it) */}
+          {view.allFree && (
+            <div class="plan__allfree">
+              <p>
+                <strong>No {lasts} time works for all {total}{view.everyoneIn ? "" : " so far"}.</strong>{" "}
+                All {total}{view.everyoneIn ? "" : " so far"} are free <span class="plan__span">{formatSpan(view.allFree.from, view.allFree.to)} ({formatDuration(view.allFree.to - view.allFree.from)})</span>.
+              </p>
+              {isOwner && (
+                <form method="post" action={action} data-plan>
+                  <input type="hidden" name="action" value="change" />
+                  <input type="hidden" name="plan" value={plan.id} />
+                  <input type="hidden" name="duration" value={view.allFree.to - view.allFree.from} />
+                  <button class="btn btn--small">Make it {formatDuration(view.allFree.to - view.allFree.from)}</button>
+                </form>
+              )}
+            </div>
+          )}
           {noneFits ? (
             <div class="plan__none plan__none--short">
               <p>

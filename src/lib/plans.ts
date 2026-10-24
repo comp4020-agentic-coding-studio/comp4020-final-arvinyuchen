@@ -327,6 +327,11 @@ export interface PlanView {
   rest: PlanWindow[];
   /** with no window as long as the plan takes: the longest there is that two or more are free (in minutes), or 0 */
   longestShort: number;
+  /**
+   * when windows are listed but none has everyone who answered free, and a
+   * shorter one does: the longest such (the earliest of equals), or null
+   */
+  allFree: { from: number; to: number } | null;
   /** once set: who's free all through the set time, who isn't, who hasn't said */
   set: { free: Member[]; busy: Member[]; unknown: Member[] } | null;
   /** for the owner, once set: who has since changed their times so they can't make it */
@@ -397,6 +402,11 @@ export function planView(plan: Plan, members: Member[], viewer: Member, ownerId:
     hiddenWindows: hidden,
     rest: windows.filter((w) => !rows.includes(w)).slice(0, 8).map(toWindow),
     longestShort: windows.length ? 0 : Math.max(0, ...shorter.map((w) => w.to - w.from)),
+    // (shorter is sorted most free, then longest, then earliest)
+    allFree:
+      windows.length && !windows.some((w) => w.free.length === total)
+        ? (shorter.filter((w) => w.free.length === total).map(({ from, to }) => ({ from, to }))[0] ?? null)
+        : null,
     set,
     changed,
   };
