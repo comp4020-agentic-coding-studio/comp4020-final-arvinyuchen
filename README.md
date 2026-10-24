@@ -35,6 +35,10 @@ other's taste.
   someone shares it with a sentence on why it's good, signed with their name.
   So the pool grows from people's real favourites, not from a directory, while
   each group's list, members and votes stay theirs alone.
+- **Talking it over stays with the place.** "Is it open Mondays?" belongs
+  next to the place it's about, not 200 messages up a group chat. Each place
+  on the list has its own short thread, for the group only, and you see
+  what's new on the list itself, not by a buzz in your pocket.
 - **You can see where it is.** Picking a place should answer "is that near
   us?" straight away, so every card can fly the map to its spot.
 - **Ask the way you'd ask a friend.** "Cheap dumplings near Dickson" or "a
@@ -150,6 +154,12 @@ other's taste.
   lives on the group's page: a dot on Our list's tab, a note at the foot of
   an open page, and the card asking for your times. The group already has a
   chat for nudging each other.
+- **A group chat, and notifications for Talk.** The group already has a
+  chat, and Spots would lose to it. Talk is one thread per place on the
+  list, so what's said stays next to what's being decided; there's no
+  push, email or share button for it, just a count on the place's row, a
+  dot on Our list and "N new" on My groups. No editing, reactions, photos,
+  @mentions or typing dots either: it's for a few lines about a place.
 - **Booking and directions.** The map shows where a place is; getting there
   and booking a table are for the apps that already do them well.
 
@@ -185,4 +195,12 @@ that long in one tap. The owner sets the
 time: a window's earliest start in one tap, or any later start that still
 fits, typed or swiped to the minute (or an exact time of their own, from the plan's ··· menu); it shows under the group's name as Next up and on the place's row in
 the list, and if someone's times change after that, only the owner hears,
-with a time to move to. Next: saying who's coming once the time is set.
+with a time to move to. Every place on the list has its Talk: a speech
+bubble on its row, with how many have been said (blue and bold when some
+are new to you), opens the place's thread, a sheet over the list on a
+phone, and on a wide screen Explore's column, with the map flown to the
+place. Only the group sees it. Messages arrive live; your own has a ··· (or
+a long press) to delete it, with Undo, and leaves "Message removed"; a
+day later its words are gone for good. Without a script it's a link and
+plain forms. Next: saying who's coming once the time is set, and Talk on
+the plan itself.
