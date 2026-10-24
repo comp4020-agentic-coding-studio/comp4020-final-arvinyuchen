@@ -167,6 +167,64 @@ describe("Talk", () => {
   }, 10_000);
 });
 
+describe("Talk on the group's page", () => {
+  it("shows each row's count, what's new to you, and a dot on Our list's tab, until you've read it", async () => {
+    const c = await crew("Count crew");
+    const row = async (jar: Jar) => (await page(jar, c.path)).querySelector<HTMLAnchorElement>(`#list [data-talk-open="${c.place}"]`);
+    // nothing said: just the way in, a link to the thread
+    let link = await row(c.ana);
+    expect(link?.getAttribute("href")).toBe(`/g/${c.id}?talk=${c.place}#talk`);
+    expect(link?.classList.contains("is-empty")).toBe(true);
+    await say(c, c.ben, "Saturday?");
+    await say(c, c.ben, "Or Sunday");
+    link = await row(c.ana);
+    expect(link?.classList.contains("is-new")).toBe(true);
+    expect(link?.textContent?.trim()).toBe("2 new");
+    expect(link?.getAttribute("aria-label")).toBe("Talk about Questacon: 2 messages, 2 new");
+    let doc = await page(c.ana, c.path);
+    expect(doc.querySelector('.tabs a[data-tab="list"] .tabs__dot')?.textContent).toContain("2 new in Talk");
+    // My groups says so too
+    expect((await page(c.ana, "/me")).querySelector(".my-group__new")?.textContent).toBe("2 new");
+    // Ben said them, so they're not new to him
+    expect((await row(c.ben))?.classList.contains("is-new")).toBe(false);
+    expect((await row(c.ben))?.textContent?.trim()).toBe("2");
+    // Ana opens the thread (the plain way, ?talk=): it's there, open, and read
+    doc = await page(c.ana, `${c.path}?talk=${c.place}`);
+    const sheet = doc.querySelector("dialog#talk");
+    expect(sheet?.hasAttribute("open")).toBe(true);
+    expect(sheet?.querySelector("#talk-title")?.textContent).toBe("Questacon");
+    expect([...(sheet?.querySelectorAll(".msg__bubble") ?? [])].map((b) => b.textContent?.split(": ")[1])).toEqual(["Saturday?", "Or Sunday"]);
+    const compose = sheet?.querySelector("form[data-talk-send]");
+    expect(compose?.getAttribute("action")).toBe(`${c.api}/talk`);
+    expect(compose?.querySelector("textarea")?.getAttribute("maxlength")).toBe("500");
+    expect(compose?.querySelector<HTMLInputElement>('input[name="nonce"]')?.value).toMatch(/.{16,}/);
+    expect(doc.querySelector(`#list [data-talk-open="${c.place}"]`)?.classList.contains("is-new")).toBe(false);
+    expect(doc.querySelector(".tabs__dot")).toBeNull();
+    expect((await page(c.ana, "/me")).querySelector(".my-group__new")).toBeNull();
+    // the thread is never in a region a live refresh redraws: the box keeps what's typed
+    expect(doc.querySelector("#list #talk, #plans #talk, #plan-sheets #talk, #explore #talk")).toBeNull();
+  });
+
+  it("has no Talk for a place in Explore that isn't on the list", async () => {
+    const c = await crew("Explore crew");
+    const doc = await page(c.ana, c.path);
+    expect(doc.querySelector("#explore-section [data-talk-open]")).toBeNull();
+    const pins = JSON.parse(doc.querySelector("#pins")?.textContent ?? "[]") as { id: number; name: string }[];
+    const elsewhere = pins.find((p) => p.name !== "Questacon")!.id;
+    const asked = await page(c.ana, `${c.path}?talk=${elsewhere}`);
+    expect(asked.querySelector("dialog#talk")?.hasAttribute("open")).toBe(false);
+    expect(asked.querySelector("#list .notice")?.textContent).toContain("isn't on the list");
+  });
+
+  it("asks for the thread and posts in the background, keeping the stream open", async () => {
+    const c = await crew("Script crew");
+    const html = await (await request(c.ana, c.path)).text();
+    // the live stream stays open for Talk's posts, as for a keen
+    expect(html).toMatch(/matches\("[^"]*\[data-talk\][^"]*"\)\) source\.close\(\)/);
+    expect(html).toContain('source.addEventListener("talk"');
+  });
+});
+
 describe("Talk's words stay in the group", () => {
   const secret = `zqxv${Date.now().toString(36)}`;
 

@@ -67,7 +67,7 @@ const parts = (text: string) => {
             data-msg={m.id}
           >
             {m.deleted ? (
-              <p class="msg__stub">
+              <div class="msg__stub">
                 <span>{m.mine ? "You removed this message" : "Message removed"}</span>
                 {m.undoable && (
                   <form method="post" action={action} data-talk data-talk-undo>
@@ -77,7 +77,7 @@ const parts = (text: string) => {
                     <button class="msg__undo">Undo</button>
                   </form>
                 )}
-              </p>
+              </div>
             ) : (
               <>
                 {!m.run && (
