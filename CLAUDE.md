@@ -84,8 +84,9 @@ follow from it; every change has to hold to them.
   (PROCESS.md, "Several people voting at once"). Never jump cards without
   the glide, and never replay the cards' entrance on a refresh.
 - **A plan is the owner's to decide, from busy times nobody else sees.** The
-  owner starts one plan at a time, for a place on Our list and a day
-  (`src/lib/plans.ts`); each member marks only their own busy times
+  owner starts one plan at a time, for a place on Our list, a day and how
+  long it takes (`src/lib/plans.ts`); only times at least that long are
+  offered, never a shorter one; each member marks only their own busy times
   (`me()`), and the owner sets the time. Times are Canberra's wall clock:
   a local date and whole minutes since its midnight, to the minute
   (`src/lib/when.ts`), never the server's zone. Nobody sees anyone else's

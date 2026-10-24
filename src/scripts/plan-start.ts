@@ -7,10 +7,11 @@
 // out of reach. A chip and the calendar are one choice: the chips keep a
 // day of theirs (the date field emptied), and a day further off is the
 // date field's, with no chip chosen; the form posts as it always did.
-// The hours to count are fields to type or swipe (src/scripts/timefield.ts).
+// The hours to count, and how long it takes, are fields to type or swipe
+// (src/scripts/timefield.ts); how long is never more than the hours.
 import { EARLIEST, LATEST } from "../lib/free";
 import { addDays, formatDay, isDay, parseMinute } from "../lib/when";
-import { fieldInstead, type TimeField } from "./timefield";
+import { fieldInstead, timeField, type TimeField } from "./timefield";
 
 const asDate = (day: string) => new Date(`${day}T12:00:00Z`);
 const monthOf = (day: string) => day.slice(0, 7);
@@ -180,11 +181,12 @@ function calendar(form: HTMLFormElement) {
 
 // "Count from" as two fields to type or swipe, 6am to midnight, the end
 // after the start: moving one past the other takes the other along.
-function countFrom(form: HTMLFormElement) {
+function countFrom(form: HTMLFormElement, then: (start: number, end: number) => void) {
   const from = form.querySelector<HTMLInputElement>('[data-range] input[name="from"]');
   const to = form.querySelector<HTMLInputElement>('[data-range] input[name="to"]');
   if (!from || !to) return;
   const fields: { from?: TimeField; to?: TimeField } = {};
+  const told = () => fields.from && fields.to && then(fields.from.value, fields.to.value);
   fields.from = fieldInstead(from, {
     value: parseMinute(from.value) ?? 480,
     min: EARLIEST,
@@ -192,6 +194,7 @@ function countFrom(form: HTMLFormElement) {
     label: "Count from",
     onChange: (v) => {
       if (fields.to && v >= fields.to.value) fields.to.set(Math.min(LATEST, v + 60), true);
+      told();
     },
   });
   fields.to = fieldInstead(to, {
@@ -201,6 +204,60 @@ function countFrom(form: HTMLFormElement) {
     label: "Until",
     onChange: (v) => {
       if (fields.from && v <= fields.from.value) fields.from.set(Math.max(EARLIEST, v - 60), true);
+      told();
+    },
+  });
+  told();
+}
+
+// How long it takes: a length to type or swipe, a minute up to all the
+// hours counted, in place of the plain form's hours and minutes.
+function howLong(form: HTMLFormElement) {
+  const box = form.querySelector<HTMLElement>("[data-length] .length");
+  const hours = box?.querySelector<HTMLInputElement>('input[name="duration_h"]');
+  const minutes = box?.querySelector<HTMLInputElement>('input[name="duration_m"]');
+  if (!box || !hours || !minutes) return null;
+  const field = timeField({
+    value: Number(hours.value) * 60 + Number(minutes.value),
+    min: 1,
+    max: LATEST - EARLIEST,
+    label: "How long",
+    kind: "length",
+    name: "duration",
+  });
+  for (const i of [hours, minutes]) i.disabled = true;
+  box.hidden = true;
+  box.after(field.el);
+  return field;
+}
+
+// The owner's exact time on the card, the same two fields: the start
+// moving takes the end with it, keeping how long it is.
+function exactTime(row: HTMLElement) {
+  if (row.dataset.enhanced !== undefined) return;
+  row.dataset.enhanced = "";
+  const from = row.querySelector<HTMLInputElement>('input[name="set_from"]');
+  const to = row.querySelector<HTMLInputElement>('input[name="set_to"]');
+  const min = Number(row.dataset.min);
+  const max = Number(row.dataset.max);
+  if (!from || !to || !(min < max)) return;
+  const fields: { from?: TimeField; to?: TimeField } = {};
+  let gap = Math.max(1, (parseMinute(to.value, true) ?? max) - (parseMinute(from.value) ?? min));
+  fields.from = fieldInstead(from, {
+    value: parseMinute(from.value) ?? min,
+    min,
+    max: max - 1,
+    label: "Starts",
+    onChange: (v) => fields.to?.set(Math.min(max, v + gap)),
+  });
+  fields.to = fieldInstead(to, {
+    value: parseMinute(to.value, true) ?? max,
+    min: min + 1,
+    max,
+    label: "Ends",
+    onChange: (v) => {
+      if (fields.from && v <= fields.from.value) fields.from.set(Math.max(min, v - gap));
+      if (fields.from) gap = v - fields.from.value;
     },
   });
 }
@@ -210,13 +267,15 @@ function enhance(dialog: HTMLDialogElement) {
   if (!form || form.dataset.enhanced !== undefined) return;
   form.dataset.enhanced = "";
   calendar(form);
-  countFrom(form);
+  const length = howLong(form);
+  countFrom(form, (start, end) => length?.bounds(1, end - start));
 }
 
 function enhanceAll() {
   const dialog = document.querySelector<HTMLDialogElement>("dialog#plan-start");
   if (dialog) enhance(dialog);
+  for (const row of document.querySelectorAll<HTMLElement>("[data-set-range]")) exactTime(row);
 }
 enhanceAll();
-// (a live refresh can bring the sheet in anew)
+// (a live refresh can bring the sheet, or the card, in anew)
 document.addEventListener("spots:refreshed", enhanceAll);

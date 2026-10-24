@@ -8,6 +8,7 @@ import {
   callOffPlan,
   changePlan,
   currentPlan,
+  DEFAULT_DURATION,
   DEFAULT_RANGE,
   keepPlanTime,
   planOf,
@@ -17,7 +18,8 @@ import {
 } from "../../../../lib/plans";
 
 // The owner's side of a plan: start one (a place on the list, a day, the
-// hours to count), set the time, go back to picking, keep the time after
+// hours to count, how long it takes), set the time (a start offered, one
+// from "Other", or an exact time), go back to picking, keep the time after
 // someone's changed theirs, move it to another day, or call it off. Only
 // the owner gets past the first check. The page's script posts in the
 // background (a 204, or a 409 when it can't be done); a plain form post
@@ -46,9 +48,14 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
     start: form.has("from") ? minute("from") : or.start,
     end: form.has("to") ? minute("to", true) : or.end,
   });
+  // how long it takes, in minutes: the script's one field, or the plain
+  // form's hours and minutes (or, with none sent, this)
+  const whole = (key: string) => (/^\d{1,4}$/.test(clean(form.get(key), 4)) ? Number(clean(form.get(key), 4)) : NaN);
+  const duration = (or: number) =>
+    form.has("duration") ? whole("duration") : form.has("duration_h") ? whole("duration_h") * 60 + (clean(form.get("duration_m"), 4) ? whole("duration_m") : 0) : or;
 
   if (action === "start") {
-    const id = startPlan(group, member, Number(form.get("place")), day, range(DEFAULT_RANGE));
+    const id = startPlan(group, member, Number(form.get("place")), day, range(DEFAULT_RANGE), duration(DEFAULT_DURATION));
     if (id === "exists") return refused("plan-exists");
     if (id === "invalid") return refused("plan-start", "&plan=new#plan-start");
     return done(id);
@@ -59,15 +66,17 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   if (!plan || plan.id !== currentPlan(group.id)?.id) return refused("plan-gone");
 
   if (action === "set") {
-    // a start among the offered, or one picked from "Other"
-    const at = parseInterval(clean(form.get("other"), 12) || clean(form.get("at"), 12));
+    // an exact time, typed; or a start among the offered, or one picked from "Other"
+    const at = form.get("exact")
+      ? [parseMinute(clean(form.get("set_from"), 8)) ?? NaN, parseMinute(clean(form.get("set_to"), 8), true) ?? NaN]
+      : parseInterval(clean(form.get("other"), 12) || clean(form.get("at"), 12));
     return at && setPlanTime(plan, at[0], at[1]) ? done(plan.id) : refused("plan-set");
   }
   if (action === "unset") return unsetPlanTime(plan) ? done(plan.id) : refused("plan-set");
   // (the owner having seen a change is theirs alone: nobody else's page moves)
   if (action === "keep") return keepPlanTime(plan) ? done(plan.id, false) : refused("plan-set");
   if (action === "change") {
-    const id = changePlan(plan, member, day || plan.day, range(plan.range));
+    const id = changePlan(plan, member, day || plan.day, range(plan.range), duration(plan.duration));
     return id === "invalid" ? refused("plan-change") : done(id);
   }
   if (action === "off") return callOffPlan(plan) ? done(plan.id) : refused("plan-gone");

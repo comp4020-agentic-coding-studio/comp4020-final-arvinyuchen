@@ -210,14 +210,15 @@ describe("the plan on the group's page", () => {
     // longest first: 2:15–11pm, everyone free
     expect(card?.querySelector(".win__when")?.textContent).toContain("2:15–11pm");
     expect(card?.querySelector(".win__who")?.textContent).toBe("Everyone free");
+    // the start offered ends two hours on, as long as the plan takes
     const first = card?.querySelector<HTMLInputElement>('input[name="at"]:checked')?.value;
-    expect(first).toBe("855-1380");
+    expect(first).toBe("855-975");
     await request(c.ana, `${c.api}/plans`, { form: { action: "set", plan, at: first ?? "" } });
 
     doc = await page(c.ben, c.path);
     expect(doc.querySelector(".next-up")?.textContent).toContain("2:15pm");
     expect(doc.querySelector(`#plan-${plan} .plan__when`)?.textContent).toContain("2:15pm");
-    expect(doc.querySelector(`#plan-${plan} .plan__going`)?.textContent).toContain("Everyone's free till 11pm");
+    expect(doc.querySelector(`#plan-${plan} .plan__going`)?.textContent).toContain("Everyone's free till 4:15pm");
     expect(doc.querySelector("#list .pick__plan")?.textContent).toContain("2:15pm");
   });
 
@@ -228,10 +229,58 @@ describe("the plan on the group's page", () => {
     await request(c.ben, `${c.api}/busy`, { form: { plan, from: "11:31", to: "14:13" } });
     const card = (await page(c.ana, c.path)).querySelector(`#plan-${plan}`);
     expect(card?.querySelector(".win__when")?.textContent).toContain("2:13–11pm");
-    expect(card?.querySelector<HTMLInputElement>('input[name="at"]:checked')?.value).toBe("853-1380");
+    expect(card?.querySelector<HTMLInputElement>('input[name="at"]:checked')?.value).toBe("853-973");
     // "Other" offers the window's own start, then every 5 minutes
     const other = [...(card?.querySelectorAll('select[name="other"] option') ?? [])].map((o) => o.getAttribute("value"));
-    expect(other.slice(0, 3)).toEqual(["", "853-1380", "855-1380"]);
+    expect(other.slice(0, 3)).toEqual(["", "853-973", "855-975"]);
+    // or an exact time, typed
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, exact: "1", set_from: "14:13", set_to: "16:41" })).status).toBe(204);
+    expect((await page(c.ben, c.path)).querySelector(`#plan-${plan} .plan__going`)?.textContent).toContain("till 4:41pm");
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, exact: "1", set_from: "16:41", set_to: "14:13" })).status).toBe(409);
+  });
+
+  it("offers only times as long as the plan takes, and works it out again when that changes", async () => {
+    const c = await crew("Length crew");
+    // busy 10am to 10pm, and free all day: together 8 to 10am, and 10 to 11pm
+    const plan = await planned(c);
+    await request(c.ana, `${c.api}/busy`, { form: { plan, from: "10:00", to: "22:00" } });
+    await request(c.ben, `${c.api}/busy`, { form: { plan } });
+    const card = async (jar = c.ana) => (await page(jar, c.path)).querySelector(`#plan-${plan}`);
+    const whens = async () => [...((await card())?.querySelectorAll(".win__when") ?? [])].map((w) => w.textContent?.split(" ·")[0].trim());
+    // two hours: only the morning, and everyone sees how long it takes
+    expect(await whens()).toEqual(["8–10am"]);
+    expect((await card(c.ben))?.querySelector(".plan__sub")?.textContent).toContain("· 2h");
+    expect((await page(c.ben, c.path)).querySelector("#busy .sheet__sub")?.textContent).toContain("Questacon · ");
+    expect((await page(c.ben, c.path)).querySelector("#busy .sheet__sub")?.textContent).toContain("· 2h");
+    // an hour (the plain form's hours and minutes): the evening too, longest first; nobody's answers lost
+    expect((await request(c.ana, `${c.api}/plans`, { form: { action: "change", plan, duration_h: "1", duration_m: "0" } })).status).toBe(303);
+    expect(await whens()).toEqual(["8–10am", "10–11pm"]);
+    expect((await card())?.textContent).toContain("Everyone's in");
+    // three hours: nothing fits, and the card says so, with a way to change it for the owner
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, duration: "180" })).status).toBe(204);
+    expect(await whens()).toEqual([]);
+    const none = (await card())?.querySelector(".plan__none--short");
+    expect(none?.textContent).toContain("No 3h stretch works for 2 or more");
+    expect(none?.textContent).toContain("The longest is 2h");
+    expect(none?.querySelector("[data-open-start]")).toBeTruthy();
+    expect((await card(c.ben))?.querySelector(".plan__none--short [data-open-start]")).toBeNull();
+  });
+
+  it("takes a length from a minute to all the hours it counts, and nothing else", async () => {
+    const c = await crew("Bad length crew");
+    for (const duration of ["0", "-5", "901", "1.5", "two hours", ""])
+      expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: soon, duration })).status).toBe(409);
+    // longer than the hours it counts
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: soon, from: "18:00", to: "20:00", duration: "121" })).status).toBe(409);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: soon, duration_h: "1", duration_m: "x" })).status).toBe(409);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: soon, from: "18:00", to: "20:00", duration: "120" })).status).toBe(204);
+    const plan = (await page(c.ana, c.path)).querySelector<HTMLElement>(".plan")?.dataset.planId ?? "";
+    // and changing it is checked the same
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, duration: "121" })).status).toBe(409);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, duration: "1" })).status).toBe(204);
+    // the owner's sheet has it as plain hours and minutes
+    const sheet = (await page(c.ana, c.path)).querySelector("#plan-start [data-length]");
+    expect([sheet?.querySelector<HTMLInputElement>('input[name="duration_h"]')?.getAttribute("value"), sheet?.querySelector<HTMLInputElement>('input[name="duration_m"]')?.getAttribute("value")]).toEqual(["0", "1"]);
   });
 
   it("never shows anyone else's busy times, only counts and who can't", async () => {

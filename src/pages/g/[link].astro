@@ -1012,7 +1012,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           form.closest("dialog")?.close();
           form.closest("details")?.removeAttribute("open");
           await refresh();
-          if (res.status === 409) say(form.matches("[data-plan-start]") ? "That didn't work: pick a place on the list and a day from today on." : "The plan changed meanwhile. Here it is as it is now.");
+          if (res.status === 409) say(form.matches("[data-plan-start]") ? "That didn't work: pick a place on the list, a day from today on, and how long it takes within the hours you count." : "The plan changed meanwhile. Here it is as it is now.");
           else if (form.matches("[data-busy]")) say("Your times are in. The others see how many are free, never when you're busy.");
           return;
         }

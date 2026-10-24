@@ -158,14 +158,15 @@ db.exec(`
      WHERE NOT EXISTS (SELECT 1 FROM group_links l WHERE l.group_id = g.id AND l.retired_at IS NULL);
 `);
 
-// Plans: the owner picks a place on the list and a day; everyone marks when
-// they're busy that day; the owner sets the time (src/lib/plans.ts). A day
-// is a local date and times are whole minutes since its local midnight
-// (src/lib/when.ts), never instants. An answer with no busy times is "free
-// all day"; no answer is "hasn't said". A plan whose day changed is called
-// off and points at the one that replaced it, so nobody's answers are lost.
-// Times kept to the millisecond, so a change just after the time was set
-// still counts as after it.
+// Plans: the owner picks a place on the list, a day and how long it takes;
+// everyone marks when they're busy that day; the owner sets the time
+// (src/lib/plans.ts). A day is a local date and times are whole minutes
+// since its local midnight (src/lib/when.ts), never instants; how long is
+// minutes too (plans made before it was asked count as an hour). An answer
+// with no busy times is "free all day"; no answer is "hasn't said". A plan
+// whose day changed is called off and points at the one that replaced it,
+// so nobody's answers are lost. Times kept to the millisecond, so a change
+// just after the time was set still counts as after it.
 const planTables = {
   plans: (name: string) => `CREATE TABLE ${name} (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -182,6 +183,7 @@ const planTables = {
     called_off_at TEXT,
     replaced_by INTEGER REFERENCES plans(id),
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    duration INTEGER NOT NULL DEFAULT 60,
     CHECK (range_start >= 360 AND range_start < range_end AND range_end <= 1440),
     CHECK (set_start IS NULL OR (set_start >= range_start AND set_start < set_end AND set_end <= range_end))
   )`,
@@ -223,6 +225,7 @@ db.exec(`
   ${planTables.plan_busy("IF NOT EXISTS plan_busy")};
   CREATE INDEX IF NOT EXISTS plan_busy_answer ON plan_busy (plan_id, member_id);
 `);
+addColumn("plans", "duration", "INTEGER NOT NULL DEFAULT 60");
 
 // The checked starter places, upserted by key so a corrected coordinate,
 // blurb or photo reaches the live database on the next deploy.

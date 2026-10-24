@@ -4694,11 +4694,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-weight: 500;
 }
 
-/* (a window under half an hour says so, in gold) */
-.win__when small.is-short {
-  color: var(--crown-ink);
-}
-
 .win__who {
   color: var(--muted);
   font-size: 0.78rem;
@@ -4818,6 +4813,68 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   padding: 0.2rem 0.9rem 0.9rem;
   color: var(--muted);
   font-size: 0.86rem;
+}
+
+.plan__none--short {
+  display: grid;
+  justify-items: start;
+  gap: 0.55rem;
+}
+
+.plan__none--short p {
+  margin: 0;
+}
+
+.plan__none--short strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* The owner's exact time, folded under Set it: the same fields to type or swipe. */
+.plan__exact {
+  margin: -0.3rem 0.9rem 0.9rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.plan__exact summary {
+  width: max-content;
+  margin: 0 auto;
+  color: var(--accent-ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.plan__exact[open] summary {
+  margin-bottom: 0.5rem;
+}
+
+.plan__exact-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.plan__exact-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.plan__exact-row input[type="time"] {
+  width: auto;
+  min-height: 2.2rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+.plan__exact .btn {
+  display: flex;
+  margin: 0 auto;
 }
 
 .plan__acts {
@@ -5498,6 +5555,27 @@ dialog.sheet[open]:not(:modal) {
   border-top: 1px solid var(--line);
 }
 
+.length {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.length label {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.length input {
+  width: 3.6rem;
+  min-height: 2.2rem;
+  padding: 0.3rem 0.5rem;
+  text-align: right;
+}
+
 .sheet__row input[type="time"] {
   width: auto;
   min-height: 2.2rem;
@@ -5601,7 +5679,7 @@ dialog.sheet[open]:not(:modal) {
   display: none;
   overflow: hidden;
   width: max(100%, 3.2rem);
-  height: 9rem;
+  height: 7.75rem;
   margin: 0;
   border-radius: 14px;
   background: var(--card);
@@ -5616,17 +5694,17 @@ dialog.sheet[open]:not(:modal) {
 
 .tf__wheel b {
   display: grid;
-  padding-top: 0.5rem;
+  padding-top: 0.25rem;
   font-weight: 500;
   -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
   mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
 }
 
 .tf__wheel i {
-  height: 1.6rem;
+  height: 1.45rem;
   color: var(--muted);
   font-style: normal;
-  line-height: 1.6rem;
+  line-height: 1.45rem;
   text-align: center;
 }
 

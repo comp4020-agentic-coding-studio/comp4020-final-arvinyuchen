@@ -26,7 +26,7 @@ describe("free times", () => {
     expect(windows.find((w) => w.from === 855 && w.to === 1090)?.free).toEqual(["Arvin", "Mia", "Leo", "Zoe"]);
   });
 
-  it("keeps short windows (there's no shortest), and shows a longer one with fewer beside them", () => {
+  it("keeps short windows when the plan is short, and shows a longer one with fewer beside them", () => {
     const { windows } = freeTimes(day, people, answers({
       Arvin: "745-1080",
       Mia: "540-730,1110-1380",
@@ -60,6 +60,28 @@ describe("free times", () => {
     expect(answered).toEqual(["Arvin", "Zoe"]);
     expect(spans(windows)).toEqual(["620-1380", "480-545"]);
     expect(windows[0].free).toEqual(["Arvin", "Zoe"]);
+  });
+
+  it("leaves out windows shorter than the plan takes, longer ones with fewer too", () => {
+    const busyDay = answers({
+      Arvin: "745-1080",
+      Mia: "540-730,1110-1380",
+      Leo: "480-600,900-1020",
+      Zoe: "1140-1260",
+      Sam: "",
+    });
+    // all five are free together only 15 and 30 minutes: an hour leaves them out
+    const hour = freeTimes(day, people, busyDay, 60);
+    expect(spans(hour.windows.slice(0, 3))).toEqual(["730-900", "600-745", "1260-1380"]);
+    expect(spans(hour.shorter.filter((w) => w.free.length === 5))).toEqual(["1080-1110", "730-745"]);
+    // three hours: four of you never are, so three, longest first
+    const three = freeTimes(day, people, busyDay, 180);
+    expect(spans(three.windows)).toEqual(["730-1110", "1080-1380", "480-745"]);
+    expect(spans(shownWindows(three.windows, 5).rows)).toEqual(["730-1110", "1080-1380"]);
+    // nothing that long at all
+    const day15 = freeTimes(day, people, busyDay, 15 * 60);
+    expect(day15.windows).toEqual([]);
+    expect(day15.shorter.length).toBeGreaterThan(0);
   });
 
   it("works to the minute", () => {
@@ -99,5 +121,8 @@ describe("busy times as they come in", () => {
     expect(startsIn({ from: 855, to: 1000 })).toEqual([855, 870, 900, 930]);
     expect(startsIn({ from: 1080, to: 1110 })).toEqual([1080]);
     expect(startsIn({ from: 730, to: 745 })).toEqual([730]);
+    // only starts that leave the plan's length before the window ends
+    expect(startsIn({ from: 855, to: 1000 }, 120)).toEqual([855, 870]);
+    expect(startsIn({ from: 853, to: 973 }, 120)).toEqual([853]);
   });
 });

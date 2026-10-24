@@ -4,9 +4,10 @@ import { EARLIEST, freeDuring, freeTimes, isInterval, LATEST, mergeIntervals, sh
 import type { Kind } from "./kinds";
 import { addDays, isDay, today } from "./when";
 
-// Deciding when: the owner picks a place on the list and a day; everyone,
-// the owner too, marks when they're busy that day; the card works out when
-// people are free together, and the owner sets the time whenever they like.
+// Deciding when: the owner picks a place on the list, a day and how long it
+// takes; everyone, the owner too, marks when they're busy that day; the card
+// works out when people are free together for that long, and the owner sets
+// the time whenever they like.
 // One plan at a time per group. Nobody sees anyone else's busy times: only
 // how many are free when, and who can't make a window. No push, no share:
 // people find out on the page (src/pages/g/[link].astro).
@@ -15,6 +16,8 @@ import { addDays, isDay, today } from "./when";
 export const PLAN_DAYS_AHEAD = 365;
 /** Unless the owner says otherwise, a plan counts 8am to 11pm. */
 export const DEFAULT_RANGE = { start: 480, end: 1380 };
+/** Unless the owner says otherwise, a plan takes two hours. */
+export const DEFAULT_DURATION = 120;
 
 export interface Plan {
   id: number;
@@ -24,6 +27,8 @@ export interface Plan {
   createdBy: number;
   day: string;
   range: { start: number; end: number };
+  /** how long it takes, in minutes: only windows this long are offered */
+  duration: number;
   set: { start: number; end: number; at: string } | null;
   reviewedAt: string | null;
   calledOffAt: string | null;
@@ -38,6 +43,7 @@ type PlanRow = {
   day: string;
   range_start: number;
   range_end: number;
+  duration: number;
   set_start: number | null;
   set_end: number | null;
   set_at: string | null;
@@ -65,6 +71,7 @@ const toPlan = (r: PlanRow): Plan => ({
   createdBy: r.created_by,
   day: r.day,
   range: { start: r.range_start, end: r.range_end },
+  duration: r.duration,
   set: r.set_start !== null && r.set_end !== null && r.set_at ? { start: r.set_start, end: r.set_end, at: r.set_at } : null,
   reviewedAt: r.reviewed_at,
   calledOffAt: r.called_off_at,
@@ -104,6 +111,10 @@ export function pastPlans(groupId: string, now = new Date(), limit = 12): Plan[]
 export const isRange = (r: { start: number; end: number }) =>
   isInterval([r.start, r.end]) && r.start >= EARLIEST && r.end <= LATEST;
 
+/** Whether `duration` is how long a plan counting `range` may take: a minute, up to all of it. */
+export const isDuration = (duration: number, r: { start: number; end: number }) =>
+  Number.isInteger(duration) && duration >= 1 && duration <= r.end - r.start;
+
 /** Whether `day` can have a plan: today, or up to a year ahead. */
 export const isPlanDay = (day: string, now = new Date()) =>
   isDay(day) && day >= today(now) && day <= addDays(today(now), PLAN_DAYS_AHEAD);
@@ -112,8 +123,9 @@ const onList = (groupId: string, placeId: number) =>
   db.prepare("SELECT 1 FROM picks WHERE group_id = ? AND place_id = ?").get(groupId, placeId) !== undefined;
 
 /**
- * The owner starts a plan for a place on the list, on a day. One at a time:
- * "exists" while the group has one. Returns its id, or "invalid".
+ * The owner starts a plan for a place on the list, on a day, taking so
+ * long. One at a time: "exists" while the group has one. Returns its id,
+ * or "invalid".
  */
 export function startPlan(
   group: Group,
@@ -121,15 +133,17 @@ export function startPlan(
   placeId: number,
   day: string,
   range = DEFAULT_RANGE,
+  duration = DEFAULT_DURATION,
   now = new Date(),
 ): number | "exists" | "invalid" {
-  if (by.id !== group.ownerId || !isPlanDay(day, now) || !isRange(range) || !onList(group.id, placeId)) return "invalid";
+  if (by.id !== group.ownerId || !isPlanDay(day, now) || !isRange(range) || !isDuration(duration, range) || !onList(group.id, placeId))
+    return "invalid";
   return db.transaction(() => {
     if (currentPlan(group.id, now)) return "exists" as const;
     return Number(
       db
-        .prepare("INSERT INTO plans (group_id, place_id, created_by, day, range_start, range_end) VALUES (?, ?, ?, ?, ?, ?)")
-        .run(group.id, placeId, by.id, day, range.start, range.end).lastInsertRowid,
+        .prepare("INSERT INTO plans (group_id, place_id, created_by, day, range_start, range_end, duration) VALUES (?, ?, ?, ?, ?, ?, ?)")
+        .run(group.id, placeId, by.id, day, range.start, range.end, duration).lastInsertRowid,
     );
   })();
 }
@@ -199,23 +213,31 @@ export function callOffPlan(plan: Plan): boolean {
 }
 
 /**
- * Another day, or other hours to count. Other hours keep everyone's answers;
- * another day is a new plan for the same place (answers were about the old
- * day), and the old one is called off and points at it, so nothing's lost.
- * Returns the plan's id now, or "invalid".
+ * Another day, other hours to count, or another length. Other hours or
+ * another length keep everyone's answers (the card just works it out
+ * again); another day is a new plan for the same place (answers were about
+ * the old day), and the old one is called off and points at it, so
+ * nothing's lost. Returns the plan's id now, or "invalid".
  */
-export function changePlan(plan: Plan, by: Member, day: string, range: { start: number; end: number }, now = new Date()): number | "invalid" {
-  if (plan.calledOffAt || !isRange(range) || !isPlanDay(day, now)) return "invalid";
+export function changePlan(
+  plan: Plan,
+  by: Member,
+  day: string,
+  range: { start: number; end: number },
+  duration = plan.duration,
+  now = new Date(),
+): number | "invalid" {
+  if (plan.calledOffAt || !isRange(range) || !isDuration(duration, range) || !isPlanDay(day, now)) return "invalid";
   if (day === plan.day) {
     if (plan.set && (plan.set.start < range.start || plan.set.end > range.end)) unsetPlanTime(plan);
-    db.prepare("UPDATE plans SET range_start = ?, range_end = ? WHERE id = ?").run(range.start, range.end, plan.id);
+    db.prepare("UPDATE plans SET range_start = ?, range_end = ?, duration = ? WHERE id = ?").run(range.start, range.end, duration, plan.id);
     return plan.id;
   }
   return db.transaction(() => {
     const id = Number(
       db
-        .prepare("INSERT INTO plans (group_id, place_id, created_by, day, range_start, range_end) VALUES (?, ?, ?, ?, ?, ?)")
-        .run(plan.groupId, plan.placeId, by.id, day, range.start, range.end).lastInsertRowid,
+        .prepare("INSERT INTO plans (group_id, place_id, created_by, day, range_start, range_end, duration) VALUES (?, ?, ?, ?, ?, ?, ?)")
+        .run(plan.groupId, plan.placeId, by.id, day, range.start, range.end, duration).lastInsertRowid,
     );
     db.prepare(`UPDATE plans SET called_off_at = ${NOW}, replaced_by = ? WHERE id = ?`).run(id, plan.id);
     return id;
@@ -253,6 +275,8 @@ export interface PlanView {
   hiddenWindows: number;
   /** the windows not listed (the best few), for "Other" */
   rest: PlanWindow[];
+  /** with no window as long as the plan takes: the longest there is that two or more are free (in minutes), or 0 */
+  longestShort: number;
   /** once set: who's free all through the set time, who isn't, who hasn't said */
   set: { free: Member[]; busy: Member[]; unknown: Member[] } | null;
   /** for the owner, once set: who has since changed their times so they can't make it */
@@ -265,7 +289,7 @@ export function planView(plan: Plan, members: Member[], viewer: Member, ownerId:
   const ids = members.map((m) => m.id);
   const nameOf = new Map(members.map((m) => [m.id, m.name]));
   const answered = members.filter((m) => busy.has(m.id));
-  const { segments, windows } = freeTimes(plan.range, ids, busy);
+  const { segments, windows, shorter } = freeTimes(plan.range, ids, busy, plan.duration);
   const total = answered.length;
   const everyoneIn = total === members.length;
   const toWindow = (w: Stretch<number>): PlanWindow => ({
@@ -304,7 +328,7 @@ export function planView(plan: Plan, members: Member[], viewer: Member, ownerId:
       // (the next best: of the windows with the most free, the one starting nearest the set time)
       const most = windows.filter((w) => w.free.length === windows[0]?.free.length);
       const near = most.sort((x, y) => Math.abs(x.from - start) - Math.abs(y.from - start))[0];
-      const best = near && !(near.from === start && near.to === end) ? toWindow(near) : null;
+      const best = near && near.from !== start ? toWindow(near) : null;
       if (names.length) changed = { names, best };
     }
   }
@@ -322,6 +346,7 @@ export function planView(plan: Plan, members: Member[], viewer: Member, ownerId:
     windows: rows.map(toWindow),
     hiddenWindows: hidden,
     rest: windows.filter((w) => !rows.includes(w)).slice(0, 8).map(toWindow),
+    longestShort: windows.length ? 0 : Math.max(0, ...shorter.map((w) => w.to - w.from)),
     set,
     changed,
   };

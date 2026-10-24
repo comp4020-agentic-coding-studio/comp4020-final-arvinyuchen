@@ -4,8 +4,8 @@
 // A day is minutes since local midnight (src/lib/when.ts). Everyone marks
 // the stretches they're busy, to the minute; an empty list is "free all
 // day", and no answer at all is "hasn't said", which counts neither way.
-// There's no shortest window: two of you free for 15 minutes is a window,
-// the card just says how short it is.
+// The owner says up front how long the plan takes, and a window is only
+// one if it's at least that long: a time it doesn't fit in isn't offered.
 
 export type Interval = [from: number, to: number];
 
@@ -58,13 +58,16 @@ export interface Stretch<Id> {
  * free in it; then every window: for each set of people free together
  * somewhere, the longest runs where they all are, each with exactly who's
  * free all through it. Windows need two people free (a plan of one isn't a
- * plan). Best first: most people free, then the longest, then the earliest.
+ * plan) and to be at least `length` minutes long (how long the plan takes);
+ * `shorter` counts the ones that would be windows but for that. Best
+ * first: most people free, then the longest, then the earliest.
  */
 export function freeTimes<Id>(
   range: { start: number; end: number },
   members: Id[],
   answers: Map<Id, Interval[]>,
-): { answered: Id[]; segments: Stretch<Id>[]; windows: Stretch<Id>[] } {
+  length = 1,
+): { answered: Id[]; segments: Stretch<Id>[]; windows: Stretch<Id>[]; shorter: Stretch<Id>[] } {
   const answered = members.filter((m) => answers.has(m));
   const cuts = new Set([range.start, range.end]);
   for (const m of answered)
@@ -98,10 +101,11 @@ export function freeTimes<Id>(
     }
   }
   const need = Math.min(2, answered.length);
-  const windows = [...found.values()]
+  const all = [...found.values()]
     .filter((w) => w.free.length >= need && w.free.length > 0)
     .sort((x, y) => y.free.length - x.free.length || y.to - y.from - (x.to - x.from) || x.from - y.from);
-  return { answered, segments, windows };
+  const fits = (w: Stretch<Id>) => w.to - w.from >= length;
+  return { answered, segments, windows: all.filter(fits), shorter: all.filter((w) => !fits(w)) };
 }
 
 /**
@@ -125,9 +129,13 @@ export function shownWindows<Id>(windows: Stretch<Id>[], answered: number, maxTo
   return { rows, hidden: windows.length - rows.length };
 }
 
-/** The times to offer as a window's start: its own start, then each :00 and :30 in it (four in all, at most). */
-export function startsIn(w: { from: number; to: number }, max = 4): number[] {
+/**
+ * The times to offer as a window's start: its own start, then each :00 and
+ * :30 in it that still leaves `length` minutes before it ends (four in all,
+ * at most).
+ */
+export function startsIn(w: { from: number; to: number }, length = 1, max = 4): number[] {
   const starts = [w.from];
-  for (let m = Math.floor(w.from / 30) * 30 + 30; m < w.to && starts.length < max; m += 30) starts.push(m);
+  for (let m = Math.floor(w.from / 30) * 30 + 30; m + length <= w.to && starts.length < max; m += 30) starts.push(m);
   return starts;
 }

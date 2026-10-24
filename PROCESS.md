@@ -173,14 +173,20 @@ a grid of half hours.
 
 **Decision.** Option 3, on a timeline to the minute (at first 5-minute
 steps, but a class out at 10:07 had to round, and rounding can hide a
-window or make one up), with no shortest time. Busy rather than free, since most of a Saturday is free: less to
-mark, and "I'm free all day" is one tap. The day draws the way phone
+window or make one up), and the owner says up front how long it takes
+(2h unless they say). Busy rather than free, since most of a Saturday is
+free: less to mark, and "I'm free all day" is one tap. The day draws the way phone
 calendars do: a swipe scrolls, a tap adds an hour, a hold (400ms) then a
 drag draws, and a stretch has dots to drag and exact times behind a tap.
-Without a script the same sheet is From and To rows. The card lists when
-everyone is free, longest first, then a longer time that most can make; a
-time shorter than half an hour still shows, marked in gold. Only times when
-at least two are free count. The owner can set a time whenever they like,
+Without a script the same sheet is From and To rows. The card lists only
+times at least as long as the plan takes: when everyone is free, longest
+first, then a longer time that most can make. At first there was no
+shortest time, a 15-minute overlap marked in gold; but a time the outing
+doesn't fit in isn't a choice, so now it isn't offered, and when nothing is
+long enough the card says so ("No 2h stretch works for 2 or more"), with
+the longest there is, and the owner can make it shorter. Only times when
+at least two are free count. A start the owner picks ends that long after;
+an exact time can still be typed. The owner can set a time whenever they like,
 and is nudged once everyone's in. After that, someone changing their times
 tells only the owner, with a time to move to, or Keep.
 
@@ -198,7 +204,9 @@ two have answered and one is busy, the other knows who), so the timeline
 hides the others' strip until two others have answered, but the card's
 counts can't avoid it entirely. A hold to draw is harder to discover than
 painting, so the empty day says how. Moving the plan to another day starts
-everyone's answers again (the old plan is kept, called off). Times are
+everyone's answers again (the old plan is kept, called off); other hours
+or another length keep them. A length set too long hides every time until
+the owner shortens it, so the card says what the longest is. Times are
 Canberra's, so someone away sees Canberra times. The hold and drag needs
 checking on a real iPhone: Safari decides scrolling from the first touch,
 and the drag relies on stopping the page's scroll once a hold has armed.

@@ -2,13 +2,14 @@
 import type { Group, Member } from "../lib/db";
 import { startsIn } from "../lib/free";
 import type { PlanView, PlanWindow } from "../lib/plans";
-import { dayParts, formatDay, formatDuration, formatMinute, formatSpan } from "../lib/when";
+import { clockOf, dayParts, formatDay, formatDuration, formatMinute, formatSpan } from "../lib/when";
 import PlanHeat from "./PlanHeat.astro";
 
 // The group's plan, on Our list: what it's for and when, who has said
 // when they're busy, and when people are free together, as counts and
-// who can't make it, never anyone's busy times. The owner picks the time
-// here; everyone fills theirs in from here. Every action is a plain form
+// who can't make it, never anyone's busy times, and only times as long as
+// the plan takes. The owner picks the time here (a start; it ends that long
+// after, or at an exact time they type); everyone fills theirs in from here. Every action is a plain form
 // or a link, so it all works without a script (the page's script posts
 // them in the background and opens the sheets in place).
 interface Props {
@@ -43,12 +44,18 @@ const tiered = view.windows.some((w) => w.free.length !== top);
 const tierOf = (w: PlanWindow) =>
   w.free.length !== top ? "Longer, with fewer" : everyone(w) ? "Everyone free" : w.all ? `All ${total} so far` : `${top} of ${total} free`;
 // "Other": a window's own start (which may be any minute), then each 5
-// minutes in it (every minute would make a list too long to look through).
+// minutes in it that leaves the plan's length (every minute would make a
+// list too long to look through).
+const long = plan.duration;
 const otherStarts = (w: PlanWindow) => {
   const starts = [w.from];
-  for (let m = Math.floor(w.from / 5) * 5 + 5; m < w.to; m += 5) starts.push(m);
+  for (let m = Math.floor(w.from / 5) * 5 + 5; m + long <= w.to; m += 5) starts.push(m);
   return starts;
 };
+const lasts = formatDuration(long);
+// (with nothing that long: the longest that two or more could do, said plainly)
+const noneFits = view.windows.length === 0 && view.longestShort > 0;
+const first = view.windows[0];
 const set = plan.set;
 const setWhen = set && `${formatDay(plan.day)}, ${formatMinute(set.start)}`;
 const ownerFirst = view.owner === member.name ? "you" : view.owner;
@@ -82,7 +89,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
         <p class="plan__when">{setWhen}</p>
       ) : (
         <p class="plan__sub">
-          {formatDay(plan.day)} · {formatSpan(plan.range.start, plan.range.end)}
+          {formatDay(plan.day)} · {formatSpan(plan.range.start, plan.range.end)} · {lasts}
           {needs === "answer" && <> · when are you busy?</>}
         </p>
       )}
@@ -93,7 +100,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
           <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="4.5" cy="10" r="1.6" fill="currentColor" /><circle cx="10" cy="10" r="1.6" fill="currentColor" /><circle cx="15.5" cy="10" r="1.6" fill="currentColor" /></svg>
         </summary>
         <div class="plan__menu-list">
-          <a href={`/g/${group.link}?plan=change#plan-start`} data-open-start>Change the day or hours</a>
+          <a href={`/g/${group.link}?plan=change#plan-start`} data-open-start>Change the day, hours or how long</a>
           {set && (
             <form method="post" action={action} data-plan>
               <input type="hidden" name="action" value="unset" />
@@ -142,7 +149,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
               <form method="post" action={action} data-plan>
                 <input type="hidden" name="action" value="set" />
                 <input type="hidden" name="plan" value={plan.id} />
-                <input type="hidden" name="at" value={`${view.changed.best.from}-${view.changed.best.to}`} />
+                <input type="hidden" name="at" value={`${view.changed.best.from}-${view.changed.best.from + long}`} />
                 <button class="btn btn--small btn--primary">Move to {formatMinute(view.changed.best.from)}</button>
               </form>
             )}
@@ -185,7 +192,15 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
         <div class="plan__results">
           {!view.everyoneIn && <p class="plan__label">So far · {total} answered</p>}
           <PlanHeat heat={view.heat} range={plan.range} total={total} mark={view.windows[0]} />
-          {view.windows.length === 0 ? (
+          {noneFits ? (
+            <div class="plan__none plan__none--short">
+              <p>
+                <strong>No {lasts} stretch works for 2 or more{view.everyoneIn ? "" : " yet"}.</strong>{" "}
+                The longest is {formatDuration(view.longestShort)}.{isOwner && " Try a shorter time."}
+              </p>
+              {isOwner && <a class="btn btn--small" href={`/g/${group.link}?plan=change#plan-start`} data-open-start>Change how long</a>}
+            </div>
+          ) : view.windows.length === 0 ? (
             <p class="plan__none">
               {view.everyoneIn ? "No two of you are free at the same time." : "Nobody's free together yet."}
             </p>
@@ -203,7 +218,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
                         <span class="win__text">
                           <span class="win__when">
                             {formatSpan(w.from, w.to)}{" "}
-                            <small class:list={{ "is-short": w.to - w.from < 30 }}>· {formatDuration(w.to - w.from)}</small>
+                            <small>· {formatDuration(w.to - w.from)}</small>
                           </span>
                           <span class="win__who">{whoLine(w)}</span>
                         </span>
@@ -213,9 +228,9 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
                     <li class="starts">
                       <span class="starts__label" id={`starts-${plan.id}-${i}`}>Start at</span>
                       <span class="starts__list" role="radiogroup" aria-labelledby={`starts-${plan.id}-${i}`}>
-                        {startsIn(w).map((s, j) => (
+                        {startsIn(w, long).map((s, j) => (
                           <label class="st">
-                            <input type="radio" name="at" id={`at-${plan.id}-${i}-${j}`} value={`${s}-${w.to}`} checked={i === 0 && j === 0} data-when={formatMinute(s)} data-win={`${w.from}-${w.to}`} />
+                            <input type="radio" name="at" id={`at-${plan.id}-${i}-${j}`} value={`${s}-${s + long}`} checked={i === 0 && j === 0} data-when={formatMinute(s)} data-win={`${w.from}-${w.to}`} />
                             <span>{formatMinute(s)}</span>
                           </label>
                         ))}
@@ -232,7 +247,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
                     {[...view.windows, ...view.rest].map((w) => (
                       <optgroup label={`${formatSpan(w.from, w.to)} · ${whoLine(w)}`}>
                         {otherStarts(w).map((s) => (
-                          <option value={`${s}-${w.to}`}>{formatMinute(s)}</option>
+                          <option value={`${s}-${s + long}`}>{formatMinute(s)}</option>
                         ))}
                       </optgroup>
                     ))}
@@ -242,6 +257,14 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
               <button class="btn btn--primary btn--block plan__set" data-set-label={`Set it: ${formatDay(plan.day)}`}>
                 Set it
               </button>
+              <details class="plan__exact" data-keep-open={`exact-${plan.id}`}>
+                <summary>Or set an exact time</summary>
+                <div class="plan__exact-row" data-set-range data-min={plan.range.start} data-max={plan.range.end}>
+                  <label>From <input type="time" name="set_from" step="60" value={clockOf(first.from)} /></label>
+                  <label>to <input type="time" name="set_to" step="60" value={clockOf(first.from + long)} /></label>
+                </div>
+                <button class="btn btn--small" name="exact" value="1">Set this time</button>
+              </details>
               {view.windows[0]?.youCant && <p class="fine plan__fine">You're busy in this one. You can still set it.</p>}
             </form>
           ) : (
@@ -255,7 +278,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
                       <span class="win__text">
                         <span class="win__when">
                           {formatSpan(w.from, w.to)}{" "}
-                          <small class:list={{ "is-short": w.to - w.from < 30 }}>· {formatDuration(w.to - w.from)}</small>
+                          <small>· {formatDuration(w.to - w.from)}</small>
                         </span>
                         <span class="win__who">{whoLine(w)}</span>
                       </span>
@@ -266,7 +289,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
               {view.hiddenWindows > 0 && <li class="wins__tier wins__rest">{view.hiddenWindows} more, with fewer people</li>}
             </ol>
           )}
-          {view.windows.length === 0 && view.everyoneIn && isOwner && (
+          {view.windows.length === 0 && !noneFits && view.everyoneIn && isOwner && (
             <div class="plan__acts">
               <a class="btn btn--small" href={`/g/${group.link}?plan=change#plan-start`} data-open-start>Change the day</a>
               <form method="post" action={action} data-plan data-confirm={`Call off ${plan.place.name} on ${formatDay(plan.day)}? It stays under Past plans.`}>

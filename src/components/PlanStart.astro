@@ -1,6 +1,6 @@
 ---
 import type { Group, Pick } from "../lib/db";
-import { DEFAULT_RANGE, PLAN_DAYS_AHEAD, type Plan } from "../lib/plans";
+import { DEFAULT_DURATION, DEFAULT_RANGE, PLAN_DAYS_AHEAD, type Plan } from "../lib/plans";
 import { addDays, clockOf, dayParts, today } from "../lib/when";
 import SpotPhoto from "./SpotPhoto.astro";
 
@@ -9,7 +9,8 @@ import SpotPhoto from "./SpotPhoto.astro";
 // which the script turns into a calendar in the sheet's own look,
 // src/scripts/plan-start.ts), and the hours to count (8am to 11pm unless
 // they say: time fields to the minute, which the script makes fields you
-// type or swipe, src/scripts/timefield.ts). With a plan already on,
+// type or swipe, src/scripts/timefield.ts), and how long it takes (2h
+// unless they say): only times that long are offered. With a plan already on,
 // the same sheet moves it to another day or other hours. A <dialog>, open
 // from the server when the URL asks (?plan=new, ?plan=change), so it works
 // without a script; the page's script opens it in place. It sits outside
@@ -27,6 +28,7 @@ const first = today();
 const days = Array.from({ length: 14 }, (_, i) => addDays(first, i));
 const chosenDay = plan?.day ?? addDays(first, 1);
 const range = plan?.range ?? DEFAULT_RANGE;
+const duration = plan?.duration ?? DEFAULT_DURATION;
 ---
 
 <dialog id="plan-start" class="sheet" open={open} tabindex="-1" aria-labelledby="plan-start-title">
@@ -46,7 +48,7 @@ const range = plan?.range ?? DEFAULT_RANGE;
       <span></span>
     </div>
     <div class="sheet__body">
-      {error && <p class="notice" role="alert">That didn't work: pick a place on the list and a day from today on.</p>}
+      {error && <p class="notice" role="alert">That didn't work: pick a place on the list, a day from today on, and how long it takes within the hours you count.</p>}
       {changing ? (
         <p class="fine">{plan.place.name}. On another day, it starts afresh: everyone marks their times for that day.</p>
       ) : (
@@ -94,6 +96,13 @@ const range = plan?.range ?? DEFAULT_RANGE;
           <div class="sheet__row" data-range>
             <label for="plan-to"><strong>Until</strong><span class="fine">12:00am is midnight</span></label>
             <input id="plan-to" type="time" name="to" step="60" value={clockOf(range.end)} required />
+          </div>
+          <div class="sheet__row" data-length>
+            <span id="plan-long"><strong>How long</strong><span class="fine">Only times this long are suggested</span></span>
+            <span class="length" role="group" aria-labelledby="plan-long">
+              <label><input type="number" name="duration_h" min="0" max="18" value={Math.floor(duration / 60)} inputmode="numeric" aria-label="Hours" />h</label>
+              <label><input type="number" name="duration_m" min="0" max="59" value={duration % 60} inputmode="numeric" aria-label="Minutes" />m</label>
+            </span>
           </div>
         </div>
       </fieldset>
