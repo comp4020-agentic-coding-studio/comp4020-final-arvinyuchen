@@ -43,6 +43,10 @@ describe("reading a search prompt", () => {
   it("hears a kind only when the prompt asks for one", () => {
     expect(parseQuery("somewhere for dinner", anchors).kind).toBe("food");
     expect(parseQuery("a picnic spot", anchors).kind).toBe("outdoors");
+    expect(parseQuery("good coffee", anchors).kind).toBe("coffee");
+    expect(parseQuery("drinks after work", anchors).kind).toBe("drinks");
+    expect(parseQuery("a museum for a rainy day", anchors).kind).toBe("culture");
+    expect(parseQuery("bowling or climbing", anchors).kind).toBe("fun");
     expect(parseQuery("dinner then a walk in the park", anchors).kind).toBeNull();
     expect(parseQuery("something cosy", anchors).kind).toBeNull();
   });

@@ -1,0 +1,79 @@
+---
+import type { Group } from "../lib/db";
+import type { PlanView } from "../lib/plans";
+import { clockOf, formatDay, formatDuration, formatMinute, formatSpan } from "../lib/when";
+
+// When you're busy on the plan's day. As a plain form it's rows of From
+// and To, time fields to the minute (a row left empty is none, and one
+// empty row is always there for the next; an end of 12:00am is midnight);
+// with the script it's a day you draw on
+// (src/scripts/busy.ts), which writes the same form. Only your own busy
+// times are in it. Its title says how long the plan takes, so everyone
+// knows how much room it needs. What the others are free is there as counts, for the
+// timeline's "Others": never whose. A <dialog>, open from the server when
+// the URL asks (?busy), outside what a live refresh redraws while open.
+interface Props {
+  group: Group;
+  view: PlanView;
+  open: boolean;
+  error: boolean;
+  isOwner: boolean;
+}
+const { group, view, open, error, isOwner } = Astro.props;
+const { plan } = view;
+const { start, end } = plan.range;
+// (busy times kept from before the hours changed still show, clipped)
+const rows = (view.mine ?? []).map(([a, b]) => [Math.max(a, start), Math.min(b, end)]).filter(([a, b]) => a < b);
+const timeline = JSON.stringify({
+  day: plan.day,
+  start,
+  end,
+  busy: rows,
+  // (one other's counts would be their own times: only from two)
+  others: view.othersAnswered >= 2 ? view.others : [],
+  othersAnswered: view.othersAnswered,
+  set: plan.set ? [plan.set.start, plan.set.end] : null,
+}).replace(/</g, "\\u003c");
+---
+
+<dialog id="busy" class="sheet sheet--busy" open={open} tabindex="-1" aria-labelledby="busy-title">
+  <form method="post" action={`/api/groups/${group.id}/busy`} class="sheet__form" data-busy data-busy-sheet>
+    <input type="hidden" name="plan" value={plan.id} />
+    <div class="sheet__bar">
+      <a class="sheet__cancel" href={`/g/${group.link}#plan-${plan.id}`} data-close>Cancel</a>
+      <div>
+        <h2 id="busy-title">When are you busy?</h2>
+        <p class="sheet__sub">{plan.place.name} · {formatDay(plan.day)} · {formatDuration(plan.duration)}</p>
+      </div>
+      <span></span>
+    </div>
+    <div class="sheet__body busy">
+      {error && <p class="notice" role="alert">A busy time needs a start before its end, both in {formatSpan(start, end)}.</p>}
+      {plan.set && !isOwner && (
+        <p class="busy__set"><strong>{view.owner} set {formatMinute(plan.set.start)}.</strong> If you're busy then, the card tells {view.owner}, who can move it. Nobody else sees your times.</p>
+      )}
+      <div class="busy__rows" data-busy-rows>
+        <p class="fine">{formatSpan(start, end)}, to the minute. Nobody else sees your times, only how many are free when.</p>
+        {[...rows, [null, null]].map(([a, b], i) => (
+          <div class="busy__row">
+            <label>
+              <span>From</span>
+              <input type="time" name="from" step="60" min={clockOf(start)} max={clockOf(end - 1)} value={a === null ? "" : clockOf(a)} aria-label={`Busy time ${i + 1}: from`} />
+            </label>
+            <label>
+              <span>to</span>
+              <input type="time" name="to" step="60" value={b === null ? "" : clockOf(b)} aria-label={`Busy time ${i + 1}: to`} />
+            </label>
+          </div>
+        ))}
+        <p class="fine">Need another row? Save, and an empty one is waiting.</p>
+      </div>
+      <script type="application/json" data-timeline-data is:inline set:html={timeline} />
+    </div>
+    <div class="sheet__foot">
+      <p class="busy__sum" aria-live="polite" data-busy-sum></p>
+      <button class="btn btn--primary btn--block" data-busy-save>Save my times</button>
+      <button class="btn btn--block" name="free" value="all" data-busy-free>I'm free all day</button>
+    </div>
+  </form>
+</dialog>

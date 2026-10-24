@@ -1,0 +1,117 @@
+---
+import type { Group, Pick } from "../lib/db";
+import { DEFAULT_DURATION, DEFAULT_RANGE, PLAN_DAYS_AHEAD, type Plan } from "../lib/plans";
+import { addDays, clockOf, dayParts, today } from "../lib/when";
+import SpotPhoto from "./SpotPhoto.astro";
+
+// The owner's sheet for a plan: where (a place on Our list), which day (a
+// chip for the next two weeks, or another date: the browser's date field,
+// which the script turns into a calendar in the sheet's own look,
+// src/scripts/plan-start.ts), and the hours to count (8am to 11pm unless
+// they say: time fields to the minute, which the script makes fields you
+// type or swipe, src/scripts/timefield.ts), and how long it takes (2h
+// unless they say): only times that long are offered. With a plan already on,
+// the same sheet moves it to another day or other hours. A <dialog>, open
+// from the server when the URL asks (?plan=new, ?plan=change), so it works
+// without a script; the page's script opens it in place. It sits outside
+// what a live refresh redraws while it's open.
+interface Props {
+  group: Group;
+  picks: Pick[];
+  plan?: Plan;
+  open: boolean;
+  error: boolean;
+}
+const { group, picks, plan, open, error } = Astro.props;
+const changing = plan !== undefined;
+const first = today();
+const days = Array.from({ length: 14 }, (_, i) => addDays(first, i));
+const chosenDay = plan?.day ?? addDays(first, 1);
+const range = plan?.range ?? DEFAULT_RANGE;
+const duration = plan?.duration ?? DEFAULT_DURATION;
+---
+
+<dialog id="plan-start" class="sheet" open={open} tabindex="-1" aria-labelledby="plan-start-title">
+  <form
+    method="post"
+    action={`/api/groups/${group.id}/plans`}
+    class="sheet__form"
+    data-plan-start
+    data-day={plan?.day}
+    data-confirm={changing ? "If the day changes, everyone marks their times again for the new day. Go ahead?" : undefined}
+  >
+    <input type="hidden" name="action" value={changing ? "change" : "start"} />
+    {plan && <input type="hidden" name="plan" value={plan.id} />}
+    <div class="sheet__bar">
+      <a class="sheet__cancel" href={`/g/${group.link}#list`} data-close>Cancel</a>
+      <h2 id="plan-start-title">{changing ? "Change the plan" : "Plan a day"}</h2>
+      <span></span>
+    </div>
+    <div class="sheet__body">
+      {error && <p class="notice" role="alert">That didn't work: pick a place on the list, a day from today on, and how long it takes within the hours you count.</p>}
+      {changing ? (
+        <p class="fine">{plan.place.name}. On another day, it starts afresh: everyone marks their times for that day.</p>
+      ) : (
+        <fieldset class="sheet__group">
+          <legend class="sheet__label">Where · from Our list</legend>
+          <div class="card where-list">
+            {picks.map((pick, i) => (
+              <label class={`where spot--${pick.place.kind}`}>
+                <SpotPhoto photo={pick.place.photo} name={pick.place.name} kind={pick.place.kind} small />
+                <span class="where__text">
+                  <strong>{pick.place.name}</strong>
+                  <span>{[pick.place.area, `${pick.keen.length} keen`].filter(Boolean).join(" · ")}</span>
+                </span>
+                <input type="radio" name="place" value={pick.place.id} checked={i === 0} required />
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
+      <fieldset class="sheet__group">
+        <legend class="sheet__label">Which day</legend>
+        <div class="days" role="radiogroup">
+          {days.map((day) => {
+            const { weekday, date, month } = dayParts(day);
+            return (
+              <label class="days__day">
+                <input type="radio" name="day" value={day} checked={day === chosenDay} />
+                <span class="cal"><b>{day === first ? "Today" : weekday}</b><span>{date}</span><i>{month}</i></span>
+              </label>
+            );
+          })}
+        </div>
+        <label class="days__other">
+          <span>Or another date</span>
+          <input type="date" name="date" min={first} max={addDays(first, PLAN_DAYS_AHEAD)} value={days.includes(chosenDay) ? "" : chosenDay} />
+        </label>
+      </fieldset>
+      <fieldset class="sheet__group">
+        <legend class="sheet__label">Options</legend>
+        <div class="card sheet__rows">
+          <div class="sheet__row" data-range>
+            <label for="plan-from"><strong>Count from</strong><span class="fine">Night isn't "free"</span></label>
+            <input id="plan-from" type="time" name="from" step="60" min="06:00" max="23:59" value={clockOf(range.start)} required />
+          </div>
+          <div class="sheet__row" data-range>
+            <label for="plan-to"><strong>Until</strong><span class="fine">12:00am is midnight</span></label>
+            <input id="plan-to" type="time" name="to" step="60" value={clockOf(range.end)} required />
+          </div>
+          <div class="sheet__row" data-length>
+            <span id="plan-long"><strong>How long</strong><span class="fine">Only times this long are suggested</span></span>
+            <span class="length" role="group" aria-labelledby="plan-long">
+              <label><input type="number" name="duration_h" min="0" max="18" value={Math.floor(duration / 60)} inputmode="numeric" aria-label="Hours" />h</label>
+              <label><input type="number" name="duration_m" min="0" max="59" value={duration % 60} inputmode="numeric" aria-label="Minutes" />m</label>
+            </span>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+    <div class="sheet__foot">
+      <button class="btn btn--primary btn--block">{changing ? "Save" : "Ask when everyone's busy"}</button>
+      <p class="fine">
+        {changing ? "The group sees the change straight away." : "Everyone, you too, marks when they're busy that day. You pick the time."}
+      </p>
+    </div>
+  </form>
+</dialog>

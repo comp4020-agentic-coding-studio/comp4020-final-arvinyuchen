@@ -84,7 +84,7 @@ export function restoreGroups(ids: string[]): number {
 }
 
 /**
- * Deletes archived groups for good: their members, list, votes and links.
+ * Deletes archived groups for good: their members, list, votes, plans and links.
  * Places they shared stay in the pool (hide those separately). A group that
  * isn't archived is left alone, so this can never be the first step.
  */
@@ -104,6 +104,11 @@ export function purgeGroups(ids: string[]): number {
       `DELETE FROM votes WHERE pick_id IN (SELECT id FROM picks WHERE group_id IN (${inGroups}))
           OR member_id IN (SELECT id FROM members WHERE group_id IN (${inGroups}))`,
     ).run(...archived, ...archived);
+    const plans = `SELECT id FROM plans WHERE group_id IN (${inGroups})`;
+    db.prepare(`DELETE FROM plan_busy WHERE plan_id IN (${plans})`).run(...archived);
+    db.prepare(`DELETE FROM plan_answers WHERE plan_id IN (${plans})`).run(...archived);
+    db.prepare(`UPDATE plans SET replaced_by = NULL WHERE group_id IN (${inGroups})`).run(...archived);
+    db.prepare(`DELETE FROM plans WHERE group_id IN (${inGroups})`).run(...archived);
     db.prepare(`DELETE FROM picks WHERE group_id IN (${inGroups})`).run(...archived);
     db.prepare(`DELETE FROM members WHERE group_id IN (${inGroups})`).run(...archived);
     db.prepare(`DELETE FROM group_links WHERE group_id IN (${inGroups})`).run(...archived);

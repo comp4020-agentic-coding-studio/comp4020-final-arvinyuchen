@@ -1,4 +1,4 @@
-import type { Kind } from "../lib/catalogue";
+import type { Kind } from "../lib/kinds";
 
 // What every Spots map puts over its streets, in the page's own font rather
 // than the tiles' lettering: the pins, a few place names, and the credit

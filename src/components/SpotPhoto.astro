@@ -1,28 +1,69 @@
 ---
 import type { Kind, Photo } from "../lib/catalogue";
+import { KIND_ART } from "../lib/kind-art";
+import { KIND_LABEL } from "../lib/kinds";
+import KindIcon from "./KindIcon.astro";
 
-// A spot's photo with its credit, or, for a group's own finds (which have no
-// photo), a plain panel in the spot's kind colour with its initial.
+// A spot's photo with its credit: a Commons photo with its author and
+// licence, or the sharer's own with their name; the panel's tint in the
+// kind's colour shows while it loads. A place without one shows its kind's
+// picture (src/lib/kind-art.ts), or the kind's icon, named with the kind so
+// it isn't taken for a photo of the place. Small, on Our list, there's no
+// room to name the kind, and the list names it nowhere else: the kind's
+// icon marks the picture's corner instead (the icon itself, where the
+// picture is the icon), and is named for a screen reader.
 interface Props {
-  photo?: Photo | null;
+  photo: Photo | null;
   name: string;
   kind: Kind;
   small?: boolean;
 }
 const { photo, name, kind, small = false } = Astro.props;
+const art = photo ? undefined : KIND_ART[kind];
+const label = KIND_LABEL[kind];
 ---
 
-<figure class:list={["photo", `photo--${kind}`, { "photo--small": small }]}>
-  {photo ? (
-    <>
+{
+  photo ? (
+    <figure class:list={["photo", `photo--${kind}`, { "photo--small": small }]}>
       <img src={photo.src} alt={`${name}`} loading="lazy" decoding="async" width="800" height="533" />
-      {!small && (
+      {small ? (
+        <span class="photo__badge"><KindIcon kind={kind} /><span class="sr-only">{label}</span></span>
+      ) : (
         <figcaption>
-          <a href={photo.page} rel="noopener">Photo: {photo.credit}, {photo.license}</a>
+          <a href={photo.page} rel="noopener">
+            Photo: {photo.credit}
+            {photo.license && `, ${photo.license}`}
+          </a>
         </figcaption>
       )}
-    </>
+    </figure>
   ) : (
-    <div class="photo__none" aria-hidden="true">{name.charAt(0).toUpperCase()}</div>
-  )}
-</figure>
+    <figure class:list={["photo", "photo--kind", `photo--${kind}`, { "photo--small": small, "photo--art": art }]} data-kind-art={kind}>
+      {art ? (
+        <img src={art.src} alt="" loading="lazy" decoding="async" width="800" height="533" />
+      ) : (
+        <>
+          <span class="photo__icon"><KindIcon kind={kind} /></span>
+          <span class="photo__ghost"><KindIcon kind={kind} /></span>
+        </>
+      )}
+      {small ? (
+        art ? (
+          <span class="photo__badge"><KindIcon kind={kind} /><span class="sr-only">{label}</span></span>
+        ) : (
+          <span class="sr-only">{label}</span>
+        )
+      ) : (
+        <figcaption>
+          <span class="photo__kind">{label}</span>
+          {art && (
+            <a href={art.page ?? "https://unsplash.com"} rel="noopener">
+              {art.credit ? `Photo: ${art.credit}, Unsplash` : "Photo: Unsplash"}
+            </a>
+          )}
+        </figcaption>
+      )}
+    </figure>
+  )
+}

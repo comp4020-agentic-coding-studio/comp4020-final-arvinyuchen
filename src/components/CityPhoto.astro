@@ -14,8 +14,10 @@ interface Props {
   // build-photo.mjs. Not where the photo's box can be wider for its height
   // than nine to ten, or the cut would show.)
   tall?: boolean;
+  // (only on some screens: hidden, it isn't fetched at all)
+  lazy?: boolean;
 }
-const { class: className, sizes, first, tall } = Astro.props;
+const { class: className, sizes, first, tall, lazy } = Astro.props;
 const widths = [1000, 2000, 3000];
 const set = (type: string) => widths.map((w) => `/images/canberra-from-ainslie-${w}.${type} ${w}w`).join(", ");
 const upright = "(max-aspect-ratio: 3/4) and (max-width: 40rem)";
@@ -41,6 +43,7 @@ const middle = (type: string) =>
     width="1000"
     height="663"
     fetchpriority={first ? "high" : undefined}
+    loading={lazy ? "lazy" : undefined}
     alt="Canberra from Mount Ainslie: Anzac Parade runs down to Lake Burley Griffin and Parliament House, with the Brindabellas behind"
   />
 </picture>

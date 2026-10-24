@@ -38,9 +38,12 @@ const LANDMARKS: Anchor[] = [
 const NEAR_WORDS = "near|around|in|by|close to|next to|walking distance (?:of|from)|at";
 
 const KIND_WORDS: Record<Kind, string[]> = {
-  food: ["food", "eat", "eats", "eating", "hungry", "restaurant", "restaurants", "cafe", "cafes", "café", "cafés", "coffee", "brunch", "breakfast", "lunch", "dinner", "dessert", "snack", "snacks"],
-  fun: ["museum", "museums", "gallery", "galleries", "exhibition", "exhibits", "indoor", "indoors", "games", "show"],
+  food: ["food", "eat", "eats", "eating", "hungry", "restaurant", "restaurants", "lunch", "dinner", "snack", "snacks", "dumplings", "noodles", "pizza"],
+  coffee: ["coffee", "cafe", "cafes", "café", "cafés", "brunch", "breakfast", "dessert", "desserts", "cake", "cakes", "tea", "bakery"],
+  drinks: ["drinks", "drink", "bar", "bars", "pub", "pubs", "beer", "beers", "wine", "cocktail", "cocktails", "nightlife"],
   outdoors: ["outdoors", "outdoor", "outside", "hike", "hiking", "bushwalk", "nature", "park", "parks", "picnic", "garden", "gardens", "lookout", "view", "views"],
+  culture: ["museum", "museums", "gallery", "galleries", "exhibition", "exhibits", "art", "history", "theatre", "show"],
+  fun: ["activity", "activities", "games", "indoor", "indoors", "play", "bowling", "climbing", "cinema", "movie", "movies"],
 };
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

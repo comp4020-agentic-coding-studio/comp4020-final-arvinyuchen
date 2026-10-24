@@ -1,0 +1,336 @@
+import { describe, expect, it } from "vitest";
+import { Jar } from "./authenticator";
+import { baseUrl, join, origin, page, request, startGroup } from "./browser";
+import { addDays, today } from "../src/lib/when";
+
+// Deciding when, against the running app: the owner picks a place on the
+// list and a day, everyone marks when they're busy, the owner sets the
+// time. Only the owner runs the plan; only you answer for you; nobody sees
+// anyone else's busy times; and every change reaches the group's pages.
+
+const soon = addDays(today(), 3);
+
+/** A group with Questacon on its list, its owner Ana and a member Ben. */
+async function crew(name: string) {
+  const ana = new Jar();
+  const id = await startGroup(ana, name, "Ana");
+  const ben = new Jar();
+  await join(ben, id, id, "Ben");
+  const api = `/api/groups/${id}`;
+  await request(ana, `${api}/picks`, { form: { key: "questacon" } });
+  const place = (await page(ana, `/g/${id}`)).querySelector<HTMLElement>("#list [data-place-id]")?.dataset.placeId ?? "";
+  return { ana, ben, id, api, place, path: `/g/${id}` };
+}
+/** Starts a plan as the owner; returns its id. */
+async function planned(c: Awaited<ReturnType<typeof crew>>, day = soon) {
+  const res = await request(c.ana, `${c.api}/plans`, { form: { action: "start", place: c.place, day } });
+  expect(res.status).toBe(303);
+  return /#plan-(\d+)$/.exec(res.headers.get("location") ?? "")?.[1] ?? "";
+}
+const inPage = (jar: Jar, path: string, form: Record<string, string> | URLSearchParams) =>
+  fetch(new URL(path, baseUrl), {
+    method: "POST",
+    headers: { origin, cookie: jar.header, "x-spots": "in-page" },
+    body: form instanceof URLSearchParams ? form : new URLSearchParams(form),
+    redirect: "manual",
+  });
+
+describe("a plan", () => {
+  it("is the owner's to start, for a place on the list, one at a time", async () => {
+    const c = await crew("Plan crew");
+    // not the owner, not a place on the list, not a day gone by
+    expect((await inPage(c.ben, `${c.api}/plans`, { action: "start", place: c.place, day: soon })).status).toBe(403);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: "999999", day: soon })).status).toBe(409);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: addDays(today(), -1) })).status).toBe(409);
+    // hours outside 6am to midnight, ending before they start, or not whole minutes
+    for (const [from, to] of [["300", "1380"], ["05:59", "23:00"], ["1380", "1380"], ["22:00", "21:59"], ["480", "1441"], ["482.5", "1380"], ["8am", "11pm"]])
+      expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: soon, from, to })).status).toBe(409);
+
+    const id = await planned(c);
+    expect(id).toMatch(/^\d+$/);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: soon })).status).toBe(409);
+  });
+
+  it("counts hours to the minute, sent as minutes or as the plain form's date and time fields", async () => {
+    const c = await crew("Minute crew");
+    // the plain form: a date typed, not a chip; 8:07am to midnight
+    const res = await request(c.ana, `${c.api}/plans`, { form: { action: "start", place: c.place, date: addDays(today(), 20), from: "08:07", to: "00:00" } });
+    expect(res.status).toBe(303);
+    const plan = /#plan-(\d+)$/.exec(res.headers.get("location") ?? "")?.[1] ?? "";
+    const data = () => page(c.ben, c.path).then((doc) => JSON.parse(doc.querySelector("#busy [data-timeline-data]")?.textContent ?? "{}"));
+    expect(await data()).toMatchObject({ day: addDays(today(), 20), start: 487, end: 1440 });
+    // the owner's sheet keeps that date in its plain date field (past the two weeks' chips), from today to a year on
+    const date = (await page(c.ana, c.path)).querySelector('#plan-start input[type="date"][name="date"]');
+    expect([date?.getAttribute("value"), date?.getAttribute("min"), date?.getAttribute("max")]).toEqual([addDays(today(), 20), today(), addDays(today(), 365)]);
+    // and its hours as plain time fields, to the minute (12:00am the midnight it ends on)
+    const hours = [...(await page(c.ana, c.path)).querySelectorAll('#plan-start input[type="time"]')].map((i) => [i.getAttribute("name"), i.getAttribute("value")]);
+    expect(hours).toEqual([["from", "08:07"], ["to", "00:00"]]);
+    // other hours, as the script sends them
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, from: "421", to: "1379" })).status).toBe(204);
+    expect(await data()).toMatchObject({ start: 421, end: 1379 });
+    // and a date more than a year ahead isn't one
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, date: addDays(today(), 400) })).status).toBe(409);
+  });
+
+  it("takes your busy times from you alone, to the minute, the same answer twice changing nothing", async () => {
+    const c = await crew("Busy crew");
+    const plan = await planned(c);
+    // someone who isn't in the group
+    const olly = new Jar();
+    await startGroup(olly, "Elsewhere", "Olly");
+    expect((await inPage(olly, `${c.api}/busy`, { plan, busy: "540-600" })).status).toBe(403);
+
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, busy: "541-607" })).status).toBe(204);
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, busy: "600-540" })).status).toBe(409);
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, busy: "540-1441" })).status).toBe(409);
+    // the plain form's time fields: to the minute, an end of 00:00 being midnight
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, from: "09:07", to: "10:21" })).status).toBe(204);
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, from: "22:30", to: "00:00" })).status).toBe(204);
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, from: "10:21", to: "09:07" })).status).toBe(409);
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, from: "09:07", to: "" })).status).toBe(409);
+    const twice = new URLSearchParams([["plan", plan], ["busy", "540-620"], ["busy", "840-1020"]]);
+    expect((await inPage(c.ben, `${c.api}/busy`, twice)).status).toBe(204);
+    expect((await inPage(c.ben, `${c.api}/busy`, twice)).status).toBe(204);
+    // the plain form's from/to rows, one left empty
+    const plain = await request(c.ana, `${c.api}/busy`, {
+      form: Object.fromEntries([["plan", plan]]) as Record<string, string>,
+    });
+    expect(plain.status).toBe(303); // no rows at all: free all day
+    expect(plain.headers.get("location")).toContain(`#plan-${plan}`);
+  });
+
+  it("is set by the owner only, inside the hours it counts", async () => {
+    const c = await crew("Set crew");
+    const plan = await planned(c);
+    expect((await inPage(c.ben, `${c.api}/plans`, { action: "set", plan, at: "855-1000" })).status).toBe(403);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, at: "400-500" })).status).toBe(409);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, at: "1000-857" })).status).toBe(409);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, at: "857-1003" })).status).toBe(204);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, at: "855-1000" })).status).toBe(204);
+    // "Other": a start picked from the list wins over the offered one
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, at: "855-1000", other: "900-1000" })).status).toBe(204);
+  });
+
+  it("is called off when its place leaves the list, and then takes no answers", async () => {
+    const c = await crew("Off crew");
+    const plan = await planned(c);
+    const pick = (await page(c.ana, c.path)).querySelector<HTMLInputElement>('#list input[name="pick"]')?.value ?? "";
+    await request(c.ana, `${c.api}/picks`, { form: { remove: pick } });
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, busy: "540-600" })).status).toBe(409);
+    // and the group can start another
+    await request(c.ana, `${c.api}/picks`, { form: { key: "questacon" } });
+    const again = (await page(c.ana, c.path)).querySelector<HTMLElement>("#list [data-place-id]")?.dataset.placeId ?? "";
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: again, day: soon })).status).toBe(204);
+  });
+
+  it("moves to another day as a new plan, and can be called off", async () => {
+    const c = await crew("Move crew");
+    const plan = await planned(c);
+    const moved = await request(c.ana, `${c.api}/plans`, { form: { action: "change", plan, day: addDays(soon, 1) } });
+    const next = /#plan-(\d+)$/.exec(moved.headers.get("location") ?? "")?.[1] ?? "";
+    expect(next).not.toBe(plan);
+    // the old one is done with: answering it, or acting on it, is refused
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, busy: "540-600" })).status).toBe(409);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "off", plan })).status).toBe(409);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "off", plan: next })).status).toBe(204);
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan: next, busy: "540-600" })).status).toBe(409);
+  });
+
+  it("doesn't take answers from someone removed", async () => {
+    const c = await crew("Removed crew");
+    const plan = await planned(c);
+    const benId = [...(await page(c.ana, c.path)).querySelectorAll("#settings .people li")]
+      .find((li) => li.textContent?.includes("Ben"))
+      ?.querySelector<HTMLInputElement>('input[name="member"]')?.value ?? "";
+    await request(c.ana, `${c.api}/owner`, { form: { action: "remove", member: benId } });
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, busy: "540-600" })).status).toBe(403);
+  });
+
+  it("tells the group's open pages when someone answers and when the time is set", async () => {
+    const c = await crew("Live plan crew");
+    const plan = await planned(c);
+    const stream = await fetch(new URL(`/api/events?group=${c.id}`, baseUrl), { headers: { cookie: c.ana.header } });
+    const reader = stream.body!.getReader();
+    const decoder = new TextDecoder();
+    let got = decoder.decode((await reader.read()).value, { stream: true }); // (connected)
+    const hear = async () => {
+      while (!got.includes("event: change")) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        got += decoder.decode(value, { stream: true });
+      }
+      const heard = got.includes("event: change");
+      got = "";
+      return heard;
+    };
+    await inPage(c.ben, `${c.api}/busy`, { plan, busy: "540-600" });
+    expect(await hear()).toBe(true);
+    await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, at: "855-1000" });
+    expect(await hear()).toBe(true);
+    await reader.cancel();
+  }, 10_000);
+});
+
+describe("the plan on the group's page", () => {
+  it("asks each member for their times until they've given them, and works without a script", async () => {
+    const c = await crew("Page crew");
+    const plan = await planned(c);
+    let doc = await page(c.ben, c.path);
+    const card = doc.querySelector(`#plan-${plan}`);
+    expect(card?.textContent).toContain("Questacon");
+    expect(card?.textContent).toContain("Needs your answer");
+    expect(card?.getAttribute("data-needs")).toBe("answer");
+    expect(doc.querySelector(".tabs__dot")).toBeTruthy();
+    // the plain form: rows of from/to time fields, to the minute, and "I'm free all day"
+    const sheet = doc.querySelector("#busy form");
+    expect(sheet?.getAttribute("action")).toBe(`${c.api}/busy`);
+    const from = sheet?.querySelector('input[type="time"][name="from"]');
+    expect([from?.getAttribute("min"), from?.getAttribute("max"), from?.getAttribute("step")]).toEqual(["08:00", "22:59", "60"]);
+    expect(sheet?.querySelector('input[type="time"][name="to"]')).toBeTruthy();
+    expect(sheet?.querySelector('button[name="free"][value="all"]')).toBeTruthy();
+    // the place on the list says it's being planned
+    expect(doc.querySelector("#list .pick__plan")?.textContent).toContain("Planning");
+
+    await request(c.ben, `${c.api}/busy`, { form: { plan, from: "540", to: "620" } });
+    doc = await page(c.ben, c.path);
+    expect(doc.querySelector(`#plan-${plan}`)?.getAttribute("data-needs")).toBeNull();
+    expect(doc.querySelector(`#plan-${plan} .plan__mine`)?.textContent).toContain("busy 9–10:20am");
+    expect(doc.querySelector(".tabs__dot")).toBeNull();
+  });
+
+  it("shows the owner when everyone's free, lets them set it, then shows everyone the time", async () => {
+    const c = await crew("Results crew");
+    const plan = await planned(c);
+    await request(c.ana, `${c.api}/busy`, { form: { plan, from: "545", to: "620" } });
+    await request(c.ben, `${c.api}/busy`, { form: { plan, from: "690", to: "855" } });
+    let doc = await page(c.ana, c.path);
+    const card = doc.querySelector(`#plan-${plan}`);
+    expect(card?.getAttribute("data-needs")).toBe("pick");
+    expect(card?.textContent).toContain("Everyone's in");
+    // longest first: 2:15–11pm, everyone free
+    expect(card?.querySelector(".win__when")?.textContent).toContain("2:15–11pm");
+    expect(card?.querySelector(".win__who")?.textContent).toBe("Everyone free");
+    // the start offered ends two hours on, as long as the plan takes
+    const first = card?.querySelector<HTMLInputElement>('input[name="at"]:checked')?.value;
+    expect(first).toBe("855-975");
+    await request(c.ana, `${c.api}/plans`, { form: { action: "set", plan, at: first ?? "" } });
+
+    doc = await page(c.ben, c.path);
+    expect(doc.querySelector(".next-up")?.textContent).toContain("2:15pm");
+    expect(doc.querySelector(`#plan-${plan} .plan__when`)?.textContent).toContain("2:15pm");
+    expect(doc.querySelector(`#plan-${plan} .plan__going`)?.textContent).toContain("Everyone's free till 4:15pm");
+    expect(doc.querySelector("#list .pick__plan")?.textContent).toContain("2:15pm");
+  });
+
+  it("works out when everyone's free to the minute", async () => {
+    const c = await crew("Minute results crew");
+    const plan = await planned(c);
+    await request(c.ana, `${c.api}/busy`, { form: { plan, from: "09:07", to: "10:21" } });
+    await request(c.ben, `${c.api}/busy`, { form: { plan, from: "11:31", to: "14:13" } });
+    const card = (await page(c.ana, c.path)).querySelector(`#plan-${plan}`);
+    expect(card?.querySelector(".win__when")?.textContent).toContain("2:13–11pm");
+    expect(card?.querySelector<HTMLInputElement>('input[name="at"]:checked')?.value).toBe("853-973");
+    // "Other" offers the window's own start, then every 5 minutes
+    const other = [...(card?.querySelectorAll('select[name="other"] option') ?? [])].map((o) => o.getAttribute("value"));
+    expect(other.slice(0, 3)).toEqual(["", "853-973", "855-975"]);
+    // or an exact time, typed
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, exact: "1", set_from: "14:13", set_to: "16:41" })).status).toBe(204);
+    expect((await page(c.ben, c.path)).querySelector(`#plan-${plan} .plan__going`)?.textContent).toContain("till 4:41pm");
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, exact: "1", set_from: "16:41", set_to: "14:13" })).status).toBe(409);
+  });
+
+  it("offers only times as long as the plan takes, and works it out again when that changes", async () => {
+    const c = await crew("Length crew");
+    // busy 10am to 10pm, and free all day: together 8 to 10am, and 10 to 11pm
+    const plan = await planned(c);
+    await request(c.ana, `${c.api}/busy`, { form: { plan, from: "10:00", to: "22:00" } });
+    await request(c.ben, `${c.api}/busy`, { form: { plan } });
+    const card = async (jar = c.ana) => (await page(jar, c.path)).querySelector(`#plan-${plan}`);
+    const whens = async () => [...((await card())?.querySelectorAll(".win__when") ?? [])].map((w) => w.textContent?.split(" ·")[0].trim());
+    // two hours: only the morning, and everyone sees how long it takes
+    expect(await whens()).toEqual(["8–10am"]);
+    expect((await card(c.ben))?.querySelector(".plan__sub")?.textContent).toContain("· 2h");
+    expect((await page(c.ben, c.path)).querySelector("#busy .sheet__sub")?.textContent).toContain("Questacon · ");
+    expect((await page(c.ben, c.path)).querySelector("#busy .sheet__sub")?.textContent).toContain("· 2h");
+    // an hour (the plain form's hours and minutes): the evening too, longest first; nobody's answers lost
+    expect((await request(c.ana, `${c.api}/plans`, { form: { action: "change", plan, duration_h: "1", duration_m: "0" } })).status).toBe(303);
+    expect(await whens()).toEqual(["8–10am", "10–11pm"]);
+    expect((await card())?.textContent).toContain("Everyone's in");
+    // three hours: nothing fits, and the card says so, with a way to change it for the owner
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, duration: "180" })).status).toBe(204);
+    expect(await whens()).toEqual([]);
+    const none = (await card())?.querySelector(".plan__none--short");
+    expect(none?.textContent).toContain("No 3h stretch works for 2 or more");
+    expect(none?.textContent).toContain("The longest is 2h");
+    expect(none?.querySelector("[data-open-start]")).toBeTruthy();
+    expect((await card(c.ben))?.querySelector(".plan__none--short [data-open-start]")).toBeNull();
+  });
+
+  it("takes a length from a minute to all the hours it counts, and nothing else", async () => {
+    const c = await crew("Bad length crew");
+    for (const duration of ["0", "-5", "901", "1.5", "two hours", ""])
+      expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: soon, duration })).status).toBe(409);
+    // longer than the hours it counts
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: soon, from: "18:00", to: "20:00", duration: "121" })).status).toBe(409);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: soon, duration_h: "1", duration_m: "x" })).status).toBe(409);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: soon, from: "18:00", to: "20:00", duration: "120" })).status).toBe(204);
+    const plan = (await page(c.ana, c.path)).querySelector<HTMLElement>(".plan")?.dataset.planId ?? "";
+    // and changing it is checked the same
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, duration: "121" })).status).toBe(409);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, duration: "1" })).status).toBe(204);
+    // the owner's sheet has it as plain hours and minutes
+    const sheet = (await page(c.ana, c.path)).querySelector("#plan-start [data-length]");
+    expect([sheet?.querySelector<HTMLInputElement>('input[name="duration_h"]')?.getAttribute("value"), sheet?.querySelector<HTMLInputElement>('input[name="duration_m"]')?.getAttribute("value")]).toEqual(["0", "1"]);
+  });
+
+  it("never shows anyone else's busy times, only counts and who can't", async () => {
+    const c = await crew("Private crew");
+    const plan = await planned(c);
+    await request(c.ana, `${c.api}/busy`, { form: { plan, from: "545", to: "620" } });
+    await request(c.ben, `${c.api}/busy`, { form: { plan, from: "840", to: "1020" } });
+    const html = await (await request(c.ben, c.path)).text();
+    const doc = await page(c.ben, c.path);
+    // Ben's sheet holds Ben's times alone
+    const rows = [...doc.querySelectorAll<HTMLInputElement>('#busy input[type="time"]')].map((o) => o.getAttribute("value"));
+    expect(rows).toEqual(["14:00", "17:00", "", ""]);
+    const data = JSON.parse(doc.querySelector("#busy [data-timeline-data]")?.textContent ?? "{}");
+    expect(data.busy).toEqual([[840, 1020]]);
+    // one other answered: their counts would be their times, so none
+    expect(data.others).toEqual([]);
+    expect(html).not.toContain("busy 9:05–10:20am");
+    expect(html).not.toContain("545-620");
+  });
+
+  it("has its places on the page before there's a plan, so one can arrive live", async () => {
+    const c = await crew("Live plan crew");
+    let doc = await page(c.ben, c.path);
+    // (a live refresh only swaps parts that are there already)
+    for (const part of ["#plans", "#plan-sheets", ".next-up-slot", ".tabs__flag", "#past-plans"]) expect(doc.querySelector(part)).toBeTruthy();
+    expect(doc.querySelector("#busy")).toBeNull();
+    const plan = await planned(c);
+    doc = await page(c.ben, c.path);
+    // the sheet is in its place, with what the timeline draws from
+    const data = JSON.parse(doc.querySelector("#plan-sheets #busy [data-timeline-data]")?.textContent ?? "{}");
+    expect(data).toMatchObject({ start: 480, end: 1380, busy: [], set: null });
+    expect(data.day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(doc.querySelector(`#plan-${plan}`)?.getAttribute("data-day")).toMatch(/^\w{3} \d{1,2} \w{3}$/);
+  });
+
+  it("isn't shown to someone who isn't in the group", async () => {
+    const c = await crew("Secret plan crew");
+    await planned(c);
+    const stranger = await page(new Jar(), c.path);
+    expect(stranger.querySelector(".plan, #plans, #busy, #plan-start, .next-up")).toBeNull();
+    expect(stranger.body.textContent).not.toContain("Needs your answer");
+  });
+
+  it("keeps a called-off plan under Past plans", async () => {
+    const c = await crew("Past crew");
+    const plan = await planned(c);
+    await request(c.ana, `${c.api}/plans`, { form: { action: "off", plan } });
+    const doc = await page(c.ben, c.path);
+    expect(doc.querySelector(".plan")).toBeNull();
+    expect(doc.querySelector("#past-plans")?.textContent).toContain("Called off");
+    expect(doc.querySelector("#past-plans")?.textContent).toContain("Questacon");
+  });
+});

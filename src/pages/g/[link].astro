@@ -1,14 +1,19 @@
 ---
-import QRCode from "qrcode";
 import CityPhoto from "../../components/CityPhoto.astro";
+import KindIcon from "../../components/KindIcon.astro";
+import BusySheet from "../../components/BusySheet.astro";
 import MiniMap from "../../components/MiniMap.astro";
 import NoPasskey from "../../components/NoPasskey.astro";
+import PlanCard from "../../components/PlanCard.astro";
+import PlanStart from "../../components/PlanStart.astro";
 import SpotPhoto from "../../components/SpotPhoto.astro";
 import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
-import { groupByLink, listMembers, listPicks, listPlaces, NOTE_MAX } from "../../lib/db";
+import { canRemovePick, groupByLink, listMembers, listPicks, listPlaces, NOTE_MAX } from "../../lib/db";
 import { clean, me, signedIn } from "../../lib/me";
+import { currentPlan, pastPlans, planView } from "../../lib/plans";
 import { search } from "../../lib/search";
+import { dayParts, formatDay, formatMinute } from "../../lib/when";
 
 // The link is the invite. After the owner resets it, the old one still
 // brings members back (to the new link), but lets nobody new in.
@@ -31,16 +36,42 @@ const isNew = Astro.url.searchParams.has("new");
 // The invite goes person to person, never to a public feed: whoever holds the
 // link can join, so there's no Facebook post or X button (see CLAUDE.md). On a
 // phone the Share button opens the system sheet (Messages, WhatsApp, Messenger,
-// Instagram, WeChat...); these links and the QR code work everywhere, script or not.
+// Instagram, WeChat...); these links work everywhere, script or not.
 const invite = `Join ${group.name} on Spots: we're picking places to go together.`;
 const enc = encodeURIComponent;
+// Each as its app's icon: WhatsApp's and Telegram's own marks (their paths
+// from Simple Icons 16.30.0, CC0) in their brand colours, as both allow on a
+// share button; Messages and Email drawn here, a bubble and an envelope in
+// the spirit of the phone's own apps, not Apple's artwork.
 const sendBy = [
-  { label: "Messages", href: `sms:?&body=${enc(`${invite} ${shareUrl}`)}` },
-  { label: "WhatsApp", href: `https://wa.me/?text=${enc(`${invite} ${shareUrl}`)}` },
-  { label: "Telegram", href: `https://t.me/share/url?url=${enc(shareUrl)}&text=${enc(invite)}` },
-  { label: "Email", href: `mailto:?subject=${enc(`Join ${group.name} on Spots`)}&body=${enc(`${invite}\n\n${shareUrl}`)}` },
+  {
+    key: "sms",
+    label: "Messages",
+    href: `sms:?&body=${enc(`${invite} ${shareUrl}`)}`,
+    art: `<path d="M12 5c-4.7 0-8.5 3.06-8.5 6.83 0 2.2 1.3 4.16 3.32 5.4-.17 1.06-.7 2.03-1.5 2.77 1.66.08 3.24-.5 4.43-1.5.73.17 1.48.26 2.25.26 4.7 0 8.5-3.06 8.5-6.83S16.7 5 12 5Z" fill="#fff"/>`,
+  },
+  {
+    key: "whatsapp",
+    label: "WhatsApp",
+    href: `https://wa.me/?text=${enc(`${invite} ${shareUrl}`)}`,
+    art: `<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" fill="#fff"/>`,
+  },
+  {
+    key: "telegram",
+    label: "Telegram",
+    href: `https://t.me/share/url?url=${enc(shareUrl)}&text=${enc(invite)}`,
+    // (the mark's plane alone: the button is its blue circle)
+    art: `<path d="M16.906 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" fill="#fff"/>`,
+  },
+  {
+    key: "email",
+    label: "Email",
+    href: `mailto:?subject=${enc(`Join ${group.name} on Spots`)}&body=${enc(`${invite}\n\n${shareUrl}`)}`,
+    art: `<rect x="3.5" y="6.5" width="17" height="11.5" rx="2.2" fill="#fff"/><path d="m4.9 8 7.1 5.3L19.1 8" fill="none" stroke="#8ab8f2" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
 ];
-const qr = await QRCode.toString(shareUrl, { type: "svg", margin: 1, color: { dark: "#241c15", light: "#ffffff" } });
+// The link as people say it, without the "https://".
+const shortUrl = shareUrl.replace(/^https?:\/\//, "");
 const error = Astro.url.searchParams.get("error");
 const done = Astro.url.searchParams.get("done");
 const DONE: Record<string, string> = {
@@ -54,14 +85,22 @@ const DONE: Record<string, string> = {
 // A search answers with cards only: Explore shows the matching places, best
 // first, and the map shows just their pins.
 const q = clean(Astro.url.searchParams.get("q"), 200);
+
+// Our list in Edit mode (?edit, or the Edit button): Remove where this
+// member may take a place off, in place of the keen button. After a plain
+// form's remove, the place that went, to put back.
+const editing = Astro.url.searchParams.has("edit");
+const removedId = Number(Astro.url.searchParams.get("removed"));
+const removed = removedId ? places.find((p) => p.id === removedId && !onList.has(p.id)) : undefined;
 const found = q ? await search(q, places) : null;
 const shown = found ? found.places : places;
 
-// What the map draws: every place in Explore that has a location. Carried as
+// What the map draws: every place in Explore that has a location, with its
+// photo for the card the map opens on it (src/scripts/map.ts). Carried as
 // JSON inside #explore, so a live refresh of Explore refreshes the pins too.
 const pins = shown
   .filter((p) => p.lat !== null && p.lon !== null)
-  .map(({ id, name, kind, area, lat, lon }) => ({ id, name, kind, area, lat, lon }));
+  .map(({ id, name, kind, area, lat, lon, photo }) => ({ id, name, kind, area, lat, lon, photo: photo?.src ?? null }));
 const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
 
 // Before joining, the link shows a preview and nothing more: who's in, who
@@ -72,8 +111,48 @@ const preview = [...picks].sort((a, b) => a.id - b.id).slice(0, 3);
 // The note's words, each its own span so they can arrive one after another.
 const noteWords = group.note?.split(" ") ?? [];
 
+
 // Each member's initial in a colour of its own, the same on every visit.
 const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
+
+// Who's in, on the group's panel: the owner first, then you, then the rest
+// in the order they joined. Up to six fit a row; more, and it's five and
+// a "+N more" face that unfolds them all.
+const firstOf = (id: number) => (id === group.ownerId ? 0 : id === member?.id ? 1 : 2);
+const crew = [...members].sort((a, b) => firstOf(a.id) - firstOf(b.id));
+const crewMore = crew.length > 6 ? crew.length - 5 : 0;
+const crown = "M1.5 5.2 5 8l3-5 3 5 3.5-2.8-1.3 7.3H2.8z";
+
+// The group's plan (src/lib/plans.ts), for members only: the one on now,
+// and those behind it. What it needs from this member puts a dot on Our
+// list's tab and rings its card: their busy times, or (the owner) the
+// time to pick once everyone's in, or a look at who changed theirs.
+const plan = member ? currentPlan(group.id) : undefined;
+const view = plan && member ? planView(plan, members, member, group.ownerId) : undefined;
+const past = member ? pastPlans(group.id) : [];
+const needs = !view
+  ? ""
+  : !plan!.set && view.mine === null
+    ? "answer"
+    : isOwner && !plan!.set && view.everyoneIn
+      ? "pick"
+      : isOwner && view.changed
+        ? "changed"
+        : "";
+const planParam = Astro.url.searchParams.get("plan");
+const PLAN_ERROR: Record<string, string> = {
+  "plan-exists": "There's a plan on already. Call it off first to start another.",
+  "plan-gone": "That plan has changed since this page loaded: here it is now.",
+  "plan-set": "That time doesn't fit the plan's hours. Pick one of the starts offered.",
+  "plan-change": "That day or those hours don't work: a day from today on, hours between 6am and midnight.",
+};
+const planLine = (placeId: number) =>
+  plan && plan.placeId === placeId
+    ? plan.set
+      ? `${formatDay(plan.day)}, ${formatMinute(plan.set.start)}`
+      : `Planning ${dayParts(plan.day).weekday} ${dayParts(plan.day).date}`
+    : "";
+const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 8.5h14M7 2.8v3M13 2.8v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>`;
 ---
 
 <Base
@@ -216,85 +295,231 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
   </section>
   ) : (
   <>
+  <div class="group-page">
+  {/* The group's own column: who and inviting, the tabs, and Our list. On a
+      wide screen it stands on the left beside Explore and the map. */}
+  <div class="group-side">
   <section class="group-head group-head--split">
     <div class="group-head__title">
-      <p class="eyebrow">Group</p>
       <h1>{group.name}</h1>
+      {/* The time set for the group's plan, on every tab's header. */}
+      <p class="next-up-slot">
+        {plan?.set && view?.set && (
+          <a class="next-up" href={`#plan-${plan.id}`} data-tab="list">
+            <span class="next-up__cal" aria-hidden="true"><svg viewBox="0 0 20 20" width="15" height="15" set:html={calendar} /></span>
+            <span class="next-up__text">
+              {formatDay(plan.day)}, {formatMinute(plan.set.start)} · {plan.place.name}
+              <span> · {view.set.busy.length === 0 && view.set.unknown.length === 0 ? "everyone's free" : `${view.set.free.length} free`}</span>
+            </span>
+          </a>
+        )}
+      </p>
       {group.note && (
         <p class="group-note">
           “{group.note}” <span class="fine">{owner ? `${owner.name}, to the group` : ""}</span>
         </p>
       )}
-      <p class="members">
-        <span class="faces" aria-hidden="true">
-          {members.slice(0, 6).map((m) => (
-            <span class="face" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span>
-          ))}
-        </span>
-        <span>
-          {members.length} {members.length === 1 ? "person" : "people"}: {members.map((m) => m.name).join(", ")}
-        </span>
-      </p>
-    </div>
-    <div class={`share card${isNew ? " share--new" : ""}`}>
-      <label for="share-link">{isNew ? "Your group is ready. Send this link to everyone coming:" : "Invite link"}</label>
-      <div class="share__row">
-        <input id="share-link" value={shareUrl} readonly />
-        <button type="button" class="btn" data-copy="#share-link">Copy</button>
-        <button type="button" class="btn btn--primary share__native" data-share data-title={`Join ${group.name} on Spots`} data-text={invite}>Share…</button>
-        <p class="share__by">
-          <span class="fine">Or send it by</span>
-          {sendBy.map(({ label, href }) => (
-            <a class="chip" href={href} {...(href.startsWith("https:") ? { target: "_blank", rel: "noopener" } : {})}>{label}</a>
-          ))}
+      {/* Who's in, as faces with names: the owner's has a crown, yours a
+          ring. Past six, the last face is "+N more", the summary of a
+          <details>, so it unfolds everyone without a script, and folds
+          them again as "less". The <details> sits outside what a live
+          refresh redraws (the count, the faces, the "+N"), so it stays
+          open. How many and whose group is said to a screen reader. */}
+      <div class="who">
+        <p class="who__count sr-only">
+          {members.length} {members.length === 1 ? "person" : "people"}{owner && `, ${owner.name}'s group`}
         </p>
-        <details class="share__qr">
-          <summary>Show a QR code</summary>
-          <div class="share__qr-code" role="img" aria-label="QR code for the invite link" set:html={qr} />
-          <p class="fine">Friends in the room can scan it with their phone camera.</p>
+        <ul class="who__grid" role="list">
+          {crew.map((m, i) => {
+            const mine = m.id === member.id;
+            const owns = m.id === group.ownerId;
+            return (
+              <li class={`who__cell${i >= 5 && crewMore ? " who__cell--extra" : ""}`}>
+                <span class={`face${mine ? " is-you" : ""}`} style={`--hue: ${hue(m.name)}`} aria-hidden="true">
+                  {[...m.name][0]?.toUpperCase()}
+                  {owns && (
+                    <span class="crown"><svg viewBox="0 0 16 16"><path fill="currentColor" d={crown} /></svg></span>
+                  )}
+                  {mine && <span class="who__you">YOU</span>}
+                </span>
+                <span class={`who__name${mine ? " is-you" : ""}${owns ? " is-owner" : ""}`}>
+                  {m.name}
+                  {(owns || mine) && <span class="sr-only"> ({[owns && "owner", mine && "you"].filter(Boolean).join(", ")})</span>}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+        <details class="who__toggle">
+          <summary class="who__cell">
+            <span class="who__fold">
+              <span class="face face--more" aria-hidden="true">+{crewMore}</span>
+              <span class="who__name" aria-hidden="true">more</span>
+              <span class="sr-only">Show all {members.length} people</span>
+            </span>
+            <span class="who__unfold">
+              <span class="face face--more" aria-hidden="true">
+                <svg viewBox="0 0 16 16" width="16" height="16"><path d="M3.5 10 8 5.5l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </span>
+              <span class="who__name" aria-hidden="true">less</span>
+              <span class="sr-only">Show fewer</span>
+            </span>
+          </summary>
         </details>
       </div>
     </div>
+    {/* (on a wide screen, where this is the group's panel: the home page's
+        Canberra across its top) */}
+    <div class="group-head__photo" aria-hidden="true">
+      <CityPhoto class="group-head__img" sizes="24rem" lazy />
+    </div>
+    {/* The invite, folded behind a button: it's needed once, then every
+        visit would open on it. Open by itself while the group is new or
+        still just its owner. A <details>, so it opens without a script. */}
+    <details class="invite" id="invite" open={isNew || members.length === 1}>
+      <summary class="btn invite__open">
+        <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+          <path d="M8 9.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2.5 16.5c.6-2.8 2.8-4.5 5.5-4.5s4.9 1.7 5.5 4.5M15.5 6.5v5M13 9h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+        Invite friends
+      </summary>
+      {/* The invite as one panel: the link as one button that copies it,
+          Share… where there's a share sheet, and the private channels as
+          their apps' icons. Never a public feed (CLAUDE.md). */}
+      <div class={`share card${isNew ? " share--new" : ""}`}>
+        <h2 class="share__title">{isNew ? "Your group is ready" : `Invite friends to ${group.name}`}</h2>
+        <div class="share__row">
+          {/* The link in a field to select, without a script or a clipboard;
+              with them, a button the width of the card that copies it. */}
+          <div class="share__link">
+            <span class="share__glyph" aria-hidden="true">
+              <svg class="share__chain" viewBox="0 0 24 24" width="20" height="20"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </span>
+            <label for="share-link" class="sr-only">Invite link</label>
+            <input id="share-link" value={shareUrl} readonly />
+            <button type="button" class="share__copy" data-copy="#share-link">
+              <span class="share__glyph" aria-hidden="true">
+                <svg class="share__chain" viewBox="0 0 24 24" width="20" height="20"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                <svg class="share__tick" viewBox="0 0 24 24" width="20" height="20"><path d="m5.5 12.5 4.2 4.2L18.5 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </span>
+              <span class="share__words">
+                <span class="share__do" aria-live="polite">Copy link</span>
+                <span class="share__url">{shortUrl}</span>
+              </span>
+              <svg class="share__dup" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+            </button>
+          </div>
+          <button type="button" class="btn btn--primary share__native" data-share data-title={`Join ${group.name} on Spots`} data-text={invite}>
+            Share…
+          </button>
+          <ul class="share__by" aria-label="Or send it by">
+            {sendBy.map(({ key, label, href, art }) => (
+              <li>
+                <a class={`share__app share__app--${key}`} href={href} {...(href.startsWith("https:") ? { target: "_blank", rel: "noopener" } : {})}>
+                  <span class="share__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" set:html={art} />
+                  </span>
+                  {label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </details>
   </section>
 
-    <p class="you">
-      You're in as <strong>{member.name}</strong>
-      {isOwner && <span class="owner-tag">owner</span>}
-      {" "}· <a href="/me">My groups</a>
-    </p>
-
-  <nav class="section-nav" aria-label="On this page">
-    <a href="#list">Our list</a>
-    <a href="#explore-section">Explore</a>
-    {member && <a href="#add">Share a place</a>}
-    {isOwner && <a href="#settings">Settings</a>}
+  {/* One part of the group at a time: tabs, by the script below. Without
+      it they're links down the page, and every part is there. */}
+  {/* (with a glyph each, for when they're the phone's tab bar) */}
+  <nav class="section-nav tabs" aria-label="Group">
+    <a href="#list" data-tab="list">
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      <span>Our list</span> <span class="tabs__n">{picks.length}</span>
+      <span class="tabs__flag">{needs && <span class="tabs__dot"><span class="sr-only">: the plan needs you</span></span>}</span>
+    </a>
+    <a href="#explore-section" data-tab="explore">
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Zm0 0v14m6-12v14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      <span>Explore</span>
+    </a>
+    <a href="#add" data-tab="add">
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Zm0-13.5v5m-2.5-2.5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      <span>Share</span>
+    </a>
+    {isOwner && (
+      <a href="#settings" data-tab="settings">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-3a7.4 7.4 0 0 0-.1-1.2l2-1.6-2-3.4-2.4.9a7.5 7.5 0 0 0-2-1.2L14.5 3h-5l-.4 2.5a7.5 7.5 0 0 0-2 1.2l-2.4-.9-2 3.4 2 1.6a7.4 7.4 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-.9c.6.5 1.3.9 2 1.2l.4 2.5h5l.4-2.5c.7-.3 1.4-.7 2-1.2l2.4.9 2-3.4-2-1.6c.1-.4.1-.8.1-1.2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        <span>Settings</span>
+      </a>
+    )}
   </nav>
 
-  <div class="board">
-  <section id="list" class="board__list" aria-labelledby="list-title">
-    <h2 id="list-title">Our list</h2>
-    {picks.length === 0 ? (
-      <p class="empty">Nothing on the list yet. Add something from Explore.</p>
+  {/* The group's plan, above Our list: on a phone the top of its tab, on a
+      wide screen between the tabs and the list. Always there, even empty,
+      so a live refresh can bring one in. */}
+  <section id="plans" class="plans" aria-label="Plan" data-panel="list">
+    {error && PLAN_ERROR[error] && <p class="notice" role="alert">{PLAN_ERROR[error]}</p>}
+    {view ? (
+      <PlanCard view={view} group={group} member={member} isOwner={isOwner} needs={needs} />
     ) : (
-      <ol class="picks">
-        {picks.map(({ id, place, addedBy, keen }, i) => {
-          const mine = member ? keen.includes(member.name) : false;
-          return (
-            <li
-              id={`pick-${id}`}
-              class={`pick spot--${place.kind}${i === 0 && keen.length > 0 ? " pick--top" : ""}`}
-              data-place={place.lat !== null ? place.id : undefined}
-            >
-              <SpotPhoto photo={place.photo} name={place.name} kind={place.kind} small />
-              <div class="pick__main">
-                <span class="tag">{KIND_LABEL[place.kind]}</span>
-                <h3>{place.name}</h3>
-                <p class="area">
-                  {place.area && `${place.area} · `}added by {addedBy}
-                </p>
-                <p class="keen-who">{keen.length > 0 ? `Keen: ${keen.join(", ")}` : "No one's keen yet"}</p>
-              </div>
-              {member && (
+      isOwner && picks.length > 0 && (
+        <div class="plan plan--empty">
+          <span class="plan__icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20" set:html={calendar} /></span>
+          <p><strong>Plan a day out</strong> Pick a place and a day; everyone marks when they're busy, and you set the time.</p>
+          <a class="btn btn--small" href={`/g/${group.link}?plan=new#plan-start`} data-open-start>Plan a day</a>
+        </div>
+      )
+    )}
+  </section>
+
+  {/* Our list as a ranking: most keen first, the leader standing out, the
+      rest compact rows, each with its keen count on its button. */}
+  <section id="list" class="board__list" aria-labelledby="list-title" data-panel="list" data-editing={editing ? "" : undefined}>
+    <div class="list-card">
+      <div class="list-head">
+        <h2 id="list-title">Our list</h2>
+        {picks.length > 0 && (
+          <a class="list-edit" href={editing ? `/g/${group.link}#list` : `/g/${group.link}?edit#list`} data-edit-toggle>
+            <span class="list-edit__edit">Edit</span><span class="list-edit__done">Done</span>
+          </a>
+        )}
+      </div>
+      {removed && (
+        <form class="notice notice--ok list-note" method="post" action={`/api/groups/${group.id}/picks`} role="status">
+          <input type="hidden" name="place" value={removed.id} />
+          <span>Took {removed.name} off the list.</span>
+          <button class="list-note__undo">Undo</button>
+        </form>
+      )}
+      {error === "remove" && (
+        <p class="notice list-note" role="alert">That one stays: someone else is keen on it now. Only the owner can take it off.</p>
+      )}
+      {picks.length === 0 ? (
+        <p class="empty">Nothing on the list yet. Add something from Explore.</p>
+      ) : (
+        <ol class="picks">
+          {picks.map((pick, i) => {
+            const { id, place, keen } = pick;
+            const mine = keen.includes(member.name);
+            // (others' keens go with it: the owner is asked first)
+            const othersKeen = keen.filter((name) => name !== member.name).length;
+            const lead = i === 0 && keen.length > 0;
+            return (
+              <li
+                id={`pick-${id}`}
+                class={`pick spot--${place.kind}${lead ? " pick--top" : ""}`}
+                data-place={place.lat !== null ? place.id : undefined}
+                data-place-id={place.id}
+              >
+                <SpotPhoto photo={place.photo} name={place.name} kind={place.kind} small />
+                <div class="pick__main">
+                  {lead && <p class="pick__lead">Most keen</p>}
+                  <h3>{place.name}</h3>
+                  {place.area && <p class="area">{place.area}</p>}
+                  {planLine(place.id) && (
+                    <p class="pick__plan"><svg viewBox="0 0 20 20" width="13" height="13" aria-hidden="true" set:html={calendar} />{planLine(place.id)}</p>
+                  )}
+                </div>
                 <form method="post" action={`/api/groups/${group.id}/keen`} data-keen>
                   <input type="hidden" name="pick" value={id} />
                   <input type="hidden" name="keen" value={mine ? "off" : "on"} />
@@ -303,40 +528,95 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
                     <span>{mine ? "Keen!" : "I'm keen"}</span>
                   </button>
                 </form>
-              )}
-            </li>
-          );
-        })}
-      </ol>
+                {canRemovePick(group, pick, member) ? (
+                  <form
+                    method="post"
+                    action={`/api/groups/${group.id}/picks`}
+                    class="pick__remove"
+                    data-remove={place.name}
+                    data-confirm={othersKeen > 0 ? `Take ${place.name} off the list? ${othersKeen === 1 ? "1 keen goes" : `${othersKeen} keens go`} with it.` : undefined}
+                  >
+                    <input type="hidden" name="remove" value={id} />
+                    <button class="remove">Remove<span class="sr-only"> {place.name}</span></button>
+                  </form>
+                ) : (
+                  <p class="pick__remove pick__by">{pick.addedById === member.id ? "Others are keen" : `${pick.addedBy}'s`}</p>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </div>
+  </section>
+
+  {/* Plans behind the group, folded at the foot of Our list. */}
+  <section id="past-plans" class="past-plans" aria-label="Past plans" data-panel="list">
+    {past.length > 0 && (
+      <details class="past card" data-keep-open="past">
+        <summary><h2>Past plans</h2><span>{past.length}</span></summary>
+        <ol>
+          {past.map((p) => {
+            const { weekday, date } = dayParts(p.day);
+            const off = p.calledOffAt !== null;
+            return (
+              <li class:list={{ "is-off": off || !p.set }}>
+                <span class="cal cal--small" aria-hidden="true"><b>{weekday}</b><span>{date}</span></span>
+                <span>
+                  <strong>{p.place.name}</strong>
+                  {off ? <span class="past__tag">Called off</span> : !p.set && <span class="past__tag">No time set</span>}
+                  <span class="past__when">{formatDay(p.day)}{p.set && !off && `, ${formatMinute(p.set.start)}`}</span>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </details>
     )}
   </section>
 
-  <section id="explore-section" class="explore-wrap" aria-labelledby="explore-title">
-    <div class="explore-head">
-      <h2 id="explore-title">Explore</h2>
-      <p class="fine">Places every group on Spots has shared, each with a reason it's good.</p>
-      <form class="ask" method="get" action={`/g/${group.link}#explore`} role="search" data-search>
-        <label for="ask-q" class="sr-only">Describe what you're after</label>
-        <input
-          id="ask-q"
-          name="q"
-          value={q}
-          maxlength="200"
-          autocomplete="off"
-          placeholder="Describe it: “cheap dumplings near Dickson”, “a walk with a view”"
-        />
-        <button class="btn btn--primary">Find</button>
-      </form>
-      <div class="filters" role="group" aria-label="Show" hidden>
-        <button type="button" class="chip chip--on" data-filter="all" aria-pressed="true">All</button>
-        {kinds.map((k) => (
-          <button type="button" class={`chip chip--${k}`} data-filter={k} aria-pressed="false">
-            {KIND_LABEL[k]}
-          </button>
-        ))}
+  </div>
+
+  {/* Explore's title, search and cards, then the map. On a phone, in the
+      Explore tab, the first two are one box that scrolls under the map
+      (src/styles.css, "Explore on a phone"). */}
+  <section id="explore-section" class="explore-wrap" aria-labelledby="explore-title" data-panel="explore">
+    <div class="explore-scroll">
+      <div class="explore-head">
+        <div class="explore-head__top">
+          <h2 id="explore-title">Explore</h2>
+          <button type="button" class="show-all" data-show-all hidden>Show all</button>
+        </div>
+        <form class="ask" method="get" action={`/g/${group.link}#explore`} role="search" data-search>
+          <label for="ask-q" class="sr-only">Describe what you're after</label>
+          <svg class="ask__glass" viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M8.75 15a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Zm4.5-1.75 4.25 4.25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
+          </svg>
+          <input
+            id="ask-q"
+            name="q"
+            type="search"
+            enterkeyhint="search"
+            value={q}
+            maxlength="200"
+            autocomplete="off"
+            placeholder="Describe it: “cheap dumplings near Dickson”, “a walk with a view”"
+          />
+          <button class="btn btn--primary">Find</button>
+        </form>
+        {/* (the kinds need the script that filters by them, so it shows them) */}
+        <div class="filters" role="group" aria-label="Show only" data-sel="all" hidden>
+          {kinds.map((k) => (
+            <button type="button" class={`chip chip--${k}`} data-filter={k} aria-pressed="false">
+              <span class="chip__dot"><KindIcon kind={k} /></span>
+              <span>{KIND_LABEL[k]}</span>
+            </button>
+          ))}
+        </div>
+        <p class="filter-empty" hidden>
+          Nothing under <span data-empty-kind></span> yet. <a href="#add" data-tab="add">Share one</a>
+        </p>
       </div>
-    </div>
-    <div class="explore-grid">
       <div id="explore" data-q={q || undefined}>
         <script type="application/json" id="pins" is:inline set:html={pinsJson} />
         {found && (
@@ -352,7 +632,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
             <li class={`spot spot--${p.kind}`} data-kind={p.kind} data-place={p.lat !== null ? p.id : undefined}>
               <SpotPhoto photo={p.photo} name={p.name} kind={p.kind} />
               <div class="spot__meta">
-                <span class="tag">{KIND_LABEL[p.kind]}</span>
+                <span class="tag"><KindIcon kind={p.kind} />{KIND_LABEL[p.kind]}</span>
                 {p.groups > 0 && (
                   <span class="groups">
                     On {p.groups} {p.groups === 1 ? "list" : "lists"}
@@ -362,49 +642,45 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
               <h3>{p.name}</h3>
               <p class="area">{p.area}</p>
               <p class="why">{p.addedBy === "Spots" ? p.why : `“${p.why}” — ${p.addedBy}`}</p>
-              <div class="spot__actions">
-                {p.lat !== null && (
-                  <button type="button" class="btn btn--small btn--ghost" data-fly={p.id}>
-                    Show on map
-                  </button>
-                )}
-                {member &&
-                  (onList.has(p.id) ? (
+              {member && (
+                <div class="spot__actions">
+                  {onList.has(p.id) ? (
                     <span class="added">On our list</span>
                   ) : (
                     <form method="post" action={`/api/groups/${group.id}/picks`}>
                       <input type="hidden" name="place" value={p.id} />
                       <button class="btn btn--small">Add to our list</button>
                     </form>
-                  ))}
-              </div>
+                  )}
+                </div>
+              )}
             </li>
           ))}
         </ul>
       </div>
-      <div class="map-wrap">
-        <figure class="map-frame">
-          <div id="map" role="region" aria-label="Map of the places in Explore"></div>
-          <figcaption class="fold-credit">
-            <span class="fold-credit__sources">
-              © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>{" · "}<a href="https://openfreemap.org">OpenFreeMap</a>{" · relief "}<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Mapzen</a>
-            </span>
-            <button type="button" class="fold-credit__info" aria-label="Map credits" aria-expanded="false">i</button>
-          </figcaption>
-        </figure>
-      </div>
+    </div>
+    <div class="map-wrap">
+      <figure class="map-frame">
+        <div id="map" role="region" aria-label="Map of the places in Explore"></div>
+        <figcaption class="fold-credit">
+          <span class="fold-credit__sources">
+            © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>{" · "}<a href="https://openfreemap.org">OpenFreeMap</a>{" · relief "}<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Mapzen</a>
+          </span>
+          <button type="button" class="fold-credit__info" aria-label="Map credits" aria-expanded="false">i</button>
+        </figcaption>
+      </figure>
     </div>
   </section>
-  </div>
 
   <div class="group-tools">
   {member && (
-    <section id="add" class="card add" aria-labelledby="add-title">
+    <section id="add" class="card add" aria-labelledby="add-title" data-panel="add">
       <h2 id="add-title">Share a good place</h2>
       <p class="fine">
         It goes into Explore for every group, so only add somewhere you'd actually send a friend, and say why.
       </p>
       {error === "place" && <p class="notice" role="alert">A place needs a name, a kind and a reason it's good.</p>}
+      {error === "photo" && <p class="notice" role="alert">That file isn't a photo we can use. Choose a JPEG, PNG or WebP under 15 MB, or share it without one.</p>}
       <div class="finder" hidden>
         <label for="find-q"><span>Find it on the map</span></label>
         <div class="finder__row">
@@ -413,8 +689,8 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         </div>
         <ul class="finder__results" aria-live="polite"></ul>
       </div>
-      <form method="post" action={`/api/groups/${group.id}/places`} class="grid-form" id="add-form">
-        <input type="hidden" name="osm" />
+      <form method="post" action={`/api/groups/${group.id}/places`} class="grid-form" id="add-form" enctype="multipart/form-data">
+        <input type="hidden" name="ref" />
         <input type="hidden" name="lat" />
         <input type="hidden" name="lon" />
         <label>
@@ -435,6 +711,19 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
           <span>Why it's good (required)</span>
           <input name="why" required maxlength="160" placeholder="Best chilli oil in Canberra, and open late" />
         </label>
+        {/* A photo of the sharer's own, if they have one; without, its card
+            shows its kind's picture. (A place picked that's already shared
+            shows its photo instead: src/scripts/map.ts.) */}
+        <div class="photo-pick wide">
+          <figure class="photo-pick__found" hidden>
+            <img alt="" />
+            <figcaption></figcaption>
+          </figure>
+          <label class="photo-pick__own">
+            <span class="photo-pick__label">Photo (optional)</span>
+            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/*" />
+          </label>
+        </div>
         <p class="located wide" hidden></p>
         <button class="btn btn--primary wide">Share it and add to our list</button>
       </form>
@@ -442,7 +731,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
   )}
 
   {isOwner && (
-    <section id="settings" class="card settings" aria-labelledby="settings-title">
+    <section id="settings" class="card settings" aria-labelledby="settings-title" data-panel="settings">
       <h2 id="settings-title">Group settings</h2>
       <p class="fine">Only you see this: you started {group.name}.</p>
       {done && DONE[done] && <p class="notice notice--ok" role="status">{DONE[done]}</p>}
@@ -531,56 +820,99 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     </section>
   )}
   </div>
+  </div>
 
-  <script is:inline define:vars={{ groupId: group.id }}>
+  <div id="toast" class="toast" role="status" hidden>
+    <span class="toast__text"></span>
+    <button type="button" class="toast__undo" hidden>Undo</button>
+  </div>
+
+  {/* The plan's two sheets: the owner's (start it, or change its day), and
+      everyone's busy times. Always there, even empty, so a live refresh can
+      bring them in; it leaves them be while one is open. */}
+  <div id="plan-sheets">
+    {isOwner && (plan || picks.length > 0) && (
+      <PlanStart group={group} picks={picks} plan={plan} open={planParam === "new" || planParam === "change"} error={error === "plan-start"} />
+    )}
+    {view && <BusySheet group={group} view={view} open={Astro.url.searchParams.has("busy")} error={error === "busy"} isOwner={isOwner} />}
+  </div>
+
+  <script is:inline define:vars={{ groupId: group.id, isOwner }}>
     // Live: anyone joining, picking or voting in this group, or any group
     // sharing a new place, reaches every open page within a moment, with no
     // reload by the viewer. The page asks the server for itself again and
     // swaps in the changed parts, keeping the scroll position, the map and
     // anything typed in the forms.
-    const regions = [".group-head h1", ".group-head .members", ".share__row", "#list", "#explore", "#settings .people"];
+    const regions = [".group-head h1", ".next-up-slot", ".group-head .who__count", ".group-head .who__grid", ".group-head .who__fold", ".share__row", ".tabs__n", ".tabs__flag", "#plans", "#list", "#past-plans", "#explore", "#settings .people", "#plan-sheets"];
     // The page as it is now, search included, without one-off notices.
     const current = () => {
       const q = new URLSearchParams(location.search).get("q");
       return location.pathname + (q ? `?q=${encodeURIComponent(q)}` : "");
     };
-    // The list keeps each person's order while they're on the page: a card
-    // never moves under someone's thumb mid-vote (see PROCESS.md, "Several
-    // people voting at once"). Counts and names still change live; when the
-    // ranking underneath has moved, a bar offers the new order.
-    let held = true;
-    const pickIds = (root) => [...root.querySelectorAll("#list .picks > li")].map((li) => li.id);
-    function holdOrder(now, next) {
-      const held = pickIds(document);
-      const ranked = pickIds(next.ownerDocument);
+    // The list is always in rank order: a live refresh re-ranks it, and
+    // each card glides from where it was to its new place, so the group
+    // sees what moved (PROCESS.md, "Several people voting at once"). For a
+    // moment after a move, a keen tap is ignored: it was aimed at whatever
+    // card was there before.
+    const still = matchMedia("(prefers-reduced-motion: reduce)");
+    let movedAt = 0;
+    function rerank(now, next) {
+      const was = new Map([...now.querySelectorAll(".picks > li")].map((li) => [li.id, li.getBoundingClientRect().top]));
+      const order = [...was.keys()].join();
       const focused = document.activeElement?.closest(".picks > li")?.id;
+      // (on a wide screen the list scrolls inside its column: stay where you were)
+      const scrolled = now.querySelector(".picks")?.scrollTop ?? 0;
       now.innerHTML = next.innerHTML;
-      const list = now.querySelector(".picks");
-      if (list && held.length > 0) {
-        // Cards already here keep their place; new ones join the bottom.
-        const order = [...held.filter((id) => ranked.includes(id)), ...ranked.filter((id) => !held.includes(id))];
-        for (const id of order) list.append(list.querySelector(`#${CSS.escape(id)}`));
-        if (order.join() !== ranked.join()) {
-          // Out of rank order, the position numbers would be wrong: hide them.
-          list.classList.add("picks--held");
-          const bar = document.createElement("button");
-          bar.type = "button";
-          bar.className = "reorder";
-          bar.dataset.reorder = "";
-          bar.textContent = "New order — show it";
-          now.querySelector("h2").after(bar);
+      const picks = now.querySelector(".picks");
+      if (picks) picks.scrollTop = scrolled;
+      // (no entrance replayed: only cards that are new arrive)
+      now.dataset.live = "";
+      const cards = [...now.querySelectorAll(".picks > li")];
+      if (focused) now.querySelector(`#${CSS.escape(focused)} .keen`)?.focus({ preventScroll: true });
+      if (cards.map((li) => li.id).join() === order) return;
+      movedAt = performance.now();
+      if (still.matches) return;
+      for (const li of cards) {
+        const from = was.get(li.id);
+        if (from === undefined) {
+          li.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 300, easing: "ease-out" });
+          continue;
+        }
+        const dy = from - li.getBoundingClientRect().top;
+        if (dy) li.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: 450, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" });
+      }
+    }
+    // A part redrawn keeps what the viewer had open in it (a fold, the
+    // plan's menu) and the start the owner chose. The plan's card changing
+    // height moves the list under it, so a keen tap waits, as after a move.
+    let sheetsBehind = false;
+    function swap(now, next) {
+      const open = [...now.querySelectorAll("details[data-keep-open][open]")].map((d) => d.dataset.keepOpen);
+      const pick = now.querySelector(".plan__pick[data-chosen]");
+      const at = pick?.querySelector("input[name=at]:checked")?.value;
+      const other = pick?.querySelector("select[name=other]")?.value;
+      const tall = now.offsetHeight;
+      now.innerHTML = next.innerHTML;
+      for (const key of open) now.querySelector(`details[data-keep-open="${CSS.escape(key)}"]`)?.setAttribute("open", "");
+      const fresh = now.querySelector(".plan__pick");
+      if (pick && fresh) {
+        const radio = at && [...fresh.querySelectorAll("input[name=at]")].find((r) => r.value === at);
+        const select = fresh.querySelector("select[name=other]");
+        if (other && select && [...select.options].some((o) => o.value === other)) {
+          select.value = other;
+          for (const r of fresh.querySelectorAll("input[name=at]")) r.checked = false;
+          fresh.dataset.chosen = "";
+        } else if (radio) {
+          radio.checked = true;
+          fresh.dataset.chosen = "";
         }
       }
-      if (focused) now.querySelector(`#${CSS.escape(focused)} .keen`)?.focus();
+      if (now.id === "plans" && now.offsetHeight !== tall) movedAt = performance.now();
     }
-    document.addEventListener("click", (event) => {
-      if (!event.target.closest("[data-reorder]")) return;
-      // The server already renders the list most keen first: ask for it.
-      held = false;
-      refresh();
-    });
     let pending = false;
     let again = false;
+    // (a card on its way out finishes leaving before the list is redrawn)
+    let leaving = null;
     async function refresh() {
       // A change that lands mid-refresh gets its own pass afterwards, so the
       // last vote is never the one that's missed.
@@ -590,6 +922,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
       }
       pending = true;
       try {
+        await leaving;
         const res = await fetch(current(), { cache: "no-store" });
         // A reset invite link sends members on to the new one: follow it.
         const landed = new URL(res.url);
@@ -599,11 +932,15 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         for (const selector of regions) {
           const now = document.querySelector(selector);
           const next = fresh.querySelector(selector);
-          if (!now || !next) continue;
-          if (selector === "#list" && held) holdOrder(now, next);
-          else if (now.innerHTML !== next.innerHTML) now.innerHTML = next.innerHTML;
+          if (!now || !next || now.innerHTML === next.innerHTML) continue;
+          // (a sheet open over the page isn't redrawn under the finger: it
+          // catches up when it closes)
+          if (selector === "#plan-sheets" && now.querySelector("dialog[open]")) sheetsBehind = true;
+          else if (selector === "#list") rerank(now, next);
+          else swap(now, next);
         }
-        held = true;
+        planLabel();
+        noticePlan();
         document.dispatchEvent(new Event("spots:refreshed"));
       } catch {
         location.reload();
@@ -615,26 +952,116 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
         }
       }
     }
-    // A keen posts in the background, so the page (and its order) stays put.
-    // If that fails, the form posts the plain way.
+    // A note at the foot of the screen for a moment, with an action in it
+    // (Undo, Fill in) or none.
+    const toast = document.querySelector("#toast");
+    let toastTimer;
+    function say(text, action, label = "Undo") {
+      clearTimeout(toastTimer);
+      toast.querySelector(".toast__text").textContent = text;
+      const button = toast.querySelector(".toast__undo");
+      button.textContent = label;
+      button.hidden = !action;
+      button.onclick = action ? () => { toast.hidden = true; action(); } : null;
+      toast.hidden = false;
+      toastTimer = setTimeout(() => (toast.hidden = true), 6000);
+    }
+    const post = (action, body) => fetch(action, { method: "POST", body, headers: { "x-spots": "in-page" } });
+    // A card taken off the list folds away, then the rest close up.
+    function fold(li) {
+      if (!li || still.matches) return Promise.resolve();
+      li.style.overflow = "hidden";
+      const h = li.getBoundingClientRect().height;
+      return li
+        .animate(
+          [{ opacity: 1, height: `${h}px` }, { opacity: 0, height: "0px", paddingTop: "0px", paddingBottom: "0px" }],
+          { duration: 260, easing: "ease-in", fill: "forwards" },
+        )
+        .finished.catch(() => {});
+    }
+    // A keen, a Remove, or anything for the plan posts in the background, so
+    // the page (and its order) stays put. If that fails, the form posts the
+    // plain way.
+    const inPage = "[data-keen], [data-remove], [data-plan], [data-busy], [data-plan-start]";
+    // (moving the plan to another day starts its answers afresh: asked
+    // first, but only when the day really changes)
+    const asks = (form) => {
+      if (!form.dataset.confirm) return false;
+      if (!form.matches("[data-plan-start]") || !form.dataset.day) return true;
+      const day = form.querySelector("input[name=date]")?.value || form.querySelector("input[name=day]:checked")?.value;
+      return day !== form.dataset.day;
+    };
     document.addEventListener("submit", async (event) => {
-      const form = event.target.closest("[data-keen]");
+      const form = event.target.closest(inPage);
       if (!form) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      // Busy rather than disabled: disabling would drop the keyboard focus.
-      if (form.dataset.busy) return;
-      form.dataset.busy = "true";
+      // Sending rather than disabled: disabling would drop the keyboard focus.
+      if (form.dataset.sending || (form.matches("[data-keen], [data-remove]") && performance.now() - movedAt < 450)) return;
+      // (this handler comes first, so it asks what the owner's confirm would)
+      if (asks(form) && !window.confirm(form.dataset.confirm)) return;
+      // (the button pressed is part of what's sent: "I'm free all day")
+      const body = new FormData(form);
+      const by = event.submitter;
+      if (by?.name) body.set(by.name, by.value);
+      form.dataset.sending = "true";
       try {
-        const res = await fetch(form.action, { method: "POST", body: new FormData(form), headers: { "x-spots": "in-page" } });
+        const res = await post(form.getAttribute("action"), body);
+        if (form.matches("[data-plan], [data-busy], [data-plan-start]")) {
+          if (res.status !== 204 && res.status !== 409) throw new Error(String(res.status));
+          form.closest("dialog")?.close();
+          form.closest("details")?.removeAttribute("open");
+          await refresh();
+          if (res.status === 409) say(form.matches("[data-plan-start]") ? "That didn't work: pick a place on the list, a day from today on, and how long it takes within the hours you count." : "The plan changed meanwhile. Here it is as it is now.");
+          else if (form.matches("[data-busy]")) say("Your times are in. The others see how many are free, never when you're busy.");
+          return;
+        }
+        if (form.matches("[data-remove]")) {
+          if (res.status === 409) {
+            say("That one stays: someone else is keen on it now.");
+            await refresh();
+            return;
+          }
+          if (!res.ok) throw new Error(String(res.status));
+          const name = form.dataset.remove;
+          const li = form.closest("li");
+          const place = li?.dataset.placeId;
+          leaving = fold(li);
+          await refresh();
+          leaving = null;
+          say(`Took ${name} off the list.`, place && (async () => {
+            const body = new FormData();
+            body.set("place", place);
+            await post(form.getAttribute("action"), body);
+            await refresh();
+          }));
+          return;
+        }
         if (!res.ok) throw new Error(String(res.status));
         await refresh();
       } catch {
+        if (by?.name) form.insertAdjacentHTML("beforeend", `<input type="hidden" name="${by.name}" value="${by.value}">`);
         form.submit();
       } finally {
-        delete form.dataset.busy;
+        delete form.dataset.sending;
       }
     }, true);
+    // Edit and Done switch the list in place (the link loads ?edit without
+    // a script).
+    document.addEventListener("click", (event) => {
+      const toggle = event.target.closest("[data-edit-toggle]");
+      if (!toggle) return;
+      event.preventDefault();
+      const list = document.querySelector("#list");
+      const on = !list.hasAttribute("data-editing");
+      list.toggleAttribute("data-editing", on);
+      const url = new URL(location.href);
+      url.searchParams.delete("removed");
+      url.searchParams.delete("error");
+      if (on) url.searchParams.set("edit", "");
+      else url.searchParams.delete("edit");
+      history.replaceState(null, "", url.pathname + url.search.replace("edit=", "edit") + url.hash);
+    });
     const source = new EventSource(`/api/events?group=${encodeURIComponent(groupId)}`);
     source.addEventListener("change", refresh);
     source.addEventListener("places", refresh);
@@ -661,7 +1088,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     document.addEventListener(
       "submit",
       (event) => {
-        if (!event.target.matches("[data-search], [data-keen]")) source.close();
+        if (!event.target.matches("[data-search], [data-keen], [data-remove], [data-plan], [data-busy], [data-plan-start]")) source.close();
       },
       true,
     );
@@ -702,39 +1129,223 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
       showSearch("", true);
     });
     window.addEventListener("popstate", () => {
-      askInput.value = new URLSearchParams(location.search).get("q") ?? "";
-      showSearch(askInput.value, false);
+      // (only when the search itself changed, not on going back a tab)
+      const q = new URLSearchParams(location.search).get("q") ?? "";
+      if (q === (document.querySelector("#explore")?.dataset.q ?? "")) return;
+      askInput.value = q;
+      showSearch(q, false);
     });
 
-    // The section links mark where the reader is. Without a script they're
-    // still plain links down the page.
-    const navLinks = [...document.querySelectorAll(".section-nav a")];
-    const sections = navLinks.map((a) => document.querySelector(a.hash)).filter(Boolean);
-    const here = new IntersectionObserver(
-      (entries) => {
-        const seen = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-        if (!seen) return;
-        for (const a of navLinks) {
-          if (a.hash === `#${seen.target.id}`) a.setAttribute("aria-current", "true");
-          else a.removeAttribute("aria-current");
+    // Tabs: one part of the group at a time (Our list, Explore, Share a
+    // place, Settings), the open one in the URL's #, so a reload, the back
+    // button or a form that lands on #settings opens the right one. On a
+    // wide screen Our list is always there in the left column, so the tabs
+    // choose what's beside it: Explore (with the map), Share or Settings.
+    const page = document.querySelector(".group-page");
+    const tabLinks = [...document.querySelectorAll(".tabs a[data-tab]")];
+    const panels = [...document.querySelectorAll("[data-panel]")];
+    const wide = matchMedia("(min-width: 1180px)");
+    const tabOf = (hash) => {
+      if (/^#(explore|explore-section)$/.test(hash)) return "explore";
+      if (hash === "#add") return "add";
+      if (hash === "#settings" && document.querySelector("#settings")) return "settings";
+      return "list";
+    };
+    let tab = tabOf(location.hash);
+    function show(next, scroll) {
+      tab = next;
+      page.dataset.tab = tab;
+      const beside = wide.matches && tab === "list" ? "explore" : tab;
+      for (const panel of panels) {
+        const kind = panel.dataset.panel;
+        panel.hidden = !(kind === beside || (wide.matches && kind === "list"));
+      }
+      for (const a of tabLinks) {
+        if (a.dataset.tab === beside) a.setAttribute("aria-current", "page");
+        else a.removeAttribute("aria-current");
+      }
+      // (a map shown again takes its size)
+      window.dispatchEvent(new Event("resize"));
+      // The tab opens at its top, under the tabs, never scrolled half way.
+      const top = document.querySelector(".group-head").getBoundingClientRect().bottom + scrollY;
+      if (scroll && scrollY > top) scrollTo({ top, behavior: "instant" });
+    }
+    page.classList.add("is-tabbed");
+    show(tab, false);
+    // (a link to one card, like a vote without the script, still lands on it)
+    try {
+      if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+    } catch {
+      // (a # that isn't an id)
+    }
+    wide.addEventListener("change", () => show(tab, false));
+    window.addEventListener("popstate", () => show(tabOf(location.hash), true));
+    function go(next, hash) {
+      if (location.hash !== hash) history.pushState(null, "", location.pathname + location.search + hash);
+      show(next, true);
+    }
+    document.addEventListener("click", (event) => {
+      const link = event.target.closest("a[data-tab]");
+      if (!link || event.metaKey || event.ctrlKey || event.shiftKey) return;
+      event.preventDefault();
+      go(link.dataset.tab, link.hash);
+    });
+    // A tap on a place in the list shows it on the map, which on a narrow
+    // screen is Explore's: open that first (src/scripts/map.ts then flies).
+    document.addEventListener(
+      "click",
+      (event) => {
+        if (wide.matches || tab !== "list") return;
+        if (event.target.closest("button, a, form, input, select, label")) return;
+        if (event.target.closest("#list [data-place]")) go("explore", "#explore-section");
+      },
+      true,
+    );
+
+    // The plan's sheets open over the page in place (each link loads the
+    // page with the sheet open, without a script), and Cancel, Escape or a
+    // save closes them. Closed, the address loses its ?busy or ?plan, and
+    // what changed while one was open catches up.
+    function openSheet(dialog) {
+      if (!dialog) return false;
+      if (dialog.open && !dialog.matches(":modal")) dialog.close();
+      if (!dialog.open) dialog.showModal();
+      // (the sheet itself takes the focus, so a screen reader starts at its title)
+      dialog.focus();
+      dialog.dispatchEvent(new Event("spots:sheet-open"));
+      return true;
+    }
+    for (const dialog of document.querySelectorAll("#plan-sheets dialog[open]")) openSheet(dialog);
+    document.addEventListener("click", (event) => {
+      const link = event.target.closest("[data-open-busy], [data-open-start]");
+      if (link && !event.metaKey && !event.ctrlKey && !event.shiftKey) {
+        if (openSheet(document.querySelector(link.matches("[data-open-busy]") ? "#busy" : "#plan-start"))) {
+          event.preventDefault();
+          link.closest("details")?.removeAttribute("open");
+        }
+        return;
+      }
+      const cancel = event.target.closest("dialog [data-close]");
+      if (cancel) {
+        event.preventDefault();
+        cancel.closest("dialog").close();
+      }
+    });
+    document.addEventListener(
+      "close",
+      (event) => {
+        if (!event.target.matches?.("#plan-sheets dialog")) return;
+        const url = new URL(location.href);
+        for (const key of ["busy", "plan", "error"]) url.searchParams.delete(key);
+        history.replaceState(null, "", url.pathname + url.search + (/^#(busy|plan-start)$/.test(url.hash) ? "#list" : url.hash));
+        if (sheetsBehind) {
+          sheetsBehind = false;
+          refresh();
         }
       },
-      { rootMargin: "-20% 0px -60% 0px" },
+      true,
     );
-    for (const section of sections) here.observe(section);
 
-    // Delegated, since a reset invite link swaps the share row in live.
+    // The owner's choice of start says itself on the button ("Set it: Sat 24
+    // Oct, 2:15pm") and rings its window on the strip. "Other" is one choice
+    // more: picking it lets go of the start chips, and back.
+    function planLabel() {
+      const pick = document.querySelector(".plan__pick");
+      if (!pick) return;
+      const other = pick.querySelector("select[name=other]");
+      const radio = pick.querySelector("input[name=at]:checked");
+      const button = pick.querySelector(".plan__set");
+      const when = other?.value ? other.selectedOptions[0].textContent : radio?.dataset.when;
+      button.textContent = when ? `${button.dataset.setLabel}, ${when}` : "Set it";
+      const heat = document.querySelector("#plans .heat");
+      const mark = heat?.querySelector(".heat__mark");
+      const win = (radio?.dataset.win ?? other?.value)?.split("-").map(Number);
+      if (!mark || !win) return;
+      const from = Number(heat.dataset.from);
+      const span = Number(heat.dataset.to) - from;
+      mark.style.left = `${((win[0] - from) / span) * 100}%`;
+      mark.style.width = `${((win[1] - win[0]) / span) * 100}%`;
+    }
+    planLabel();
+    document.addEventListener("change", (event) => {
+      const pick = event.target.closest(".plan__pick");
+      if (!pick) return;
+      pick.dataset.chosen = "";
+      const other = pick.querySelector("select[name=other]");
+      if (event.target === other) {
+        for (const r of pick.querySelectorAll("input[name=at]")) r.checked = !other.value && r.id.endsWith("-0-0");
+      } else if (event.target.name === "at") other.value = "";
+      planLabel();
+    });
+
+    // What the plan newly needs from you, said once at the foot of the
+    // screen as it arrives (the card says it too, and the dot on Our list):
+    // the owner asking when you're busy, everyone in for the owner, someone
+    // changing their times after the time was set; and to the others, the
+    // time once it's set.
+    const planCard = () => document.querySelector("#plans .plan[data-plan-id]");
+    const needsOf = (card) => (card?.dataset.needs ? `${card.dataset.planId}:${card.dataset.needs}` : "");
+    const setOf = (card) => (card?.dataset.set ? `${card.dataset.planId}:${card.dataset.set}` : "");
+    let needsWas = needsOf(planCard());
+    let setWas = setOf(planCard());
+    function showPlan() {
+      const card = planCard();
+      if (!card) return;
+      go("list", "#plans");
+      card.scrollIntoView({ block: "nearest", behavior: still.matches ? "instant" : "smooth" });
+    }
+    function noticePlan() {
+      const card = planCard();
+      const needs = needsOf(card);
+      const set = setOf(card);
+      if (needs && needs !== needsWas) {
+        const { needs: what, owner, place, day } = card.dataset;
+        if (what === "answer") say(`${owner} is planning ${place} on ${day}. When are you busy?`, () => openSheet(document.querySelector("#busy")), "Fill in");
+        else if (what === "pick") say(`Everyone's in for ${place}. Pick the time.`, showPlan, "Show");
+        else if (what === "changed") say(`${card.querySelector(".plan__changed strong")?.textContent ?? "Someone changed their times"}.`, showPlan, "Show");
+      } else if (set && set !== setWas && !isOwner) {
+        say(`${card.dataset.owner} set ${card.dataset.place}: ${card.dataset.set}.`, showPlan, "Show");
+      }
+      needsWas = needs;
+      setWas = set;
+    }
+
+    // Where the invite opens over the page (beside the name, wider than a
+    // phone), a click outside it or Escape closes it, as a popover would.
+    const inviteBox = document.querySelector("#invite");
+    const floating = () => inviteBox?.open && getComputedStyle(inviteBox.querySelector(".share")).position === "absolute";
+    document.addEventListener("click", (event) => {
+      if (floating() && !inviteBox.contains(event.target)) inviteBox.open = false;
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || !floating()) return;
+      inviteBox.open = false;
+      inviteBox.querySelector("summary").focus();
+    });
+
+    // The link copies with one tap where there's a clipboard; elsewhere it
+    // stays a field to select it in. Delegated, since a reset invite link
+    // swaps the share row in live.
+    if (navigator.clipboard?.writeText) document.documentElement.classList.add("can-copy");
     document.addEventListener("click", async (event) => {
       const button = event.target.closest("[data-copy]");
       if (!button) return;
       const input = document.querySelector(button.dataset.copy);
+      const say = button.querySelector(".share__do");
       try {
         await navigator.clipboard.writeText(input.value);
-        button.textContent = "Copied";
+        button.classList.add("is-copied");
+        say.textContent = "Copied";
+        setTimeout(() => {
+          button.classList.remove("is-copied");
+          say.textContent = "Copy link";
+        }, 2000);
       } catch {
+        // No clipboard after all: back to the field, with the link selected.
+        document.documentElement.classList.remove("can-copy");
+        input.focus();
         input.select();
       }
-      setTimeout(() => (button.textContent = "Copy"), 1500);
     });
 
     // The system share sheet, where there is one (phones, Safari, Edge): it
@@ -758,5 +1369,7 @@ const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt
     import "../../scripts/map";
     import "../../scripts/passkeys";
     import "../../scripts/welcome";
+    import "../../scripts/busy";
+    import "../../scripts/plan-start";
   </script>
 </Base>

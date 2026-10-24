@@ -6,15 +6,18 @@
 // addCustomPick in db.ts), and those are the ones that make a list theirs.
 //
 // Coordinates come from each Wikipedia article, or, where it has none (the
-// two streets, the markets, Questacon), from OpenStreetMap's Nominatim.
+// markets, Questacon), from OpenStreetMap's Nominatim.
 //
 // These are only the seed: on boot they're upserted into the shared `places`
 // table (src/lib/db.ts), where every place any group adds joins them.
 //
 // Photos are from Wikimedia Commons under the licence named, hotlinked as
 // 800px thumbnails, and credited on the card with a link to the file page,
-// which is what CC BY and CC BY-SA ask for.
-export type Kind = "food" | "fun" | "outdoors";
+// which is what CC BY and CC BY-SA ask for. A place with no such photo goes
+// without, and its card shows its kind's picture (src/lib/kind-art.ts).
+import type { Kind } from "./kinds";
+
+export { KIND_LABEL, type Kind } from "./kinds";
 
 export interface Photo {
   src: string;
@@ -32,38 +35,11 @@ export interface CatalogueSpot {
   area: string;
   blurb: string;
   source: string;
-  photo: Photo;
+  /** a credited photo whose licence allows reuse, if there is one */
+  photo?: Photo;
 }
 
-export const KIND_LABEL: Record<Kind, string> = {
-  food: "Food",
-  fun: "Fun",
-  outdoors: "Outdoors",
-};
-
 export const CATALOGUE: CatalogueSpot[] = [
-  {
-    key: "lonsdale-st",
-    lat: -35.2759125,
-    lon: 149.1324111,
-    name: "Lonsdale Street",
-    kind: "food",
-    area: "Braddon",
-    blurb: "A strip of cafés, bars and late food, the default for a night out near ANU.",
-    source: "https://en.wikipedia.org/wiki/Braddon,_Australian_Capital_Territory",
-    photo: { src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e8/Lonsdale_Street_Braddon_September_2017.jpg/960px-Lonsdale_Street_Braddon_September_2017.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail", page: "https://commons.wikimedia.org/wiki/File:Lonsdale_Street_Braddon_September_2017.jpg", credit: "Nick-D", license: "CC BY-SA 3.0" },
-  },
-  {
-    key: "woolley-st",
-    lat: -35.2502783,
-    lon: 149.1366687,
-    name: "Woolley Street",
-    kind: "food",
-    area: "Dickson",
-    blurb: "Dickson's run of Asian restaurants: dumplings, noodles, hot pot.",
-    source: "https://en.wikipedia.org/wiki/Dickson,_Australian_Capital_Territory",
-    photo: { src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5b/Woolley_St%2C_Dickson.JPG/960px-Woolley_St%2C_Dickson.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail", page: "https://commons.wikimedia.org/wiki/File:Woolley_St,_Dickson.JPG", credit: "Grahamec", license: "CC BY-SA 3.0" },
-  },
   {
     key: "bus-depot-markets",
     lat: -35.312704,
@@ -80,7 +56,7 @@ export const CATALOGUE: CatalogueSpot[] = [
     lat: -35.2985062,
     lon: 149.1312548,
     name: "Questacon",
-    kind: "fun",
+    kind: "culture",
     area: "Parkes",
     blurb: "The science centre: hands-on exhibits that are more fun with friends than you'd admit.",
     source: "https://en.wikipedia.org/wiki/Questacon",
@@ -91,7 +67,7 @@ export const CATALOGUE: CatalogueSpot[] = [
     lat: -35.3003,
     lon: 149.1364,
     name: "National Gallery of Australia",
-    kind: "fun",
+    kind: "culture",
     area: "Parkes",
     blurb: "The national art collection, plus the sculpture garden outside.",
     source: "https://en.wikipedia.org/wiki/National_Gallery_of_Australia",
@@ -102,7 +78,7 @@ export const CATALOGUE: CatalogueSpot[] = [
     lat: -35.293056,
     lon: 149.120833,
     name: "National Museum of Australia",
-    kind: "fun",
+    kind: "culture",
     area: "Acton",
     blurb: "On Acton Peninsula right next to ANU, an easy afternoon.",
     source: "https://en.wikipedia.org/wiki/National_Museum_of_Australia",
@@ -113,7 +89,7 @@ export const CATALOGUE: CatalogueSpot[] = [
     lat: -35.2805,
     lon: 149.1491,
     name: "Australian War Memorial",
-    kind: "fun",
+    kind: "culture",
     area: "Campbell",
     blurb: "The memorial and its galleries, at the end of Anzac Parade.",
     source: "https://en.wikipedia.org/wiki/Australian_War_Memorial",
@@ -124,7 +100,7 @@ export const CATALOGUE: CatalogueSpot[] = [
     lat: -35.3115975,
     lon: 149.1436952,
     name: "Canberra Glassworks",
-    kind: "fun",
+    kind: "culture",
     area: "Kingston",
     blurb: "Glass art studios and a gallery in the old Kingston Powerhouse.",
     source: "https://en.wikipedia.org/wiki/Canberra_Glassworks",

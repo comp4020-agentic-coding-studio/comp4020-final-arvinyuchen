@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Jar } from "./authenticator";
-import { page, request, signUp, startGroup, you } from "./browser";
+import { page, photo, request, signUp, startGroup, you } from "./browser";
 
 // Site admin: archive and restore groups, delete archived ones for good,
 // hide shared places. The app under test needs ADMIN_CODE, and the spec the
@@ -30,7 +30,7 @@ describe("site admin", () => {
     const id = await startGroup(owner, "Not yours", "Bo");
     const nobody = await account("Cy");
     await groupsAct(nobody, "archive", [id]);
-    expect(await you(owner, id)).toContain("You're in as Bo");
+    expect(await you(owner, id)).toBe("Bo");
   });
 
   it.skipIf(!code)("makes an account admin only with the right code", async () => {
@@ -48,7 +48,7 @@ describe("site admin", () => {
     await request(owner, `/api/groups/${id}/picks`, { form: { key: "nma" } });
 
     await groupsAct(boss, "purge", [id]);
-    expect(await you(owner, id)).toContain("You're in as Bo");
+    expect(await you(owner, id)).toBe("Bo");
 
     await groupsAct(boss, "archive", [id]);
     expect((await page(owner, `/g/${id}`)).querySelector("h1")?.textContent).toBe("This group has been closed");
@@ -56,7 +56,7 @@ describe("site admin", () => {
     expect(vote.headers.get("location")).toBe("/");
 
     await groupsAct(boss, "restore", [id]);
-    expect(await you(owner, id)).toContain("You're in as Bo");
+    expect(await you(owner, id)).toBe("Bo");
 
     await groupsAct(boss, "archive", [id]);
     await groupsAct(boss, "purge", [id]);
@@ -69,7 +69,7 @@ describe("site admin", () => {
     const sharer = new Jar();
     const ours = await startGroup(sharer, "Sharing crew", "Di");
     const name = `Admin test place ${Date.now()}`;
-    await request(sharer, `/api/groups/${ours}/places`, { form: { name, kind: "food", why: "testing the admin page" } });
+    await request(sharer, `/api/groups/${ours}/places`, { form: { name, kind: "food", why: "testing the admin page", photo: await photo() } });
     const viewer = new Jar();
     const theirs = await startGroup(viewer, "Looking crew", "Ed");
     expect(await explore(viewer, theirs)).toContain(name);

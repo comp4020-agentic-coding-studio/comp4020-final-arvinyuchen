@@ -128,6 +128,16 @@ the same" means a keen has to land where the person meant it, and a vote on
 the wrong card is a voice miscounted. Option 4 keeps the second without losing
 the first: every count is still live within a second, and the ranking is one
 tap away. The person who decides when the list moves is the one looking at it.
+
+**Revisited (October 2026).** Using it, the held order read as a list that
+was wrong until you tapped a bar, and the bar was one more thing on the
+screen. The list is now always the ranking (option 2): a live change
+re-ranks it at once, and each card glides from its old place to its new
+one (a FLIP animation; under reduced motion they just swap), so everyone
+sees what moved and why. A keen tap within about half a second of a move
+is ignored, since it was aimed at whatever card was there before, and the
+keen button still sends the state it shows, so a tap that does land never
+undoes a vote. The New order bar and the held state are gone.
 Sending the shown state fixes the same problem from the other side: the vote
 records what the person saw, not whatever the server held at that moment.
 
@@ -140,6 +150,70 @@ page (the keen form posts in the background), so without JavaScript the form
 still works but reloads into the current ranking, as before. Two devices, one
 showing keen and one not, can still disagree for up to a second. Whichever
 tap arrives last wins, but it can no longer undo a vote by accident.
+
+## Deciding when
+
+**Context.** Spots got a group to "where", then left "when" to the group
+chat, which is where plans stall: someone suggests Saturday, half reply,
+nobody says what time. The group needed a time without a poll that half of
+it never answers, and on a phone, since that's where the chat is.
+
+**Options.**
+1. *The owner suggests a few times and everyone votes.* Quick, but the
+   owner guesses, and "none of these" is a dead end.
+2. *Everyone paints when they're free over a week* (When2meet). It finds
+   the overlap, but asks a lot, shows everyone's diary to everyone, and on a
+   phone the painting fights the page's scroll.
+3. *The owner picks a day and everyone marks when they're busy that day;*
+   the app finds when people are free together, and the owner decides.
+
+For marking busy times on a phone I mocked up four ways: a timeline of the
+day, From and To rows, parts of the day (morning, afternoon, evening), and
+a grid of half hours.
+
+**Decision.** Option 3, on a timeline to the minute (at first 5-minute
+steps, but a class out at 10:07 had to round, and rounding can hide a
+window or make one up), and the owner says up front how long it takes
+(2h unless they say). Busy rather than free, since most of a Saturday is
+free: less to mark, and "I'm free all day" is one tap. The day draws the way phone
+calendars do: a swipe scrolls, a tap adds an hour, a hold (400ms) then a
+drag draws, and a stretch has dots to drag and exact times behind a tap.
+Without a script the same sheet is From and To rows. The card lists only
+times at least as long as the plan takes: when everyone is free, longest
+first, then a longer time that most can make. At first there was no
+shortest time, a 15-minute overlap marked in gold; but a time the outing
+doesn't fit in isn't a choice, so now it isn't offered, and when nothing is
+long enough the card says so ("No 2h stretch works for 2 or more"), with
+the longest there is, and the owner can make it shorter. Only times when
+at least two are free count. A start the owner picks ends that long after;
+an exact time can still be typed. The owner can set a time whenever they like,
+and is nudged once everyone's in. After that, someone changing their times
+tells only the owner, with a time to move to, or Keep.
+
+**Why.** "Deciding together is quick": one day, one sheet, and the overlap
+worked out instead of argued. "Everyone's voice counts the same": each
+person's times weigh the same, and the owner sees who can't make each
+time, so nobody is quietly left out. The group is private, and inside it
+each person's diary is too: the card says how many are free and who can't
+come, never what anyone is doing. Telling only the owner after the time is
+set keeps a settled plan from buzzing the whole group again.
+
+**Trade-offs.** The owner decides alone; the others have their say only
+through their times. Counts can still give someone away in a small group (if
+two have answered and one is busy, the other knows who), so the timeline
+hides the others' strip until two others have answered, but the card's
+counts can't avoid it entirely. A hold to draw is harder to discover than
+painting, so the empty day says how. Moving the plan to another day starts
+everyone's answers again (the old plan is kept, called off); other hours
+or another length keep them. A length set too long hides every time until
+the owner shortens it, so the card says what the longest is. Times are
+Canberra's, so someone away sees Canberra times. The hold and drag needs
+checking on a real iPhone: Safari decides scrolling from the first touch,
+and the drag relies on stopping the page's scroll once a hold has armed.
+To the minute, a finger moves a few minutes a millimetre, so a drag on the
+timeline lands on 5 minutes (counted from the plan's start) and says its
+from–to on itself as it goes; exact minutes are typed in a stretch's exact
+times. A stretch at an odd minute keeps its length when moved.
 
 ## How I worked with the agent
 

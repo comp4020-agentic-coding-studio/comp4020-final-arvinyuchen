@@ -18,13 +18,25 @@ follow from it; every change has to hold to them.
   (`src/pages/g/[link].astro`, checked in `spec/`).
 - **A place gets in with a reason.** Adding a place needs a "why it's good"
   from the person sharing it, shown with their name. That sentence is the
-  filter: no reason, no place. Never import places in bulk from a directory or
-  an API to pad the pool.
-- **Look places up politely.** `src/pages/api/lookup.ts` asks OpenStreetMap's
-  Nominatim only when someone presses Find, at most once a second, with the
-  app's User-Agent, and caches answers. Keep it that way: no search-as-you-type,
-  no autocomplete against Nominatim. Map tiles and data are credited on the
-  map.
+  filter: no reason, no place.
+- **A place's photo is the sharer's own, or there's none.** One a member
+  uploads (`src/lib/photos.ts`) is re-encoded with all its metadata (GPS
+  among it) stripped and credited to them; a place shared without one
+  still gets in, and its card shows its kind's picture
+  (`src/lib/kind-art.ts`, from Unsplash), named with the kind so it isn't
+  taken for that place. Nothing is fetched to give a place a photo, and it
+  never takes a photo's address from the browser. The starter places, and
+  places shared before, keep the credited Commons photos they have. Never
+  take a venue's own photos or a photographer's from their sites. Never
+  import places in bulk from a directory or an API to pad the pool.
+- **Look places up politely.** Find (`src/pages/api/lookup.ts`) searches
+  Overture Maps' Canberra places on the server first
+  (`src/data/places-index.json`, built by `scripts/build-places-index.ts`),
+  then OpenStreetMap through Photon. It asks only when someone presses
+  Find, with the app's User-Agent, and caches answers. Keep it that way: no
+  search-as-you-type, no autocomplete against Photon. The index
+  is only a finder's: none of it is in Explore until someone shares it.
+  Overture, Photon, map tiles and data are credited.
 - **One person, one keen.** A member can vote "keen" on a spot once. The
   button sends the state it shows ("on" or "off") and the server sets exactly
   that (`setKeen`), so a double-tap or a second device never undoes a vote.
@@ -39,7 +51,7 @@ follow from it; every change has to hold to them.
   member into it. Never add a way in that isn't a passkey.
 - **The invite goes person to person.** Whoever holds the link can join, so
   it's shared through private channels only: the system share sheet, Messages,
-  WhatsApp, Telegram, email, a QR code. Never add a button that posts it to a
+  WhatsApp, Telegram, email. Never add a button that posts it to a
   public feed (a Facebook post, X, a story). A link preview may name the group
   (Open Graph, `src/layouts/Base.astro`), never its members or votes.
 - **Accounts are passkeys only.** No passwords, no email, no "sign in with"
@@ -51,21 +63,53 @@ follow from it; every change has to hold to them.
   marks them, never deletes them: what they added keeps their name. Only a
   removed member's keens go. Resetting the invite link retires the old one;
   members who follow it land on the new one, nobody new gets in.
-- **Live means live.** Any join, add or vote must reach every other open page
+- **Live means live.** Any join, add, removal or vote must reach every other open page
   of that group within about a second, without the viewer reloading
   (`src/pages/api/events.ts` + the page's refresh script). A new kind of
   change has to call `changed(groupId)`; a change to the shared places also
-  calls `placesChanged()` so every group's Explore catches up.
-- **Nothing moves under someone's thumb.** While someone is on a group's page,
-  live changes update the list's counts and names but keep its order; when
-  the ranking has moved, a "New order" bar offers it (PROCESS.md, "Several
-  people voting at once"). Don't make a live update reorder cards on its own.
+  calls `placesChanged()` so every group's Explore catches up. The stream
+  answers only a signed-in member of that group (`me()`), and one open when
+  its account stops being a member ends at the next change.
+- **Taking a place off the list is for whoever put it there.** In Edit
+  mode (`?edit`), the member who added a place can take it off until
+  someone else is keen on it; the owner can take any off, asked first when
+  others are keen (`removePick` in `src/lib/db.ts`). It goes with its
+  keens, so adding it back starts from none; it stays in Explore, and the
+  page offers Undo.
+- **The list is always the ranking, and you can see it move.** A live
+  change re-ranks Our list straight away, most keen first, and each card
+  glides from its old place to its new one (under reduced motion it just
+  swaps), so the group sees what moved. For a moment after a move a keen
+  tap is ignored, since it was aimed at the card that was there before
+  (PROCESS.md, "Several people voting at once"). Never jump cards without
+  the glide, and never replay the cards' entrance on a refresh.
+- **A plan is the owner's to decide, from busy times nobody else sees.** The
+  owner starts one plan at a time, for a place on Our list, a day and how
+  long it takes (`src/lib/plans.ts`); only times at least that long are
+  offered, never a shorter one; each member marks only their own busy times
+  (`me()`), and the owner sets the time. Times are Canberra's wall clock:
+  a local date and whole minutes since its midnight, to the minute
+  (`src/lib/when.ts`), never the server's zone; on the timeline a drag
+  lands on 5 minutes and exact minutes are typed. Nobody sees anyone else's
+  busy times: the page shows how many are free when and who can't make a
+  window (`src/lib/free.ts`), and the timeline gets the others' counts only
+  once two others have answered. Never send another member's busy times to
+  the browser. There's no push, email or share button for a plan: a dot on
+  Our list's tab, a note on an open page, the card. Once the time is set, a
+  member's change tells only the owner. A plan moved to another day is a
+  new plan, the old one called off and kept; one whose place leaves the
+  list is called off and kept.
 - **Nothing is lost.** All state lives in the one SQLite file on `/data`.
   Schema changes are additive only; never drop or rewrite data a group made.
-  The one exception is the site admin (`src/lib/admin.ts`): a group is
-  archived first (closed, restorable), and only an archived group can be
-  deleted for good, by an admin, after a confirm. Shared places are hidden,
-  never deleted. An admin is a passkey account that once entered
+  A place's kind is stored by its key (`src/lib/kinds.ts`), so a key is never
+  renamed: relabel it instead, as Fun became Activities.
+  The exceptions: a starter place taken off the
+  list in `src/lib/catalogue.ts` is deleted, with its keens, its place
+  on every list and any plans for it (`src/lib/db.ts`); a place a member takes off their group's
+  list goes from that list with its keens; and the site admin
+  (`src/lib/admin.ts`) archives a group first (closed, restorable), and only
+  an archived group can be deleted for good, by an admin, after a confirm.
+  An admin can hide a shared place. An admin is a passkey account that once entered
   `ADMIN_CODE` (a Fly secret); never add another way to become one.
 - **Signed in, it works without JavaScript**, as plain forms posting and
   redirecting. The live layer, the map and the place finder are additions on
@@ -106,8 +150,12 @@ follow from it; every change has to hold to them.
   home page's share one language: tiles' lettering hidden (street names only
   once the camera is down in a street) and a few place names set in the
   page's font, fine line weights, white chips for the places on a list and
-  dots for the rest, a popup that is the chip grown into a card, and the
-  credit folded behind an "i" on the map. Pins, names and credit are placed
+  dots for the rest, and the credit folded behind an "i" on the map. On the
+  group's map (the only one with a card) a tapped place's chip becomes its
+  card: on a wide map a callout grown from the chip (its photo, name, kind
+  and suburb, its number on the list); on a phone's short map the chip
+  fills with its kind's colour and the same card sits at the map's foot,
+  with one action (keen, or Add). Pins, names and credit are placed
   by `src/scripts/map-marks.ts` and styled once ("Map marks" in
   `src/styles.css`); the drawn maps share `src/components/MapDrawing.astro`.
   Don't give a map its own pin or label style.
@@ -121,5 +169,5 @@ follow from it; every change has to hold to them.
   browser before it ships.
 - Don't invent places: anything added to the starter list in
   `src/lib/catalogue.ts` has to be a real place in Canberra, checked against a
-  source that's cited in the entry, with coordinates and a credited photo
-  whose licence allows reuse.
+  source that's cited in the entry, with coordinates, and a photo only if
+  it's credited and its licence allows reuse.

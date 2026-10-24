@@ -2,6 +2,7 @@
 import { CATALOGUE, KIND_LABEL } from "../lib/catalogue";
 import { at, H, W } from "../lib/hero-frame";
 import { PEAKS, SUBURBS } from "../lib/hero-map-data";
+import KindIcon from "./KindIcon.astro";
 import MapDrawing from "./MapDrawing.astro";
 
 // The home page's moving picture: the starter places dropping onto a sketch of
@@ -34,7 +35,7 @@ const FEATURED: {
   hang?: boolean;
   tuck?: boolean;
 }[] = [
-  { key: "woolley-st", ask: "cheap dumplings", side: "below", hang: true },
+  { key: "bus-depot-markets", ask: "food stalls by the lake", side: "above" },
   { key: "mt-ainslie", ask: "a walk with a view", side: "left", tuck: true },
   { key: "questacon", ask: "something fun with friends", side: "above" },
   { key: "arboretum", ask: "room for a picnic", side: "right" },
@@ -146,7 +147,7 @@ const labels = candidates.filter((c) => phone.includes(c.name) || wide.includes(
         class:list={["hero-map__card", `hero-map__card--${f.side}`, `spot--${f.spot.kind}`, { "is-first": i === 0 }]}
         style={`--i: ${i}; left: ${pct(f.spot.x, W)}; top: ${pct(f.spot.y, H)}`}
       >
-        <span class="tag">{KIND_LABEL[f.spot.kind]}</span>
+        <span class="tag"><KindIcon kind={f.spot.kind} />{KIND_LABEL[f.spot.kind]}</span>
         <strong>{f.spot.name}</strong>
         <span>{f.spot.blurb}</span>
       </div>

@@ -1,13 +1,17 @@
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import type { Photo } from "../lib/catalogue";
+import { KIND_ART } from "../lib/kind-art";
+import { kindIcon } from "../lib/kind-icons";
+import { KIND_LABEL, type Kind } from "../lib/kinds";
 import { buildings, fine, letters, look, quiet, STYLE } from "./map-look";
 import { around, type Box, chipFont, chips, dress, fold, mark, measure, names, type Name } from "./map-marks";
 
 // The Explore map. Every shared place with a location gets a pin; clicking a
-// card (or its "Show on map" button, or a place on our list) flies the map to
-// that place: a zoom and a tilt into the street, then its popup opens. The
-// pins come from the #pins JSON inside #explore, so when the page refreshes
-// itself live (a new shared place), the pins follow.
+// card (or a place on our list) flies the map to that place: a zoom and a
+// tilt into the street, then its card opens. The pins come from the #pins
+// JSON inside #explore, so when the page refreshes itself live (a new shared
+// place), the pins follow.
 //
 // It wears the invite map's look (map-look.ts) and its marks (map-marks.ts):
 // a place on the group's list is a white chip with its number on the list
@@ -19,17 +23,18 @@ import { around, type Box, chipFont, chips, dress, fold, mark, measure, names, t
 interface Pin {
   id: number;
   name: string;
-  kind: "food" | "fun" | "outdoors";
+  kind: Kind;
   area: string;
   lat: number;
   lon: number;
+  /** its own photo, or null for its kind's picture */
+  photo: string | null;
 }
 
 // See scripts/copy-maplibre-worker.mjs.
 maplibregl.setWorkerUrl("/vendor/maplibre/maplibre-gl-worker.mjs");
 
 const CANBERRA: [number, number] = [149.128, -35.285];
-const KIND_LABEL = { food: "Food", fun: "Fun", outdoors: "Outdoors" } as const;
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const container = document.getElementById("map");
 
@@ -84,56 +89,210 @@ if (container) {
   };
 
   // Where each place stands on our list, from #list, which a live refresh
-  // keeps current. A chip shows that number, unless the list is held out of
-  // rank order (see .picks--held): then the list shows no numbers, and
-  // nor do the chips.
+  // keeps current and in rank order: a chip shows that number.
   const readList = () => {
     const items = [...document.querySelectorAll<HTMLElement>("#list .picks > li")];
-    const held = document.querySelector("#list .picks--held") !== null;
     const order = new Map<number, number>();
     items.forEach((li, i) => {
       if (li.dataset.place) order.set(Number(li.dataset.place), i);
     });
-    return { order, held };
+    return { order };
   };
   let list = readList();
-  const number = (id: number) => (list.held || !list.order.has(id) ? null : list.order.get(id)! + 1);
+  const number = (id: number) => (list.order.has(id) ? list.order.get(id)! + 1 : null);
 
-  // One popup, for the place the map has flown to. While it's open it takes
-  // the place's chip's place, pointing at the same dot.
-  const popup = new maplibregl.Popup({ offset: 10, closeButton: false, maxWidth: "16rem" });
+  // The place the map has flown to gets a card: its chip grown into one.
+  // Where the map is big, a callout on its dot, in the chip's place; on a
+  // phone's short map the chip stays on the dot, filled with its kind's
+  // colour, and the card sits inside the map's foot with the one thing to
+  // do there (keen, or Add), so it never covers the place or runs off the
+  // map. Apple's place cards do the same: a callout on a big map, a card at
+  // the foot of a small one.
+  const narrow = window.matchMedia("(max-width: 860px)");
+  const frame = container.parentElement!;
+  // (the keyboard's focus stays where it was: the card is the next stop after the pins)
+  const popup = new maplibregl.Popup({ anchor: "bottom", offset: 10, closeButton: false, focusAfterOpen: false, maxWidth: "18rem" });
   popup.on("close", () => {
     for (const { el } of markers.values()) el.classList.remove("is-open");
   });
-  const card = (pin: Pin) => {
+  let opened: number | null = null;
+  let dock: HTMLElement | null = null;
+  // (each place's row on Our list and its card in Explore, as the page has them now)
+  const row = (id: number) => document.querySelector<HTMLElement>(`#list .picks > li[data-place="${id}"]`);
+  const spot = (id: number) => document.querySelector<HTMLElement>(`.spots--explore .spot[data-place="${id}"]`);
+
+  const card = (pin: Pin, docked: boolean) => {
     // Names and suburbs are typed by people, so they go in as text, never HTML.
     const box = document.createElement("div");
-    box.className = `map-pop spot--${pin.kind}`;
-    const head = document.createElement("span");
-    head.className = "map-pop__head";
-    const disc = document.createElement("i");
+    box.className = `map-pop spot--${pin.kind}${docked ? " map-pop--docked" : ""}`;
     const n = number(pin.id);
-    if (n !== null) disc.textContent = String(n);
+    const keen = row(pin.id)?.querySelector(".keen__count")?.textContent?.trim();
+    // A click on the card shows the place's card in Explore.
+    const main = document.createElement("button");
+    main.type = "button";
+    main.className = "map-pop__main";
+    const photo = document.createElement("span");
+    photo.className = "map-pop__photo";
+    // Its own photo, or its kind's picture, the kind's icon in the corner as
+    // on Our list (the line beside it names the kind).
+    const src = pin.photo ?? KIND_ART[pin.kind]?.src;
+    if (src) {
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = "";
+      img.decoding = "async";
+      photo.append(img);
+    }
+    const badge = document.createElement("span");
+    badge.className = "map-pop__badge";
+    badge.append(kindIcon(pin.kind));
+    photo.append(badge);
+    const text = document.createElement("span");
+    text.className = "map-pop__text";
     const name = document.createElement("strong");
+    name.className = "map-pop__name";
     name.textContent = pin.name;
-    head.append(disc, name);
     const meta = document.createElement("span");
     meta.className = "map-pop__meta";
-    const tag = document.createElement("span");
-    tag.className = "tag";
-    tag.textContent = KIND_LABEL[pin.kind];
-    const where = document.createElement("span");
-    where.textContent = [pin.area, list.order.has(pin.id) && "on our list"].filter(Boolean).join(" · ");
-    meta.append(tag, where);
-    box.append(head, meta);
+    const kind = document.createElement("span");
+    kind.className = "map-pop__kind";
+    kind.textContent = KIND_LABEL[pin.kind];
+    meta.append(kind, pin.area ? ` · ${pin.area}` : "");
+    text.append(name, meta);
+    if (n !== null) {
+      const status = document.createElement("span");
+      status.className = "map-pop__status";
+      const disc = document.createElement("i");
+      disc.textContent = String(n);
+      // (on a phone the keen button beside it says how many)
+      status.append(disc, docked || !Number(keen) ? "On our list" : `On our list · ${keen} keen`);
+      text.append(status);
+    }
+    main.append(photo, text);
+    if (!docked) {
+      const go = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      go.setAttribute("class", "map-pop__go");
+      go.setAttribute("viewBox", "0 0 12 12");
+      go.setAttribute("aria-hidden", "true");
+      go.innerHTML = '<path d="M4 1.5 8.5 6 4 10.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+      main.append(go);
+    }
+    main.addEventListener("click", (event) => {
+      // (not a click on the map behind it, which would put the card away)
+      event.stopPropagation();
+      reveal(pin.id);
+    });
+    box.append(main);
+    // The one thing to do from the map, on a phone: the list row's own keen
+    // button, or Explore's Add, copied, so they post as they always do (the
+    // page's own script sends a keen in the background).
+    if (docked) {
+      const form = (n !== null ? row(pin.id)?.querySelector("form[data-keen]") : spot(pin.id)?.querySelector(".spot__actions form"))?.cloneNode(true) as HTMLFormElement | undefined;
+      if (form) {
+        form.classList.add("map-pop__act");
+        const add = n === null && form.querySelector("button");
+        if (add) {
+          add.textContent = "Add";
+          add.setAttribute("aria-label", `Add ${pin.name} to our list`);
+        }
+        box.append(form);
+      }
+    }
     return box;
   };
-  const open = (id: number) => {
+
+  // Its card in Explore, brought into view: in its column on a wide screen,
+  // at the top of the box under the map on a phone (the page doesn't scroll
+  // there), and without the script's tabs under the stuck map.
+  function reveal(id: number) {
+    const target = spot(id);
+    if (!target) return;
+    const behavior = reducedMotion.matches ? "auto" : "smooth";
+    const box = target.closest<HTMLElement>(".explore-scroll");
+    const boxed = box !== null && getComputedStyle(box).overflowY !== "visible";
+    if (!narrow.matches || boxed) {
+      target.scrollIntoView({ behavior, block: boxed ? "start" : "nearest" });
+      return;
+    }
+    const under = frame.closest(".map-wrap")?.getBoundingClientRect().bottom ?? 0;
+    window.scrollBy({ top: target.getBoundingClientRect().top - under - 12, behavior });
+  }
+
+  // On a phone the card keeps above the tab bar, and the credit's "i" above the card.
+  const tabs = document.querySelector<HTMLElement>(".section-nav.tabs");
+  function clear() {
+    if (!dock) return;
+    const bar = tabs && getComputedStyle(tabs).position === "fixed" ? tabs.getBoundingClientRect().top : Infinity;
+    const under = Math.max(0, Math.min(container!.getBoundingClientRect().bottom - bar, container!.clientHeight / 3));
+    frame.style.setProperty("--map-clear", `${under}px`);
+    frame.style.setProperty("--map-card", `${dock.offsetHeight}px`);
+  }
+  let clearing = 0;
+  window.addEventListener("scroll", () => {
+    if (!dock || clearing) return;
+    clearing = requestAnimationFrame(() => {
+      clearing = 0;
+      clear();
+    });
+  }, { passive: true });
+
+  function open(id: number) {
     const entry = markers.get(id);
     if (!entry) return;
-    entry.el.classList.add("is-open");
-    popup.setLngLat([entry.pin.lon, entry.pin.lat]).setDOMContent(card(entry.pin)).addTo(map);
-  };
+    opened = id;
+    if (narrow.matches) {
+      popup.remove();
+      entry.el.classList.add("is-picked");
+      const next = card(entry.pin, true);
+      next.classList.add("map-card");
+      next.setAttribute("role", "group");
+      next.setAttribute("aria-label", entry.pin.name);
+      // (a refresh redraws it in place; only a newly picked place rises in)
+      if (dock?.dataset.card !== String(id)) next.classList.add("is-rising");
+      next.dataset.card = String(id);
+      // (and whatever in it had the keyboard's focus keeps it)
+      const focused = dock?.contains(document.activeElement)
+        ? document.activeElement?.closest(".map-pop__act") ? ".map-pop__act button" : ".map-pop__main"
+        : null;
+      if (dock) dock.replaceWith(next);
+      else frame.append(next);
+      dock = next;
+      if (focused) dock.querySelector<HTMLElement>(focused)?.focus({ preventScroll: true });
+      frame.classList.add("has-card");
+      clear();
+    } else {
+      dock?.remove();
+      dock = null;
+      frame.classList.remove("has-card");
+      popup.setLngLat([entry.pin.lon, entry.pin.lat]).setDOMContent(card(entry.pin, false)).addTo(map);
+      // (after: adding a popup that's open closes it first, and that clears the class)
+      entry.el.classList.add("is-open");
+    }
+    place();
+  }
+  function close() {
+    opened = null;
+    popup.remove();
+    dock?.remove();
+    dock = null;
+    frame.classList.remove("has-card");
+    for (const { el } of markers.values()) el.classList.remove("is-open", "is-picked");
+    place();
+  }
+  // A tap on the map, or Escape, puts the card away.
+  map.on("click", () => {
+    if (opened !== null) close();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && opened !== null) close();
+  });
+  // (turning a tablet round can cross from one to the other)
+  narrow.addEventListener("change", () => {
+    if (opened !== null) {
+      for (const { el } of markers.values()) el.classList.remove("is-open", "is-picked");
+      open(opened);
+    }
+  });
 
   // Markers are plain elements over the map, so they can go on before the
   // first frame renders (a tab opened in the background renders nothing yet).
@@ -213,7 +372,11 @@ if (container) {
       height,
       [...shown.map(({ at }) => around(at.x, at.y, 6)), ...controls()],
     );
-    listed.forEach(({ pin, el }, i) => dress(el, { n: number(pin.id), name: pin.name, placing: placed.placing[i] }));
+    // (a picked place's chip, filled with its colour above its card, always says its name)
+    listed.forEach(({ pin, el }, i) => {
+      const picked = pin.id === opened && el.classList.contains("is-picked");
+      dress(el, { n: number(pin.id), name: pin.name, placing: picked ? { ...placed.placing[i], named: true, bare: false } : placed.placing[i] });
+    });
     for (const { pin, el } of shown) {
       if (list.order.has(pin.id)) continue;
       dress(el, { n: null, name: pin.name, placing: { named: true, shift: 0, below: false }, dot: true });
@@ -292,14 +455,26 @@ if (container) {
   });
 
   let active: number | null = null;
+  // The place the map is on: its card in Explore and its row on Our list
+  // wear it (in their kind's colour, "The place the map has flown to" in
+  // styles.css), and say so to a screen reader.
+  function markActive(id: number) {
+    document.querySelectorAll(`[data-place="${id}"]`).forEach((card) => {
+      card.classList.add("spot--active");
+      card.setAttribute("aria-current", "true");
+    });
+  }
   function fly(id: number) {
     const entry = markers.get(id);
     if (!entry) return;
     const { pin, el } = entry;
-    popup.remove();
+    close();
     for (const { el: other } of markers.values()) other.classList.remove("is-active");
-    document.querySelectorAll(".spot--active").forEach((card) => card.classList.remove("spot--active"));
-    document.querySelectorAll(`[data-place="${id}"]`).forEach((card) => card.classList.add("spot--active"));
+    document.querySelectorAll(".spot--active").forEach((card) => {
+      card.classList.remove("spot--active");
+      card.removeAttribute("aria-current");
+    });
+    markActive(id);
     el.classList.add("is-active");
     active = id;
 
@@ -309,9 +484,11 @@ if (container) {
       container!.scrollIntoView({ behavior: reducedMotion.matches ? "auto" : "smooth", block: "center" });
     }
 
-    const target = { center: [pin.lon, pin.lat] as [number, number], zoom: 16.4, pitch: 58, bearing: -20 };
+    // (on a phone the place lands above the middle, clear of its card at the map's foot)
+    const offset: [number, number] = [0, narrow.matches ? -46 : 0];
+    const target = { center: [pin.lon, pin.lat] as [number, number], zoom: 16.4, pitch: 58, bearing: -20, offset };
     if (reducedMotion.matches) {
-      map.jumpTo(target);
+      map.easeTo({ ...target, duration: 0 });
       open(id);
       return;
     }
@@ -323,16 +500,11 @@ if (container) {
     });
   }
 
-  // Cards, list items and "Show on map" buttons, by delegation so cards a
-  // live refresh swapped in still work. A click on a card's own button, link
-  // or form does what that control does, not a fly.
+  // Cards and list items, by delegation so cards a live refresh swapped in
+  // still work. A click on a card's own button, link or form does what that
+  // control does, not a fly.
   document.addEventListener("click", (event) => {
     const target = event.target as HTMLElement;
-    const flyButton = target.closest<HTMLElement>("[data-fly]");
-    if (flyButton) {
-      fly(Number(flyButton.dataset.fly));
-      return;
-    }
     if (target.closest("button, a, form, input, select, label")) return;
     const card = target.closest<HTMLElement>("[data-place]");
     if (card?.dataset.place) fly(Number(card.dataset.place));
@@ -340,35 +512,63 @@ if (container) {
 
   // Kind filters: the chips show and hide cards and their pins together.
   let filter = "all";
+  const empty = document.querySelector<HTMLElement>(".filter-empty");
   function applyFilter() {
+    let shown = 0;
     document.querySelectorAll<HTMLElement>(".spots--explore [data-kind]").forEach((card) => {
       card.hidden = filter !== "all" && card.dataset.kind !== filter;
+      if (!card.hidden) shown++;
     });
+    // (a kind nobody has shared yet says so, and where to share one)
+    if (empty) {
+      empty.hidden = filter === "all" || shown > 0;
+      const said = empty.querySelector("[data-empty-kind]");
+      if (said) said.textContent = KIND_LABEL[filter as Kind] ?? "";
+    }
     for (const { el, pin } of markers.values()) {
       el.style.display = filter === "all" || pin.kind === filter ? "" : "none";
     }
+    // (a card whose place the filter hides goes with it)
+    if (opened !== null && markers.get(opened)?.el.style.display === "none") close();
     place();
   }
+  // (tapping the chosen kind again, or Show all, shows every place again)
   const filters = document.querySelector<HTMLElement>(".filters");
+  const showAll = document.querySelector<HTMLButtonElement>("[data-show-all]");
+  function choose(kind: string) {
+    filter = kind;
+    if (filters) {
+      filters.dataset.sel = kind;
+      filters.querySelectorAll<HTMLButtonElement>("[data-filter]").forEach((c) => {
+        const on = c.dataset.filter === kind;
+        c.classList.toggle("chip--on", on);
+        c.setAttribute("aria-pressed", String(on));
+      });
+    }
+    if (showAll) showAll.hidden = kind === "all";
+    applyFilter();
+  }
   if (filters) {
     filters.hidden = false;
     filters.addEventListener("click", (event) => {
       const chip = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-filter]");
-      if (!chip) return;
-      filter = chip.dataset.filter ?? "all";
-      filters.querySelectorAll<HTMLButtonElement>("[data-filter]").forEach((c) => {
-        const on = c === chip;
-        c.classList.toggle("chip--on", on);
-        c.setAttribute("aria-pressed", String(on));
-      });
-      applyFilter();
+      if (chip) choose(chip.dataset.filter === filter ? "all" : (chip.dataset.filter ?? "all"));
     });
   }
+  showAll?.addEventListener("click", () => choose("all"));
 
   sync();
   document.addEventListener("spots:refreshed", () => {
     sync();
-    if (active !== null) document.querySelectorAll(`[data-place="${active}"]`).forEach((el) => el.classList.add("spot--active"));
+    // (fresh cards keep to the kind that's chosen)
+    applyFilter();
+    if (active !== null) markActive(active);
+    // The open card is drawn again from the fresh page: a keen's new count,
+    // a place now on the list (or gone from Explore, and its card with it).
+    if (opened !== null) {
+      if (markers.has(opened)) open(opened);
+      else close();
+    }
   });
 
   // A search's answer is its cards; the map frames just their pins. One
@@ -379,7 +579,7 @@ if (container) {
     const move = reducedMotion.matches ? { duration: 0 } : { duration: 1400 };
     if (!searching || pins.length === 0) {
       active = null;
-      popup.remove();
+      close();
       map.easeTo({ center: CANBERRA, zoom: 11.3, pitch: 0, bearing: 0, ...move });
       return;
     }
@@ -406,8 +606,37 @@ if (container) {
     const field = (name: string) => form.querySelector<HTMLInputElement | HTMLSelectElement>(`[name="${name}"]`)!;
     let preview: maplibregl.Marker | null = null;
 
+    // Its photo: the one you choose, shown before you share it, if you do.
+    // A place picked that's already shared goes on the list as it is, so it
+    // shows the photo it has instead, and there's none to choose.
+    const own = form.querySelector<HTMLInputElement>('input[name="photo"]')!;
+    const shown = form.querySelector<HTMLElement>(".photo-pick__found")!;
+    const label = form.querySelector<HTMLElement>(".photo-pick__label")!;
+    let found: Photo | null = null;
+    let yours = "";
+    const showPhoto = () => {
+      const file = own.files?.[0];
+      if (yours) URL.revokeObjectURL(yours);
+      yours = file ? URL.createObjectURL(file) : "";
+      const photo = yours || found?.src;
+      shown.hidden = !photo;
+      if (!photo) return;
+      shown.querySelector("img")!.src = photo;
+      shown.querySelector("figcaption")!.textContent = yours
+        ? "Your photo"
+        : `Photo: ${found!.credit}${found!.license ? `, ${found!.license}` : ""}`;
+    };
+    const showFound = (photo: Photo | null) => {
+      found = photo;
+      label.parentElement!.hidden = photo !== null;
+      if (photo) own.value = "";
+      showPhoto();
+    };
+    own.addEventListener("change", showPhoto);
+
     const clearLocation = () => {
-      for (const name of ["osm", "lat", "lon"]) field(name).value = "";
+      for (const name of ["ref", "lat", "lon"]) field(name).value = "";
+      showFound(null);
       located.hidden = true;
       preview?.remove();
       preview = null;
@@ -425,7 +654,7 @@ if (container) {
         const results = res.ok ? await res.json() : [];
         list.replaceChildren();
         if (!Array.isArray(results) || results.length === 0) {
-          list.append(Object.assign(document.createElement("li"), { textContent: "Nothing found in Canberra. Try the suburb too, or fill it in by hand below.", className: "fine" }));
+          list.append(Object.assign(document.createElement("li"), { textContent: "Nothing found in Canberra. Check the spelling, or fill it in by hand below.", className: "fine" }));
           return;
         }
         for (const r of results) {
@@ -439,12 +668,13 @@ if (container) {
           where.textContent = r.detail;
           button.append(name, where);
           button.addEventListener("click", () => {
-            field("osm").value = r.osm;
+            field("ref").value = r.ref;
             field("lat").value = String(r.lat);
             field("lon").value = String(r.lon);
             field("name").value = r.name;
             field("area").value = r.area;
             field("kind").value = r.kind;
+            showFound(r.photo ?? null);
             located.hidden = false;
             located.textContent = `📍 Found on the map: ${r.name}${r.area ? `, ${r.area}` : ""}. Now say why it's good.`;
             list.replaceChildren();

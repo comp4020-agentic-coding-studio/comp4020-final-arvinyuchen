@@ -1,32 +1,49 @@
 :root {
-  /* Colours taken from the invite's photo of Canberra: the sky and Lake
-     Burley Griffin give the blues, Anzac Parade's red the food colour and
-     the gums the outdoors green. Every text colour passes WCAG AA on white
-     and on the page tint. */
-  --bg: #f7fafb;
-  --bg-deep: #edf4f6;
+  /* After Apple's own apps (and Slopes, which speaks their language): the
+     grouped grey page, white cards, one blue tint, the system palette for
+     the kinds. Every text colour passes WCAG AA on white and on the page
+     grey; the plain blue (--accent) is for fills, pins and rings. */
+  --bg: #f2f2f7;
+  --bg-deep: #f2f2f7;
   --card: #ffffff;
-  --ink: #0d2b36;
-  --muted: #4a6470;
-  --line: #d3e3e8;
-  --line-strong: #b5ccd4;
-  /* teal: --accent for pins, rings and borders; the two darker ones for text
-     and filled buttons, so both read clearly (WCAG AA) on the tint and white */
-  --accent: #1795ae;
-  --accent-strong: #0b6e88;
-  --accent-ink: #0a6680;
-  --accent-soft: #d5ecf2;
-  /* the tint a card's action area sits on, a shade deeper than the page */
-  --tint: #eef6f8;
-  --shadow-sm: 0 1px 2px rgb(13 43 54 / 6%), 0 10px 30px -18px rgb(13 43 54 / 35%);
-  --shadow-md: 0 2px 4px rgb(13 43 54 / 6%), 0 28px 56px -28px rgb(13 43 54 / 50%);
-  --food: #b0472f;
-  --fun: #7a5cc7;
-  --outdoors: #5d7a3c;
-  --radius: 16px;
-  /* the system's own face: SF on Apple devices, Segoe on Windows, Roboto on Android */
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ink: #1d1d1f;
+  --muted: #6e6e73;
+  --line: #e3e3e8;
+  --line-strong: #d1d1d6;
+  --accent: #0071e3;
+  --accent-strong: #0071e3;
+  --accent-ink: #0066cc;
+  --accent-soft: #e6f0fc;
+  /* a grey fill, for fields and quiet buttons, as iOS fills them */
+  --fill: rgb(118 118 128 / 12%);
+  --fill-strong: rgb(118 118 128 / 20%);
+  /* the tint a card's action area sits on: none, it's all one white card */
+  --tint: #f7f7fa;
+  /* barely there for what sits on the page; real depth only for what floats */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 4%);
+  --shadow-md: 0 1px 2px rgb(0 0 0 / 4%), 0 6px 20px -8px rgb(0 0 0 / 10%);
+  --shadow-float: 0 2px 6px rgb(0 0 0 / 6%), 0 18px 48px -12px rgb(0 0 0 / 24%);
+  /* the kinds, each AA as a tag's text on its own tint */
+  --food: #c93400;
+  --coffee: #8b5a2b;
+  --drinks: #b4235a;
+  --outdoors: #2e7d32;
+  --culture: #8944d4;
+  --fun: #007385;
+  --radius: 18px;
+  /* the owner's crown: gold, so it reads apart from the blue of you */
+  --crown: #ffcc00;
+  --crown-ink: #7a5200;
+  /* busy times: the system red, as a calendar draws an event; its ink is
+     AA on its own tint, and white is AA on the strong fill */
+  --busy: #ff3b30;
+  --busy-ink: #b0170f;
+  --busy-strong: #d70015;
+  /* the system's own face: SF on Apple devices, Segoe on Windows, Roboto on
+     Android; numbers in its rounded cut where there is one */
+  --font: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: var(--font);
+  --font-rounded: ui-rounded, "SF Pro Rounded", var(--font);
   color-scheme: light;
 }
 
@@ -42,10 +59,11 @@
 
 body {
   margin: 0;
-  background: linear-gradient(var(--bg-deep), var(--bg) 22rem) no-repeat, var(--bg);
+  background: var(--bg);
   color: var(--ink);
   font-family: var(--font);
-  line-height: 1.55;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Every page has one content width, --page, and the header and footer
@@ -105,19 +123,21 @@ h3,
 h4 {
   font-family: var(--font-display);
   line-height: 1.15;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
+/* a large title, as at the top of an iOS screen */
 h1 {
-  font-size: clamp(2.1rem, 6vw, 3.4rem);
-  font-weight: 800;
+  font-size: clamp(2.1rem, 6vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
   margin: 0.2rem 0 0.6rem;
 }
 
 h2 {
-  font-size: 1.45rem;
-  font-weight: 800;
-  margin: 2.2rem 0 0.9rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 2rem 0 0.8rem;
 }
 
 /* The site header scrolls away; on a group page its section links stick instead. */
@@ -135,7 +155,7 @@ h2 {
   align-items: center;
   gap: 0.45rem;
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 700;
   font-size: 1.25rem;
   color: var(--ink);
   text-decoration: none;
@@ -165,7 +185,7 @@ h2 {
 }
 
 .top nav a:hover {
-  background: var(--accent-soft);
+  background: var(--fill);
 }
 
 /* the one action in the header, so it's the one filled button */
@@ -173,7 +193,7 @@ h2 {
   margin-left: 0.3rem;
   background: var(--accent-strong);
   color: #fff;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .top nav a.top__cta:hover {
@@ -182,11 +202,9 @@ h2 {
 
 .eyebrow {
   margin: 0;
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--accent-ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .card {
@@ -194,7 +212,7 @@ h2 {
   border: 0;
   border-radius: var(--radius);
   padding: var(--pad);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   --pad: 1.5rem;
 }
 
@@ -208,15 +226,13 @@ h2 {
   margin-top: 0;
 }
 
-/* A card's action, as on the invite: the full width of the card, on a tint
-   of its own under a hairline, its fields white on the tint. It closes the
-   card, so it takes the card's own inset back. */
+/* A card's action, as on the invite: the full width of the card under a
+   hairline. It closes the card, so it takes the card's own inset back. */
 .card__actions {
   margin: 1.25rem calc(-1 * var(--pad)) calc(-1 * var(--pad));
   padding: 1.25rem var(--pad) var(--pad);
   border-top: 1px solid var(--line);
   border-radius: 0 0 var(--radius) var(--radius);
-  background: var(--tint);
 }
 
 .start {
@@ -239,13 +255,14 @@ h2 {
 
 label span {
   display: block;
-  margin-bottom: 0.4rem;
-  font-size: 0.95rem;
-  font-weight: 700;
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
-/* Fields as on the invite: white, a soft line, rounded to match the
-   buttons, and an accent ring while you're in one. */
+/* Fields as iOS fills them: grey, no outline, rounded, turning white with
+   a blue ring while you're in one. */
 input,
 select,
 textarea {
@@ -253,9 +270,9 @@ textarea {
   min-height: 3rem;
   font: inherit;
   padding: 0.65rem 1rem;
-  border: 1.5px solid var(--line);
-  border-radius: 14px;
-  background: #fff;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  background: var(--fill);
   color: var(--ink);
   transition:
     border-color 0.15s,
@@ -268,17 +285,12 @@ textarea::placeholder {
   opacity: 0.75;
 }
 
-input:hover,
-select:hover,
-textarea:hover {
-  border-color: var(--line-strong);
-}
-
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
   outline: none;
   border-color: var(--accent);
+  background: #fff;
   box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
@@ -298,50 +310,31 @@ input[type="radio"] {
   font-weight: 600;
   padding: 0.6rem 1.1rem;
   border-radius: 999px;
-  border: 1px solid var(--line);
-  background: #fff;
-  color: var(--ink);
+  border: 0;
+  background: var(--fill);
+  color: var(--accent-ink);
   text-decoration: none;
   cursor: pointer;
-  transition: transform 0.12s, box-shadow 0.15s, background 0.15s;
+  transition: transform 0.12s, background 0.15s;
 }
 
 .btn:hover {
-  border-color: var(--line-strong);
-  box-shadow: 0 8px 18px -12px rgb(13 43 54 / 55%);
+  background: var(--fill-strong);
 }
 
 .btn:active {
   transform: scale(0.97);
 }
 
-/* The invite's Join button, for every main action: a lit teal gradient
-   (white text is 4.5:1 or better on both its stops) that lifts a little
-   under the pointer. */
+/* The one main action: a flat blue capsule (white on it is 4.7:1). */
 .btn--primary {
   border: 0;
-  background: linear-gradient(180deg, #12809b, #0a6680);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 22%),
-    0 1px 2px rgb(10 102 128 / 30%),
-    0 10px 24px -10px rgb(10 102 128 / 70%);
+  background: var(--accent-strong);
   color: #fff;
 }
 
 .btn--primary:hover {
-  background: linear-gradient(180deg, #0f7a94, #095f78);
-  transform: translateY(-1px);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 22%),
-    0 2px 4px rgb(10 102 128 / 30%),
-    0 14px 28px -10px rgb(10 102 128 / 75%);
-}
-
-.btn--primary:active {
-  transform: translateY(0) scale(0.985);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 15%),
-    0 1px 2px rgb(10 102 128 / 30%);
+  background: #0062c4;
 }
 
 /* A form's own button is as tall and as rounded as its fields, so the two
@@ -349,15 +342,13 @@ input[type="radio"] {
 .stack > .btn,
 .stack > button.btn {
   min-height: 3.25rem;
-  border-radius: 16px;
   font-size: 1.02rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* A button beside a field (Copy, Find, Rename) stands as tall as it. */
 :is(.share__row, .finder__row, .settings__row) > .btn {
   min-height: 3rem;
-  border-radius: 14px;
 }
 
 .btn:focus-visible,
@@ -377,15 +368,14 @@ input[type="radio"] {
 .fine,
 .empty,
 .members,
-.area,
-.you {
+.area {
   color: var(--muted);
   font-size: 0.9rem;
 }
 
 .notice {
   padding: 0.7rem 1rem;
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--accent-soft);
 }
 
@@ -406,14 +396,13 @@ input[type="radio"] {
   padding: 1rem;
   border-radius: var(--radius);
   background: var(--card);
-  border: 1px solid var(--line);
-  border-top: 4px solid var(--kind);
+  box-shadow: var(--shadow-sm);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .spot:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px -22px rgb(13 43 54 / 60%);
+  box-shadow: var(--shadow-md);
 }
 
 .spot h3,
@@ -446,87 +435,334 @@ input[type="radio"] {
   --kind: var(--outdoors);
 }
 
-.tag {
-  align-self: flex-start;
-  justify-self: start;
-  padding: 0.1rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: color-mix(in srgb, var(--kind) 72%, black);
-  background: color-mix(in srgb, var(--kind) 12%, white);
+.spot--coffee {
+  --kind: var(--coffee);
 }
 
+.spot--drinks {
+  --kind: var(--drinks);
+}
+
+.spot--culture {
+  --kind: var(--culture);
+}
+
+/* A place's kind: its system colour, in its glyph and words, on a wash of
+   it. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  align-self: flex-start;
+  justify-self: start;
+  padding: 0.12rem 0.55rem 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--kind);
+  background: color-mix(in srgb, var(--kind) 10%, white);
+}
+
+/* A kind's glyph (src/lib/kind-icons.ts): sized to the words beside it
+   and in their colour, so it changes with them (a chip that's on). */
+.kind-icon {
+  flex: none;
+  width: 1.2em;
+  height: 1.2em;
+}
+
+/* The invite panel (src/pages/g/[link].astro): a heading, the link as one
+   button that copies it, Share… where there's a share sheet, the private
+   channels as their apps' icons. */
 .share {
-  max-width: 34rem;
+  display: grid;
+  gap: 0.9rem;
 }
 
 .share--new {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-soft);
+  box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-md);
 }
 
-.share label {
-  display: block;
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-bottom: 0.4rem;
+.share__title {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
 }
 
 .share__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  display: grid;
+  gap: 0.9rem;
 }
 
-.share__row input {
-  flex: 1 1 12rem;
+/* The link: a field to select it in, without a script; with one, the
+   field gives way to the copy button. */
+.share__link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
   min-width: 0;
+  padding: 0.55rem 0.95rem 0.55rem 0.55rem;
+  border: 1.5px solid transparent;
+  border-radius: 16px;
+  background: var(--fill);
+}
+
+.share__link:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.share__link input {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 0.92rem;
+  text-overflow: ellipsis;
+  box-shadow: none;
+  outline: none;
+}
+
+.share__copy {
+  display: none;
+}
+
+.can-copy .share__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.can-copy .share__link > :not(.share__copy) {
+  display: none;
+}
+
+/* The whole row is the button: what it does on top, the link under it. */
+.can-copy .share__copy {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  padding: 0.55rem 0.95rem 0.55rem 0.55rem;
+  border: 1.5px solid transparent;
+  border-radius: 16px;
+  background: var(--fill);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
+}
+
+.share__copy:hover {
+  background: var(--fill-strong);
+}
+
+.share__copy:active {
+  transform: scale(0.985);
+}
+
+.share__copy:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft), inset 0 0 0 1.5px var(--accent);
+}
+
+.share__glyph {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--accent-ink);
+  box-shadow: var(--shadow-sm);
+  transition: background 0.2s, color 0.2s;
+}
+
+.share__glyph svg {
+  grid-area: 1 / 1;
+}
+
+.share__words {
+  flex: 1;
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.share__do {
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+
+.share__url {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share__dup {
+  flex: none;
+  color: var(--accent-ink);
+  transition: opacity 0.2s;
+}
+
+.share__tick {
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.2s, transform 0.25s cubic-bezier(0.3, 1.5, 0.6, 1);
+}
+
+.share__chain {
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+/* Copied: a green tick where the link was, for a moment. */
+.share__copy.is-copied {
+  background: color-mix(in srgb, #34c759 14%, white);
+}
+
+.is-copied .share__glyph {
+  background: #34c759;
+  color: #fff;
+}
+
+.is-copied .share__chain {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.is-copied .share__tick {
+  opacity: 1;
+  transform: none;
+}
+
+.is-copied .share__do {
+  color: #1f8a3b;
+}
+
+.is-copied .share__dup {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share__copy,
+  .share__glyph,
+  .share__chain,
+  .share__tick,
+  .share__dup {
+    transition: none;
+  }
 }
 
 /* Only where the browser has a system share sheet (set by the page script). */
 .share__native {
   display: none;
+  width: 100%;
 }
 
 .can-share .share__native {
   display: inline-flex;
-}
-
-.share__by,
-.share__qr {
-  flex-basis: 100%;
-  margin: 0;
+  justify-content: center;
 }
 
 .share__by {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.share__by .chip {
+.share__app {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.2rem 0.5rem;
+  border-radius: 14px;
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 600;
   text-decoration: none;
 }
 
-.share__qr summary {
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
+.share__app:hover {
+  background: var(--tint);
 }
 
-.share__qr-code {
-  width: 10rem;
-  margin: 0.6rem 0 0.3rem;
+/* Four of a kind: the same circle, each in its app's colour, its mark in
+   white. */
+.share__icon {
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  background: var(--app);
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 8%), 0 1px 3px rgb(0 0 0 / 10%);
+  transition: transform 0.15s;
 }
 
-.share__qr-code svg {
-  display: block;
-  width: 100%;
-  height: auto;
+.share__icon svg {
+  width: var(--art, 62%);
+  height: var(--art, 62%);
+}
+
+.share__app:hover .share__icon {
+  transform: translateY(-2px);
+}
+
+/* (Messages and Mail: lit from above, as the phone's own apps are) */
+.share__app--sms {
+  --app: linear-gradient(#65f57f, #0cbd2a);
+  --art: 70%;
+}
+
+.share__app--whatsapp {
+  --app: #25d366;
+  --art: 56%;
+}
+
+/* (the plane sits in the circle where Telegram's mark puts it) */
+.share__app--telegram {
+  --app: #26a5e4;
+  --art: 100%;
+}
+
+.share__app--email {
+  --app: linear-gradient(#1cd0fb, #1b6ef0);
+}
+
+/* (on the narrowest phones, a little smaller, so the names keep apart) */
+@media (max-width: 22rem) {
+  .share__by {
+    gap: 0.2rem;
+  }
+
+  .share__app {
+    font-size: 0.7rem;
+  }
+
+  .share__icon {
+    width: 2.9rem;
+    height: 2.9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share__icon {
+    transition: none;
+  }
 }
 
 .join {
@@ -534,80 +770,33 @@ input[type="radio"] {
   margin-top: 1.25rem;
 }
 
-.picks {
-  display: grid;
-  gap: 0.6rem;
-  padding: 0;
-  list-style: none;
-}
-
-.pick {
-  --kind: var(--food);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.9rem 1rem;
-  border-radius: var(--radius);
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-left: 5px solid var(--kind);
-  animation: rise 0.3s ease-out backwards;
-}
-
-/* .pick sets the food colour above, so the other kinds say theirs again */
-.pick.spot--fun {
-  --kind: var(--fun);
-}
-
-.pick.spot--outdoors {
-  --kind: var(--outdoors);
-}
-
-.pick--top {
-  box-shadow: 0 0 0 3px var(--accent-soft);
-}
-
-.pick__main {
-  flex: 1;
-  min-width: 0;
-}
-
-.pick h3 {
-  margin: 0.2rem 0 0;
-  font-size: 1.1rem;
-}
-
-.pick p {
-  margin: 0.1rem 0 0;
-}
-
 .note {
   font-style: italic;
 }
 
-.keen-who {
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
+/* Keen, as the App Store's GET: a capsule on a wash of blue, filled
+   when it's yours. */
 .keen {
-  display: grid;
-  justify-items: center;
-  min-width: 5.2rem;
-  padding: 0.5rem 0.7rem;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.4rem 0.8rem;
   font: inherit;
-  font-size: 0.8rem;
-  font-weight: 700;
-  border-radius: 14px;
-  border: 2px solid var(--line);
-  background: #fff;
-  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 999px;
+  border: 0;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
   cursor: pointer;
-  transition: transform 0.12s, background 0.15s, border-color 0.15s;
+  transition: transform 0.12s, background 0.15s;
 }
 
 .keen__count {
-  font-size: 1.4rem;
+  font-family: var(--font-rounded);
+  font-size: 1rem;
+  font-weight: 700;
   line-height: 1;
 }
 
@@ -616,13 +805,12 @@ input[type="radio"] {
 }
 
 .keen:hover {
-  border-color: var(--line-strong);
+  background: color-mix(in srgb, var(--accent) 18%, white);
 }
 
 .keen--on,
 .keen--on:hover {
   background: var(--accent-strong);
-  border-color: var(--accent-strong);
   color: #fff;
 }
 
@@ -635,6 +823,60 @@ input[type="radio"] {
 
 .grid-form .wide {
   grid-column: 1 / -1;
+}
+
+/* A place's photo in the Share form: the one found for it, or the one you
+   chose, beside the button to choose one. */
+.photo-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.photo-pick__found {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+.photo-pick__found img {
+  display: block;
+  width: 8rem;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: 12px;
+  background: var(--fill);
+}
+
+.photo-pick__found figcaption {
+  max-width: 8rem;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.photo-pick__own {
+  flex: 1 1 14rem;
+}
+
+input[type="file"] {
+  cursor: pointer;
+  color: var(--muted);
+}
+
+input[type="file"]::file-selector-button {
+  margin-right: 0.75rem;
+  padding: 0.3rem 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .readme {
@@ -712,26 +954,12 @@ input[type="radio"] {
   text-decoration: underline;
 }
 
-.photo__none {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  font-size: 2.4rem;
-  font-weight: 800;
-  color: var(--kind);
-}
-
 .photo--small {
   flex: none;
   width: 5.5rem;
   margin: 0;
   border-radius: 12px;
   aspect-ratio: 1;
-}
-
-.photo--small .photo__none {
-  font-size: 1.6rem;
 }
 
 .photo--fun {
@@ -742,8 +970,112 @@ input[type="radio"] {
   --kind: var(--outdoors);
 }
 
+.photo--coffee {
+  --kind: var(--coffee);
+}
+
+.photo--drinks {
+  --kind: var(--drinks);
+}
+
+.photo--culture {
+  --kind: var(--culture);
+}
+
 .photo--food {
   --kind: var(--food);
+}
+
+/* A place with no photo shows its kind's picture (src/lib/kind-art.ts), or,
+   until the kind has one, its icon on the kind's colour, with a large
+   faint copy cut off at the corner. Either way the kind's name sits on it,
+   so nobody takes it for a photo of the place. */
+.photo--kind {
+  display: grid;
+  place-items: center;
+  color: var(--kind);
+  background: radial-gradient(120% 90% at 30% 20%, color-mix(in srgb, var(--kind) 9%, white), color-mix(in srgb, var(--kind) 22%, white));
+}
+
+.photo--art {
+  background: color-mix(in srgb, var(--kind) 14%, white);
+}
+
+.photo__icon .kind-icon {
+  display: block;
+  width: 3.4rem;
+  height: 3.4rem;
+}
+
+.photo__ghost {
+  position: absolute;
+  right: -1.4rem;
+  bottom: -1.8rem;
+  opacity: 0.09;
+  transform: rotate(-12deg);
+}
+
+.photo__ghost .kind-icon {
+  display: block;
+  width: 9rem;
+  height: 9rem;
+}
+
+.photo--small .photo__icon .kind-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.photo--small .photo__ghost {
+  display: none;
+}
+
+.photo--kind figcaption {
+  left: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border-radius: 0;
+}
+
+.photo__kind {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--kind) 70%, black);
+  opacity: 0.8;
+}
+
+.photo__badge {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 92%);
+  color: var(--kind);
+}
+
+.photo__badge .kind-icon {
+  width: 0.7rem;
+  height: 0.7rem;
+}
+
+/* (on a picture, the name and credit sit on a shade to be read) */
+.photo--art figcaption {
+  background: linear-gradient(transparent, rgb(0 0 0 / 45%));
+}
+
+.photo--art .photo__kind {
+  color: #fff;
+  opacity: 1;
 }
 
 @media (max-width: 480px) {
@@ -758,49 +1090,219 @@ input[type="radio"] {
 
 /* ---- Explore + map --------------------------------------------------------- */
 
+/* Explore as one card, as the group's panel holds its name, people and
+   invite: the title, the search, and the six kinds. On a wide screen the
+   middle column then starts the way the left one does. */
 .explore-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  margin-top: 1.6rem;
+  padding: 1rem 1rem 0.8rem;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+
+.explore-head__top {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.25rem 1rem;
-  margin-top: 2.2rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 1.75rem;
 }
 
 .explore-head h2 {
   margin: 0;
+  font-size: 1.35rem;
 }
 
-.explore-head .fine {
-  flex: 1 1 18rem;
+.show-all {
+  padding: 0.15rem 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.show-all[hidden] {
+  display: none;
+}
+
+/* The kinds as Maps' "Find Nearby" buttons: a round tint of each kind's
+   colour with its glyph, the name under it. The chosen one fills with its
+   colour and the rest step back. Six across, always one row. */
+.filters {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  padding-top: 0.15rem;
+}
+
+.filters[hidden] {
+  display: none;
+}
+
+.filters .chip {
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.15rem 0 0.1rem;
+  border-radius: 12px;
+  background: none;
+  color: var(--ink);
+  font-size: 0.74rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.filters .chip:hover,
+.filters .chip--on {
+  background: none;
+  color: var(--ink);
+}
+
+.filters .chip--on {
+  font-weight: 600;
+}
+
+.filters .chip .kind-icon {
+  width: 1.3rem;
+  height: 1.3rem;
   margin: 0;
 }
 
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+.chip--food { --kind: var(--food); }
+.chip--coffee { --kind: var(--coffee); }
+.chip--drinks { --kind: var(--drinks); }
+.chip--outdoors { --kind: var(--outdoors); }
+.chip--culture { --kind: var(--culture); }
+.chip--fun { --kind: var(--fun); }
+
+.chip__dot {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--kind) 11%, white);
+  color: var(--kind);
+  transition: background 0.15s, color 0.15s, transform 0.12s;
 }
 
-/* Search by describing it: a wide prompt box, answered with cards. */
+.filters .chip:hover .chip__dot {
+  background: color-mix(in srgb, var(--kind) 18%, white);
+}
+
+.filters .chip:active .chip__dot {
+  transform: scale(0.94);
+}
+
+.filters .chip--on .chip__dot,
+.filters .chip--on:hover .chip__dot {
+  background: var(--kind);
+  color: #fff;
+}
+
+/* (one chosen: the others step back, still there to tap) */
+.filters:not([data-sel="all"]) .chip:not(.chip--on) {
+  opacity: 0.5;
+}
+
+.filters:not([data-sel="all"]) .chip:not(.chip--on):hover {
+  opacity: 0.8;
+}
+
+/* (on a phone the six run nearly to the card's edges, for room between
+   their names) */
+@media (max-width: 1179px) {
+  .filters {
+    margin-inline: -0.65rem;
+  }
+
+  .filters .chip {
+    font-size: 0.7rem;
+    letter-spacing: -0.005em;
+  }
+}
+
+@media (max-width: 359px) {
+  .explore-head {
+    padding-inline: 0.75rem;
+  }
+
+  .filters {
+    margin-inline: -0.6rem;
+  }
+
+  .chip__dot {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+
+  .filters .chip .kind-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+
+  .filters .chip {
+    font-size: 0.64rem;
+    letter-spacing: -0.015em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip__dot {
+    transition: none;
+  }
+}
+
+/* a kind nobody has shared yet */
+.filter-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Search by describing it: a grey field with the glass in it and Find at
+   its end, answered with cards. (16px type, so a phone doesn't zoom in) */
 .ask {
-  flex: 1 0 100%;
-  display: flex;
-  gap: 0.5rem;
-  margin: 0.6rem 0 0.4rem;
+  position: relative;
+  margin: 0;
+}
+
+.ask__glass {
+  position: absolute;
+  top: 50%;
+  left: 0.8rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--muted);
+  pointer-events: none;
+  translate: 0 -50%;
 }
 
 .ask input {
-  flex: 1;
-  min-width: 0;
-  font-size: 1.05rem;
-  padding: 0.85rem 1.1rem;
-  border-radius: 999px;
-  box-shadow: 0 10px 28px -22px rgb(13 43 54 / 60%);
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.45rem 4.7rem 0.45rem 2.4rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  text-overflow: ellipsis;
 }
 
 .ask .btn {
-  border-radius: 999px;
-  padding-inline: 1.4rem;
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  bottom: 0.35rem;
+  min-height: 0;
+  padding: 0 0.95rem;
+  border-radius: 9px;
+  font-size: 0.9rem;
 }
 
 .ask-meta {
@@ -849,37 +1351,59 @@ input[type="radio"] {
 }
 
 .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
   font: inherit;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 500;
   padding: 0.35rem 0.9rem;
   border-radius: 999px;
-  border: 1px solid var(--line);
-  background: #fff;
+  border: 0;
+  background: var(--fill);
   color: var(--ink);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
-.chip--on {
+.chip:hover {
+  background: var(--fill-strong);
+}
+
+/* (a glyph's side wants a little less room than a letter's) */
+.chip .kind-icon {
+  margin-left: -0.15rem;
+}
+
+.chip--on,
+.chip--on:hover {
   background: var(--ink);
-  border-color: var(--ink);
   color: #fff;
 }
 
-.explore-grid {
+/* Explore's title and search across the top, then the cards beside the
+   map. Title, search and cards are one box (.explore-scroll), which only
+   on a phone's Explore tab is a box of its own ("Explore on a phone"). */
+.explore-wrap {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 1.25rem;
+  gap: 1rem 1.25rem;
   align-items: start;
-  margin-top: 1rem;
+}
+
+.explore-scroll {
+  display: contents;
+}
+
+.explore-head {
+  grid-column: 1 / -1;
 }
 
 .spots--explore {
   grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
 }
 
-.spots--explore .spot,
+.spots--explore .spot[data-place],
 .pick[data-place] {
   cursor: pointer;
 }
@@ -920,16 +1444,59 @@ input[type="radio"] {
   background: transparent;
 }
 
-.spot--active {
-  outline: 3px solid var(--kind, var(--accent));
-  outline-offset: 2px;
-  transform: translateY(-2px);
-  box-shadow: 0 18px 36px -22px rgb(13 43 54 / 65%);
+/* The place the map has flown to: its card takes a faint wash of its kind's
+   colour and a fine ring of it, both inside the card (the ring over the
+   photo too), so the scrolling column doesn't cut it off and nothing
+   moves. On Our list its row takes the wash and its rank the colour. No
+   transition: a live refresh puts the mark back on fresh cards, and it
+   shouldn't flash in again. */
+.spot.spot--active {
+  background: color-mix(in srgb, var(--kind) 7%, var(--card));
+}
+
+.spot.spot--active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--kind) 65%, transparent);
+  pointer-events: none;
+}
+
+/* (its tag and button go white, to stand off the wash) */
+.spot.spot--active .tag {
+  background: var(--card);
+}
+
+.spot.spot--active .btn {
+  background: rgb(255 255 255 / 80%);
+}
+
+.spot.spot--active .btn:hover {
+  background: var(--card);
+}
+
+.pick.spot--active {
+  background: color-mix(in srgb, var(--kind) 8%, var(--card));
+}
+
+.pick.spot--active::before {
+  color: var(--kind);
+  font-weight: 700;
+}
+
+/* (the hairlines above and below it step aside: the wash is its edge) */
+.pick.spot--active::after,
+.pick.spot--active + .pick::after {
+  border-top-color: transparent;
 }
 
 .map-wrap {
   position: sticky;
   top: calc(var(--nav-h) + 0.75rem);
+  grid-column: 2;
+  grid-row: 2;
 }
 
 #map {
@@ -996,7 +1563,7 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   scale: 1.35;
 }
 
-/* While its popup is open, the popup is the place's chip. */
+/* While its callout is open, the callout is the place's chip. */
 .map-mark.is-open .map-chip {
   visibility: hidden;
 }
@@ -1019,18 +1586,31 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
     0 4px 10px rgb(13 43 54 / 16%);
 }
 
-/* A place's popup: its chip grown into a small card, the number (or disc)
-   in its colour, its name, its kind and suburb. */
+/* A place's card (src/scripts/map.ts): its chip grown into one. Its photo
+   (or its kind's picture) as a small rounded square with the kind's icon in
+   its corner, as on Our list; its name; its kind and suburb; and for a place
+   on the list, the chip's number disc. Where the map is big it's a callout
+   on the place's dot, in its chip's place, with a soft-tipped tail; card
+   and tail cast one shadow, so the shadow is a filter on the pair. */
 .maplibregl-popup {
   z-index: 4;
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 10%)) drop-shadow(0 10px 18px rgb(13 43 54 / 18%));
 }
 
 .maplibregl-popup-content {
-  padding: 0.5rem 0.8rem 0.55rem 0.5rem;
-  border-radius: 14px;
-  box-shadow:
-    0 1px 2px rgb(13 43 54 / 14%),
-    0 12px 28px -10px rgb(13 43 54 / 40%);
+  padding: 0;
+  border-radius: var(--radius);
+  background: #fff;
+  box-shadow: none;
+}
+
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  width: 22px;
+  height: 9px;
+  margin-top: -1px;
+  border: 0;
+  background: #fff;
+  clip-path: path("M0 0H22C16.5 0 13.6 8.4 11 8.4S5.5 0 0 0Z");
 }
 
 :where(.map-pop) {
@@ -1038,50 +1618,240 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
 }
 
 .map-pop {
-  display: grid;
-  gap: 0.25rem;
+  display: flex;
+  align-items: center;
   color: var(--ink);
 }
 
-.map-pop__head {
+.map-pop__main {
   display: flex;
+  flex: 1;
   align-items: center;
-  gap: 0.45rem;
+  gap: 12px;
+  width: 17rem;
+  min-width: 0;
+  padding: 8px 10px 8px 8px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.map-pop__head i {
-  display: grid;
+.map-pop__main:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: -3px;
+}
+
+.map-pop__photo {
+  position: relative;
   flex: none;
+  width: 60px;
+  height: 60px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--kind) 14%, white);
+}
+
+.map-pop__photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.map-pop__badge {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  display: grid;
   place-items: center;
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: var(--kind);
-  color: #fff;
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 800;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+  color: var(--kind);
 }
 
-.map-pop__head i:empty {
-  width: 14px;
-  height: 14px;
-  margin: 3px;
+.map-pop__badge .kind-icon {
+  width: 12px;
+  height: 12px;
 }
 
-.map-pop strong {
-  font-size: 0.92rem;
-  line-height: 1.25;
+/* (a kind without a picture: its icon on its colour, larger, in the middle) */
+.map-pop__photo:not(:has(img)) .map-pop__badge {
+  inset: 0;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.map-pop__photo:not(:has(img)) .map-pop__badge .kind-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.map-pop__text {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.map-pop__name {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.22;
+  letter-spacing: -0.012em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .map-pop__meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-  padding-left: calc(20px + 0.45rem);
+  overflow: hidden;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.map-pop__kind {
+  color: var(--kind);
+  font-weight: 600;
+}
+
+.map-pop__status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* the chip's number disc */
+.map-pop__status i {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--kind);
+  color: #fff;
+  font:
+    700 11px/1 var(--font-rounded);
+}
+
+.map-pop__go {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  color: #c7c7cc;
+}
+
+/* On a phone's short map the card sits inside the map's foot instead, 8px
+   in from its edges and clear of the tab bar (--map-clear, from the
+   script), with the one thing to do there beside it: your keen, or Add. */
+.map-card {
+  position: absolute;
+  right: 8px;
+  bottom: calc(8px + var(--map-clear, 0px));
+  left: 8px;
+  z-index: 3;
+  gap: 4px;
+  padding-right: 10px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 10%),
+    0 8px 24px -6px rgb(13 43 54 / 30%);
+}
+
+.map-card .map-pop__main {
+  width: auto;
+  gap: 11px;
+  padding-right: 4px;
+  border-radius: 14px;
+}
+
+.map-card .map-pop__photo {
+  width: 58px;
+  height: 58px;
+  border-radius: 8px;
+}
+
+.map-card .map-pop__status {
+  margin-top: 2px;
+  font-size: 12px;
+}
+
+.map-pop__act {
+  flex: none;
+  margin: 0;
+}
+
+.map-pop__act .btn {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .map-card.is-rising {
+    animation: map-card-rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
+@keyframes map-card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* The credit's "i" steps up out of the card's way. */
+.map-frame.has-card .fold-credit {
+  bottom: calc(var(--map-card, 0px) + 8px + var(--map-clear, 0px));
+}
+
+/* Above its card, the place's chip stays on its dot, filled with its
+   kind's colour, its number (or disc) white: the card's twin on the map. */
+.map-mark.is-picked .map-chip {
+  display: flex;
+  padding-right: 10px;
+  background: var(--kind, var(--food));
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 18%),
+    0 6px 14px -4px rgb(13 43 54 / 40%);
+}
+
+.map-mark.is-picked .map-chip::after {
+  background: var(--kind, var(--food));
+}
+
+.map-mark.is-picked .map-chip i {
+  background: #fff;
+  color: var(--kind, var(--food));
+}
+
+.map-mark.is-picked .map-chip b {
+  max-width: 13rem;
+  overflow: hidden;
+  color: #fff;
+  text-overflow: ellipsis;
+}
+
+#map .map-mark.is-picked {
+  z-index: 4;
 }
 
 /* ---- sharing a place --------------------------------------------------------- */
@@ -1139,12 +1909,18 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
 }
 
 @media (max-width: 860px) {
-  .explore-grid {
-    grid-template-columns: 1fr;
+  .explore-wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* (the title and search, the map, then the cards) */
+  #explore {
+    order: 1;
   }
 
   .map-wrap {
-    order: -1;
+    grid-column: auto;
+    grid-row: auto;
     position: sticky;
     top: var(--nav-h);
     z-index: 4;
@@ -1157,6 +1933,123 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   #map {
     height: 30vh;
     min-height: 13rem;
+  }
+}
+
+/* ---- Explore on a phone ------------------------------------------------------ */
+
+/* With the script (the tabs work), Explore's tab on a phone or a narrow
+   tablet is the screen, and the page itself doesn't scroll: the site's bar,
+   the map under it, and from the map's foot to the tab bar a box of its own
+   (.explore-scroll) where Explore's title, search and kinds scroll away
+   first, then the cards. What scrolls is cut off at the box's top edge, so
+   nothing passes behind the map. The group's header (its name, people and
+   invite) stays on Our list, where it doesn't take the cards' room. (A
+   phone on its side is too short for a box under the map: there the page
+   scrolls, as it does without the script.) */
+@media (max-width: 860px) and (min-height: 30rem) {
+  body:has(.group-page.is-tabbed[data-tab="explore"]) {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body:has(.group-page.is-tabbed[data-tab="explore"]) > .top {
+    flex: none;
+    width: 100%;
+  }
+
+  body:has(.group-page.is-tabbed[data-tab="explore"]) > main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  body:has(.group-page.is-tabbed[data-tab="explore"]) > .foot,
+  .group-page.is-tabbed[data-tab="explore"] .group-head,
+  .group-page.is-tabbed[data-tab="explore"] > .group-tools {
+    display: none;
+  }
+
+  .group-page.is-tabbed[data-tab="explore"] {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* (on a tablet the tabs are a segmented control above the map) */
+  .group-page.is-tabbed[data-tab="explore"] .section-nav {
+    flex: none;
+    margin: 0 0 0.75rem;
+  }
+
+  .group-page.is-tabbed[data-tab="explore"] .explore-wrap {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 0;
+  }
+
+  .group-page.is-tabbed[data-tab="explore"] .map-wrap {
+    position: static;
+    flex: none;
+    order: -1;
+    padding: 0 0 0.15rem;
+    background: none;
+    box-shadow: none;
+  }
+
+  /* The box runs to the screen's edges, so a card's shadow isn't cut at
+     its sides, and fades what scrolls out at its top edge rather than
+     slicing it square (its first 0.6rem is that fade, empty at rest). */
+  .group-page.is-tabbed[data-tab="explore"] .explore-scroll {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-right: calc(-1 * max(1rem, env(safe-area-inset-right)));
+    margin-left: calc(-1 * max(1rem, env(safe-area-inset-left)));
+    padding: 0.6rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    mask-image: linear-gradient(transparent, #000 0.6rem);
+  }
+
+  .group-page.is-tabbed[data-tab="explore"] .explore-head {
+    margin-top: 0;
+  }
+
+  .group-page.is-tabbed[data-tab="explore"] #explore {
+    margin-top: 1rem;
+  }
+
+  /* (a card brought into view lands just under the fade) */
+  .group-page.is-tabbed[data-tab="explore"] .explore-scroll .spot {
+    scroll-margin-top: 0.6rem;
+  }
+}
+
+/* On a phone the tab bar is the screen's foot here, not floating over it,
+   so the box ends exactly on it. */
+@media (max-width: 600px) and (min-height: 30rem) {
+  body:has(.group-page.is-tabbed[data-tab="explore"]) {
+    padding-bottom: 0;
+  }
+
+  .group-page.is-tabbed[data-tab="explore"] .section-nav.tabs {
+    position: static;
+    order: 1;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-right: calc(-1 * max(1rem, env(safe-area-inset-right)));
+    margin-left: calc(-1 * max(1rem, env(safe-area-inset-left)));
   }
 }
 
@@ -1225,13 +2118,9 @@ html:not(.in-app) .no-passkey__app {
   padding: 0.05rem 0.5rem;
   border-radius: 999px;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--accent-ink);
   background: var(--accent-soft);
-}
-
-.you {
-  margin: 1.2rem 0 0;
 }
 
 .settings {
@@ -1972,7 +2861,8 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   pointer-events: none;
 }
 
-.hero-map svg {
+/* (the drawing itself, not the kind glyphs on its cards) */
+.hero-map__frame > svg {
   display: block;
   width: 100%;
   height: 100%;
@@ -2029,8 +2919,19 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 /* On a small frame (the home page's map over its form on a phone) a
-   place's card is a size smaller, so it doesn't cover half the map. */
+   place's card is a size smaller, so it doesn't cover half the map, and a
+   long name in a chip is cut short rather than run out of the frame. */
 @container (max-width: 300px) {
+  .hero-map .hero-map__chip {
+    max-width: calc(100cqw - 12px);
+  }
+
+  .hero-map .hero-map__chip b {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .hero-map .hero-map__card {
     width: 8.75rem;
     padding: 0.45rem 0.6rem;
@@ -2197,6 +3098,18 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 
 .hero-map__card.spot--outdoors {
   --kind: var(--outdoors);
+}
+
+.hero-map__card.spot--coffee {
+  --kind: var(--coffee);
+}
+
+.hero-map__card.spot--drinks {
+  --kind: var(--drinks);
+}
+
+.hero-map__card.spot--culture {
+  --kind: var(--culture);
 }
 
 /* where a card opens from its pin, so it stays inside the frame */
@@ -2375,14 +3288,66 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   min-width: 0;
 }
 
+/* (the photo across the group's panel: wide screens only, below) */
+.group-head__photo {
+  display: none;
+}
+
 .group-head h1 {
   margin-bottom: 0.4rem;
   overflow-wrap: anywhere;
 }
 
-.group-head .share {
+/* The invite, folded into its button (a <details>) beside the group's name;
+   opened, the card drops under the button. */
+.invite {
   flex: 0 1 26rem;
-  padding: 1rem 1.1rem;
+  display: grid;
+  justify-items: end;
+  gap: 0.75rem;
+}
+
+.invite > summary {
+  list-style: none;
+}
+
+.invite > summary::-webkit-details-marker {
+  display: none;
+}
+
+.invite__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+}
+
+.invite[open] > .invite__open {
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+.invite .share {
+  justify-self: stretch;
+  padding: 1.15rem 1.2rem 1rem;
+  text-align: left;
+}
+
+/* Beside the name (wider than a phone), the panel opens under its button
+   over the page, rather than pushing the page down. */
+@media (min-width: 601px) {
+  .invite {
+    position: relative;
+  }
+
+  .invite .share {
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    right: 0;
+    z-index: 8;
+    width: min(24rem, calc(100vw - 2rem));
+    box-shadow: var(--shadow-float);
+  }
 }
 
 .members {
@@ -2410,7 +3375,164 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   color: hsl(var(--hue) 45% 28%);
   font-family: var(--font-display);
   font-size: 0.85rem;
-  font-weight: 800;
+  font-weight: 700;
+}
+
+/* Who's in, on the group's panel: a grid of faces, each with its name under
+   it, straight under the group's name. The owner's wears a crown, yours a
+   blue ring and a YOU; past six, five and a grey "+N more" that unfolds
+   them all, the last cell then a grey "less" that folds them again. The
+   faces' list and the fold (a <details>) share the one grid. */
+.who {
+  /* (the gap around a face's ring and badges: the page, or the panel's white) */
+  --ring-gap: var(--bg);
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 3.75rem));
+  gap: 0.7rem 0.2rem;
+  margin-top: 0.9rem;
+}
+
+.who__grid {
+  display: contents;
+}
+
+.who__cell {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+/* (the fold only when there's more than fits: five faces and "+N more") */
+.who__cell--extra,
+.who:not(:has(.who__cell--extra)) .who__toggle {
+  display: none;
+}
+
+.who:has(.who__toggle[open]) .who__cell--extra {
+  display: grid;
+}
+
+.who__toggle {
+  min-width: 0;
+}
+
+.who__toggle > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.who__toggle > summary::-webkit-details-marker {
+  display: none;
+}
+
+.who__toggle > summary:focus-visible {
+  outline: none;
+}
+
+.who__toggle > summary:focus-visible .face--more {
+  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.who__fold,
+.who__unfold {
+  display: contents;
+}
+
+.who__unfold,
+.who__toggle[open] .who__fold {
+  display: none;
+}
+
+.who__toggle[open] .who__unfold {
+  display: contents;
+}
+
+.who__cell .face {
+  position: relative;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0;
+  border: 0;
+  font-size: 1.05rem;
+}
+
+.who__cell .face.is-you {
+  box-shadow: 0 0 0 2px var(--ring-gap), 0 0 0 4px var(--accent);
+}
+
+.face--more {
+  background: var(--fill-strong);
+  color: var(--ink);
+  font-family: var(--font-rounded);
+}
+
+.who__cell .face--more {
+  font-size: 0.9rem;
+}
+
+.face--more svg {
+  display: block;
+}
+
+.who__toggle > summary:hover .face--more {
+  background: rgb(118 118 128 / 28%);
+}
+
+.crown {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--crown);
+  color: var(--crown-ink);
+  box-shadow: 0 0 0 2px var(--ring-gap);
+}
+
+.crown svg {
+  width: 11px;
+  height: 11px;
+}
+
+.who__you {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.45;
+  box-shadow: 0 0 0 2px var(--ring-gap);
+  transform: translateX(-50%);
+}
+
+.who__name {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.who__name.is-owner {
+  font-weight: 600;
+}
+
+.who__name.is-you,
+.who__toggle .who__name {
+  color: var(--accent-ink);
+  font-weight: 600;
 }
 
 .join {
@@ -2418,93 +3540,64 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 /* Section links: plain anchors that stay in reach while the page scrolls. */
+/* The group's parts as a segmented control, stuck under the top as the page
+   scrolls: a grey track, the open one a white segment lifted off it. (On a
+   phone they're a tab bar at the foot instead, below.) */
 .section-nav {
   position: sticky;
-  top: 0;
+  top: 0.5rem;
   z-index: 6;
   display: flex;
-  gap: 0.3rem;
-  min-height: var(--nav-h);
+  gap: 0.1rem;
+  width: fit-content;
+  max-width: 100%;
   align-items: center;
-  margin: 1.25rem -1rem 0;
-  padding: 0.45rem 1rem;
+  margin: 1.25rem 0 0;
+  padding: 0.2rem;
   overflow-x: auto;
   scrollbar-width: none;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, #e4e4ea 88%, transparent);
+  backdrop-filter: blur(16px) saturate(1.6);
 }
 
 .section-nav a {
+  display: inline-flex;
   flex: none;
-  padding: 0.45rem 0.95rem;
-  border-radius: 999px;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 1rem;
+  border-radius: 10px;
   color: var(--ink);
-  font-size: 0.92rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
 }
 
-.section-nav a:hover {
-  background: var(--accent-soft);
-}
-
-.section-nav a[aria-current="true"] {
-  background: var(--ink);
-  color: #fff;
-}
-
-/* Our list beside Explore on a wide screen; above it otherwise. */
-.board {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0 2rem;
-}
-
-.board__list h2,
-.explore-head h2 {
-  margin-top: 1.6rem;
-}
-
-.explore-head {
-  margin-top: 0;
-}
-
-.picks {
-  counter-reset: rank;
-}
-
-.pick {
-  position: relative;
-  counter-increment: rank;
-  box-shadow: var(--shadow-sm);
-}
-
-.pick::before {
-  content: counter(rank);
-  position: absolute;
-  top: -0.5rem;
-  left: -0.5rem;
-  display: grid;
-  place-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  background: var(--ink);
-  color: #fff;
-  font-family: var(--font-display);
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.pick--top::before {
-  background: var(--accent-strong);
-}
-
-/* Held out of rank order (see .reorder): the numbers would mislead. */
-.picks--held > .pick::before {
+.section-nav a svg {
   display: none;
+}
+
+.section-nav a:hover {
+  background: rgb(255 255 255 / 50%);
+}
+
+.section-nav a[aria-current] {
+  background: #fff;
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%), 0 1px 1px rgb(0 0 0 / 4%);
+}
+
+/* Our list as one card, as Explore is: its title and Edit on top, the
+   ranking under them. */
+.list-card {
+  margin-top: 1.6rem;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
 }
 
 .empty {
@@ -2513,45 +3606,2836 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   border-radius: var(--radius);
 }
 
-/* list rows stay compact in the sidebar and on a phone */
-@media (min-width: 1180px), (max-width: 600px) {
-  .board__list .pick {
-    gap: 0.75rem;
-    padding: 0.75rem 0.8rem;
+/* The group's own column (who's in, inviting, the tabs, Our list) is just
+   the top of the page on a phone or a tablet... */
+.group-side {
+  display: contents;
+}
+
+/* ...and on a wide screen the left of three columns, all level at the top:
+   the group's panel with Our list under it, then Explore (its title,
+   filters, search and cards), then the map. The tabs choose what's beside
+   the list: Explore and the map, Share a place, or Settings. */
+@media (min-width: 1180px) {
+  .group-page {
+    display: grid;
+    grid-template-columns: 23.5rem minmax(0, 1fr);
+    gap: 1.5rem 1.75rem;
+    align-items: start;
+    margin-top: 0.75rem;
   }
 
-  .board__list .photo--small {
-    width: 3.75rem;
+  .group-side {
+    display: block;
+    grid-row: 1 / span 2;
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem 1rem;
+    overflow-y: auto;
+    scrollbar-width: thin;
   }
 
-  .board__list .pick h3 {
-    font-size: 1rem;
+  /* the group's panel: its name, who's in, you, and the invite */
+  .group-head.group-head--split {
+    display: grid;
+    justify-content: stretch;
+    align-items: start;
+    gap: 0.9rem;
+    padding: 1.25rem;
+    border-radius: var(--radius);
+    background: var(--card);
+    box-shadow: var(--shadow-sm);
   }
 
-  .board__list .keen {
-    min-width: 4.2rem;
-    padding: 0.4rem 0.5rem;
+  .group-head h1 {
+    margin: 0 0 0.5rem;
+    font-size: 1.85rem;
   }
 
-  .board__list .keen__count {
-    font-size: 1.2rem;
+  /* the home page's Canberra, a strip across the top of the panel */
+  .group-head.group-head--split {
+    overflow: hidden;
+  }
+
+  .group-head .who {
+    --ring-gap: var(--card);
+  }
+
+  .group-head__photo {
+    display: block;
+    order: -1;
+    height: 6.5rem;
+    margin: -1.25rem -1.25rem 0.1rem;
+  }
+
+  .group-head__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 58%;
+  }
+
+  .invite {
+    position: relative;
+    justify-items: stretch;
+  }
+
+  .invite__open {
+    justify-content: center;
+  }
+
+  /* opened, the invite unfolds inside the panel (the column scrolls, so a
+     card floating out of it would be cut off) */
+  .invite .share {
+    position: static;
+    width: auto;
+    box-shadow: none;
+    padding: 0.25rem 0 0;
+  }
+
+  /* the tabs, under the panel: Our list is always here, so no tab for it */
+  .section-nav.tabs {
+    position: static;
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    width: 100%;
+    margin-top: 0.9rem;
+  }
+
+  .section-nav.tabs a {
+    justify-content: center;
+  }
+
+  .section-nav.tabs a[data-tab="list"] {
+    display: none;
+  }
+
+  .list-card {
+    margin-top: 1.25rem;
+  }
+
+  .explore-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 0 1.25rem;
+    align-items: start;
+  }
+
+  .explore-head {
+    margin-top: 0;
+    padding: 1.1rem 1.25rem 0.9rem;
+  }
+
+  .explore-head h2 {
+    font-size: 1.5rem;
+  }
+
+  .explore-head,
+  #explore {
+    grid-column: 1;
+  }
+
+  .map-wrap {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    top: 1rem;
+  }
+
+  #map {
+    height: calc(100vh - 2rem);
+  }
+
+  .group-page > .group-tools {
+    margin-top: 0;
+  }
+
+  /* (without the script every part is there: the tools under Explore) */
+  .group-page:not(.is-tabbed) > .group-tools {
+    grid-column: 2;
+  }
+
+  /* With the script (the tabs work), the page is the screen: each column is
+     its height and scrolls on its own. The group's panel, the tabs, and
+     Explore's title and search stay put; Our list and the cards scroll
+     under them; the map fills its column. */
+  body:has(.group-page.is-tabbed) {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body:has(.group-page.is-tabbed) > .top {
+    width: 100%;
+  }
+
+  body:has(.group-page.is-tabbed) > main {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 0;
+    padding-bottom: 1rem;
+  }
+
+  body:has(.group-page.is-tabbed) > .foot {
+    width: 100%;
+    padding-top: 0.6rem;
+    padding-bottom: calc(0.6rem + env(safe-area-inset-bottom));
+  }
+
+  .group-page.is-tabbed {
+    height: 100%;
+    margin-top: 0;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .group-page.is-tabbed .group-side {
+    display: flex;
+    flex-direction: column;
+    grid-row: 1;
+    position: static;
+    height: 100%;
+    max-height: none;
+    padding-bottom: 0;
+  }
+
+  .group-page.is-tabbed .group-side > * {
+    flex: none;
+  }
+
+  /* Our list's title stays at the top of its card; the rows scroll under
+     it, so what scrolls out of sight goes behind the card's rounded
+     corners. (A short screen with the invite open: then the whole column
+     scrolls.) */
+  .group-page.is-tabbed #list {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 14rem;
+  }
+
+  .group-page.is-tabbed .list-card {
+    display: flex;
+    flex: 0 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .group-page.is-tabbed .list-card > .list-head,
+  .group-page.is-tabbed .list-card > .list-note {
+    flex: none;
+  }
+
+  .group-page.is-tabbed .picks {
+    flex: 0 1 auto;
+    align-content: start;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  .group-page.is-tabbed .explore-wrap {
+    grid-row: 1;
+    height: 100%;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  /* (the cards scroll in a box with the cards' own corners, so one scrolled
+     half out of sight is still rounded) */
+  .group-page.is-tabbed #explore {
+    min-height: 0;
+    height: 100%;
+    padding-bottom: 1rem;
+    border-radius: var(--radius);
+    /* cards fade as they slide under the search, and in at the foot,
+       rather than being cut off square */
+    mask-image: linear-gradient(transparent, #000 0.9rem, #000 calc(100% - 1rem), transparent);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  /* (a box that scrolls can take focus, so a link to #explore, as a search
+     or "Show every place" makes, lands focus on it: there it stays, for
+     the arrow keys to scroll the cards, but without a ring round the
+     column, which nobody tabbed to) */
+  .group-page.is-tabbed #explore:target:focus {
+    outline: none;
+  }
+
+  .group-page.is-tabbed .map-wrap {
+    position: static;
+    height: 100%;
+  }
+
+  .group-page.is-tabbed .map-frame {
+    height: 100%;
+    margin: 0;
+  }
+
+  .group-page.is-tabbed #map {
+    height: 100%;
+    min-height: 0;
+  }
+
+  /* (Share and Settings take Explore's place; with neither open the tools
+     aren't there at all, so they don't lie over Explore) */
+  .group-page.is-tabbed > .group-tools:not(:has(> section:not([hidden]))) {
+    display: none;
+  }
+
+  .group-page.is-tabbed > .group-tools {
+    grid-row: 1;
+    grid-column: 2;
+    height: 100%;
+    border-radius: var(--radius);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  /* the leader, in the narrower column: a size up still, on fewer lines */
+  .group-side .pick--top {
+    grid-template-columns: 1.3rem 4rem minmax(0, 1fr) auto;
+  }
+
+  .group-side .pick--top .photo--small {
+    width: 4rem;
+  }
+
+  .group-side .pick--top h3 {
+    font-size: 1.08rem;
   }
 }
 
-@media (min-width: 1180px) {
-  .board {
-    grid-template-columns: 21rem minmax(0, 1fr);
+/* ---- Our list, a ranking ---------------------------------------------------- */
+
+/* Most keen first, always: each row its rank, photo, name, who's keen, and
+   the keen button. The leader (.pick--top, first with anyone keen) is a
+   size up. */
+/* One inset grouped list, as in Settings or Music's charts: the rows of
+   the list's white card, parted by hairlines that start where the words
+   do. */
+.picks {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  counter-reset: rank;
+}
+
+.pick {
+  --kind: var(--food);
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.3rem 3.25rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--card);
+  counter-increment: rank;
+  animation: rise 0.3s ease-out backwards;
+}
+
+.pick + .pick::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: calc(0.9rem + 1.3rem + 0.75rem);
+  border-top: 1px solid var(--line);
+}
+
+/* .pick sets the food colour above, so the other kinds say theirs again */
+.pick.spot--fun {
+  --kind: var(--fun);
+}
+
+.pick.spot--outdoors {
+  --kind: var(--outdoors);
+}
+
+.pick.spot--coffee {
+  --kind: var(--coffee);
+}
+
+.pick.spot--drinks {
+  --kind: var(--drinks);
+}
+
+.pick.spot--culture {
+  --kind: var(--culture);
+}
+
+.pick::before {
+  content: counter(rank);
+  color: var(--muted);
+  font-family: var(--font-rounded);
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Our list's title, with Edit at its right, as in an iOS list. */
+.list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0.9rem 0.35rem;
+}
+
+.list-head h2 {
+  margin: 0;
+}
+
+.list-edit {
+  padding: 0.2rem 0;
+  color: var(--accent-ink);
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.list-edit:hover {
+  text-decoration: underline;
+}
+
+.list-edit__done,
+#list[data-editing] .list-edit__edit {
+  display: none;
+}
+
+#list[data-editing] .list-edit__done {
+  display: inline;
+  font-weight: 600;
+}
+
+.list-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  margin: 0.4rem 0.9rem 0.5rem;
+}
+
+/* (an empty list says so in its card, under the title) */
+.list-card > .empty {
+  margin: 0;
+  padding: 0.25rem 0.9rem 1.1rem;
+  border: 0;
+}
+
+.list-note__undo {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Edit mode: Remove, in red, takes the keen button's place where this
+   member may take the place off; elsewhere, whose it is. */
+.pick > form,
+.pick > .pick__remove {
+  grid-column: 4;
+  grid-row: 1;
+}
+
+.pick__remove,
+#list[data-editing] .pick > [data-keen] {
+  display: none;
+}
+
+#list[data-editing] .pick__remove {
+  display: block;
+}
+
+.remove {
+  padding: 0.4rem 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, #d70015 10%, white);
+  color: #c4000f;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.remove:hover {
+  background: color-mix(in srgb, #d70015 16%, white);
+}
+
+.remove:focus-visible {
+  outline: 3px solid color-mix(in srgb, #d70015 45%, transparent);
+  outline-offset: 2px;
+}
+
+.pick__by {
+  max-width: 7rem;
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A note for a moment at the foot of the screen (Took X off the list,
+   Undo), above the phone's tab bar. */
+.toast {
+  position: fixed;
+  bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  /* (its own width, not what's left right of the middle) */
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  padding: 0.7rem 0.8rem 0.7rem 1.1rem;
+  border-radius: 14px;
+  background: rgb(29 29 31 / 92%);
+  color: #fff;
+  font-size: 0.92rem;
+  box-shadow: var(--shadow-float);
+  backdrop-filter: blur(20px);
+  transform: translateX(-50%);
+  animation: toast-in 0.25s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+.toast[hidden] {
+  display: none;
+}
+
+.toast__text {
+  min-width: 0;
+}
+
+.toast__undo {
+  flex: none;
+  padding: 0.3rem 0.6rem;
+  border: 0;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 14%);
+  color: #6cb4ff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  body:has(.section-nav.tabs) .toast {
+    bottom: calc(4.6rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
+/* (once the page is live, a refresh doesn't replay the cards' entrance: they
+   glide to their new places instead, from the page's script) */
+#list[data-live] .pick {
+  animation: none;
+}
+
+.pick .photo--small {
+  width: 3.25rem;
+  border-radius: 10px;
+}
+
+.pick__main {
+  min-width: 0;
+}
+
+.pick h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.pick p {
+  margin: 0.1rem 0 0;
+}
+
+.pick .area {
+  font-size: 0.82rem;
+}
+
+/* The leader, a size up. */
+.pick--top {
+  grid-template-columns: 1.3rem 4.75rem minmax(0, 1fr) auto;
+  padding: 1rem 0.9rem;
+}
+
+.pick--top::before {
+  color: var(--accent-ink);
+  font-size: 1.45rem;
+}
+
+.pick--top .photo--small {
+  width: 4.75rem;
+  border-radius: 12px;
+}
+
+.pick--top h3 {
+  font-size: 1.2rem;
+}
+
+.pick__lead {
+  color: var(--accent-strong);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+/* ---- Plans ---------------------------------------------------------------------- */
+
+/* The group's plan (src/components/PlanCard.astro), above Our list: a white
+   card like the list's, its day a calendar page. What it needs from you
+   (your busy times, the time to pick) rings it in blue. Its parts are an
+   inset list, parted by hairlines, as the list's rows are. */
+.plans {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.plans:not(:has(*)) {
+  display: none;
+}
+
+/* (the list under it closes up) */
+.plans:has(*) + .board__list .list-card {
+  margin-top: 0.9rem;
+}
+
+.plan {
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  scroll-margin-top: 5rem;
+}
+
+.plan--needs {
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow-sm);
+}
+
+.plan__nudge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  background: var(--accent-strong);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.plan__top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.9rem 0.9rem 0.7rem;
+}
+
+.plan__title h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.plan__eyebrow {
+  margin: 0 0 0.1rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.plan__eyebrow.is-blue {
+  color: var(--accent-ink);
+}
+
+.plan__sub {
+  margin: 0.1rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.plan__when {
+  margin: 0.15rem 0 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+/* A day as a calendar page: the weekday on a blue band, the date large. */
+.cal {
+  display: grid;
+  justify-items: center;
+  overflow: hidden;
+  width: 3.25rem;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line), var(--shadow-sm);
+  line-height: 1;
+}
+
+.cal b {
+  width: 100%;
+  padding: 0.22rem 0 0.2rem;
+  background: var(--accent-strong);
+  color: #fff;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.cal span {
+  padding: 0.2rem 0 0.08rem;
+  font-family: var(--font-rounded);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.cal i {
+  padding-bottom: 0.28rem;
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cal--big {
+  width: 4.1rem;
+  border-radius: 14px;
+}
+
+.cal--big b {
+  padding: 0.3rem 0 0.25rem;
+  font-size: 0.68rem;
+}
+
+.cal--big span {
+  padding: 0.3rem 0 0.15rem;
+  font-size: 1.85rem;
+}
+
+.cal--big i {
+  padding-bottom: 0.35rem;
+  font-size: 0.66rem;
+}
+
+.cal--small {
+  width: 2.6rem;
+  border-radius: 10px;
+}
+
+.cal--small b {
+  background: var(--fill-strong);
+  color: var(--muted);
+  font-size: 0.55rem;
+}
+
+.cal--small span {
+  padding: 0.15rem 0 0.25rem;
+  font-size: 1.1rem;
+}
+
+/* The owner's "···": a menu folded behind a round button (a <details>). */
+.plan__menu {
+  position: relative;
+  align-self: start;
+}
+
+.plan__more {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--accent-ink);
+  list-style: none;
+  cursor: pointer;
+}
+
+.plan__more::-webkit-details-marker {
+  display: none;
+}
+
+.plan__menu-list {
+  position: absolute;
+  top: 2.4rem;
+  right: 0;
+  z-index: 8;
+  display: grid;
+  min-width: 13rem;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow-float);
+}
+
+.plan__menu-list > a,
+.plan__menu-list button {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.plan__menu-list > :first-child,
+.plan__menu-list > :first-child button {
+  border-top: 0;
+}
+
+.plan__menu-list .is-danger {
+  color: var(--food);
+}
+
+/* Not answered yet: the two ways to, full width. */
+.plan__ask {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0 0.9rem 0.8rem;
+}
+
+.plan__ask .btn {
+  width: 100%;
+  min-height: 2.9rem;
+}
+
+/* Who has said when they're busy (a tick), and who hasn't (a dashed ring). */
+.plan__filled,
+.plan__going {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0 0.9rem 0.8rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.plan__going {
+  color: var(--ink);
+  font-size: 0.88rem;
+}
+
+.plan__filled strong,
+.plan__going strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.plan .faces {
+  flex: none;
+  padding-left: 0.35rem;
+}
+
+.plan .faces .face {
+  position: relative;
+  width: 1.7rem;
+  height: 1.7rem;
+  margin-left: -0.35rem;
+  border-color: var(--card);
+  font-size: 0.7rem;
+}
+
+.face--done::after {
+  content: "";
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 0.72rem;
+  height: 0.72rem;
+  border: 1.5px solid var(--card);
+  border-radius: 50%;
+  background: var(--accent-strong) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6.2 5 8l4-4.2' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100%;
+}
+
+.plan .faces .face--waiting {
+  border: 1.5px dashed #aeaeb2;
+  background: var(--card);
+  color: #8e8e93;
+}
+
+/* When people are free: the strip, then the windows, best first. */
+.plan__results {
+  border-top: 1px solid var(--line);
+}
+
+.plan__label {
+  margin: 0;
+  padding: 0.7rem 0.9rem 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.heat {
+  padding: 0.75rem 0.9rem 0.4rem;
+}
+
+.heat__bar {
+  position: relative;
+  height: 1.7rem;
+}
+
+.heat__fill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 7px;
+  background: var(--line);
+}
+
+.heat__fill i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+/* (a white hairline on each hour) */
+.heat__fill b {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  background: rgb(255 255 255 / 85%);
+}
+
+.heat__mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  margin-left: -3px;
+  padding-right: 6px;
+  box-sizing: content-box;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.heat__axis {
+  position: relative;
+  height: 1.1rem;
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.heat__axis span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.heat__axis .is-first {
+  transform: none;
+}
+
+.heat__axis .is-last {
+  transform: translateX(-100%);
+}
+
+.heat__key {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.heat__key i {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 3px;
+}
+
+.heat__key i + i,
+.heat__key i:not(:first-child) {
+  margin-left: 0.45rem;
+}
+
+.wins {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wins__tier {
+  padding: 0.65rem 0.9rem 0.15rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.wins__rest {
+  padding-bottom: 0.8rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.win {
+  position: relative;
+}
+
+.win + .starts + .win::before,
+.wins--read .win + .win::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 4.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.win__row {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+}
+
+.wins--read .win__row {
+  cursor: auto;
+}
+
+.frac {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 10px;
+  background: var(--tint);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-family: var(--font-rounded);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.frac small {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.win--all .frac {
+  background: var(--accent-strong);
+  box-shadow: none;
+  color: #fff;
+}
+
+.win--all .frac small {
+  color: rgb(255 255 255 / 80%);
+}
+
+.win__text {
+  display: grid;
+  min-width: 0;
+}
+
+.win__when {
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.win__when small {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.win__who {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.win__radio {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px var(--line-strong);
+}
+
+/* The window picked: its start chips open under it, its circle filled. */
+.win:has(+ .starts :checked),
+.starts:has(:checked) {
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--card));
+}
+
+.win:has(+ .starts :checked) .win__radio {
+  background: var(--accent-strong);
+  box-shadow: inset 0 0 0 5px var(--accent-strong), inset 0 0 0 9px #fff;
+}
+
+.starts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.9rem 0.75rem 4.25rem;
+}
+
+.starts:not(:has(:checked)) {
+  display: none;
+}
+
+.starts__label {
+  width: 100%;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.starts__list {
+  display: contents;
+}
+
+.st {
+  position: relative;
+  cursor: pointer;
+}
+
+.st input {
+  position: absolute;
+  opacity: 0;
+}
+
+.st span {
+  display: inline-block;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.st input:checked + span {
+  background: var(--accent-strong);
+  box-shadow: none;
+  color: #fff;
+}
+
+.st input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.plan__other {
+  padding: 0.3rem 0.9rem 0.2rem;
+}
+
+.plan__other label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.plan__other select {
+  width: auto;
+  min-height: 2.2rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  color: var(--accent-ink);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.plan__pick .plan__set {
+  display: flex;
+  width: calc(100% - 1.8rem);
+  min-height: 2.9rem;
+  margin: 0.5rem 0.9rem 0.9rem;
+}
+
+.plan__fine {
+  margin: -0.4rem 0.9rem 0.8rem;
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+.plan__none {
+  margin: 0;
+  padding: 0.2rem 0.9rem 0.9rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.plan__none--short {
+  display: grid;
+  justify-items: start;
+  gap: 0.55rem;
+}
+
+.plan__none--short p {
+  margin: 0;
+}
+
+.plan__none--short strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* The owner's exact time, folded under Set it: the same fields to type or swipe. */
+.plan__exact {
+  margin: -0.3rem 0.9rem 0.9rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.plan__exact summary {
+  width: max-content;
+  margin: 0 auto;
+  color: var(--accent-ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.plan__exact[open] summary {
+  margin-bottom: 0.5rem;
+}
+
+.plan__exact-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.plan__exact-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.plan__exact-row input[type="time"] {
+  width: auto;
+  min-height: 2.2rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+.plan__exact .btn {
+  display: flex;
+  margin: 0 auto;
+}
+
+.plan__acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0 0.9rem 0.9rem;
+}
+
+/* After the time's set: someone's changed theirs, for the owner. */
+.plan__changed {
+  margin: 0 0.9rem 0.8rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--crown) 16%, var(--card));
+  color: var(--crown-ink);
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.plan__changed p {
+  margin: 0;
+}
+
+.plan__changed strong {
+  color: #4d3400;
+}
+
+.plan__changed-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.plan__changed .btn:not(.btn--primary) {
+  background: var(--card);
+}
+
+/* Your own answer, one line, and the way back into it. */
+.plan__mine {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.65rem 0.9rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.88rem;
+}
+
+.plan__mine strong {
+  font-weight: 600;
+}
+
+.plan__mine a {
+  flex: none;
+  color: var(--accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* No plan yet: the owner's way to start one, one quiet row. */
+.plan--empty {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.8rem 0.9rem;
+}
+
+.plan--empty p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.plan--empty strong {
+  display: block;
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.plan__icon {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+/* The set time, a pill under the group's name on every tab. */
+.next-up-slot {
+  margin: 0;
+}
+
+.next-up-slot:empty {
+  display: none;
+}
+
+.next-up {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 0.8rem;
+  padding: 0.35rem 0.8rem 0.35rem 0.45rem;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.next-up__cal {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.next-up__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.next-up__text span {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* A place with a plan says when, under its suburb on Our list. */
+.pick .pick__plan {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+  color: var(--accent-ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pick__plan svg {
+  flex: none;
+}
+
+/* Plans behind the group, folded at the foot of Our list. */
+.past-plans:not(:has(*)) {
+  display: none;
+}
+
+.past {
+  margin-top: 0.9rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.past summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.9rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.past summary::-webkit-details-marker {
+  display: none;
+}
+
+.past summary h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.past summary span {
+  color: var(--accent-ink);
+  font-weight: 500;
+}
+
+.past ol {
+  margin: 0;
+  padding: 0 0 0.4rem;
+  list-style: none;
+}
+
+.past li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+}
+
+.past li + li::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 4.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.past li > span:last-child {
+  display: grid;
+}
+
+.past strong {
+  font-weight: 600;
+}
+
+.past li.is-off strong {
+  color: var(--muted);
+}
+
+.past__when {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.past__tag {
+  justify-self: start;
+  margin: 0.1rem 0;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* "The plan needs you": a dot on Our list's tab. */
+.tabs__flag {
+  display: contents;
+}
+
+.tabs__dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--accent-strong);
+}
+
+/* ---- The plan's sheets ---------------------------------------------------------- */
+
+/* The owner's sheet and everyone's busy times: on a phone a sheet risen from
+   the foot of the screen, wider a card in the middle. <dialog>s: the
+   script opens them over the page; without it, the server opens them (a
+   link with ?plan=new or ?busy) and they sit over the page the same. */
+dialog.sheet {
+  position: fixed;
+  inset: 2.75rem 0 0;
+  z-index: 40;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 14px 14px 0 0;
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: var(--shadow-float);
+  overflow: hidden;
+}
+
+dialog.sheet:focus {
+  outline: none;
+}
+
+dialog.sheet::backdrop {
+  background: rgb(0 0 0 / 32%);
+}
+
+/* (opened without the script there's no backdrop: its shadow is one) */
+dialog.sheet[open]:not(:modal) {
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 32%), var(--shadow-float);
+}
+
+@media (min-width: 601px) {
+  dialog.sheet {
+    inset: 0;
+    width: min(30rem, calc(100% - 2rem));
+    height: min(54rem, calc(100% - 3rem));
+    margin: auto;
+    border-radius: 22px;
+  }
+}
+
+.sheet__form {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sheet__bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 0.5rem;
+  padding: 0.9rem max(1rem, env(safe-area-inset-right)) 0.6rem max(1rem, env(safe-area-inset-left));
+  text-align: center;
+}
+
+.sheet__bar h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.sheet__sub {
+  margin: 0.05rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.sheet__cancel {
+  justify-self: start;
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+
+.sheet__body {
+  display: grid;
+  flex: 1 1 auto;
+  align-content: start;
+  gap: 0.6rem;
+  min-height: 0;
+  padding: 0 max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sheet__foot {
+  display: grid;
+  flex: none;
+  gap: 0.4rem;
+  padding: 0.6rem max(1rem, env(safe-area-inset-right)) calc(0.9rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  border-top: 0.5px solid rgb(0 0 0 / 10%);
+}
+
+.sheet__foot .btn--block,
+.btn--block {
+  width: 100%;
+  min-height: 3rem;
+}
+
+.sheet__foot .fine {
+  margin: 0;
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+.sheet__group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.sheet__label {
+  margin: 0.4rem 0.2rem 0.35rem;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Where: the places on Our list, one to choose. */
+.where-list,
+.sheet__rows {
+  overflow: hidden;
+  padding: 0;
+}
+
+/* (a time field's wheel may reach past the card) */
+.sheet__rows {
+  overflow: visible;
+}
+
+.where {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr) auto;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+}
+
+.where + .where::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 4.1rem;
+  border-top: 1px solid var(--line);
+}
+
+.where .photo--small {
+  width: 2.6rem;
+  border-radius: 8px;
+}
+
+.where__text {
+  display: grid;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.where__text strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.where input {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+/* Which day: the next two weeks as calendar pages, the chosen one ringed. */
+.days {
+  display: flex;
+  gap: 0.45rem;
+  margin: 0 -1rem;
+  padding: 0.2rem 1rem 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.days__day {
+  position: relative;
+  flex: none;
+  cursor: pointer;
+}
+
+.days__day input {
+  position: absolute;
+  opacity: 0;
+}
+
+.days__day .cal {
+  width: 3.1rem;
+}
+
+.days__day .cal b {
+  background: var(--fill-strong);
+  color: var(--ink);
+}
+
+.days__day input:checked + .cal {
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow-sm);
+}
+
+.days__day input:checked + .cal b {
+  background: var(--accent-strong);
+  color: #fff;
+}
+
+.days__day input:focus-visible + .cal {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.days__other {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.days__other input {
+  width: auto;
+  min-height: 2.4rem;
+  padding: 0.3rem 0.7rem;
+}
+
+/* With the script, another date is a row that opens a calendar in the
+   sheet, in the sheet's look: a month at a time, Monday first, today in
+   blue, the chosen day filled with the chips' blue. */
+.days__more {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 2.75rem;
+  margin-top: 0.2rem;
+  padding: 0.45rem 0.6rem 0.45rem 0.85rem;
+  border: 0;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.92rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.days__more > span:first-child {
+  flex: 1;
+}
+
+.days__chosen:not(:empty) {
+  padding: 0.2rem 0.65rem;
+  border-radius: 8px;
+  background: var(--accent-strong);
+  color: #fff;
+  font-weight: 600;
+}
+
+.days__more svg {
+  flex: none;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+
+.days__more.is-open svg {
+  transform: rotate(90deg);
+}
+
+.days__more:focus-visible,
+.pcal button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pcal {
+  --pad: 0.85rem;
+  margin-top: 0.45rem;
+}
+
+.pcal__head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.pcal__month {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.pcal__nav {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+
+.pcal__nav:hover:not(:disabled) {
+  background: var(--fill);
+}
+
+.pcal__nav:disabled {
+  color: var(--line-strong);
+  cursor: default;
+}
+
+.pcal__week,
+.pcal__days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  justify-items: center;
+}
+
+.pcal__week span {
+  padding: 0.15rem 0 0.3rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.pcal__day {
+  display: grid;
+  place-items: center;
+  width: min(2.6rem, 100%);
+  aspect-ratio: 1;
+  margin: 0.08rem 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+  font-family: var(--font-rounded);
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.pcal__day:hover:not(:disabled, [aria-pressed="true"]) {
+  background: var(--fill);
+}
+
+.pcal__day.is-today {
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+.pcal__day[aria-pressed="true"] {
+  background: var(--accent-strong);
+  color: #fff;
+  font-weight: 700;
+}
+
+.pcal__day:disabled {
+  color: var(--line-strong);
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .days__more svg {
+    transition: none;
+  }
+}
+
+.sheet__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.6rem 0.8rem;
+}
+
+.sheet__row > :first-child {
+  display: grid;
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.sheet__row > :first-child span {
+  margin: 0;
+}
+
+.sheet__row .fine {
+  font-size: 0.74rem;
+}
+
+.sheet__row + .sheet__row {
+  border-top: 1px solid var(--line);
+}
+
+.length {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.length label {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.length input {
+  width: 3.6rem;
+  min-height: 2.2rem;
+  padding: 0.3rem 0.5rem;
+  text-align: right;
+}
+
+.sheet__row input[type="time"] {
+  width: auto;
+  min-height: 2.2rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* A time to type or turn (src/scripts/timefield.ts): a grey chip as iOS
+   draws a compact time, each part of it its own; the part being dragged
+   opens into a little wheel of the times around it. Only the parts take a
+   vertical drag, so the sheet scrolls everywhere else. */
+.tf {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.3rem;
+  border-radius: 10px;
+  background: var(--fill);
+  color: var(--ink);
+  font-family: var(--font-rounded);
+  font-size: 1.02rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.tf__part {
+  position: relative;
+  display: inline-block;
+  margin: 0;
+  touch-action: none;
+  cursor: ns-resize;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tf .tf__in {
+  width: 2.2ch;
+  min-height: 0;
+  margin: 0;
+  padding: 0.2rem 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  caret-color: var(--accent);
+  cursor: ns-resize;
+  transition: none;
+}
+
+.tf [data-part="h"] .tf__in {
+  text-align: right;
+}
+
+.tf--length [data-part="h"] .tf__in {
+  width: 2.6ch;
+}
+
+.tf .tf__ap {
+  width: auto;
+  margin-left: 0.15rem;
+  padding: 0.2rem 0.25rem;
+  font-size: 0.9em;
+}
+
+.tf .tf__in:focus,
+.tf .tf__in:focus-visible,
+.tf__part.is-turning .tf__in {
+  border: 0;
+  outline: none;
+  background: var(--accent-soft);
+  box-shadow: none;
+  color: var(--accent-ink);
+}
+
+.tf .tf__ap:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+.tf__colon,
+.tf__unit {
+  display: inline;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.tf__unit {
+  margin-right: 0.15rem;
+}
+
+.tf .tf__wheel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 20;
+  display: none;
+  overflow: hidden;
+  width: max(100%, 3.2rem);
+  height: 7.75rem;
+  margin: 0;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow-float);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.tf__part.is-turning .tf__wheel {
+  display: block;
+}
+
+.tf__wheel b {
+  display: grid;
+  padding-top: 0.25rem;
+  font-weight: 500;
+  -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+  mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+}
+
+.tf__wheel i {
+  height: 1.45rem;
+  color: var(--muted);
+  font-style: normal;
+  line-height: 1.45rem;
+  text-align: center;
+}
+
+.tf__wheel i.is-on {
+  margin: 0 0.25rem;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+/* Busy times as a plain form: a row of From and To for each. */
+.busy__rows {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.busy__rows .fine {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.busy__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  padding-left: 0.6rem;
+  border-left: 3px solid var(--busy);
+}
+
+.busy__row label {
+  display: grid;
+  gap: 0.15rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.busy__row input {
+  min-height: 2.6rem;
+  padding: 0.4rem 0.7rem;
+}
+
+.busy__set {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--crown) 16%, var(--card));
+  color: var(--crown-ink);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.busy__set strong {
+  color: #4d3400;
+}
+
+.busy__sum {
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+.busy__sum:empty {
+  display: none;
+}
+
+/* Busy times drawn on the day (src/scripts/busy.ts): the plan's hours down
+   the sheet, filling it, your busy stretches on them as dark blocks, and
+   the others as counts only, a blue strip beside the hours and a band
+   where all of them are free. The page scrolls under a swipe; a hold
+   draws, so the hours ask the browser for vertical panning only, and none
+   once a drag has begun. */
+.busy.is-drawn {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  padding-bottom: 0.6rem;
+}
+
+.busy.is-drawn > * {
+  flex: none;
+}
+
+.busy.is-drawn > .busy__set,
+.busy.is-drawn > .notice {
+  margin-bottom: 0.5rem;
+}
+
+.tl-cap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 1.6rem;
+  margin: 0 0.15rem 0.35rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+.tl-cap b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.tl-cap__others {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 1.6rem;
+  padding: 0.1rem 0.55rem 0.1rem 0.35rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tl-cap__others i {
+  width: 0.55rem;
+  height: 0.9rem;
+  border-radius: 2px;
+  background: linear-gradient(var(--accent) 0 40%, color-mix(in srgb, var(--accent) 40%, var(--line)) 40% 70%, var(--line) 70%);
+}
+
+.tl-cap__others.is-off {
+  color: var(--muted);
+}
+
+.tl-cap__others.is-off i {
+  opacity: 0.35;
+}
+
+.busy.is-drawn > .tl-box {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 12rem;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.tl-scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.tl {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tl.is-armed,
+.tl.is-dragging {
+  touch-action: none;
+  cursor: grabbing;
+}
+
+.tl__hr,
+.tl__half,
+.tl__gline,
+.tl__set,
+.tl__now {
+  position: absolute;
+  left: 3.05rem;
+  right: 0;
+  border-top: 1px solid var(--line);
+}
+
+.tl__half {
+  border-top-color: color-mix(in srgb, var(--line) 45%, var(--card));
+}
+
+.tl__lbl,
+.tl__glbl,
+.tl__nowlbl {
+  position: absolute;
+  left: 0.1rem;
+  width: 2.55rem;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.tl__lbl.is-dim {
+  opacity: 0;
+}
+
+.tl__glbl {
+  z-index: 3;
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+.tl__gline {
+  z-index: 3;
+  width: 0.5rem;
+  border-top: 1.5px solid var(--accent);
+}
+
+.tl__heat {
+  position: absolute;
+  left: 3.15rem;
+  width: 5px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.tl__heat i {
+  position: absolute;
+  right: 0;
+  left: 0;
+}
+
+.tl__band {
+  position: absolute;
+  left: 3.6rem;
+  right: 0;
+  background: color-mix(in srgb, var(--accent-soft) 70%, var(--card));
+}
+
+.tl__band span {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.1rem;
+  color: var(--accent-ink);
+  font-size: 0.62rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* (the set time stays in sight over a busy stretch; a selected one covers it) */
+.tl__set {
+  z-index: 3;
+  border-top: 2px solid var(--accent);
+  pointer-events: none;
+}
+
+.tl__set::before,
+.tl__now::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.tl__set span {
+  position: absolute;
+  top: -0.68rem;
+  right: 0.35rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  color: #fff;
+  font-size: 0.64rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tl__now {
+  z-index: 2;
+  border-top: 1.5px solid var(--food);
+}
+
+.tl__now::before {
+  top: -4.5px;
+  background: var(--food);
+}
+
+.tl__nowlbl {
+  z-index: 3;
+  background: var(--card);
+  color: var(--food);
+  font-weight: 700;
+}
+
+/* A busy stretch, as a calendar draws an event: a light red tint with a
+   red bar down its edge and the time in dark red; selected, a stronger
+   tint ringed in red with a red dot at each end to drag; being drawn or
+   dragged, solid red. (Red busy against the blue of others free.) */
+.tl__blk {
+  position: absolute;
+  right: 0.55rem;
+  left: 3.75rem;
+  z-index: 2;
+  display: block;
+  min-height: 0;
+  padding: 0.18rem 0.5rem 0.18rem 0.62rem;
+  border: 0;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--busy) 16%, var(--card));
+  color: var(--busy-ink);
+  font: inherit;
+  line-height: 1.2;
+  text-align: left;
+  overflow: visible;
+  touch-action: pan-y;
+  cursor: pointer;
+}
+
+.tl__blk::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  border-radius: 7px 0 0 7px;
+  background: var(--busy);
+}
+
+.tl__bt,
+.tl__bs {
+  display: block;
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tl__bs {
+  color: var(--busy-ink);
+  font-size: 0.72rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.tl__blk.is-one .tl__bt,
+.tl__blk.is-one .tl__bs {
+  display: inline;
+}
+
+.tl__blk.is-one .tl__bs {
+  margin-left: 0.3rem;
+}
+
+.tl__blk.is-tiny {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.tl__blk.is-tiny .tl__bt,
+.tl__blk.is-tiny .tl__bs {
+  display: none;
+}
+
+.tl__blk.is-sel {
+  z-index: 4;
+  background: color-mix(in srgb, var(--busy) 26%, var(--card));
+  box-shadow: 0 0 0 2px var(--busy), 0 6px 18px -8px rgb(215 0 21 / 45%);
+  touch-action: none;
+}
+
+.tl__blk.is-lift {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 2px var(--busy), 0 12px 28px -8px rgb(215 0 21 / 50%);
+}
+
+/* (being drawn or dragged: solid red, white on it) */
+.tl__blk.is-live,
+.tl__blk.is-ghost {
+  background: var(--busy-strong);
+  color: #fff;
+}
+
+.tl__blk.is-live::before,
+.tl__blk.is-ghost::before {
+  background: var(--busy-ink);
+}
+
+.tl__blk.is-ghost {
+  pointer-events: none;
+}
+
+.tl__blk.is-ghost .tl__bs {
+  color: #fff;
+}
+
+/* The stretch being moved says its from–to on itself, to the minute: a
+   white pill over its top, or just above it when it's too short for one. */
+.tl__live {
+  position: absolute;
+  top: 0.3rem;
+  left: 0.55rem;
+  z-index: 1;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 28%);
+  color: var(--busy-ink);
+  font-family: var(--font-rounded);
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.tl__blk.is-live .tl__bt,
+.tl__blk.is-live .tl__bs {
+  visibility: hidden;
+}
+
+.tl__blk.is-live.is-one .tl__live,
+.tl__blk.is-live.is-tiny .tl__live {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+.tl__blk:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* (each dot a 44px target, bigger than it looks) */
+.tl__hd {
+  position: absolute;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  touch-action: none;
+  cursor: ns-resize;
+}
+
+.tl__hd::after {
+  content: "";
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2.5px var(--busy), 0 1px 3px rgb(0 0 0 / 30%);
+}
+
+.tl__hd--t {
+  top: -22px;
+  right: 6px;
+}
+
+.tl__hd--b {
+  bottom: -22px;
+  left: 6px;
+}
+
+.tl__hd.is-on::after {
+  width: 15px;
+  height: 15px;
+  box-shadow: 0 0 0 2.5px var(--busy-strong), 0 2px 6px rgb(0 0 0 / 30%);
+}
+
+/* The time under the finger, big enough to read past it. */
+.tl__bubble {
+  position: absolute;
+  z-index: 6;
+  padding: 0.3rem 0.7rem;
+  border-radius: 12px;
+  background: rgb(29 29 31 / 94%);
+  box-shadow: var(--shadow-float);
+  color: #fff;
+  font-family: var(--font-rounded);
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+}
+
+.tl__bubble small {
+  display: block;
+  margin-top: -0.1rem;
+  color: rgb(255 255 255 / 70%);
+  font-family: var(--font);
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* (the hold has armed: a ring where it began) */
+.tl__ring {
+  position: absolute;
+  z-index: 6;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent-soft) 60%, transparent);
+  pointer-events: none;
+  animation: tl-ring 0.45s ease-out;
+}
+
+@keyframes tl-ring {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+.tl__empty {
+  position: absolute;
+  top: 50%;
+  right: 0.55rem;
+  left: 3.75rem;
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: center;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.tl__empty b {
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.tl-sum {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.86rem;
+  line-height: 1.3;
+}
+
+.tl-sum > span {
+  min-width: 0;
+}
+
+.tl-sum b {
+  font-weight: 600;
+}
+
+.tl-sum .is-busy {
+  color: var(--busy-ink);
+}
+
+.tl-exact {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* A stretch's exact times: a small sheet over the busy sheet. */
+.tl-ed__dim {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  border-radius: inherit;
+  background: rgb(0 0 0 / 22%);
+}
+
+.tl-ed {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  padding: 0.5rem max(1rem, env(safe-area-inset-right)) calc(1.4rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  border-radius: 14px 14px 0 0;
+  background: var(--bg);
+  box-shadow: 0 -10px 30px -10px rgb(0 0 0 / 30%);
+}
+
+.tl-ed__bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin: 0.2rem 0 0.7rem;
+}
+
+.tl-ed__bar h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.tl-ed__bar button {
+  justify-self: start;
+  padding: 0.3rem 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tl-ed__bar .is-done {
+  justify-self: end;
+  font-weight: 600;
+}
+
+/* (the busy time's own red bar down its edge, as on the timeline) */
+.tl-ed__rows {
+  overflow: visible;
+  padding: 0;
+  box-shadow: inset 3px 0 0 var(--busy), var(--shadow-sm);
+}
+
+.tl-ed__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0.85rem;
+  font-weight: 500;
+}
+
+.tl-ed__row + .tl-ed__row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0.85rem;
+  border-top: 1px solid var(--line);
+}
+
+.tl-ed__row select {
+  width: auto;
+  min-width: 7.2rem;
+  min-height: 2.3rem;
+  padding: 0.35rem 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-ed__del {
+  display: block;
+  width: 100%;
+  margin-top: 0.7rem;
+  padding: 0.7rem;
+  border: 0;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  color: var(--food);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tl-ed__note {
+  margin: 0.55rem 0.2rem 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl__ring {
+    animation: none;
   }
 
-  .board__list {
-    position: sticky;
-    top: var(--nav-h);
-    max-height: calc(100vh - var(--nav-h));
-    overflow-y: auto;
-    padding: 0 0.6rem 1.5rem 0.6rem;
-    margin-left: -0.6rem;
-    scrollbar-width: thin;
+  .tl__blk.is-lift {
+    transform: none;
   }
+}
+
+/* ---- Tabs ---------------------------------------------------------------------- */
+
+/* With the script, the section links are tabs: one part showing at a time
+   (on a wide screen, Our list and Explore together). */
+.tabs__n {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--fill-strong);
+  color: var(--ink);
+  font-family: var(--font-rounded);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.section-nav a[aria-current] .tabs__n {
+  background: var(--accent-strong);
+  color: #fff;
+}
+
+.group-page.is-tabbed .group-tools {
+  display: block;
+}
+
+@media (max-width: 1179px) {
+  .group-page.is-tabbed .group-tools {
+    margin-top: 1.5rem;
+  }
+}
+
+.group-page.is-tabbed .group-tools > section {
+  max-width: 44rem;
 }
 
 /* Share a place and the owner's settings, side by side when there's room. */
@@ -2581,8 +6465,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     column-gap: 0.85rem;
     row-gap: 0.2rem;
     padding: 0.75rem;
-    border-top-width: 1px;
-    border-left: 4px solid var(--kind);
   }
 
   .spots--explore .spot > * {
@@ -2606,6 +6488,18 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     line-height: 1.3;
   }
 
+  /* (the kind's name over its credit: side by side they don't fit) */
+  .spots--explore .photo--kind figcaption {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    padding: 0.45rem 0.6rem;
+  }
+
+  .spots--explore .photo--kind figcaption a {
+    white-space: nowrap;
+  }
+
   .spots--explore .spot h3 {
     font-size: 1rem;
   }
@@ -2618,8 +6512,25 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     padding-top: 0.35rem;
   }
 
-  .group-head .share {
+  /* (the button at the start; the panel, opened, the page's width however
+     short its words) */
+  .invite {
     flex-basis: 100%;
+    justify-items: stretch;
+  }
+
+  .invite__open {
+    justify-self: start;
+    padding: 0.5rem 0.95rem;
+    font-size: 0.92rem;
+  }
+
+  .group-head--split {
+    gap: 0.9rem;
+  }
+
+  .group-page .section-nav {
+    margin-top: 0.75rem;
   }
 
   .top {
@@ -2632,14 +6543,78 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     font-size: 0.86rem;
   }
 
-  .section-nav {
-    gap: 0.1rem;
-    padding-inline: 0.6rem;
+  /* On a phone the group's parts are a tab bar at the foot of the screen,
+     as in Slopes or any iOS app: a glyph over each name, frosted. */
+  .section-nav.tabs {
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    gap: 0;
+    width: auto;
+    margin: 0;
+    padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
+    border-radius: 0;
+    border-top: 0.5px solid rgb(0 0 0 / 14%);
+    background: rgb(249 249 251 / 86%);
+    backdrop-filter: blur(20px) saturate(1.8);
   }
 
-  .section-nav a {
-    padding: 0.4rem 0.65rem;
-    font-size: 0.86rem;
+  .section-nav.tabs a {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 0.1rem;
+    padding: 0.2rem 0;
+    border-radius: 0;
+    color: #8e8e93;
+    font-size: 0.66rem;
+    font-weight: 500;
+  }
+
+  .section-nav.tabs a svg {
+    display: block;
+  }
+
+  .section-nav.tabs a:hover,
+  .section-nav.tabs a[aria-current] {
+    background: none;
+    box-shadow: none;
+  }
+
+  .section-nav.tabs a[aria-current] {
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+
+  /* the plan needs you: a dot on the list's glyph, left of its count */
+  .section-nav.tabs .tabs__dot {
+    position: absolute;
+    top: 0.15rem;
+    left: calc(50% - 1.05rem);
+    width: 0.6rem;
+    height: 0.6rem;
+    box-shadow: 0 0 0 2px rgb(249 249 251);
+  }
+
+  /* the list's count, a badge on its glyph */
+  .section-nav.tabs .tabs__n {
+    position: absolute;
+    top: 0;
+    left: calc(50% + 0.35rem);
+    min-width: 1.05rem;
+    height: 1.05rem;
+    font-size: 0.62rem;
+  }
+
+  /* (room at the foot of the page for the bar) */
+  body:has(.section-nav.tabs) {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -2692,27 +6667,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 
 .foot__credits a {
   color: inherit;
-}
-
-/* Offers the list's new order without moving cards under anyone's thumb. */
-.reorder {
-  display: block;
-  width: 100%;
-  margin: 0 0 0.75rem;
-  padding: 0.55rem 0.9rem;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--accent-strong);
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-strong);
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.reorder:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  outline-offset: 2px;
 }
 
 /* The invite link's own page, for someone who hasn't joined yet: one card,
@@ -2780,7 +6734,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   margin: 0;
   color: #fff;
   font-size: clamp(2rem, 8vw, 2.7rem);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.02;
   letter-spacing: -0.03em;
   text-shadow: 0 2px 16px rgb(4 38 52 / 40%);
@@ -2878,7 +6832,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 .welcome__label {
   margin: 0 0 0.55rem;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* ---- The drawn map ------------------------------------------------------------ */
@@ -3061,7 +7015,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   color: #fff;
   font-size: 11px;
   font-style: normal;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* No number to show: a plain disc in the place's colour. */
@@ -3074,7 +7028,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 .map-chip b {
   color: var(--ink);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .map-dot {
@@ -3274,13 +7228,13 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 
 .minimap__n {
   fill: #fff;
-  font-weight: 800;
+  font-weight: 700;
   text-anchor: middle;
 }
 
 .minimap__name {
   fill: var(--ink);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* Once the map is in, the pins drop onto it one after another. */
@@ -3385,7 +7339,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   background: var(--kind, var(--food));
   color: #fff;
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 700;
   transform: translateY(-0.1rem);
 }
 
@@ -3726,7 +7680,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   gap: 0.5rem;
   border-radius: 16px;
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.01em;
 }
 

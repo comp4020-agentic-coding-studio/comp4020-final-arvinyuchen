@@ -31,7 +31,7 @@ describe("accounts by passkey", () => {
     expect(await you(laptop, id)).toBe("");
     const { res } = await signInWith(laptop, passkeyOf(phone));
     expect(res.status).toBe(200);
-    expect(await you(laptop, id)).toContain("You're in as Ana");
+    expect(await you(laptop, id)).toBe("Ana");
     expect((await page(laptop, "/me")).body.textContent).toContain("Passkey crew");
   });
 
@@ -70,7 +70,7 @@ describe("accounts by passkey", () => {
     expect(invite.querySelector('form#join input[name="name"]')).toBeNull();
     expect(invite.querySelector("form#join")?.textContent).toContain("as Ana");
     await join(jar, second, second, "ignored");
-    expect(await you(jar, second)).toContain("You're in as Ana");
+    expect(await you(jar, second)).toBe("Ana");
     const mine = (await page(jar, "/me")).body.textContent ?? "";
     expect(mine).toContain("First crew");
     expect(mine).toContain("Second crew");
@@ -84,11 +84,11 @@ describe("accounts by passkey", () => {
     await join(ana, second, second, "Ana");
 
     await request(ana, "/api/account", { form: { name: "Annie" } });
-    expect(await you(ana, first)).toContain("You're in as Annie");
-    expect((await page(ben, `/g/${second}`)).querySelector(".members")?.textContent).toContain("Annie");
+    expect(await you(ana, first)).toBe("Annie");
+    expect((await page(ben, `/g/${second}`)).querySelector(".who")?.textContent).toContain("Annie");
     // An empty name changes nothing.
     await request(ana, "/api/account", { form: { name: " " } });
-    expect(await you(ana, first)).toContain("You're in as Annie");
+    expect(await you(ana, first)).toBe("Annie");
   });
 
   it("keeps several passkeys, removes one, and never the last", async () => {
@@ -195,8 +195,10 @@ describe("the owner's tools", () => {
     expect(names).toEqual(["Ana", "Ben"]);
     // The new account is Ben now, his old keen came with him, and the old
     // account (whoever has its passkey) is out of the group.
-    expect(await you(benAgain, id)).toContain("You're in as Ben");
-    expect((await page(owner, `/g/${id}`)).querySelector("#list .keen-who")?.textContent).toBe("Keen: Ben");
+    expect(await you(benAgain, id)).toBe("Ben");
+    const mine = (await page(benAgain, `/g/${id}`)).querySelector("#list .keen");
+    expect(mine?.getAttribute("aria-pressed")).toBe("true");
+    expect(mine?.querySelector(".keen__count")?.textContent).toBe("1");
     expect(await you(ben, id)).toBe("");
   });
 
@@ -209,11 +211,11 @@ describe("the owner's tools", () => {
     const [ana, benMember] = await people();
     await act(owner, { action: "remove", member: benMember.id! });
     expect(await you(ben, id)).toBe("");
-    expect((await page(owner, `/g/${id}`)).querySelector("#list .keen-who")?.textContent).toBe("No one's keen yet");
+    expect((await page(owner, `/g/${id}`)).querySelector("#list .keen__count")?.textContent).toBe("0");
 
     // The owner can't be removed.
     await act(owner, { action: "remove", member: ana.id ?? "" });
-    expect(await you(owner, id)).toContain("You're in as Ana");
+    expect(await you(owner, id)).toBe("Ana");
   });
 
   it("resets the invite link: members follow it, nobody new gets in with the old one", async () => {
@@ -232,6 +234,6 @@ describe("the owner's tools", () => {
     expect(await you(stranger, fresh)).toBe("");
 
     await join(stranger, id, fresh, "Cat");
-    expect(await you(stranger, fresh)).toContain("You're in as Cat");
+    expect(await you(stranger, fresh)).toBe("Cat");
   });
 });

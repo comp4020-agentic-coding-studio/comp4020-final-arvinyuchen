@@ -4,7 +4,7 @@ Spots is a shared list of places for one group of friends: the food spots, fun
 places and things to do you might go to together. Someone starts a group and
 shares the link; everyone joins with their name and a passkey, explores
 places, adds the ones they're keen on, and votes. Votes show up live as people make them, the
-list re-ranks when you ask it to, and it's still there next time the group
+list re-ranks itself as they vote, and it's still there next time the group
 wants to go out.
 
 ## Who it's for
@@ -23,6 +23,12 @@ other's taste.
   group agrees on in minutes, not a 200-message thread. Votes show up on
   everyone's screen within a second, so a group in the same room decides
   together, live.
+- **Settling when is quick too, and nobody's diary is on show.** Once the
+  group has a favourite, whoever started it picks a day; everyone marks only
+  when they're busy that day (free all day is one tap), and the page shows
+  when everyone's free, best first. The others see how many are free when,
+  and who can't make each time, never anyone's busy times. Nobody votes on a
+  time: the owner sets it.
 - **The list is the group's own; the good places are everyone's.** A friend's
   "best chilli oil in Canberra" beats a star rating from a stranger. Every
   group explores one shared pool of places, and a place only gets in when
@@ -38,8 +44,8 @@ other's taste.
 - **Joining costs almost nothing.** A link, your name and your face or
   fingerprint: no app to install, no password, no email. The link goes wherever the
   group already talks: one Share button opens the phone's own share sheet
-  (Messages, WhatsApp, Instagram, WeChat), and there are direct links and a QR
-  code for everywhere else. It never goes to a public feed, since anyone who
+  (Messages, WhatsApp, Instagram, WeChat), and there are direct links for
+  everywhere else. It never goes to a public feed, since anyone who
   has it can join. Opening the link shows one invite card: the group, who
   started it, who's in, a line from whoever started it if they wrote one,
   and one button to join. Under it, the first few places on a small street
@@ -74,9 +80,13 @@ other's taste.
   ratings and one person's account, not a group deciding together. Google's
   Places API would bring thousands of restaurants but no judgement about which
   are good, which is the one thing Spots is for.
-- OpenStreetMap: its Nominatim search finds a real place's name and location
-  when someone shares it (under its usage policy: one request at a time, only
-  when asked), and OpenFreeMap serves its map tiles. The home page opens
+- Finding a real place to share: OpenStreetMap alone missed too many of
+  Canberra's cafés and bars, so Find searches Overture Maps' places first
+  (an open dataset, its Canberra places built into an index once), then
+  OpenStreetMap through Photon, which forgives a half-remembered name
+  ("Lonsdale Street Roasters" finds "Lonsdale St Roasters"). The index only
+  helps someone find a place; Explore still holds only what people shared.
+  OpenFreeMap serves the map tiles. The home page opens
   on a photo of the city from Mount Ainslie, and as you scroll it turns into
   a 3D map of the same view: OpenFreeMap's tiles over Mapzen's terrain, with
   the camera in the photographer's place, so the two line up. The camera
@@ -91,7 +101,13 @@ other's taste.
   never queries OpenStreetMap for it. Its hills are shaded once from
   Mapzen's terrain by `scripts/build-hero-relief.ts`. The starter places were
   checked against Wikipedia, with photos from Wikimedia Commons credited on
-  each card. Both street maps, the group's and the invite's small one, are
+  each card where there is one. Finding a free photo of every café and bar
+  proved hopeless (Commons has few, and a venue's own are its own), so a
+  place a person shares has the photo they upload, if any, kept with its
+  location and every other bit of metadata stripped, and credited to them.
+  One without isn't turned away: its card shows its kind's picture, one
+  from Unsplash for each kind, named with the kind, so it's never taken
+  for a photo of that place. Both street maps, the group's and the invite's small one, are
   OpenFreeMap's tiles recoloured to look like Apple Maps, with city parks
   in green, hairline side streets, hills shaded from Mapzen's open terrain
   tiles, and buildings that stand up as the group's map flies into a
@@ -103,6 +119,13 @@ other's taste.
   Canberra, from Unsplash and credited in the footer, opens the home page,
   every invite and a Spots link shared in a chat, so all three look like the
   same place.
+- Picking a time: Doodle polls a few times someone guessed, and When2meet
+  has everyone paint when they're free on a week's grid, which shows
+  everyone's diary to everyone and fights the page's scroll on a phone.
+  Phone calendars draw an event with a hold, then a drag, so a swipe still
+  scrolls. Spots asks about one day, the owner's, for busy times (most of a
+  Saturday is free, so there's less to mark), on a timeline drawn the
+  calendar way.
 - Voyage AI's embeddings turn each card and each search prompt into a
   vector; cards are ranked by how close they are in meaning (cosine
   similarity). Only card text and prompts are sent, nothing about a group.
@@ -123,6 +146,10 @@ other's taste.
 - **A chatbot that writes recommendations.** Generated text would say things
   about places that nobody here vouched for. Search hands back people's own
   cards, in the words they wrote.
+- **Notifications, calendar invites and a share button for plans.** A plan
+  lives on the group's page: a dot on Our list's tab, a note at the foot of
+  an open page, and the card asking for your times. The group already has a
+  chat for nudging each other.
 - **Booking and directions.** The map shows where a place is; getting there
   and booking a table are for the apps that already do them well.
 
@@ -132,12 +159,22 @@ Start a group, join by link, and explore the shared places on cards and a map:
 click a card and the map flies to it. Add a place to your group's list, or
 share a new one by looking it up on OpenStreetMap and saying why it's good; it
 appears in every group's Explore. Vote "keen" and the count changes live in
-every open page. Cards hold their place while you're looking, and a "New
-order" bar re-ranks the list when you tap it. Search Explore by describing what you're after: the answer is
+every open page, and the list re-ranks itself, each card gliding to its new
+place. Our list's Edit takes a place off again: yours until someone else is
+keen on it, any for the owner, with Undo; put back, it starts from no keens.
+The group's page is in tabs (Our list, Explore, Share a place, and
+Settings for whoever started it), and the invite folds behind one button. Search Explore by describing what you're after: the answer is
 the matching cards, best first, and the map frames their pins. Everyone signs
 in with a passkey, is themselves on any device, and sees all their groups in
 one place; your account page renames you everywhere and adds or removes
 passkeys. The person who started a
 group can rename it, write a note for the people they invite, remove or merge
-members, and reset its invite link. Next:
-deciding a date and time, and a "who's coming" for the chosen spot.
+members, and reset its invite link. They can also plan a day out: a place
+from the list, a day, and how long it takes. Everyone marks when they're busy on that day's
+hours, to the minute (tap for an hour, hold and drag to draw in 5-minute
+steps, type exact minutes; without a script, rows of From and To), and the plan's card shows when everyone's
+free for that long, longest first, as counts and who can't make it (or
+says plainly that no stretch is that long). The owner sets the
+time; it shows under the group's name as Next up and on the place's row in
+the list, and if someone's times change after that, only the owner hears,
+with a time to move to. Next: saying who's coming once the time is set.
