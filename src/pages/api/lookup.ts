@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { USER_AGENT } from "../../lib/agent";
 import { photoOfRef } from "../../lib/db";
 import { best, type Candidate, merge, score, words } from "../../lib/finder";
 import type { Kind } from "../../lib/kinds";
@@ -21,7 +22,6 @@ import { LOCAL } from "../../lib/places-index";
 //
 // The browser asks only when someone presses Find, never as they type, with
 // the app's User-Agent, and answers are cached for a day.
-const USER_AGENT = "Spots/1.0 (https://comp4020-final-arvinyuchen.fly.dev; COMP4020 student project)";
 const cache = new Map<string, { at: number; results: unknown[] }>();
 const BOX = "148.76,-35.92,149.40,-35.12";
 

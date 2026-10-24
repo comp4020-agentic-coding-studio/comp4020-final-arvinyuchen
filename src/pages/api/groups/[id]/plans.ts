@@ -3,6 +3,7 @@ import { getGroup } from "../../../../lib/db";
 import { changed } from "../../../../lib/events";
 import { parseInterval } from "../../../../lib/free";
 import { clean, me } from "../../../../lib/me";
+import { prefetchOuting } from "../../../../lib/outing-data";
 import { parseMinute } from "../../../../lib/when";
 import {
   callOffPlan,
@@ -34,6 +35,9 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   const action = clean(form.get("action"), 10);
   const done = (id: number, tell = true) => {
     if (tell) changed(group.id);
+    // (the stops' hours and forecast are asked for now, in the background,
+    // so the card has them by the time anyone looks: src/lib/outing-data.ts)
+    if (tell) prefetchOuting(group.id);
     return inPage ? new Response(null, { status: 204 }) : redirect(`/g/${group.link}#plan-${id}`, 303);
   };
   const refused = (error: string, then = "#plans") =>

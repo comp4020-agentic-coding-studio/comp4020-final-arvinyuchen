@@ -71,7 +71,10 @@ const account = signedIn(Astro.cookies);
         OpenStreetMap through <a href="https://photon.komoot.io">Photon</a> by komoot. Photos from{" "}
         <a href="https://commons.wikimedia.org">Wikimedia Commons</a> and members, credited on each card; the
         pictures of each kind from <a href="https://unsplash.com">Unsplash</a>. Search by meaning with{" "}
-        <a href="https://www.voyageai.com">Voyage AI</a> embeddings. The photo of Canberra is by{" "}
+        <a href="https://www.voyageai.com">Voyage AI</a> embeddings. A plan's opening hours are OpenStreetMap's, through
+        the <a href="https://overpass-api.de">Overpass API</a>, read with{" "}
+        <a href="https://github.com/opening-hours/opening_hours.js">opening_hours.js</a>;{" "}
+        <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> (CC BY 4.0). The photo of Canberra is by{" "}
         <a href="https://unsplash.com/photos/cityscape-during-daytime-QkcWZlBHykg" rel="noopener">Linda Xu on Unsplash</a>.{" "}
         <slot name="credits" />
         </p>

@@ -1,0 +1,46 @@
+---
+import { skyOf } from "../lib/outing";
+import type { Outing } from "../lib/outing-data";
+import { CLOCK_ICON, SKY_ICON } from "../lib/outing-icons";
+
+// The outing on the day, at the foot of the plan's card, quiet: a stop
+// that won't be open for its part of the plan (amber when it's only some
+// of it, red when it's none), and outside, the day's forecast once it's
+// within range. Unknown hours and days beyond the forecast say nothing.
+// It all comes from the cache src/lib/outing-data.ts keeps, so it's drawn
+// at once, script or not.
+interface Props {
+  outing: Outing;
+}
+const { outing } = Astro.props;
+const many = outing.stops.length > 1;
+const told = outing.stops.filter((s) => s.note || s.forecast);
+const cap = (text: string) => text[0].toUpperCase() + text.slice(1);
+---
+
+{told.length > 0 && (
+  <div class="outing">
+    <ul class:list={["outing__stops", { "outing__stops--many": many }]}>
+      {outing.stops.map((s, i) =>
+        (s.note || s.forecast) && (
+          <li class="outing__stop">
+            {many && <span class="outing__n" aria-hidden="true">{i + 1}</span>}
+            {many ? <span class="outing__name">{s.name}</span> : <span class="sr-only">{s.name}:</span>}
+            {s.note && (
+              <span class:list={["outing__note", `outing__note--${s.note.tone}`]}>
+                <svg viewBox="0 0 256 256" width="13" height="13" aria-hidden="true"><path fill="currentColor" d={CLOCK_ICON} /></svg>
+                {many ? s.note.text : cap(s.note.text)}
+              </span>
+            )}
+            {s.forecast && (
+              <span class="outing__sky">
+                <svg viewBox="0 0 256 256" width="14" height="14" role="img" aria-label={skyOf(s.forecast.code).label}><path fill="currentColor" d={SKY_ICON[skyOf(s.forecast.code).sky]} /></svg>
+                {s.forecast.text}
+              </span>
+            )}
+          </li>
+        ),
+      )}
+    </ul>
+  </div>
+)}

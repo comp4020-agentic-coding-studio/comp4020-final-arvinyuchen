@@ -3,6 +3,9 @@ import type { Group, Member } from "../lib/db";
 import { stopNames, type PlanView, type PlanWindow } from "../lib/plans";
 import { clockOf, dayParts, formatDay, formatDuration, formatMinute, formatSpan } from "../lib/when";
 import PlanHeat from "./PlanHeat.astro";
+import OutingMark from "./OutingMark.astro";
+import PlanOuting from "./PlanOuting.astro";
+import { outingOf } from "../lib/outing-data";
 
 // The group's plan, on Our list: what it's for and when, who has said
 // when they're busy, and when people are free together, as counts and
@@ -53,6 +56,8 @@ const noneFits = view.windows.length === 0 && view.longestShort > 0;
 const first = view.windows[0];
 const set = plan.set;
 const setWhen = set && `${formatDay(plan.day)}, ${formatMinute(set.start)}`;
+// (the stops on the day: open or not, the forecast; src/components/PlanOuting.astro)
+const outing = outingOf(view, group.id);
 ---
 
 <article
@@ -266,6 +271,7 @@ const setWhen = set && `${formatDay(plan.day)}, ${formatMinute(set.start)}`;
                           <span class="win__text">
                             <span class="win__when">{formatSpan(w.from, w.to)}</span>
                             <span class="win__who">{whoLine(w)}</span>
+                            <OutingMark outing={outing} from={w.from} />
                           </span>
                           <span class="win__radio" aria-hidden="true"></span>
                         </label>
@@ -320,6 +326,7 @@ const setWhen = set && `${formatDay(plan.day)}, ${formatMinute(set.start)}`;
                       <span class="win__text">
                         <span class="win__when">{formatSpan(w.from, w.to)}</span>
                         <span class="win__who">{whoLine(w)}</span>
+                        <OutingMark outing={outing} from={w.from} />
                       </span>
                     </span>
                   </li>
@@ -342,6 +349,8 @@ const setWhen = set && `${formatDay(plan.day)}, ${formatMinute(set.start)}`;
       )}
     </>
   )}
+
+  <PlanOuting outing={outing} />
 
   {mine !== null && (
     <p class="plan__mine">

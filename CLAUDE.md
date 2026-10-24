@@ -37,6 +37,28 @@ follow from it; every change has to hold to them.
   search-as-you-type, no autocomplete against Photon. The index
   is only a finder's: none of it is in Explore until someone shares it.
   Overture, Photon, map tiles and data are credited.
+- **The outing on the day asks politely, and only about places.** The
+  plan's card says, quietly at its foot, when a stop won't be open for its
+  part of the plan ("Questacon closes 5pm", "Closed Mondays"; a window's
+  row says it too) and, for a stop outside, the day's forecast
+  ("24° · 10% rain") once it's within Open-Meteo's 16 days
+  (`src/lib/outing.ts`, `src/components/PlanOuting.astro`). Hours are
+  OpenStreetMap's `opening_hours` tag (Overture's places carry none),
+  asked of Overpass and read by the pinned opening_hours.js, which knows
+  the ACT's public holidays; forecasts are Open-Meteo's, with no key.
+  Only a place's coordinates, its OpenStreetMap id and a date ever go out
+  (`src/lib/outing-fetch.ts`), never a member, a group, a plan or a
+  place's name, always with the app's User-Agent (`src/lib/agent.ts`).
+  They're asked in the background (`src/lib/outing-data.ts`): when a plan
+  starts or changes, or a card finds something missing or stale; one
+  request at a time per service; never while a page waits. Answers are
+  kept in SQLite (hours a week, a forecast three hours, a failure an hour
+  before it's tried again), and a page reads only that, so a service
+  that's down never slows the card. Unknown hours, and days beyond the
+  forecast, say nothing: never a guess. Overpass, OpenStreetMap,
+  opening_hours.js and Open-Meteo are credited in the footer. The spec
+  runs the app with `OUTING_STUB=1`, whose stub (`src/lib/outing-stub.ts`)
+  answers instead and logs what would have gone out.
 - **One person, one keen.** A member can vote "keen" on a spot once. The
   button sends the state it shows ("on" or "off") and the server sets exactly
   that (`setKeen`), so a double-tap or a second device never undoes a vote.
@@ -202,7 +224,8 @@ follow from it; every change has to hold to them.
 ## The work
 
 - `pnpm check` must be green before a commit: start the app
-  (`pnpm build && pnpm start`) and run it against `APP_URL`.
+  (`pnpm build && pnpm start`) with `OUTING_STUB=1`, and run it against
+  `APP_URL`. Never run the spec against the live site.
 - A claim in `README.md` about how the app behaves gets checked in a real
   browser before it ships.
 - Don't invent places: anything added to the starter list in

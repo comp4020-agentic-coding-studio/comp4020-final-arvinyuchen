@@ -32,10 +32,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build and start the app
         # the same image Fly deploys, with a throwaway /data in place of the
-        # volume; the spec runs against it
+        # volume; the spec runs against it, with the outing's fetchers stubbed
+        # (OUTING_STUB: nothing goes to Overpass or Open-Meteo from CI)
         run: |
           docker build -t app .
-          docker run -d --init --name app -p 8080:8080 -e PORT=8080 -e ADMIN_CODE=spec-admin-code --tmpfs /data app
+          docker run -d --init --name app -p 8080:8080 -e PORT=8080 -e ADMIN_CODE=spec-admin-code -e OUTING_STUB=1 --tmpfs /data app
       - name: Run the spec
         run: pnpm check
         env:

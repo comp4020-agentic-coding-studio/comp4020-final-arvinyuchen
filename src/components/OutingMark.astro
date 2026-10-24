@@ -1,0 +1,16 @@
+---
+import type { Outing } from "../lib/outing-data";
+
+// On a window's row of the plan's card: the first stop that won't be open
+// for its part of the plan if it starts then ("Questacon closes 5pm"), in
+// the card's quiet amber (or red, not open at all). Nothing when all are,
+// or their hours aren't known.
+interface Props {
+  outing: Outing;
+  /** the window's start */
+  from: number;
+}
+const note = Astro.props.outing.windowNote(Astro.props.from);
+---
+
+{note && <span class={`win__shut win__shut--${note.tone}`}>{note.text}</span>}

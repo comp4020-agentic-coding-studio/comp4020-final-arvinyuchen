@@ -39,6 +39,10 @@
   --busy: #ff3b30;
   --busy-ink: #b0170f;
   --busy-strong: #d70015;
+  /* a stop that won't be open for all of its part of the plan: a calm
+     amber, AA on white (the system orange's darker cut); not at all, the
+     busy red's ink */
+  --warn-ink: #8f5200;
   /* the system's own face: SF on Apple devices, Segoe on Windows, Roboto on
      Android; numbers in its rounded cut where there is one */
   --font: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -5048,6 +5052,99 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   color: var(--accent-ink);
   font-weight: 600;
   text-decoration: none;
+}
+
+/* The outing on the day, at the foot of the plan's card
+   (src/components/PlanOuting.astro): grey and small, so it never pushes
+   the card's own actions down; a stop's hours in amber, or red when it's
+   not open at all; the forecast in grey with its sky. */
+.outing {
+  margin: 0;
+  padding: 0.55rem 0.9rem 0.6rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.outing__stops {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.outing__stop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0.5rem;
+  min-width: 0;
+}
+
+/* (with several stops, each one's number hangs in the margin, so a line
+   that wraps lines up under its name) */
+.outing__stops--many .outing__stop {
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.outing__stops--many .outing__n {
+  position: absolute;
+  top: 0.1rem;
+  left: 0;
+}
+
+.outing__n {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--ink);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.outing__name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outing__note,
+.outing__sky {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.outing__note svg,
+.outing__sky svg {
+  flex: none;
+}
+
+.outing__note--warn,
+.win__shut--warn {
+  color: var(--warn-ink);
+}
+
+.outing__note--closed,
+.win__shut--closed {
+  color: var(--busy-ink);
+}
+
+/* (on a window's row, under who can't) */
+.win__shut {
+  font-size: 0.76rem;
+  line-height: 1.3;
 }
 
 /* No plan yet: the owner's way to start one, one quiet row. */
