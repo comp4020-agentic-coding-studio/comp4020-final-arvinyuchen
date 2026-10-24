@@ -4606,15 +4606,16 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-size: 0.7rem;
 }
 
-.heat__key i {
-  width: 0.7rem;
-  height: 0.7rem;
-  border-radius: 3px;
+/* (the scale itself: the strip's grey to its blue, as it deepens) */
+.heat__scale {
+  width: 3.2rem;
+  height: 0.3rem;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--line), color-mix(in srgb, var(--accent) 30%, var(--line)) 45%, var(--accent));
 }
 
-.heat__key i + i,
-.heat__key i:not(:first-child) {
-  margin-left: 0.45rem;
+.heat__ringkey {
+  margin-left: auto;
 }
 
 .wins {

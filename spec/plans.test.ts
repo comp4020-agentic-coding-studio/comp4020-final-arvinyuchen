@@ -312,6 +312,8 @@ describe("the plan on the group's page", () => {
     // one answer singles nothing out: the strip has no ring
     expect(doc.querySelector(`#plan-${plan} .heat`)).toBeTruthy();
     expect(doc.querySelector(`#plan-${plan} .heat__mark`)).toBeNull();
+    // and its key is a scale from busy to free, no squares
+    expect([...doc.querySelectorAll(`#plan-${plan} .heat__key span`)].map((k) => k.textContent)).toEqual(["busy", "free"]);
   });
 
   it("shows the owner when everyone's free, lets them set it, then shows everyone the time", async () => {
@@ -331,6 +333,7 @@ describe("the plan on the group's page", () => {
     expect(first).toBe("855-975");
     // the ring round the owner's pick: 2:15 to 4:15pm of 8am to 11pm
     expect(card?.querySelector<HTMLElement>(".heat__mark")?.getAttribute("style")).toBe("left: 41.667%; width: 13.333%");
+    expect([...(card?.querySelectorAll(".heat__key span") ?? [])].map((k) => k.textContent)).toEqual(["nobody", "all 2", "Outlined: your pick"]);
     await request(c.ana, `${c.api}/plans`, { form: { action: "set", plan, at: first ?? "" } });
 
     doc = await page(c.ben, c.path);
@@ -340,6 +343,7 @@ describe("the plan on the group's page", () => {
     expect(doc.querySelector("#list .pick__plan")?.textContent).toContain("2:15pm");
     // once set, the strip rings the set time
     expect(doc.querySelector(`#plan-${plan} .plan__results--set .heat__mark`)?.getAttribute("style")).toBe("left: 41.667%; width: 13.333%");
+    expect(doc.querySelector(`#plan-${plan} .plan__results--set .heat__key`)?.textContent).toContain("Outlined: the set time");
   });
 
   it("works out when everyone's free to the minute", async () => {

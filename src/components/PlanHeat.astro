@@ -46,9 +46,11 @@ for (let m = Math.ceil(range.start / 60) * 60 + 60; m < range.end; m += 60) hour
       <span class:list={{ "is-first": i === 0, "is-last": i === ticks.length - 1 }} style={`left: ${at(m)}`}>{formatMinute(m)}</span>
     ))}
   </div>
+  {/* (a key that reads as the scale it is, not kinds: grey to blue) */}
   <div class="heat__key">
-    <i style="background: var(--accent)"></i>all {total} free
-    <i style={`background: color-mix(in srgb, var(--accent) ${tint(Math.max(total - 1, 1))}%, var(--line))`}></i>fewer
-    <i style="background: var(--line)"></i>nobody
+    <span>{total === 1 ? "busy" : "nobody"}</span>
+    <i class="heat__scale"></i>
+    <span>{total === 1 ? "free" : `all ${total}`}</span>
+    {mark && markLabel && <span class="heat__ringkey">Outlined: {markLabel}</span>}
   </div>
 </div>
