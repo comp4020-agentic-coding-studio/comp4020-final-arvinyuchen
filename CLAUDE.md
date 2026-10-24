@@ -89,7 +89,8 @@ follow from it; every change has to hold to them.
   offered, never a shorter one; each member marks only their own busy times
   (`me()`), and the owner sets the time. Times are Canberra's wall clock:
   a local date and whole minutes since its midnight, to the minute
-  (`src/lib/when.ts`), never the server's zone. Nobody sees anyone else's
+  (`src/lib/when.ts`), never the server's zone; on the timeline a drag
+  lands on 5 minutes and exact minutes are typed. Nobody sees anyone else's
   busy times: the page shows how many are free when and who can't make a
   window (`src/lib/free.ts`), and the timeline gets the others' counts only
   once two others have answered. Never send another member's busy times to

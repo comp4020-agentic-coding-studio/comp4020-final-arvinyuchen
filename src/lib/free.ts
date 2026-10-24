@@ -12,6 +12,18 @@ export type Interval = [from: number, to: number];
 /** Times are kept to the minute. */
 export const STEP = 1;
 
+/** A drag on the timeline lands on 5 minutes; exact minutes are typed. */
+export const DRAG_STEP = 5;
+
+/**
+ * Where a drag lands: on `step` minutes counted from `origin` (the plan's
+ * start), inside [origin, end]; the end itself too, when that's nearer.
+ */
+export function snapTo(m: number, origin: number, end: number, step = DRAG_STEP) {
+  const on = Math.min(end, Math.max(origin, origin + Math.round((m - origin) / step) * step));
+  return Math.abs(end - m) < Math.abs(on - m) ? end : on;
+}
+
 /** A plan counts times within this much of the day, at most. */
 export const EARLIEST = 360;
 export const LATEST = 1440;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { freeTimes, mergeIntervals, parseInterval, shownWindows, startsIn, type Interval } from "../src/lib/free";
+import { freeTimes, mergeIntervals, parseInterval, shownWindows, snapTo, startsIn, type Interval } from "../src/lib/free";
 
 // Who's free when, worked out from when each person is busy (src/lib/free.ts),
 // on its own: no app, no database.
@@ -115,6 +115,20 @@ describe("busy times as they come in", () => {
   it("merge where they overlap or touch, and clip to the day", () => {
     expect(mergeIntervals([[600, 660], [540, 610], [660, 700], [900, 960]])).toEqual([[540, 700], [900, 960]]);
     expect(mergeIntervals([[300, 500], [1300, 1440]], day)).toEqual([[480, 500], [1300, 1380]]);
+  });
+
+  it("land on 5 minutes from the plan's start when dragged, inside its hours", () => {
+    // 8am to 11pm: 10:07 is nearest 10:05, 10:08 nearest 10:10
+    expect(snapTo(607, 480, 1380)).toBe(605);
+    expect(snapTo(608, 480, 1380)).toBe(610);
+    // counted from an odd start: 8:07am, so 8:12, 8:17...
+    expect(snapTo(500, 487, 1380)).toBe(502);
+    // never outside the hours
+    expect(snapTo(470, 480, 1380)).toBe(480);
+    expect(snapTo(1400, 480, 1380)).toBe(1380);
+    // an end off the 5s can still be reached
+    expect(snapTo(1379, 487, 1379)).toBe(1379);
+    expect(snapTo(1375, 487, 1379)).toBe(1377);
   });
 
   it("offer a window's start, then its :00s and :30s", () => {

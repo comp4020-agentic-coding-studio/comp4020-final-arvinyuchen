@@ -171,8 +171,8 @@ passkeys. The person who started a
 group can rename it, write a note for the people they invite, remove or merge
 members, and reset its invite link. They can also plan a day out: a place
 from the list, a day, and how long it takes. Everyone marks when they're busy on that day's
-hours, to the minute (tap for an hour, hold and drag to draw; without a
-script, rows of From and To), and the plan's card shows when everyone's
+hours, to the minute (tap for an hour, hold and drag to draw in 5-minute
+steps, type exact minutes; without a script, rows of From and To), and the plan's card shows when everyone's
 free for that long, longest first, as counts and who can't make it (or
 says plainly that no stretch is that long). The owner sets the
 time; it shows under the group's name as Next up and on the place's row in

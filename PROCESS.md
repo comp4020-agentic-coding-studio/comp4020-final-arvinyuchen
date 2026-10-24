@@ -210,9 +210,10 @@ the owner shortens it, so the card says what the longest is. Times are
 Canberra's, so someone away sees Canberra times. The hold and drag needs
 checking on a real iPhone: Safari decides scrolling from the first touch,
 and the drag relies on stopping the page's scroll once a hold has armed.
-To the minute, a finger moves a few minutes a millimetre, so the stretch
-being dragged says its from–to on itself, and a tap's hour still lands on
-5 minutes.
+To the minute, a finger moves a few minutes a millimetre, so a drag on the
+timeline lands on 5 minutes (counted from the plan's start) and says its
+from–to on itself as it goes; exact minutes are typed in a stretch's exact
+times. A stretch at an odd minute keeps its length when moved.
 
 ## How I worked with the agent
 

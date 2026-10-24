@@ -14,16 +14,19 @@
 // - a selected stretch has a dot at each end to drag, and a tap on it
 //   opens its exact times (fields to type or swipe, src/scripts/
 //   timefield.ts, and Delete).
-// Drawing and dragging go to the minute, and the stretch being moved says
-// its from–to on itself as it goes; a tap's hour lands on 5 minutes, since a
-// fingertip can't mean one minute. With a mouse, a drag draws straight away.
+// Times are kept to the minute, but a fingertip can't mean one minute: a
+// tap's hour, drawing, moving and resizing land on 5 minutes counted from
+// the plan's start, and the stretch being moved says its from–to on itself
+// as it goes. Exact minutes are typed in its exact times. A stretch already
+// at an odd minute keeps its length when moved (its start lands on 5), and
+// a resize moves only the end held. With a mouse, a drag draws straight away.
 // On a keyboard the stretches are buttons: arrows move one by a minute (Page
 // Up and Down by 15), Shift moves its end instead, Enter opens its exact
 // times, Delete takes it off; "+ Exact time" adds one.
 // The others are there only as counts: how many of them are free when, a
 // strip beside the hours and a band where all of them are, which you can
 // hide. Never whose times.
-import { mergeIntervals, STEP, type Interval } from "../lib/free";
+import { DRAG_STEP, mergeIntervals, snapTo, STEP, type Interval } from "../lib/free";
 import { formatDay, formatMinute, formatSpan, localNow } from "../lib/when";
 import { timeField } from "./timefield";
 
@@ -54,8 +57,6 @@ interface State {
 const PAD = 10;
 const HOLD = 400;
 const SLOP = 8;
-/** where a tap's hour lands: on 5 minutes */
-const TAP = 5;
 const still = matchMedia("(prefers-reduced-motion: reduce)");
 const t = (m: number) => (m === 1440 ? "12am" : formatMinute(m));
 
@@ -69,7 +70,8 @@ function enhance(dialog: HTMLDialogElement) {
   const { start, end } = data;
   const hours = (end - start) / 60;
   const clamp = (m: number) => Math.min(end, Math.max(start, m));
-  const snap = (m: number, step = STEP) => clamp(Math.round(m / step) * step);
+  // (where a finger lands: on 5 minutes from the plan's start)
+  const snap = (m: number) => snapTo(m, start, end);
 
   // The rows step aside, out of the form too (a disabled field isn't sent).
   const rows = body.querySelector<HTMLElement>("[data-busy-rows]");
@@ -176,7 +178,7 @@ function enhance(dialog: HTMLDialogElement) {
 
     // The line above it, the sum under it, the button, and the form itself.
     const sel = S.sel !== null ? S.busy[S.sel] : null;
-    let line = `<span>${S.busy.length ? "Tap to add an hour · hold and drag to draw" : `${formatSpan(start, end)} · to the minute`}</span>`;
+    let line = `<span>${S.busy.length ? "Tap to add an hour · hold and drag to draw" : `${formatSpan(start, end)} · drags in 5 minutes`}</span>`;
     if (S.paint) line = `<span><b>Drawing ${formatSpan(Math.min(S.paint.from, S.paint.to), Math.max(S.paint.from, S.paint.to))}</b> · let go to keep it</span>`;
     else if (S.drag) line = `<span><b>${formatSpan(...S.busy[S.drag.i])}</b> · let go to keep it</span>`;
     else if (sel) line = `<span><b>${formatSpan(...sel)}</b> · tap it for exact times</span>`;
@@ -375,9 +377,9 @@ function enhance(dialog: HTMLDialogElement) {
       render();
       return;
     }
-    const a = Math.min(end - STEP, Math.max(start, Math.floor(g.m / STEP) * STEP));
+    const a = Math.min(end - STEP, start + Math.max(0, Math.floor((g.m - start) / DRAG_STEP) * DRAG_STEP));
     S.sel = null;
-    S.paint = { from: a, to: a + STEP, x: g.x, ring: !g.mouse && !still.matches };
+    S.paint = { from: a, to: Math.min(end, a + DRAG_STEP), x: g.x, ring: !g.mouse && !still.matches };
     render();
   }
   // (near the top or foot of the hours, a drag scrolls them along)
@@ -406,7 +408,7 @@ function enhance(dialog: HTMLDialogElement) {
     edgeScroll(event);
     if (g.kind === "press" && S.paint) {
       const v = snap(m);
-      S.paint.to = v >= S.paint.from ? Math.max(v, S.paint.from + STEP) : v;
+      S.paint.to = v >= S.paint.from ? Math.max(v, Math.min(end, S.paint.from + DRAG_STEP)) : v;
       S.paint.x = xIn(event);
       S.paint.ring = false;
       render();
@@ -448,7 +450,7 @@ function enhance(dialog: HTMLDialogElement) {
         else {
           // a tap: an hour, centred where it landed
           const len = Math.min(60, end - start);
-          const a = Math.max(start, Math.min(end - len, snap(g.m - len / 2, TAP)));
+          const a = Math.max(start, Math.min(end - len, snap(g.m - len / 2)));
           S.busy.push([a, a + len]);
           S.sel = normalize(a);
         }
