@@ -34,6 +34,11 @@
   /* the owner's crown: gold, so it reads apart from the blue of you */
   --crown: #ffcc00;
   --crown-ink: #7a5200;
+  /* busy times: the system red, as a calendar draws an event; its ink is
+     AA on its own tint, and white is AA on the strong fill */
+  --busy: #ff3b30;
+  --busy-ink: #b0170f;
+  --busy-strong: #d70015;
   /* the system's own face: SF on Apple devices, Segoe on Windows, Roboto on
      Android; numbers in its rounded cut where there is one */
   --font: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -5732,6 +5737,8 @@ dialog.sheet[open]:not(:modal) {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
+  padding-left: 0.6rem;
+  border-left: 3px solid var(--busy);
 }
 
 .busy__row label {
@@ -6000,8 +6007,10 @@ dialog.sheet[open]:not(:modal) {
   font-weight: 700;
 }
 
-/* A busy stretch: a soft dark block with a bar down its edge; selected, a
-   solid one with a dot at each end to drag. */
+/* A busy stretch, as a calendar draws an event: a light red tint with a
+   red bar down its edge and the time in dark red; selected, a stronger
+   tint ringed in red with a red dot at each end to drag; being drawn or
+   dragged, solid red. (Red busy against the blue of others free.) */
 .tl__blk {
   position: absolute;
   right: 0.55rem;
@@ -6012,8 +6021,8 @@ dialog.sheet[open]:not(:modal) {
   padding: 0.18rem 0.5rem 0.18rem 0.62rem;
   border: 0;
   border-radius: 7px;
-  background: color-mix(in srgb, var(--ink) 12%, var(--card));
-  color: var(--ink);
+  background: color-mix(in srgb, var(--busy) 16%, var(--card));
+  color: var(--busy-ink);
   font: inherit;
   line-height: 1.2;
   text-align: left;
@@ -6028,9 +6037,9 @@ dialog.sheet[open]:not(:modal) {
   top: 0;
   bottom: 0;
   left: 0;
-  width: 3.5px;
+  width: 3px;
   border-radius: 7px 0 0 7px;
-  background: var(--ink);
+  background: var(--busy);
 }
 
 .tl__bt,
@@ -6044,7 +6053,7 @@ dialog.sheet[open]:not(:modal) {
 }
 
 .tl__bs {
-  color: var(--muted);
+  color: var(--busy-ink);
   font-size: 0.72rem;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
@@ -6071,33 +6080,34 @@ dialog.sheet[open]:not(:modal) {
 
 .tl__blk.is-sel {
   z-index: 4;
-  background: var(--ink);
-  color: #fff;
-  box-shadow: 0 6px 18px -6px rgb(0 0 0 / 45%);
+  background: color-mix(in srgb, var(--busy) 26%, var(--card));
+  box-shadow: 0 0 0 2px var(--busy), 0 6px 18px -8px rgb(215 0 21 / 45%);
   touch-action: none;
-}
-
-.tl__blk.is-sel::before {
-  background: transparent;
-}
-
-.tl__blk.is-sel .tl__bs {
-  color: rgb(255 255 255 / 78%);
 }
 
 .tl__blk.is-lift {
   transform: scale(1.02);
-  box-shadow: 0 12px 28px -8px rgb(0 0 0 / 50%);
+  box-shadow: 0 0 0 2px var(--busy), 0 12px 28px -8px rgb(215 0 21 / 50%);
+}
+
+/* (being drawn or dragged: solid red, white on it) */
+.tl__blk.is-live,
+.tl__blk.is-ghost {
+  background: var(--busy-strong);
+  color: #fff;
+}
+
+.tl__blk.is-live::before,
+.tl__blk.is-ghost::before {
+  background: var(--busy-ink);
 }
 
 .tl__blk.is-ghost {
-  background: color-mix(in srgb, var(--ink) 82%, transparent);
-  color: #fff;
   pointer-events: none;
 }
 
 .tl__blk.is-ghost .tl__bs {
-  color: rgb(255 255 255 / 80%);
+  color: #fff;
 }
 
 /* The stretch being moved says its from–to on itself, to the minute: a
@@ -6111,7 +6121,7 @@ dialog.sheet[open]:not(:modal) {
   border-radius: 999px;
   background: var(--card);
   box-shadow: 0 1px 4px rgb(0 0 0 / 28%);
-  color: var(--ink);
+  color: var(--busy-ink);
   font-family: var(--font-rounded);
   font-size: 0.88rem;
   font-weight: 700;
@@ -6155,7 +6165,7 @@ dialog.sheet[open]:not(:modal) {
   height: 11px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 0 2px var(--ink), 0 1px 3px rgb(0 0 0 / 30%);
+  box-shadow: 0 0 0 2.5px var(--busy), 0 1px 3px rgb(0 0 0 / 30%);
 }
 
 .tl__hd--t {
@@ -6171,7 +6181,7 @@ dialog.sheet[open]:not(:modal) {
 .tl__hd.is-on::after {
   width: 15px;
   height: 15px;
-  box-shadow: 0 0 0 2.5px var(--accent), 0 2px 6px rgb(0 0 0 / 30%);
+  box-shadow: 0 0 0 2.5px var(--busy-strong), 0 2px 6px rgb(0 0 0 / 30%);
 }
 
 /* The time under the finger, big enough to read past it. */
@@ -6261,6 +6271,10 @@ dialog.sheet[open]:not(:modal) {
   font-weight: 600;
 }
 
+.tl-sum .is-busy {
+  color: var(--busy-ink);
+}
+
 .tl-exact {
   flex: none;
   padding: 0;
@@ -6321,9 +6335,11 @@ dialog.sheet[open]:not(:modal) {
   font-weight: 600;
 }
 
+/* (the busy time's own red bar down its edge, as on the timeline) */
 .tl-ed__rows {
   overflow: visible;
   padding: 0;
+  box-shadow: inset 3px 0 0 var(--busy), var(--shadow-sm);
 }
 
 .tl-ed__row {

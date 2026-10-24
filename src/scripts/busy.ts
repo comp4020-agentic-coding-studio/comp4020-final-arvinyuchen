@@ -186,7 +186,7 @@ function enhance(dialog: HTMLDialogElement) {
       line += `<button type="button" class="tl-cap__others${S.showOthers ? "" : " is-off"}" data-others aria-pressed="${S.showOthers}"><i aria-hidden="true"></i>Others</button>`;
     cap.innerHTML = line;
     const runs = mergeIntervals(S.busy, { start, end });
-    sum.innerHTML = runs.length ? `Busy <b>${runs.map(([a, b]) => formatSpan(a, b)).join(", ")}</b>` : "<b>Nothing marked busy</b>";
+    sum.innerHTML = runs.length ? `Busy <b class="is-busy">${runs.map(([a, b]) => formatSpan(a, b)).join(", ")}</b>` : "<b>Nothing marked busy</b>";
     save.textContent = runs.length ? "Save my times" : "I'm free all day";
     out.innerHTML = runs.map(([a, b]) => `<input type="hidden" name="busy" value="${a}-${b}">`).join("");
   }
