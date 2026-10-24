@@ -72,10 +72,16 @@ follow from it; every change has to hold to them.
   its account stops being a member ends at the next change.
 - **Taking a place off the list is for whoever put it there.** In Edit
   mode (`?edit`), the member who added a place can take it off until
-  someone else is keen on it; the owner can take any off, asked first when
-  others are keen (`removePick` in `src/lib/db.ts`). It goes with its
-  keens, so adding it back starts from none; it stays in Explore, and the
-  page offers Undo.
+  someone else is keen on it, and never while it's a stop of the plan on
+  now (not called off, its day not gone; the route refuses); the owner can
+  take any off, asked first when others are keen (`removePick` in
+  `src/lib/db.ts`). Edit gives every row one slot where its keen button
+  was (kept, unseen, so rows don't reflow), with exactly one thing in it:
+  a red minus circle to take it off, a grey lock circle the same size on
+  a stop of the plan on (labelled "In the plan, only the owner can take it
+  off"; the row's "Planning … · stop 1 of 2" says which), or, muted on one
+  line, whose it is. It goes with its keens, so adding it back starts from
+  none; it stays in Explore, and the page offers Undo.
 - **The list is always the ranking, and you can see it move.** A live
   change re-ranks Our list straight away, most keen first, and each card
   glides from its old place to its new one (under reduced motion it just
@@ -84,10 +90,22 @@ follow from it; every change has to hold to them.
   (PROCESS.md, "Several people voting at once"). Never jump cards without
   the glide, and never replay the cards' entrance on a refresh.
 - **A plan is the owner's to decide, from busy times nobody else sees.** The
-  owner starts one plan at a time, for a place on Our list, a day and how
-  long it takes (`src/lib/plans.ts`); only times at least that long are
-  offered, never a shorter one; each member marks only their own busy times
-  (`me()`), and the owner sets the time. Times are Canberra's wall clock:
+  owner starts one plan at a time: one outing, to one to five places on Our
+  list in order (its stops, `plan_places`; `plans.place_id` is always the
+  first), on a day, with one length for all of it (`src/lib/plans.ts`); only times at least that long are
+  offered, never a shorter one; but when none of those has everyone who's
+  answered free and a shorter time does, the card says so above them,
+  naming the longest ("All 7 are free 1–4:30pm (3h 30m)", `allFree` in
+  `planView`), and gives the owner "Make it 3h 30m", the change route's
+  new length (answers kept). The owner's sheet asks only how long; the
+  hours it counts (8am to 11pm unless changed, and only time inside them
+  is ever free, so never the night) fold away under it; each member marks only their own busy times
+  (`me()`), and the owner sets the time: a window's earliest start (one
+  chip), or a later one typed or swiped in its time field, kept so the
+  whole length fits in the window (`start-` and the window's start, read
+  by the set route; a plain time input with min and max without a
+  script); the windows past the best few sit behind "N more windows", and
+  "Or set an exact time" stays for a time outside them or another end. Times are Canberra's wall clock:
   a local date and whole minutes since its midnight, to the minute
   (`src/lib/when.ts`), never the server's zone; on the timeline a drag
   lands on 5 minutes and exact minutes are typed. Nobody sees anyone else's
@@ -97,8 +115,9 @@ follow from it; every change has to hold to them.
   the browser. There's no push, email or share button for a plan: a dot on
   Our list's tab, a note on an open page, the card. Once the time is set, a
   member's change tells only the owner. A plan moved to another day is a
-  new plan, the old one called off and kept; one whose place leaves the
-  list is called off and kept.
+  new plan, the old one called off and kept. A stop whose place leaves the
+  list is dropped, the others moving up; a plan whose last stop goes is
+  called off and kept. Changing the stops keeps everyone's times.
 - **Nothing is lost.** All state lives in the one SQLite file on `/data`.
   Schema changes are additive only; never drop or rewrite data a group made.
   A place's kind is stored by its key (`src/lib/kinds.ts`), so a key is never

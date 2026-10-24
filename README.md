@@ -161,7 +161,7 @@ share a new one by looking it up on OpenStreetMap and saying why it's good; it
 appears in every group's Explore. Vote "keen" and the count changes live in
 every open page, and the list re-ranks itself, each card gliding to its new
 place. Our list's Edit takes a place off again: yours until someone else is
-keen on it, any for the owner, with Undo; put back, it starts from no keens.
+keen on it or while it's in the plan on now (a grey lock where the red minus would be), any for the owner, with Undo; put back, it starts from no keens.
 The group's page is in tabs (Our list, Explore, Share a place, and
 Settings for whoever started it), and the invite folds behind one button. Search Explore by describing what you're after: the answer is
 the matching cards, best first, and the map frames their pins. Everyone signs
@@ -169,12 +169,18 @@ in with a passkey, is themselves on any device, and sees all their groups in
 one place; your account page renames you everywhere and adds or removes
 passkeys. The person who started a
 group can rename it, write a note for the people they invite, remove or merge
-members, and reset its invite link. They can also plan a day out: a place
-from the list, a day, and how long it takes. Everyone marks when they're busy on that day's
+members, and reset its invite link. They can also plan a day out: one place
+from the list or a few in order (an outing with stops, "National Gallery →
+Questacon"), a day, and how long it all takes (the hours it counts, 8am to
+11pm, fold away under that and can be changed). Everyone marks when they're busy on that day's
 hours, to the minute (tap for an hour, hold and drag to draw in 5-minute
 steps, type exact minutes; without a script, rows of From and To), and the plan's card shows when everyone's
 free for that long, longest first, as counts and who can't make it (or
-says plainly that no stretch is that long). The owner sets the
-time; it shows under the group's name as Next up and on the place's row in
+says plainly that no stretch is that long). When every time that long
+leaves someone out but everyone's free for less, it says so too ("All 7
+are free 1–4:30pm (3h 30m)"), and the owner can make the plan that long in
+one tap. The owner sets the
+time: a window's earliest start in one tap, or any later start that still
+fits, typed or swiped to the minute (or an exact time of their own); it shows under the group's name as Next up and on the place's row in
 the list, and if someone's times change after that, only the owner hears,
 with a time to move to. Next: saying who's coming once the time is set.

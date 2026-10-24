@@ -1,16 +1,19 @@
 ---
 import type { Group, Pick } from "../lib/db";
-import { DEFAULT_DURATION, DEFAULT_RANGE, PLAN_DAYS_AHEAD, type Plan } from "../lib/plans";
-import { addDays, clockOf, dayParts, today } from "../lib/when";
+import { DEFAULT_DURATION, DEFAULT_RANGE, MAX_STOPS, PLAN_DAYS_AHEAD, type Plan } from "../lib/plans";
+import { addDays, clockOf, dayParts, formatSpan, today } from "../lib/when";
 import SpotPhoto from "./SpotPhoto.astro";
 
-// The owner's sheet for a plan: where (a place on Our list), which day (a
+// The owner's sheet for a plan: where (one to five places on Our list, the
+// outing's stops in order: ticked in the list's order as a plain form, in
+// the order tapped with the script, which numbers them), which day (a
 // chip for the next two weeks, or another date: the browser's date field,
 // which the script turns into a calendar in the sheet's own look,
-// src/scripts/plan-start.ts), and the hours to count (8am to 11pm unless
-// they say: time fields to the minute, which the script makes fields you
-// type or swipe, src/scripts/timefield.ts), and how long it takes (2h
-// unless they say): only times that long are offered. With a plan already on,
+// src/scripts/plan-start.ts), and how long it takes (2h unless they say):
+// only times that long are offered. The hours to count (8am to 11pm, so
+// night is never "free") fold away under it: open, they're time fields to
+// the minute, which the script makes fields you type or swipe
+// (src/scripts/timefield.ts). With a plan already on,
 // the same sheet moves it to another day or other hours. A <dialog>, open
 // from the server when the URL asks (?plan=new, ?plan=change), so it works
 // without a script; the page's script opens it in place. It sits outside
@@ -29,6 +32,8 @@ const days = Array.from({ length: 14 }, (_, i) => addDays(first, i));
 const chosenDay = plan?.day ?? addDays(first, 1);
 const range = plan?.range ?? DEFAULT_RANGE;
 const duration = plan?.duration ?? DEFAULT_DURATION;
+// the stops, in order: the plan's, or (for a new one) the list's first
+const chosen = plan ? plan.stops.map((s) => s.id) : picks.slice(0, 1).map((p) => p.place.id);
 ---
 
 <dialog id="plan-start" class="sheet" open={open} tabindex="-1" aria-labelledby="plan-start-title">
@@ -48,26 +53,30 @@ const duration = plan?.duration ?? DEFAULT_DURATION;
       <span></span>
     </div>
     <div class="sheet__body">
-      {error && <p class="notice" role="alert">That didn't work: pick a place on the list, a day from today on, and how long it takes within the hours you count.</p>}
-      {changing ? (
-        <p class="fine">{plan.place.name}. On another day, it starts afresh: everyone marks their times for that day.</p>
-      ) : (
-        <fieldset class="sheet__group">
-          <legend class="sheet__label">Where · from Our list</legend>
-          <div class="card where-list">
-            {picks.map((pick, i) => (
+      {error && <p class="notice" role="alert">That didn't work: pick one to five places on the list, a day from today on, and how long it takes within the hours you count.</p>}
+      <fieldset class="sheet__group">
+        <legend class="sheet__label">Where · one or more, in order</legend>
+        {changing && <p class="fine where__note">On another day, it starts afresh: everyone marks their times for that day. Other stops keep everyone's times.</p>}
+        <input type="hidden" name="stops" value="1" />
+        <input type="hidden" name="order" value={chosen.join(",")} data-stop-order />
+        <div class="card where-list" data-stops data-max={MAX_STOPS}>
+          {picks.map((pick) => {
+            const n = chosen.indexOf(pick.place.id) + 1;
+            return (
               <label class={`where spot--${pick.place.kind}`}>
                 <SpotPhoto photo={pick.place.photo} name={pick.place.name} kind={pick.place.kind} small />
                 <span class="where__text">
                   <strong>{pick.place.name}</strong>
                   <span>{[pick.place.area, `${pick.keen.length} keen`].filter(Boolean).join(" · ")}</span>
                 </span>
-                <input type="radio" name="place" value={pick.place.id} checked={i === 0} required />
+                <input type="checkbox" class="where__pick" name="place" value={pick.place.id} checked={n > 0} data-name={pick.place.name} />
+                <span class="where__n" aria-hidden="true">{n || ""}</span>
               </label>
-            ))}
-          </div>
-        </fieldset>
-      )}
+            );
+          })}
+        </div>
+        <p class="fine where__note" data-stops-note>Up to {MAX_STOPS} places, in the order you'll go.</p>
+      </fieldset>
       <fieldset class="sheet__group">
         <legend class="sheet__label">Which day</legend>
         <div class="days" role="radiogroup">
@@ -87,24 +96,30 @@ const duration = plan?.duration ?? DEFAULT_DURATION;
         </label>
       </fieldset>
       <fieldset class="sheet__group">
-        <legend class="sheet__label">Options</legend>
+        <legend class="sheet__label">How long</legend>
         <div class="card sheet__rows">
-          <div class="sheet__row" data-range>
-            <label for="plan-from"><strong>Count from</strong><span class="fine">Night isn't "free"</span></label>
-            <input id="plan-from" type="time" name="from" step="60" min="06:00" max="23:59" value={clockOf(range.start)} required />
-          </div>
-          <div class="sheet__row" data-range>
-            <label for="plan-to"><strong>Until</strong><span class="fine">12:00am is midnight</span></label>
-            <input id="plan-to" type="time" name="to" step="60" value={clockOf(range.end)} required />
-          </div>
           <div class="sheet__row" data-length>
-            <span id="plan-long"><strong>How long</strong><span class="fine">Only times this long are suggested</span></span>
-            <span class="length" role="group" aria-labelledby="plan-long">
+            <span><span class="fine" id="plan-long-hint">Only times this long are suggested</span></span>
+            <span class="length" role="group" aria-label="How long" aria-describedby="plan-long-hint">
               <label><input type="number" name="duration_h" min="0" max="18" value={Math.floor(duration / 60)} inputmode="numeric" aria-label="Hours" />h</label>
               <label><input type="number" name="duration_m" min="0" max="59" value={duration % 60} inputmode="numeric" aria-label="Minutes" />m</label>
             </span>
           </div>
         </div>
+        <details class="hours" data-hours>
+          <summary>Counting <span data-hours-now>{formatSpan(range.start, range.end)}</span> · <span class="hours__change">Change</span></summary>
+          <p class="hours__hint">Only these hours count as free: night never does.</p>
+          <div class="card sheet__rows">
+            <div class="sheet__row" data-range>
+              <label for="plan-from"><strong>From</strong></label>
+              <input id="plan-from" type="time" name="from" step="60" min="06:00" max="23:59" value={clockOf(range.start)} required />
+            </div>
+            <div class="sheet__row" data-range>
+              <label for="plan-to"><strong>Until</strong><span class="fine">12:00am is midnight</span></label>
+              <input id="plan-to" type="time" name="to" step="60" value={clockOf(range.end)} required />
+            </div>
+          </div>
+        </details>
       </fieldset>
     </div>
     <div class="sheet__foot">

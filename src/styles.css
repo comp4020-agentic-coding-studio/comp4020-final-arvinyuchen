@@ -333,8 +333,15 @@ input[type="radio"] {
   color: #fff;
 }
 
-.btn--primary:hover {
+.btn--primary:hover:not(:disabled) {
   background: #0062c4;
+}
+
+/* (a button waiting for something first: the plan sheet's, with no place picked) */
+.btn--primary:disabled {
+  background: var(--fill-strong);
+  color: var(--muted);
+  cursor: default;
 }
 
 /* A form's own button is as tall and as rounded as its fields, so the two
@@ -4042,39 +4049,54 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   cursor: pointer;
 }
 
-/* Edit mode: Remove, in red, takes the keen button's place where this
-   member may take the place off; elsewhere, whose it is. */
+/* Edit mode, as iOS lists do it: every row keeps one slot where its keen
+   button was, the button kept (unseen) so the row doesn't reflow, and in
+   it exactly one thing, at its right edge: a red minus to take the place
+   off where this member may; a grey lock, the same size, on a stop of the
+   plan on now (the row's "Planning … · stop 1 of 2" says which); or,
+   muted on one line, whose it is. */
 .pick > form,
 .pick > .pick__remove {
   grid-column: 4;
   grid-row: 1;
 }
 
-.pick__remove,
-#list[data-editing] .pick > [data-keen] {
+.pick > .pick__remove {
+  justify-self: end;
+}
+
+.pick__remove {
   display: none;
+}
+
+#list[data-editing] .pick > [data-keen] {
+  visibility: hidden;
 }
 
 #list[data-editing] .pick__remove {
   display: block;
 }
 
-.remove {
-  padding: 0.4rem 0.85rem;
+.remove,
+.pick__locked {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
   border: 0;
-  border-radius: 999px;
-  background: color-mix(in srgb, #d70015 10%, white);
-  color: #c4000f;
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 600;
-  white-space: nowrap;
+  border-radius: 50%;
+}
+
+.remove {
+  background: var(--busy-strong);
+  color: #fff;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: transform 0.15s;
 }
 
 .remove:hover {
-  background: color-mix(in srgb, #d70015 16%, white);
+  transform: scale(1.06);
 }
 
 .remove:focus-visible {
@@ -4082,15 +4104,27 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   outline-offset: 2px;
 }
 
+#list[data-editing] .pick__locked {
+  display: grid;
+  background: var(--fill);
+  color: var(--muted);
+}
+
 .pick__by {
-  max-width: 7rem;
+  max-width: 6.5rem;
   margin: 0;
   overflow: hidden;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .remove {
+    transition: none;
+  }
 }
 
 /* A note for a moment at the foot of the screen (Took X off the list,
@@ -4395,42 +4429,96 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   display: none;
 }
 
+/* (an iOS context menu: frosted, fitted to its labels, 44px rows split
+   by hairlines, the label left and its icon right in one column) */
 .plan__menu-list {
   position: absolute;
-  top: 2.4rem;
+  top: calc(100% + 0.4rem);
   right: 0;
   z-index: 8;
   display: grid;
-  min-width: 13rem;
+  width: max-content;
+  min-width: 14rem;
+  max-width: calc(100vw - 2rem);
   overflow: hidden;
-  border-radius: 14px;
-  background: var(--card);
-  box-shadow: var(--shadow-float);
+  border-radius: 13px;
+  background: rgb(249 249 251 / 92%);
+  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 8%), var(--shadow-float);
+  backdrop-filter: blur(20px) saturate(1.8);
+  transform-origin: top right;
+  animation: menu-in 0.16s ease-out;
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+.plan__menu-list > form {
+  display: contents;
 }
 
 .plan__menu-list > a,
 .plan__menu-list button {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
   width: 100%;
-  padding: 0.75rem 1rem;
+  min-height: 44px;
+  padding: 0 1rem;
   border: 0;
-  border-top: 1px solid var(--line);
+  border-top: 0.5px solid rgb(60 60 67 / 29%);
   background: none;
   color: var(--ink);
   font: inherit;
-  font-size: 0.95rem;
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
   text-align: left;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.plan__menu-list > :first-child,
-.plan__menu-list > :first-child button {
+.plan__menu-list > :first-child {
   border-top: 0;
 }
 
+.plan__menu-list svg {
+  flex: none;
+}
+
+.plan__menu-list > a:hover,
+.plan__menu-list button:hover,
+.plan__menu-list > a:focus-visible,
+.plan__menu-list button:focus-visible {
+  background: rgb(0 0 0 / 5%);
+  outline: none;
+}
+
+.plan__menu-list > a:active,
+.plan__menu-list button:active {
+  background: rgb(0 0 0 / 11%);
+}
+
+/* (the keyboard's place, as a ring inside the row it's on) */
+.plan__menu-list > a:focus-visible,
+.plan__menu-list button:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
 .plan__menu-list .is-danger {
-  color: var(--food);
+  color: var(--busy-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plan__menu-list {
+    animation: none;
+  }
 }
 
 /* Not answered yet: the two ways to, full width. */
@@ -4528,42 +4616,43 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 .heat__fill {
   position: absolute;
   inset: 0;
-  overflow: hidden;
   border-radius: 7px;
   background: var(--line);
 }
 
-.heat__fill i {
-  position: absolute;
-  top: 0;
-  bottom: 0;
+/* (the hours, as small ticks under the strip rather than cuts in it) */
+.heat__ticks {
+  position: relative;
+  height: 4px;
+  margin-top: 3px;
 }
 
-/* (a white hairline on each hour) */
-.heat__fill b {
+.heat__ticks b {
   position: absolute;
   top: 0;
-  bottom: 0;
-  width: 1.5px;
-  background: rgb(255 255 255 / 85%);
+  width: 1px;
+  height: 4px;
+  margin-left: -0.5px;
+  background: var(--line-strong);
 }
 
 .heat__mark {
   position: absolute;
   top: -3px;
   bottom: -3px;
-  margin-left: -3px;
-  padding-right: 6px;
+  margin-left: -3.5px;
+  padding-right: 4px;
   box-sizing: content-box;
-  border: 2px solid var(--ink);
+  border: 1.5px solid var(--accent);
   border-radius: 8px;
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 70%);
   pointer-events: none;
 }
 
 .heat__axis {
   position: relative;
   height: 1.1rem;
-  margin-top: 0.25rem;
+  margin-top: 0.1rem;
   color: var(--muted);
   font-size: 0.68rem;
   font-variant-numeric: tabular-nums;
@@ -4591,15 +4680,16 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-size: 0.7rem;
 }
 
-.heat__key i {
-  width: 0.7rem;
-  height: 0.7rem;
-  border-radius: 3px;
+/* (the scale itself: the strip's grey to its blue, as it deepens) */
+.heat__scale {
+  width: 3.2rem;
+  height: 0.3rem;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--line), color-mix(in srgb, var(--accent) 30%, var(--line)) 45%, var(--accent));
 }
 
-.heat__key i + i,
-.heat__key i:not(:first-child) {
-  margin-left: 0.45rem;
+.heat__ringkey {
+  margin-left: auto;
 }
 
 .wins {
@@ -4777,27 +4867,94 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   outline-offset: 2px;
 }
 
-.plan__other {
-  padding: 0.3rem 0.9rem 0.2rem;
+/* (the earliest start, picked, unless a start is typed: then the field's) */
+.st small {
+  font-weight: 500;
+  opacity: 0.8;
 }
 
-.plan__other label {
+.starts.is-typed .st input:checked + span {
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--ink);
+}
+
+.starts.is-typed .tf,
+.starts.is-typed .starts__at > input {
+  box-shadow: inset 0 0 0 2px var(--accent-strong);
+}
+
+/* (a window just as long as the plan: its one start, said) */
+.st--only {
+  cursor: auto;
+}
+
+.st--only span {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.st--only input:checked + span {
+  background: none;
+  color: var(--ink);
+}
+
+.starts__at {
+  display: inline-flex;
+}
+
+.starts__at > input {
+  width: auto;
+  min-height: 2rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+/* The windows past the best few, behind "N more windows" (a box to tick,
+   so it works without a script); one picked stays in view. */
+.wins__more label {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
-.plan__other select {
-  width: auto;
-  min-height: 2.2rem;
-  padding: 0.3rem 0.8rem;
-  border-radius: 999px;
+  gap: 0.35rem;
+  padding: 0.55rem 0.9rem;
   color: var(--accent-ink);
   font-size: 0.85rem;
   font-weight: 600;
+  cursor: pointer;
+}
+
+.wins__more input {
+  position: absolute;
+  opacity: 0;
+}
+
+.wins__more span::after {
+  content: "";
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-left: 0.45rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-0.15rem) rotate(45deg);
+  transition: transform 0.2s;
+}
+
+.wins__more input:checked + span::after {
+  transform: translateY(0.05rem) rotate(-135deg);
+}
+
+.wins__more input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.wins:not(:has(.wins__more-toggle:checked, .starts--more :checked)) .win--more {
+  display: none;
 }
 
 .plan__pick .plan__set {
@@ -4833,6 +4990,44 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 .plan__none--short strong {
   color: var(--ink);
   font-weight: 600;
+}
+
+/* Everyone's free, but for less than the plan takes: a note above the
+   windows, with the owner's way to fit it. */
+.plan__allfree {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.75rem;
+  margin: 0.1rem 0.9rem 0.75rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 12px;
+  background: var(--fill);
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.plan__allfree p {
+  flex: 1 1 12rem;
+  margin: 0;
+}
+
+.plan__allfree strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.plan__allfree form {
+  margin: 0;
+}
+
+/* (a time and its length kept on one line) */
+.plan__span {
+  white-space: nowrap;
+}
+
+.plan__allfree .btn {
+  background: var(--card);
 }
 
 /* The owner's exact time, folded under Set it: the same fields to type or swipe. */
@@ -5319,9 +5514,62 @@ dialog.sheet[open]:not(:modal) {
   white-space: nowrap;
 }
 
-.where input {
-  width: 1.3rem;
-  height: 1.3rem;
+/* (each chosen place's circle says its stop: 1, 2, 3, in the chips' blue;
+   ticked without the script, a tick) */
+.where .where__pick {
+  position: absolute;
+  right: 0.8rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: 0;
+  opacity: 0;
+}
+
+.where .where__n {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--line-strong);
+  color: transparent;
+  font-family: var(--font-rounded);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.where__pick:checked + .where__n {
+  background: var(--accent-strong);
+  box-shadow: none;
+  color: #fff;
+}
+
+.where__pick:checked + .where__n:empty::after {
+  content: "✓";
+}
+
+.where__pick:focus-visible + .where__n {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.where:has(.where__pick:disabled) {
+  cursor: default;
+}
+
+.where:has(.where__pick:disabled) .where__n {
+  opacity: 0.4;
+}
+
+.where__note {
+  margin: 0.35rem 0.2rem 0;
+  font-size: 0.78rem;
+}
+
+.sheet__group > .where__note:first-of-type {
+  margin: 0 0.2rem 0.4rem;
 }
 
 /* Which day: the next two weeks as calendar pages, the chosen one ringed. */
@@ -5556,8 +5804,56 @@ dialog.sheet[open]:not(:modal) {
   font-size: 0.74rem;
 }
 
+/* (How long's row: its header asks the question, so the hint leads) */
+.sheet__row[data-length] .fine {
+  font-size: 0.85rem;
+}
+
 .sheet__row + .sheet__row {
   border-top: 1px solid var(--line);
+}
+
+/* The hours to count, folded under How long: the range in grey, and
+   Change to open the same fields. */
+.hours {
+  margin-top: 0.45rem;
+}
+
+.hours summary {
+  width: max-content;
+  max-width: 100%;
+  margin-left: 0.2rem;
+  padding: 0.2rem 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.hours summary::-webkit-details-marker {
+  display: none;
+}
+
+.hours__change {
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.hours[open] .hours__change {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.hours summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.hours__hint {
+  margin: 0.15rem 0.2rem 0.45rem;
+  color: var(--muted);
+  font-size: 0.78rem;
 }
 
 .length {
@@ -5611,6 +5907,8 @@ dialog.sheet[open]:not(:modal) {
   position: relative;
   display: inline-block;
   margin: 0;
+  /* (in a label, not its muted spans' grey) */
+  color: inherit;
   touch-action: none;
   cursor: ns-resize;
   user-select: none;

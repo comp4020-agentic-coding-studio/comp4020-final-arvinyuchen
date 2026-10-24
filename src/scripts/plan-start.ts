@@ -7,10 +7,11 @@
 // out of reach. A chip and the calendar are one choice: the chips keep a
 // day of theirs (the date field emptied), and a day further off is the
 // date field's, with no chip chosen; the form posts as it always did.
-// The hours to count, and how long it takes, are fields to type or swipe
-// (src/scripts/timefield.ts); how long is never more than the hours.
+// How long it takes, and the hours to count (folded under it), are fields
+// to type or swipe (src/scripts/timefield.ts); how long is never more than
+// the hours.
 import { EARLIEST, LATEST } from "../lib/free";
-import { addDays, formatDay, isDay, parseMinute } from "../lib/when";
+import { addDays, formatDay, formatSpan, isDay, parseMinute } from "../lib/when";
 import { fieldInstead, timeField, type TimeField } from "./timefield";
 
 const asDate = (day: string) => new Date(`${day}T12:00:00Z`);
@@ -179,7 +180,8 @@ function calendar(form: HTMLFormElement) {
   render();
 }
 
-// "Count from" as two fields to type or swipe, 6am to midnight, the end
+// The hours to count (From and Until, folded under How long) as two fields
+// to type or swipe, 6am to midnight, the end
 // after the start: moving one past the other takes the other along.
 function countFrom(form: HTMLFormElement, then: (start: number, end: number) => void) {
   const from = form.querySelector<HTMLInputElement>('[data-range] input[name="from"]');
@@ -231,6 +233,48 @@ function howLong(form: HTMLFormElement) {
   return field;
 }
 
+// Where: the stops in the order tapped, each chosen place's circle saying
+// its number (1, 2, 3); letting one go numbers the rest again. At least
+// one (the button waits for it), at most five (the rest wait). The order
+// goes as "order"; the ticks are the plain form's, so without the script
+// they post in the list's order.
+function stops(form: HTMLFormElement) {
+  const list = form.querySelector<HTMLElement>("[data-stops]");
+  const orderField = form.querySelector<HTMLInputElement>("[data-stop-order]");
+  if (!list || !orderField) return;
+  const order: HTMLInputElement = orderField;
+  const boxes = [...list.querySelectorAll<HTMLInputElement>('input[name="place"]')];
+  const go = form.querySelector<HTMLButtonElement>(".sheet__foot .btn--primary");
+  const note = form.querySelector<HTMLElement>("[data-stops-note]");
+  const max = Number(list.dataset.max) || 5;
+  let chosen = order.value.split(",").filter((id) => boxes.some((b) => b.value === id && b.checked));
+  for (const b of boxes) if (b.checked && !chosen.includes(b.value)) chosen.push(b.value);
+  function render() {
+    order.value = chosen.join(",");
+    for (const b of boxes) {
+      const n = chosen.indexOf(b.value) + 1;
+      const dot = b.nextElementSibling;
+      if (dot) dot.textContent = n ? String(n) : "";
+      b.disabled = !n && chosen.length >= max;
+      b.setAttribute("aria-label", `${b.dataset.name}${n ? `, stop ${n} of ${chosen.length}` : ""}`);
+    }
+    if (go) go.disabled = chosen.length === 0;
+    if (note)
+      note.textContent = !chosen.length
+        ? "Pick where you're going: one place, or a few in order."
+        : chosen.length >= max
+          ? `That's ${max}, the most for one outing.`
+          : `Up to ${max} places, in the order you'll go.`;
+  }
+  list.addEventListener("change", (event) => {
+    const b = event.target as HTMLInputElement;
+    if (!boxes.includes(b)) return;
+    chosen = b.checked ? [...chosen.filter((id) => id !== b.value), b.value] : chosen.filter((id) => id !== b.value);
+    render();
+  });
+  render();
+}
+
 // The owner's exact time on the card, the same two fields: the start
 // moving takes the end with it, keeping how long it is.
 function exactTime(row: HTMLElement) {
@@ -262,19 +306,59 @@ function exactTime(row: HTMLElement) {
   });
 }
 
+// A window's start on the plan card: its plain time field (min and max
+// keeping the whole length inside the window) becomes one to type or
+// swipe. A change picks the window and says so to the page's script (the
+// button and the strip's ring follow); the window's "earliest" chip puts
+// the field back to its start.
+const startFields = new WeakMap<HTMLElement, TimeField>();
+function startField(plain: HTMLInputElement) {
+  if (plain.dataset.enhanced !== undefined) return;
+  plain.dataset.enhanced = "";
+  const starts = plain.closest<HTMLElement>(".starts");
+  const min = Number(plain.dataset.min);
+  const max = Number(plain.dataset.max);
+  if (!starts || !(min < max)) return;
+  const field = fieldInstead(plain, {
+    value: parseMinute(plain.value) ?? min,
+    min,
+    max,
+    label: "Start",
+    onChange: () => tell(),
+  });
+  const carrier = field.el.querySelector<HTMLInputElement>('input[type="hidden"]');
+  const tell = () => carrier?.dispatchEvent(new Event("change", { bubbles: true }));
+  startFields.set(starts, field);
+}
+document.addEventListener("click", (event) => {
+  const chip = (event.target as Element).closest?.(".starts .st:not(.st--only)");
+  const starts = chip?.closest<HTMLElement>(".starts");
+  const field = starts && startFields.get(starts);
+  if (!starts || !field) return;
+  field.set(Number(starts.querySelector<HTMLInputElement>("[data-start-field]")?.dataset.min), false);
+  starts.querySelector('input[type="hidden"][name^="start-"]')?.dispatchEvent(new Event("change", { bubbles: true }));
+});
+
 function enhance(dialog: HTMLDialogElement) {
   const form = dialog.querySelector<HTMLFormElement>("form[data-plan-start]");
   if (!form || form.dataset.enhanced !== undefined) return;
   form.dataset.enhanced = "";
+  stops(form);
   calendar(form);
   const length = howLong(form);
-  countFrom(form, (start, end) => length?.bounds(1, end - start));
+  const now = form.querySelector<HTMLElement>("[data-hours-now]");
+  countFrom(form, (start, end) => {
+    length?.bounds(1, end - start);
+    // (the folded line says the hours as they are)
+    if (now) now.textContent = formatSpan(start, end);
+  });
 }
 
 function enhanceAll() {
   const dialog = document.querySelector<HTMLDialogElement>("dialog#plan-start");
   if (dialog) enhance(dialog);
   for (const row of document.querySelectorAll<HTMLElement>("[data-set-range]")) exactTime(row);
+  for (const plain of document.querySelectorAll<HTMLInputElement>("input[data-start-field]")) startField(plain);
 }
 enhanceAll();
 // (a live refresh can bring the sheet, or the card, in anew)

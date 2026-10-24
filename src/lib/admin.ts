@@ -105,6 +105,7 @@ export function purgeGroups(ids: string[]): number {
           OR member_id IN (SELECT id FROM members WHERE group_id IN (${inGroups}))`,
     ).run(...archived, ...archived);
     const plans = `SELECT id FROM plans WHERE group_id IN (${inGroups})`;
+    db.prepare(`DELETE FROM plan_places WHERE plan_id IN (${plans})`).run(...archived);
     db.prepare(`DELETE FROM plan_busy WHERE plan_id IN (${plans})`).run(...archived);
     db.prepare(`DELETE FROM plan_answers WHERE plan_id IN (${plans})`).run(...archived);
     db.prepare(`UPDATE plans SET replaced_by = NULL WHERE group_id IN (${inGroups})`).run(...archived);

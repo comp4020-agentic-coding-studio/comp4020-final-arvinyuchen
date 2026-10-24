@@ -1,6 +1,6 @@
 ---
 import type { Group } from "../lib/db";
-import type { PlanView } from "../lib/plans";
+import { stopNames, type PlanView } from "../lib/plans";
 import { clockOf, formatDay, formatDuration, formatMinute, formatSpan } from "../lib/when";
 
 // When you're busy on the plan's day. As a plain form it's rows of From
@@ -43,7 +43,7 @@ const timeline = JSON.stringify({
       <a class="sheet__cancel" href={`/g/${group.link}#plan-${plan.id}`} data-close>Cancel</a>
       <div>
         <h2 id="busy-title">When are you busy?</h2>
-        <p class="sheet__sub">{plan.place.name} · {formatDay(plan.day)} · {formatDuration(plan.duration)}</p>
+        <p class="sheet__sub">{stopNames(plan.stops, 2)} · {formatDay(plan.day)} · {formatDuration(plan.duration)}</p>
       </div>
       <span></span>
     </div>

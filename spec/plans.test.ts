@@ -38,6 +38,18 @@ const inPage = (jar: Jar, path: string, form: Record<string, string> | URLSearch
 describe("a plan", () => {
   it("is the owner's to start, for a place on the list, one at a time", async () => {
     const c = await crew("Plan crew");
+    // the owner's sheet asks how long; the hours (8am to 11pm) are folded away under it
+    const sheet = (await page(c.ana, c.path)).querySelector("#plan-start");
+    expect([...(sheet?.querySelectorAll(".sheet__rows") ?? [])][0]?.querySelector("[data-length]")).toBeTruthy();
+    // under a header that asks it, the field named for it, the plain hours and minutes labelled
+    const length = sheet?.querySelector("[data-length]");
+    expect(length?.closest("fieldset")?.querySelector("legend")?.textContent).toBe("How long");
+    expect(length?.querySelector(".length")?.getAttribute("aria-label")).toBe("How long");
+    expect([...(length?.querySelectorAll("input") ?? [])].map((i) => i.getAttribute("aria-label"))).toEqual(["Hours", "Minutes"]);
+    const hours = sheet?.querySelector("details[data-hours]");
+    expect(hours?.hasAttribute("open")).toBe(false);
+    expect(hours?.querySelector("summary")?.textContent).toContain("8am–11pm");
+    expect([...(hours?.querySelectorAll('input[type="time"]') ?? [])].map((i) => i.getAttribute("name"))).toEqual(["from", "to"]);
     // not the owner, not a place on the list, not a day gone by
     expect((await inPage(c.ben, `${c.api}/plans`, { action: "start", place: c.place, day: soon })).status).toBe(403);
     expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: "999999", day: soon })).status).toBe(409);
@@ -65,6 +77,7 @@ describe("a plan", () => {
     // and its hours as plain time fields, to the minute (12:00am the midnight it ends on)
     const hours = [...(await page(c.ana, c.path)).querySelectorAll('#plan-start input[type="time"]')].map((i) => [i.getAttribute("name"), i.getAttribute("value")]);
     expect(hours).toEqual([["from", "08:07"], ["to", "00:00"]]);
+    expect((await page(c.ana, c.path)).querySelector("#plan-start details[data-hours] summary")?.textContent).toContain("8:07am–midnight");
     // other hours, as the script sends them
     expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, from: "421", to: "1379" })).status).toBe(204);
     expect(await data()).toMatchObject({ start: 421, end: 1379 });
@@ -97,6 +110,106 @@ describe("a plan", () => {
     });
     expect(plain.status).toBe(303); // no rows at all: free all day
     expect(plain.headers.get("location")).toContain(`#plan-${plan}`);
+  });
+
+  it("can take in several places on the list, in the order given, one to five", async () => {
+    const c = await crew("Stops crew");
+    for (const key of ["nga", "nma", "awm", "glassworks", "arboretum"]) await request(c.ana, `${c.api}/picks`, { form: { key } });
+    // the places by name, from the owner's sheet (one to pick for each place on the list)
+    const boxes = [...(await page(c.ana, c.path)).querySelectorAll<HTMLInputElement>('#plan-start input[name="place"]')];
+    const id: Record<string, string> = Object.fromEntries(boxes.map((b) => [b.dataset.name ?? "", b.value]));
+    const all = Object.values(id);
+    expect(all.length).toBe(6);
+    const start = (places: string[], order = "") =>
+      inPage(c.ana, `${c.api}/plans`, new URLSearchParams([["action", "start"], ["day", soon], ["stops", "1"], ["order", order], ...places.map((p): [string, string] => ["place", p])]));
+    // none, six, or one not on the list
+    expect((await start([])).status).toBe(409);
+    expect((await start(all)).status).toBe(409);
+    expect((await start([id.Questacon, "999999"])).status).toBe(409);
+    expect((await start([id.Questacon, id.Questacon])).status).toBe(409);
+    // two, in the order tapped (not the list's)
+    const q = id.Questacon;
+    const n = id["National Gallery of Australia"];
+    expect((await start([n, q], `${q},${n}`)).status).toBe(204);
+    let doc = await page(c.ben, c.path);
+    const plan = doc.querySelector<HTMLElement>(".plan")?.dataset.planId ?? "";
+    expect(doc.querySelector(".plan h3")?.textContent).toBe("Questacon → National Gallery of Australia");
+    expect(doc.querySelector("#busy .sheet__sub")?.textContent).toContain("Questacon → National Gallery of Australia · ");
+    const marks = [...doc.querySelectorAll("#list .pick__plan")].map((p) => p.textContent);
+    expect(marks.sort()).toEqual([expect.stringContaining("stop 1 of 2"), expect.stringContaining("stop 2 of 2")]);
+    // the owner's sheet has them ticked, in order
+    const sheet = (await page(c.ana, c.path)).querySelector("#plan-start");
+    expect(sheet?.querySelector<HTMLInputElement>('input[name="order"]')?.value).toBe(`${q},${n}`);
+
+    // other stops keep everyone's times; a plain form's ticks go in the list's order
+    await request(c.ben, `${c.api}/busy`, { form: { plan, from: "09:00", to: "10:00" } });
+    const plain = new URLSearchParams([["action", "change"], ["plan", plan], ["stops", "1"], ["place", id.Questacon], ["place", id["National Museum of Australia"] ?? all[2]]]);
+    expect((await inPage(c.ana, `${c.api}/plans`, plain)).status).toBe(204);
+    doc = await page(c.ben, c.path);
+    expect(doc.querySelector(".plan h3")?.textContent).toContain(" → ");
+    expect(doc.querySelector(`#plan-${plan} .plan__mine`)?.textContent).toContain("busy 9–10am");
+    // none ticked is refused, not "as it was"
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, stops: "1" })).status).toBe(409);
+
+    // a stop taken off the list leaves the plan, the rest moving up; the last one calls it off
+    const pickOf = async (name: string) =>
+      [...(await page(c.ana, c.path)).querySelectorAll("#list li")].find((li) => li.textContent?.includes(name))?.querySelector<HTMLInputElement>('input[name="pick"]')?.value ?? "";
+    const firstName = doc.querySelector(".plan h3")?.textContent?.split(" → ")[0] ?? "";
+    const secondName = doc.querySelector(".plan h3")?.textContent?.split(" → ")[1] ?? "";
+    await request(c.ana, `${c.api}/picks`, { form: { remove: await pickOf(firstName) } });
+    doc = await page(c.ben, c.path);
+    expect(doc.querySelector(".plan h3")?.textContent).toBe(secondName);
+    expect(doc.querySelector(`#plan-${plan} .plan__mine`)?.textContent).toContain("busy 9–10am");
+    await request(c.ana, `${c.api}/picks`, { form: { remove: await pickOf(secondName) } });
+    doc = await page(c.ben, c.path);
+    expect(doc.querySelector(".plan")).toBeNull();
+    expect(doc.querySelector("#past-plans")?.textContent).toContain("Called off");
+    expect(doc.querySelector("#past-plans")?.textContent).toContain(secondName);
+  });
+
+  it("keeps its stops on the list while it's on: a member can't take one off, the owner can", async () => {
+    const c = await crew("Locked crew");
+    // Ben adds two places, and the plan takes in both
+    for (const key of ["nga", "nma"]) await request(c.ben, `${c.api}/picks`, { form: { key } });
+    const boxes = [...(await page(c.ana, c.path)).querySelectorAll<HTMLInputElement>('#plan-start input[name="place"]')];
+    const id: Record<string, string> = Object.fromEntries(boxes.map((b) => [b.dataset.name ?? "", b.value]));
+    const n = id["National Gallery of Australia"];
+    const m = id["National Museum of Australia"];
+    const form = new URLSearchParams([["action", "start"], ["day", soon], ["stops", "1"], ["order", `${n},${m}`], ["place", n], ["place", m]]);
+    expect((await inPage(c.ana, `${c.api}/plans`, form)).status).toBe(204);
+    const row = async (jar: Jar, placeId: string) => (await page(jar, `${c.path}?edit`)).querySelector(`#list li[data-place-id="${placeId}"]`);
+    const pickOf = async (placeId: string) => (await row(c.ana, placeId))?.querySelector<HTMLInputElement>('input[name="pick"]')?.value ?? "";
+
+    // in Edit, Ben's own planned places have no Remove, but a lock
+    expect((await row(c.ben, n))?.querySelector('input[name="remove"]')).toBeNull();
+    expect((await row(c.ben, n))?.querySelector(".pick__locked")?.getAttribute("aria-label")).toBe("In the plan, only the owner can take it off");
+    expect((await row(c.ana, n))?.querySelector('input[name="remove"]')).toBeTruthy();
+    // and the route refuses him: in the page a 409, a plain form back with a note
+    const nPick = await pickOf(n);
+    expect((await inPage(c.ben, `${c.api}/picks`, { remove: nPick })).status).toBe(409);
+    const plain = await request(c.ben, `${c.api}/picks`, { form: { remove: nPick } });
+    expect(plain.headers.get("location")).toContain("error=remove-planned");
+    expect((await page(c.ben, `${c.path}?edit&error=remove-planned`)).querySelector(".list-note")?.textContent).toContain("in the plan");
+
+    // the owner can: only that stop goes
+    expect((await inPage(c.ana, `${c.api}/picks`, { remove: nPick })).status).toBe(204);
+    expect((await page(c.ben, c.path)).querySelector(".plan h3")?.textContent).toBe("National Museum of Australia");
+
+    // called off, Ben's own place is his to take off again
+    const plan = (await page(c.ana, c.path)).querySelector<HTMLElement>(".plan")?.dataset.planId ?? "";
+    await inPage(c.ana, `${c.api}/plans`, { action: "off", plan });
+    expect((await row(c.ben, m))?.querySelector('input[name="remove"]')).toBeTruthy();
+    expect((await inPage(c.ben, `${c.api}/picks`, { remove: await pickOf(m) })).status).toBe(204);
+  });
+
+  it("still reads a plan with one place, as plans were before stops", async () => {
+    const c = await crew("One stop crew");
+    // the form as it was: one place, no order
+    const plan = await planned(c);
+    const doc = await page(c.ben, c.path);
+    expect(doc.querySelector(`#plan-${plan} h3`)?.textContent).toBe("Questacon");
+    expect(doc.querySelector("#list .pick__plan")?.textContent).not.toContain("stop");
+    expect(doc.querySelector("#busy .sheet__sub")?.textContent).toMatch(/^Questacon · /);
   });
 
   it("is set by the owner only, inside the hours it counts", async () => {
@@ -196,6 +309,85 @@ describe("the plan on the group's page", () => {
     expect(doc.querySelector(`#plan-${plan}`)?.getAttribute("data-needs")).toBeNull();
     expect(doc.querySelector(`#plan-${plan} .plan__mine`)?.textContent).toContain("busy 9–10:20am");
     expect(doc.querySelector(".tabs__dot")).toBeNull();
+    // one answer singles nothing out: the strip has no ring
+    expect(doc.querySelector(`#plan-${plan} .heat`)).toBeTruthy();
+    expect(doc.querySelector(`#plan-${plan} .heat__mark`)).toBeNull();
+    // and its key is a scale from busy to free, no squares
+    expect([...doc.querySelectorAll(`#plan-${plan} .heat__key span`)].map((k) => k.textContent)).toEqual(["busy", "free"]);
+  });
+
+  it("says when everyone's free for less than it takes, and lets the owner make it that long", async () => {
+    const c = await crew("Shorter crew");
+    const [cat, dan] = [new Jar(), new Jar()];
+    await join(cat, c.id, c.id, "Cat");
+    await join(dan, c.id, c.id, "Dan");
+    const res = await request(c.ana, `${c.api}/plans`, { form: { action: "start", place: c.place, day: soon, duration: "240" } });
+    const plan = /#plan-(\d+)$/.exec(res.headers.get("location") ?? "")?.[1] ?? "";
+    // every 4h window leaves one out; all who've answered are free 10am to 1pm
+    await request(c.ana, `${c.api}/busy`, { form: { plan, from: "480", to: "600" } });
+    await request(c.ben, `${c.api}/busy`, { form: { plan, from: "780", to: "1380" } });
+    await request(cat, `${c.api}/busy`, { form: { plan, free: "all" } });
+    const text = (el: Element | null | undefined) => el?.textContent?.replace(/\s+/g, " ").trim();
+    let doc = await page(c.ben, c.path);
+    expect(text(doc.querySelector(`#plan-${plan} .plan__allfree p`))).toBe("No 4h time works for all 3 so far. All 3 so far are free 10am–1pm (3h).");
+    await request(dan, `${c.api}/busy`, { form: { plan, free: "all" } });
+    doc = await page(c.ben, c.path);
+    const note = doc.querySelector(`#plan-${plan} .plan__allfree`);
+    expect(text(note?.querySelector("p"))).toBe("No 4h time works for all 4. All 4 are free 10am–1pm (3h).");
+    // the ranking stays: only windows of 4h or more, none with all four
+    expect([...doc.querySelectorAll(`#plan-${plan} .win__when`)].every((w) => !w.textContent?.includes("10am–1pm"))).toBe(true);
+    // a member sees the note; only the owner can act on it
+    expect(note?.querySelector("button")).toBeNull();
+    doc = await page(c.ana, c.path);
+    const form = doc.querySelector(`#plan-${plan} .plan__allfree form`);
+    expect(form?.querySelector("button")?.textContent).toBe("Make it 3h");
+    const sent = new URLSearchParams([...(form?.querySelectorAll("input") ?? [])].map((i) => [i.getAttribute("name") ?? "", i.getAttribute("value") ?? ""]));
+    expect((await inPage(c.ana, form?.getAttribute("action") ?? "", sent)).status).toBe(204);
+    // it now takes 3h, everyone's answers kept, and that window comes first
+    doc = await page(c.ana, c.path);
+    const card = doc.querySelector(`#plan-${plan}`);
+    expect(card?.querySelector(".plan__sub")?.textContent).toContain("3h");
+    expect(card?.querySelector(".plan__allfree")).toBeNull();
+    expect(card?.querySelector(".win__when")?.textContent).toContain("10am–1pm");
+    expect(card?.querySelector(".win__who")?.textContent).toBe("Everyone free");
+  });
+
+  it("offers each window's earliest start and any later one typed, the whole length inside it", async () => {
+    const c = await crew("Start crew");
+    const plan = await planned(c);
+    await request(c.ana, `${c.api}/busy`, { form: { plan, from: "545", to: "620" } });
+    await request(c.ben, `${c.api}/busy`, { form: { plan, from: "690", to: "855" } });
+    let card = (await page(c.ana, c.path)).querySelector(`#plan-${plan}`);
+    // 2:15 to 11pm, 2h long: one chip, the earliest, and a time field from it to 9pm
+    const starts = card?.querySelector(".starts");
+    expect([...(starts?.querySelectorAll('input[name="at"]') ?? [])].map((r) => r.getAttribute("value"))).toEqual(["855-975"]);
+    expect(starts?.querySelector(".st")?.textContent).toContain("2:15pm");
+    const field = starts?.querySelector('input[type="time"]');
+    expect([field?.getAttribute("name"), field?.getAttribute("value"), field?.getAttribute("min"), field?.getAttribute("max"), field?.getAttribute("step")]).toEqual([
+      "start-855",
+      "14:15",
+      "14:15",
+      "21:00",
+      "60",
+    ]);
+    // no list of starts to choose from, only the further windows
+    expect(card?.querySelector('select[name="other"]')).toBeNull();
+    // the start typed is the one set, as long as the plan takes
+    await request(c.ana, `${c.api}/plans`, { form: { action: "set", plan, at: "855-975", "start-855": "15:37" } });
+    card = (await page(c.ana, c.path)).querySelector(`#plan-${plan}`);
+    expect(card?.querySelector(".plan__when")?.textContent).toContain("3:37pm");
+    expect(card?.textContent).toContain("Everyone's free till 5:37pm");
+  });
+
+  it("says a window's one start when it's just as long as the plan", async () => {
+    const c = await crew("Snug crew");
+    const plan = await planned(c);
+    // free together only 10am to noon, and the plan takes 2h
+    const form = new URLSearchParams([["plan", plan], ["from", "480"], ["to", "600"], ["from", "720"], ["to", "1380"]]);
+    expect((await inPage(c.ana, `${c.api}/busy`, form)).status).toBe(204);
+    const starts = (await page(c.ana, c.path)).querySelector(`#plan-${plan} .starts`);
+    expect(starts?.querySelector(".st--only")?.textContent).toBe("Starts 10am, the one start that fits");
+    expect(starts?.querySelector('input[type="time"]')).toBeNull();
   });
 
   it("shows the owner when everyone's free, lets them set it, then shows everyone the time", async () => {
@@ -207,12 +399,26 @@ describe("the plan on the group's page", () => {
     const card = doc.querySelector(`#plan-${plan}`);
     expect(card?.getAttribute("data-needs")).toBe("pick");
     expect(card?.textContent).toContain("Everyone's in");
+    // the owner's ··· menu: two short items, calling off asked first
+    expect([...(card?.querySelectorAll('.plan__menu [role="menuitem"]') ?? [])].map((i) => i.textContent?.trim())).toEqual(["Edit plan", "Call off plan"]);
+    expect(card?.querySelector('.plan__menu input[value="off"]')?.closest("form")?.getAttribute("data-confirm")).toContain("Call off");
     // longest first: 2:15–11pm, everyone free
     expect(card?.querySelector(".win__when")?.textContent).toContain("2:15–11pm");
     expect(card?.querySelector(".win__who")?.textContent).toBe("Everyone free");
     // the start offered ends two hours on, as long as the plan takes
     const first = card?.querySelector<HTMLInputElement>('input[name="at"]:checked')?.value;
     expect(first).toBe("855-975");
+    // the ring round the owner's pick: 2:15 to 4:15pm of 8am to 11pm
+    expect(card?.querySelector<HTMLElement>(".heat__mark")?.getAttribute("style")).toBe("left: 41.667%; width: 13.333%");
+    // one unbroken strip: a run per shade, end to end, nothing between
+    const fill = card?.querySelector<HTMLElement>(".heat__fill");
+    expect(fill?.children.length).toBe(0);
+    const stops = [...(fill?.getAttribute("style") ?? "").matchAll(/([\d.]+)% ([\d.]+)%/g)].map((m) => [Number(m[1]), Number(m[2])]);
+    expect(stops.length).toBe(5);
+    expect(stops[0][0]).toBe(0);
+    expect(stops.at(-1)?.[1]).toBe(100);
+    stops.slice(1).forEach(([from], i) => expect(from).toBe(stops[i][1]));
+    expect([...(card?.querySelectorAll(".heat__key span") ?? [])].map((k) => k.textContent)).toEqual(["nobody", "all 2", "Outlined: your pick"]);
     await request(c.ana, `${c.api}/plans`, { form: { action: "set", plan, at: first ?? "" } });
 
     doc = await page(c.ben, c.path);
@@ -220,6 +426,9 @@ describe("the plan on the group's page", () => {
     expect(doc.querySelector(`#plan-${plan} .plan__when`)?.textContent).toContain("2:15pm");
     expect(doc.querySelector(`#plan-${plan} .plan__going`)?.textContent).toContain("Everyone's free till 4:15pm");
     expect(doc.querySelector("#list .pick__plan")?.textContent).toContain("2:15pm");
+    // once set, the strip rings the set time
+    expect(doc.querySelector(`#plan-${plan} .plan__results--set .heat__mark`)?.getAttribute("style")).toBe("left: 41.667%; width: 13.333%");
+    expect(doc.querySelector(`#plan-${plan} .plan__results--set .heat__key`)?.textContent).toContain("Outlined: the set time");
   });
 
   it("works out when everyone's free to the minute", async () => {
@@ -230,9 +439,9 @@ describe("the plan on the group's page", () => {
     const card = (await page(c.ana, c.path)).querySelector(`#plan-${plan}`);
     expect(card?.querySelector(".win__when")?.textContent).toContain("2:13–11pm");
     expect(card?.querySelector<HTMLInputElement>('input[name="at"]:checked')?.value).toBe("853-973");
-    // "Other" offers the window's own start, then every 5 minutes
-    const other = [...(card?.querySelectorAll('select[name="other"] option') ?? [])].map((o) => o.getAttribute("value"));
-    expect(other.slice(0, 3)).toEqual(["", "853-973", "855-975"]);
+    // its start field begins on the window's own minute, and goes to the minute
+    const field = card?.querySelector('input[name="start-853"]');
+    expect([field?.getAttribute("value"), field?.getAttribute("step")]).toEqual(["14:13", "60"]);
     // or an exact time, typed
     expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, exact: "1", set_from: "14:13", set_to: "16:41" })).status).toBe(204);
     expect((await page(c.ben, c.path)).querySelector(`#plan-${plan} .plan__going`)?.textContent).toContain("till 4:41pm");

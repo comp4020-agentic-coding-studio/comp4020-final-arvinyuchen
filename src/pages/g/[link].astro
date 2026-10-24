@@ -11,7 +11,7 @@ import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
 import { canRemovePick, groupByLink, listMembers, listPicks, listPlaces, NOTE_MAX } from "../../lib/db";
 import { clean, me, signedIn } from "../../lib/me";
-import { currentPlan, pastPlans, planView } from "../../lib/plans";
+import { currentPlan, pastPlans, planView, stopNames } from "../../lib/plans";
 import { search } from "../../lib/search";
 import { dayParts, formatDay, formatMinute } from "../../lib/when";
 
@@ -146,12 +146,13 @@ const PLAN_ERROR: Record<string, string> = {
   "plan-set": "That time doesn't fit the plan's hours. Pick one of the starts offered.",
   "plan-change": "That day or those hours don't work: a day from today on, hours between 6am and midnight.",
 };
-const planLine = (placeId: number) =>
-  plan && plan.placeId === placeId
-    ? plan.set
-      ? `${formatDay(plan.day)}, ${formatMinute(plan.set.start)}`
-      : `Planning ${dayParts(plan.day).weekday} ${dayParts(plan.day).date}`
-    : "";
+// (on each stop's row: when, and which stop it is when there are several)
+const planLine = (placeId: number) => {
+  const at = plan ? plan.stops.findIndex((s) => s.id === placeId) : -1;
+  if (!plan || at < 0) return "";
+  const when = plan.set ? `${formatDay(plan.day)}, ${formatMinute(plan.set.start)}` : `Planning ${dayParts(plan.day).weekday} ${dayParts(plan.day).date}`;
+  return plan.stops.length > 1 ? `${when} · stop ${at + 1} of ${plan.stops.length}` : when;
+};
 const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 8.5h14M7 2.8v3M13 2.8v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>`;
 ---
 
@@ -308,7 +309,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           <a class="next-up" href={`#plan-${plan.id}`} data-tab="list">
             <span class="next-up__cal" aria-hidden="true"><svg viewBox="0 0 20 20" width="15" height="15" set:html={calendar} /></span>
             <span class="next-up__text">
-              {formatDay(plan.day)}, {formatMinute(plan.set.start)} · {plan.place.name}
+              {formatDay(plan.day)}, {formatMinute(plan.set.start)} · {stopNames(plan.stops, 1)}
               <span> · {view.set.busy.length === 0 && view.set.unknown.length === 0 ? "everyone's free" : `${view.set.free.length} free`}</span>
             </span>
           </a>
@@ -494,6 +495,9 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       {error === "remove" && (
         <p class="notice list-note" role="alert">That one stays: someone else is keen on it now. Only the owner can take it off.</p>
       )}
+      {error === "remove-planned" && (
+        <p class="notice list-note" role="alert">That one's in the plan: while the plan's on, only the owner can take it off.</p>
+      )}
       {picks.length === 0 ? (
         <p class="empty">Nothing on the list yet. Add something from Explore.</p>
       ) : (
@@ -504,12 +508,15 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
             // (others' keens go with it: the owner is asked first)
             const othersKeen = keen.filter((name) => name !== member.name).length;
             const lead = i === 0 && keen.length > 0;
+            // (a stop of the plan on now stays put, but for the owner)
+            const planned = plan?.stops.some((s) => s.id === place.id) ?? false;
             return (
               <li
                 id={`pick-${id}`}
                 class={`pick spot--${place.kind}${lead ? " pick--top" : ""}`}
                 data-place={place.lat !== null ? place.id : undefined}
                 data-place-id={place.id}
+                data-planned={planned ? "" : undefined}
               >
                 <SpotPhoto photo={place.photo} name={place.name} kind={place.kind} small />
                 <div class="pick__main">
@@ -528,7 +535,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
                     <span>{mine ? "Keen!" : "I'm keen"}</span>
                   </button>
                 </form>
-                {canRemovePick(group, pick, member) ? (
+                {canRemovePick(group, { ...pick, planned }, member) ? (
                   <form
                     method="post"
                     action={`/api/groups/${group.id}/picks`}
@@ -537,8 +544,15 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
                     data-confirm={othersKeen > 0 ? `Take ${place.name} off the list? ${othersKeen === 1 ? "1 keen goes" : `${othersKeen} keens go`} with it.` : undefined}
                   >
                     <input type="hidden" name="remove" value={id} />
-                    <button class="remove">Remove<span class="sr-only"> {place.name}</span></button>
+                    <button class="remove" title="Take it off the list">
+                      <svg viewBox="0 0 20 20" width="12" height="12" aria-hidden="true"><path d="M5 10h10" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" /></svg>
+                      <span class="sr-only">Remove {place.name}</span>
+                    </button>
                   </form>
+                ) : planned ? (
+                  <span class="pick__remove pick__locked" role="img" aria-label="In the plan, only the owner can take it off" title="In the plan, only the owner can take it off">
+                    <svg viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="2" fill="currentColor" /><path d="M7 9V6.8a3 3 0 0 1 6 0V9" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
+                  </span>
                 ) : (
                   <p class="pick__remove pick__by">{pick.addedById === member.id ? "Others are keen" : `${pick.addedBy}'s`}</p>
                 )}
@@ -563,7 +577,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
               <li class:list={{ "is-off": off || !p.set }}>
                 <span class="cal cal--small" aria-hidden="true"><b>{weekday}</b><span>{date}</span></span>
                 <span>
-                  <strong>{p.place.name}</strong>
+                  <strong>{stopNames(p.stops)}</strong>
                   {off ? <span class="past__tag">Called off</span> : !p.set && <span class="past__tag">No time set</span>}
                   <span class="past__when">{formatDay(p.day)}{p.set && !off && `, ${formatMinute(p.set.start)}`}</span>
                 </span>
@@ -890,22 +904,26 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       const open = [...now.querySelectorAll("details[data-keep-open][open]")].map((d) => d.dataset.keepOpen);
       const pick = now.querySelector(".plan__pick[data-chosen]");
       const at = pick?.querySelector("input[name=at]:checked")?.value;
-      const other = pick?.querySelector("select[name=other]")?.value;
+      const typed = at && pick.querySelector(`input[name="start-${at.split("-")[0]}"]:not(:disabled)`)?.value;
+      const more = pick?.querySelector(".wins__more-toggle")?.checked;
       const tall = now.offsetHeight;
       now.innerHTML = next.innerHTML;
       for (const key of open) now.querySelector(`details[data-keep-open="${CSS.escape(key)}"]`)?.setAttribute("open", "");
       const fresh = now.querySelector(".plan__pick");
       if (pick && fresh) {
         const radio = at && [...fresh.querySelectorAll("input[name=at]")].find((r) => r.value === at);
-        const select = fresh.querySelector("select[name=other]");
-        if (other && select && [...select.options].some((o) => o.value === other)) {
-          select.value = other;
-          for (const r of fresh.querySelectorAll("input[name=at]")) r.checked = false;
-          fresh.dataset.chosen = "";
-        } else if (radio) {
+        if (radio) {
           radio.checked = true;
           fresh.dataset.chosen = "";
+          // (and the start typed in it, which the field takes up as it's drawn)
+          const field = radio.closest(".starts").querySelector("input[data-start-field]");
+          if (field && typed) {
+            field.value = clockOf(minuteOf(typed));
+            radio.closest(".starts").classList.toggle("is-typed", minuteOf(typed) !== Number(field.dataset.min));
+          }
         }
+        const toggle = fresh.querySelector(".wins__more-toggle");
+        if (toggle && more) toggle.checked = true;
       }
       if (now.id === "plans" && now.offsetHeight !== tall) movedAt = performance.now();
     }
@@ -1012,13 +1030,13 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           form.closest("dialog")?.close();
           form.closest("details")?.removeAttribute("open");
           await refresh();
-          if (res.status === 409) say(form.matches("[data-plan-start]") ? "That didn't work: pick a place on the list, a day from today on, and how long it takes within the hours you count." : "The plan changed meanwhile. Here it is as it is now.");
+          if (res.status === 409) say(form.matches("[data-plan-start]") ? "That didn't work: pick one to five places on the list, a day from today on, and how long it takes within the hours you count." : "The plan changed meanwhile. Here it is as it is now.");
           else if (form.matches("[data-busy]")) say("Your times are in. The others see how many are free, never when you're busy.");
           return;
         }
         if (form.matches("[data-remove]")) {
           if (res.status === 409) {
-            say("That one stays: someone else is keen on it now.");
+            say(form.closest("li")?.hasAttribute("data-planned") ? "That one's in the plan: while it's on, only the owner can take it off." : "That one stays: someone else is keen on it now.");
             await refresh();
             return;
           }
@@ -1219,9 +1237,12 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     document.addEventListener("click", (event) => {
       const link = event.target.closest("[data-open-busy], [data-open-start]");
       if (link && !event.metaKey && !event.ctrlKey && !event.shiftKey) {
+        // (from a menu, the sheet gives the focus back to the menu's button)
+        const menu = link.closest("details");
+        menu?.querySelector("summary").focus();
         if (openSheet(document.querySelector(link.matches("[data-open-busy]") ? "#busy" : "#plan-start"))) {
           event.preventDefault();
-          link.closest("details")?.removeAttribute("open");
+          menu?.removeAttribute("open");
         }
         return;
       }
@@ -1247,23 +1268,44 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     );
 
     // The owner's choice of start says itself on the button ("Set it: Sat 24
-    // Oct, 2:15pm") and rings its window on the strip. "Other" is one choice
-    // more: picking it lets go of the start chips, and back.
+    // Oct, 2:15pm") and rings its window on the strip: a window's earliest
+    // start (its chip), or the start typed in its field, which picks that
+    // window and lets go of the chip (the field's script puts it back when
+    // the chip is tapped: src/scripts/plan-start.ts).
+    function minuteOf(value) {
+      if (/^\d+$/.test(value)) return Number(value);
+      const [h, m] = String(value).split(":").map(Number);
+      return h * 60 + m;
+    }
+    function clockOf(minute) {
+      return `${String(Math.floor(minute / 60) % 24).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+    }
+    function timeOf(minute) {
+      const h = Math.floor(minute / 60) % 24;
+      const m = minute % 60;
+      return `${h % 12 || 12}${m ? `:${String(m).padStart(2, "0")}` : ""}${h < 12 ? "am" : "pm"}`;
+    }
     function planLabel() {
       const pick = document.querySelector(".plan__pick");
       if (!pick) return;
-      const other = pick.querySelector("select[name=other]");
       const radio = pick.querySelector("input[name=at]:checked");
       const button = pick.querySelector(".plan__set");
-      const when = other?.value ? other.selectedOptions[0].textContent : radio?.dataset.when;
-      button.textContent = when ? `${button.dataset.setLabel}, ${when}` : "Set it";
-      const heat = document.querySelector("#plans .heat");
+      const win = radio?.value.split("-").map(Number);
+      if (!win) {
+        button.textContent = "Set it";
+        return;
+      }
+      const field = pick.querySelector(`input[name="start-${win[0]}"]:not(:disabled)`);
+      const typed = field?.value ? minuteOf(field.value) : NaN;
+      const start = Number.isFinite(typed) ? typed : win[0];
+      button.textContent = `${button.dataset.setLabel}, ${timeOf(start)}`;
+      // (the strip's ring follows the start chosen, as long as the plan takes)
+      const heat = pick.closest(".plan")?.querySelector(".heat");
       const mark = heat?.querySelector(".heat__mark");
-      const win = (radio?.dataset.win ?? other?.value)?.split("-").map(Number);
-      if (!mark || !win) return;
+      if (!mark) return;
       const from = Number(heat.dataset.from);
       const span = Number(heat.dataset.to) - from;
-      mark.style.left = `${((win[0] - from) / span) * 100}%`;
+      mark.style.left = `${((start - from) / span) * 100}%`;
       mark.style.width = `${((win[1] - win[0]) / span) * 100}%`;
     }
     planLabel();
@@ -1271,10 +1313,12 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       const pick = event.target.closest(".plan__pick");
       if (!pick) return;
       pick.dataset.chosen = "";
-      const other = pick.querySelector("select[name=other]");
-      if (event.target === other) {
-        for (const r of pick.querySelectorAll("input[name=at]")) r.checked = !other.value && r.id.endsWith("-0-0");
-      } else if (event.target.name === "at") other.value = "";
+      if (event.target.name?.startsWith("start-")) {
+        const starts = event.target.closest(".starts");
+        const radio = starts.querySelector("input[name=at]");
+        radio.checked = true;
+        starts.classList.toggle("is-typed", minuteOf(event.target.value) !== Number(radio.value.split("-")[0]));
+      }
       planLabel();
     });
 
@@ -1321,6 +1365,49 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       if (event.key !== "Escape" || !floating()) return;
       inviteBox.open = false;
       inviteBox.querySelector("summary").focus();
+    });
+
+    // The owner's ··· menu on a plan behaves as a menu: opening it puts the
+    // focus on its first item, the arrows move through them, and Escape, a
+    // click outside or tabbing away closes it (Escape giving the focus back
+    // to the ···). Without a script it's a plain details that opens and shuts.
+    // Delegated, since a live refresh swaps the plan cards.
+    const menus = () => document.querySelectorAll(".plan__menu[open]");
+    const items = (menu) => [...menu.querySelectorAll('[role="menuitem"]')];
+    document.addEventListener(
+      "toggle",
+      (event) => {
+        const menu = event.target;
+        if (!menu.matches?.(".plan__menu") || !menu.open) return;
+        for (const other of menus()) if (other !== menu) other.open = false;
+        items(menu)[0]?.focus();
+      },
+      true,
+    );
+    document.addEventListener("click", (event) => {
+      for (const menu of menus()) if (!menu.contains(event.target)) menu.open = false;
+    });
+    document.addEventListener("focusout", (event) => {
+      const menu = event.target.closest?.(".plan__menu[open]");
+      if (menu && event.relatedTarget && !menu.contains(event.relatedTarget)) menu.open = false;
+    });
+    document.addEventListener("keydown", (event) => {
+      const menu = event.target.closest?.(".plan__menu[open]");
+      if (!menu) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        menu.open = false;
+        menu.querySelector("summary").focus();
+        return;
+      }
+      const all = items(menu);
+      const at = all.indexOf(event.target);
+      const keys = ["ArrowDown", "ArrowUp", "Home", "End"];
+      const step = keys.indexOf(event.key);
+      if (step < 0 || !all.length) return;
+      const to = [at + 1, (at < 0 ? all.length : at) - 1, 0, all.length - 1][step];
+      event.preventDefault();
+      all[(to + all.length) % all.length].focus();
     });
 
     // The link copies with one tap where there's a clipboard; elsewhere it

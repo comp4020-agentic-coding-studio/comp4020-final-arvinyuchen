@@ -184,9 +184,25 @@ first, then a longer time that most can make. At first there was no
 shortest time, a 15-minute overlap marked in gold; but a time the outing
 doesn't fit in isn't a choice, so now it isn't offered, and when nothing is
 long enough the card says so ("No 2h stretch works for 2 or more"), with
-the longest there is, and the owner can make it shorter. Only times when
+the longest there is, and the owner can make it shorter. Later a group
+saw only "6 of 7" times for its 4h plan while all seven were free for
+3h 30m: still never offered, but now named above the list ("No 4h time
+works for all 7. All 7 are free 1–4:30pm (3h 30m)"), with "Make it
+3h 30m" for the owner, so the trade between length and everyone is in
+view rather than hidden. Only times when
 at least two are free count. A start the owner picks ends that long after;
-an exact time can still be typed. The owner can set a time whenever they like,
+an exact time can still be typed. The starts were first a row of chips
+every half hour inside the chosen window, with "Other…" listing every 5
+minutes; that was a lot to scan and still not to the minute. Now a window
+offers its earliest start as one chip and, beside it, the same time field
+to type or swipe as the sheet's, held between that start and the latest
+that still fits; the ring on the strip and "Set it" follow it as it
+turns. "Other…" kept only its other half, the windows past the best few,
+now behind "N more windows"; "Or set an exact time" stays, as the only
+way to a time outside every window or a different end. The sheet first asked for the hours to
+count as well, a start and an end, but with how long asked that's one
+question too many: the hours fold away under it, 8am to 11pm (so night
+is never "free"), shown in grey with Change. The owner can set a time whenever they like,
 and is nudged once everyone's in. After that, someone changing their times
 tells only the owner, with a time to move to, or Keep.
 
@@ -214,6 +230,21 @@ To the minute, a finger moves a few minutes a millimetre, so a drag on the
 timeline lands on 5 minutes (counted from the plan's start) and says its
 from–to on itself as it goes; exact minutes are typed in a stretch's exact
 times. A stretch at an odd minute keeps its length when moved.
+
+Later a plan became one outing that can take in several places, in order
+(the National Gallery, then Questacon), with one length for all of it
+rather than one each: the group still settles one time, and the stops
+just say where it goes. They're chosen by tapping, each numbered as
+tapped (without a script, ticked, in the list's order), one to five. A
+stop's place taken off the list drops that stop, the rest moving up,
+rather than calling off a whole outing for one part of it; the last one
+going calls it off. A plan is made once the list has settled, so while
+one is on, its stops stay put: a member can't take one off, even one they
+added (a grey lock sits where the red minus would be); only the owner can, and
+once the plan is called off or its day has gone the usual rules are
+back. There's no "Went" mark after. The stops live in their own table beside the plan,
+which keeps its first place as before, so plans from before read the
+same.
 
 ## How I worked with the agent
 
