@@ -88,11 +88,11 @@ const duration = plan?.duration ?? DEFAULT_DURATION;
         </label>
       </fieldset>
       <fieldset class="sheet__group">
-        <legend class="sheet__label">Options</legend>
+        <legend class="sheet__label">How long</legend>
         <div class="card sheet__rows">
           <div class="sheet__row" data-length>
-            <span id="plan-long"><strong>How long</strong><span class="fine">Only times this long are suggested</span></span>
-            <span class="length" role="group" aria-labelledby="plan-long">
+            <span><span class="fine" id="plan-long-hint">Only times this long are suggested</span></span>
+            <span class="length" role="group" aria-label="How long" aria-describedby="plan-long-hint">
               <label><input type="number" name="duration_h" min="0" max="18" value={Math.floor(duration / 60)} inputmode="numeric" aria-label="Hours" />h</label>
               <label><input type="number" name="duration_m" min="0" max="59" value={duration % 60} inputmode="numeric" aria-label="Minutes" />m</label>
             </span>

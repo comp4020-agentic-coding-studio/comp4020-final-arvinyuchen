@@ -5556,6 +5556,11 @@ dialog.sheet[open]:not(:modal) {
   font-size: 0.74rem;
 }
 
+/* (How long's row: its header asks the question, so the hint leads) */
+.sheet__row[data-length] .fine {
+  font-size: 0.85rem;
+}
+
 .sheet__row + .sheet__row {
   border-top: 1px solid var(--line);
 }

@@ -41,6 +41,11 @@ describe("a plan", () => {
     // the owner's sheet asks how long; the hours (8am to 11pm) are folded away under it
     const sheet = (await page(c.ana, c.path)).querySelector("#plan-start");
     expect([...(sheet?.querySelectorAll(".sheet__rows") ?? [])][0]?.querySelector("[data-length]")).toBeTruthy();
+    // under a header that asks it, the field named for it, the plain hours and minutes labelled
+    const length = sheet?.querySelector("[data-length]");
+    expect(length?.closest("fieldset")?.querySelector("legend")?.textContent).toBe("How long");
+    expect(length?.querySelector(".length")?.getAttribute("aria-label")).toBe("How long");
+    expect([...(length?.querySelectorAll("input") ?? [])].map((i) => i.getAttribute("aria-label"))).toEqual(["Hours", "Minutes"]);
     const hours = sheet?.querySelector("details[data-hours]");
     expect(hours?.hasAttribute("open")).toBe(false);
     expect(hours?.querySelector("summary")?.textContent).toContain("8am–11pm");
