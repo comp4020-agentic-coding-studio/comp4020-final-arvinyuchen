@@ -136,7 +136,7 @@ describe("a plan", () => {
     expect(doc.querySelector(".plan h3")?.textContent).toBe("Questacon → National Gallery of Australia");
     expect(doc.querySelector("#busy .sheet__sub")?.textContent).toContain("Questacon → National Gallery of Australia · ");
     const marks = [...doc.querySelectorAll("#list .pick__plan")].map((p) => p.textContent);
-    expect(marks.sort()).toEqual([expect.stringContaining("stop 1 of 2"), expect.stringContaining("stop 2 of 2")]);
+    expect(marks.sort()).toEqual([expect.stringContaining("stop 1"), expect.stringContaining("stop 2")]);
     // the owner's sheet has them ticked, in order
     const sheet = (await page(c.ana, c.path)).querySelector("#plan-start");
     expect(sheet?.querySelector<HTMLInputElement>('input[name="order"]')?.value).toBe(`${q},${n}`);
@@ -302,7 +302,10 @@ describe("the plan on the group's page", () => {
     expect(sheet?.querySelector('input[type="time"][name="to"]')).toBeTruthy();
     expect(sheet?.querySelector('button[name="free"][value="all"]')).toBeTruthy();
     // the place on the list says it's being planned
-    expect(doc.querySelector("#list .pick__plan")?.textContent).toContain("Planning");
+    // (quietly, after its suburb: the day, a screen reader told what it is)
+    const mark = doc.querySelector("#list .pick__plan");
+    expect(mark?.closest(".area")).toBeTruthy();
+    expect(mark?.textContent).toContain("In the plan");
 
     await request(c.ben, `${c.api}/busy`, { form: { plan, from: "540", to: "620" } });
     doc = await page(c.ben, c.path);
@@ -329,11 +332,18 @@ describe("the plan on the group's page", () => {
     await request(cat, `${c.api}/busy`, { form: { plan, free: "all" } });
     const text = (el: Element | null | undefined) => el?.textContent?.replace(/\s+/g, " ").trim();
     let doc = await page(c.ben, c.path);
-    expect(text(doc.querySelector(`#plan-${plan} .plan__allfree p`))).toBe("No 4h time works for all 3 so far. All 3 so far are free 10am–1pm (3h).");
+    expect(text(doc.querySelector(`#plan-${plan} .plan__allfree p`))).toBe("Everyone so far is free 10am–1pm, 1h short.");
+    // who hasn't answered, by name (you, to yourself)
+    expect(text(doc.querySelector(`#plan-${plan} .plan__filled > span:last-child`))).toBe("Waiting on Dan");
+    expect(text((await page(dan, c.path)).querySelector(`#plan-${plan} .plan__filled > span:last-child`))).toBe("Waiting on you");
     await request(dan, `${c.api}/busy`, { form: { plan, free: "all" } });
     doc = await page(c.ben, c.path);
     const note = doc.querySelector(`#plan-${plan} .plan__allfree`);
-    expect(text(note?.querySelector("p"))).toBe("No 4h time works for all 4. All 4 are free 10am–1pm (3h).");
+    expect(text(note?.querySelector("p"))).toBe("Everyone's free 10am–1pm, 1h short.");
+    expect(text(doc.querySelector(`#plan-${plan} .plan__filled > span:last-child`))).toBe("Everyone's in");
+    // each window: its times, and only who can't come (the badge counts who can)
+    expect([...doc.querySelectorAll(`#plan-${plan} .win__when`)].map(text)).toEqual(["10am–11pm", "8am–1pm"]);
+    expect([...doc.querySelectorAll(`#plan-${plan} .win__who`)].map(text)).toEqual(["you can't", "Ana can't"]);
     // the ranking stays: only windows of 4h or more, none with all four
     expect([...doc.querySelectorAll(`#plan-${plan} .win__when`)].every((w) => !w.textContent?.includes("10am–1pm"))).toBe(true);
     // a member sees the note; only the owner can act on it
@@ -361,7 +371,8 @@ describe("the plan on the group's page", () => {
     // 2:15 to 11pm, 2h long: one chip, the earliest, and a time field from it to 9pm
     const starts = card?.querySelector(".starts");
     expect([...(starts?.querySelectorAll('input[name="at"]') ?? [])].map((r) => r.getAttribute("value"))).toEqual(["855-975"]);
-    expect(starts?.querySelector(".st")?.textContent).toContain("2:15pm");
+    expect(starts?.querySelector(".st")?.textContent?.trim()).toBe("2:15pm");
+    expect(starts?.querySelector('input[type="time"]')?.getAttribute("aria-label")).toBe("Start, between 2:15pm and 9pm");
     const field = starts?.querySelector('input[type="time"]');
     expect([field?.getAttribute("name"), field?.getAttribute("value"), field?.getAttribute("min"), field?.getAttribute("max"), field?.getAttribute("step")]).toEqual([
       "start-855",
@@ -372,6 +383,14 @@ describe("the plan on the group's page", () => {
     ]);
     // no list of starts to choose from, only the further windows
     expect(card?.querySelector('select[name="other"]')).toBeNull();
+    // an exact time is in the ··· menu, a sheet of its own (open on the
+    // page its link loads, without a script); only the owner's
+    expect(card?.querySelector(".plan__menu [data-open-exact]")?.getAttribute("href")).toContain("?plan=exact#plan-exact");
+    const exact = (await page(c.ana, `${c.path}?plan=exact`)).querySelector("#plan-exact");
+    expect(exact?.hasAttribute("open")).toBe(true);
+    expect([...(exact?.querySelectorAll("input[type=time]") ?? [])].map((i) => i.getAttribute("name"))).toEqual(["set_from", "set_to"]);
+    expect(exact?.querySelector('input[name="exact"]')?.getAttribute("value")).toBe("1");
+    expect((await page(c.ben, c.path)).querySelector("#plan-exact")).toBeNull();
     // the start typed is the one set, as long as the plan takes
     await request(c.ana, `${c.api}/plans`, { form: { action: "set", plan, at: "855-975", "start-855": "15:37" } });
     card = (await page(c.ana, c.path)).querySelector(`#plan-${plan}`);
@@ -400,7 +419,7 @@ describe("the plan on the group's page", () => {
     expect(card?.getAttribute("data-needs")).toBe("pick");
     expect(card?.textContent).toContain("Everyone's in");
     // the owner's ··· menu: two short items, calling off asked first
-    expect([...(card?.querySelectorAll('.plan__menu [role="menuitem"]') ?? [])].map((i) => i.textContent?.trim())).toEqual(["Edit plan", "Call off plan"]);
+    expect([...(card?.querySelectorAll('.plan__menu [role="menuitem"]') ?? [])].map((i) => i.textContent?.trim())).toEqual(["Edit plan", "Set exact time", "Call off plan"]);
     expect(card?.querySelector('.plan__menu input[value="off"]')?.closest("form")?.getAttribute("data-confirm")).toContain("Call off");
     // longest first: 2:15–11pm, everyone free
     expect(card?.querySelector(".win__when")?.textContent).toContain("2:15–11pm");
@@ -418,7 +437,7 @@ describe("the plan on the group's page", () => {
     expect(stops[0][0]).toBe(0);
     expect(stops.at(-1)?.[1]).toBe(100);
     stops.slice(1).forEach(([from], i) => expect(from).toBe(stops[i][1]));
-    expect([...(card?.querySelectorAll(".heat__key span") ?? [])].map((k) => k.textContent)).toEqual(["nobody", "all 2", "Outlined: your pick"]);
+    expect([...(card?.querySelectorAll(".heat__key span") ?? [])].map((k) => k.textContent)).toEqual(["nobody", "all 2"]);
     await request(c.ana, `${c.api}/plans`, { form: { action: "set", plan, at: first ?? "" } });
 
     doc = await page(c.ben, c.path);
@@ -428,7 +447,8 @@ describe("the plan on the group's page", () => {
     expect(doc.querySelector("#list .pick__plan")?.textContent).toContain("2:15pm");
     // once set, the strip rings the set time
     expect(doc.querySelector(`#plan-${plan} .plan__results--set .heat__mark`)?.getAttribute("style")).toBe("left: 41.667%; width: 13.333%");
-    expect(doc.querySelector(`#plan-${plan} .plan__results--set .heat__key`)?.textContent).toContain("Outlined: the set time");
+    // (the ring needs no key: it's always on the time set)
+    expect(doc.querySelector(`#plan-${plan} .plan__results--set .heat__key`)?.textContent).not.toContain("Outlined");
   });
 
   it("works out when everyone's free to the minute", async () => {
@@ -458,7 +478,7 @@ describe("the plan on the group's page", () => {
     const whens = async () => [...((await card())?.querySelectorAll(".win__when") ?? [])].map((w) => w.textContent?.split(" ·")[0].trim());
     // two hours: only the morning, and everyone sees how long it takes
     expect(await whens()).toEqual(["8–10am"]);
-    expect((await card(c.ben))?.querySelector(".plan__sub")?.textContent).toContain("· 2h");
+    expect((await card(c.ben))?.querySelector(".plan__sub")?.textContent).toBe("2h");
     expect((await page(c.ben, c.path)).querySelector("#busy .sheet__sub")?.textContent).toContain("Questacon · ");
     expect((await page(c.ben, c.path)).querySelector("#busy .sheet__sub")?.textContent).toContain("· 2h");
     // an hour (the plain form's hours and minutes): the evening too, longest first; nobody's answers lost

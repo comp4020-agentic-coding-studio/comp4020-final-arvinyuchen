@@ -782,12 +782,20 @@ input[type="radio"] {
 }
 
 /* Keen, as the App Store's GET: a capsule on a wash of blue, filled
-   when it's yours. */
+   with a tick when it's yours. One width and one label ("3 keen") either
+   way, so a tap never moves the row. */
+:root {
+  --keen-w: 4.75rem;
+}
+
 .keen {
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.3rem;
-  padding: 0.4rem 0.8rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  width: var(--keen-w);
+  padding: 0.4rem 0.3rem;
+  font-variant-numeric: tabular-nums;
   font: inherit;
   font-size: 0.82rem;
   font-weight: 600;
@@ -798,6 +806,11 @@ input[type="radio"] {
   color: var(--accent-ink);
   cursor: pointer;
   transition: transform 0.12s, background 0.15s;
+}
+
+.keen__tick {
+  flex: none;
+  margin-right: 0.05rem;
 }
 
 .keen__count {
@@ -3765,90 +3778,57 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     grid-column: 2;
   }
 
-  /* With the script (the tabs work), the page is the screen: each column is
-     its height and scrolls on its own. The group's panel, the tabs, and
-     Explore's title and search stay put; Our list and the cards scroll
-     under them; the map fills its column. */
-  body:has(.group-page.is-tabbed) {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    height: 100dvh;
-    overflow: hidden;
-  }
-
+  /* With the script (the tabs work), the left column (the group's panel,
+     the tabs, the plan and Our list) is as long as it is, every row of the
+     list showing, and the page scrolls it. The header stays at the top,
+     and beside the list, Explore and the map (or Share, or Settings) stay
+     put under it, a screen tall: anything in them longer than that (the
+     cards) scrolls inside, held there so it never hands on to the page.
+     --top-h is the header's height, kept by the page's script. */
   body:has(.group-page.is-tabbed) > .top {
-    width: 100%;
-  }
-
-  body:has(.group-page.is-tabbed) > main {
-    flex: 1 1 auto;
-    width: 100%;
-    min-height: 0;
-    padding-bottom: 1rem;
-  }
-
-  body:has(.group-page.is-tabbed) > .foot {
-    width: 100%;
-    padding-top: 0.6rem;
-    padding-bottom: calc(0.6rem + env(safe-area-inset-bottom));
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter: blur(20px) saturate(1.8);
+    /* (the bar runs to the screen's edges, the header's content as ever) */
+    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--bg) 86%, transparent);
+    clip-path: inset(0 -100vmax);
   }
 
   .group-page.is-tabbed {
-    height: 100%;
+    --stay: calc(var(--top-h, 4.4rem) + 1.5rem);
     margin-top: 0;
-    grid-template-rows: minmax(0, 1fr);
   }
 
   .group-page.is-tabbed .group-side {
-    display: flex;
-    flex-direction: column;
     grid-row: 1;
     position: static;
-    height: 100%;
     max-height: none;
-    padding-bottom: 0;
+    overflow: visible;
   }
 
-  .group-page.is-tabbed .group-side > * {
-    flex: none;
+  /* (a link to what's beside the list, #explore, #add, #settings, finds it
+     already in view: the page, landing on it, stays at its top) */
+  .group-page.is-tabbed :is(#explore-section, #explore, #add, #settings) {
+    scroll-margin-top: 100vh;
   }
 
-  /* Our list's title stays at the top of its card; the rows scroll under
-     it, so what scrolls out of sight goes behind the card's rounded
-     corners. (A short screen with the invite open: then the whole column
-     scrolls.) */
-  .group-page.is-tabbed #list {
-    display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
-    min-height: 14rem;
+  /* (a row the page lands on, a vote without the script, clear of the bar) */
+  .group-page.is-tabbed .picks > li {
+    scroll-margin-top: calc(var(--top-h, 4.4rem) + 1rem);
   }
 
-  .group-page.is-tabbed .list-card {
-    display: flex;
-    flex: 0 1 auto;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .group-page.is-tabbed .list-card > .list-head,
-  .group-page.is-tabbed .list-card > .list-note {
-    flex: none;
-  }
-
-  .group-page.is-tabbed .picks {
-    flex: 0 1 auto;
-    align-content: start;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
+  .group-page.is-tabbed .explore-wrap,
+  .group-page.is-tabbed > .group-tools {
+    grid-row: 1;
+    position: sticky;
+    top: var(--stay);
+    height: calc(100vh - var(--stay) - 1rem);
+    height: calc(100dvh - var(--stay) - 1rem);
   }
 
   .group-page.is-tabbed .explore-wrap {
-    grid-row: 1;
-    height: 100%;
     grid-template-rows: auto minmax(0, 1fr);
   }
 
@@ -3897,34 +3877,21 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   }
 
   .group-page.is-tabbed > .group-tools {
-    grid-row: 1;
     grid-column: 2;
-    height: 100%;
     border-radius: var(--radius);
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
   }
 
-  /* the leader, in the narrower column: a size up still, on fewer lines */
-  .group-side .pick--top {
-    grid-template-columns: 1.3rem 4rem minmax(0, 1fr) auto;
-  }
-
-  .group-side .pick--top .photo--small {
-    width: 4rem;
-  }
-
-  .group-side .pick--top h3 {
-    font-size: 1.08rem;
-  }
 }
 
 /* ---- Our list, a ranking ---------------------------------------------------- */
 
-/* Most keen first, always: each row its rank, photo, name, who's keen, and
-   the keen button. The leader (.pick--top, first with anyone keen) is a
-   size up. */
+/* Most keen first, always: each row its rank, photo, name, suburb, and
+   the keen button, every row's columns the same, so ranks, photos and
+   names line up. The leader (.pick--top, first with anyone keen) says so
+   over its name, in a size up. */
 /* One inset grouped list, as in Settings or Music's charts: the rows of
    the list's white card, parted by hairlines that start where the words
    do. */
@@ -3941,9 +3908,9 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   --kind: var(--food);
   position: relative;
   display: grid;
-  grid-template-columns: 1.3rem 3.25rem minmax(0, 1fr) auto;
+  grid-template-columns: 1.3rem 3rem minmax(0, 1fr) var(--keen-w);
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
   padding: 0.75rem 0.9rem;
   background: var(--card);
   counter-increment: rank;
@@ -3955,7 +3922,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   position: absolute;
   top: 0;
   right: 0;
-  left: calc(0.9rem + 1.3rem + 0.75rem);
+  left: calc(0.9rem + 1.3rem + 0.6rem);
   border-top: 1px solid var(--line);
 }
 
@@ -4111,7 +4078,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 .pick__by {
-  max-width: 6.5rem;
+  max-width: var(--keen-w);
   margin: 0;
   overflow: hidden;
   color: var(--muted);
@@ -4197,7 +4164,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 .pick .photo--small {
-  width: 3.25rem;
+  width: 3rem;
   border-radius: 10px;
 }
 
@@ -4219,10 +4186,9 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-size: 0.82rem;
 }
 
-/* The leader, a size up. */
+/* The leader: its rank in blue, its name a size up, the columns the rest's. */
 .pick--top {
-  grid-template-columns: 1.3rem 4.75rem minmax(0, 1fr) auto;
-  padding: 1rem 0.9rem;
+  padding: 0.9rem 0.9rem;
 }
 
 .pick--top::before {
@@ -4230,13 +4196,8 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-size: 1.45rem;
 }
 
-.pick--top .photo--small {
-  width: 4.75rem;
-  border-radius: 12px;
-}
-
 .pick--top h3 {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .pick__lead {
@@ -4594,16 +4555,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   border-top: 1px solid var(--line);
 }
 
-.plan__label {
-  margin: 0;
-  padding: 0.7rem 0.9rem 0;
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
 .heat {
   padding: 0.75rem 0.9rem 0.4rem;
 }
@@ -4686,10 +4637,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   height: 0.3rem;
   border-radius: 999px;
   background: linear-gradient(to right, var(--line), color-mix(in srgb, var(--accent) 30%, var(--line)) 45%, var(--accent));
-}
-
-.heat__ringkey {
-  margin-left: auto;
 }
 
 .wins {
@@ -4778,6 +4725,8 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 .win__when {
+  /* (ink, though the owner's row is a label, whose spans are muted) */
+  color: var(--ink);
   font-size: 0.98rem;
   font-weight: 600;
   line-height: 1.25;
@@ -4825,17 +4774,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   display: none;
 }
 
-.starts__label {
-  width: 100%;
-  color: var(--muted);
-  font-size: 0.74rem;
-  font-weight: 600;
-}
-
-.starts__list {
-  display: contents;
-}
-
 .st {
   position: relative;
   cursor: pointer;
@@ -4868,11 +4806,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 /* (the earliest start, picked, unless a start is typed: then the field's) */
-.st small {
-  font-weight: 500;
-  opacity: 0.8;
-}
-
 .starts.is-typed .st input:checked + span {
   background: var(--card);
   box-shadow: inset 0 0 0 1px var(--line-strong);
@@ -5031,31 +4964,16 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 /* The owner's exact time, folded under Set it: the same fields to type or swipe. */
-.plan__exact {
-  margin: -0.3rem 0.9rem 0.9rem;
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
-.plan__exact summary {
-  width: max-content;
-  margin: 0 auto;
-  color: var(--accent-ink);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.plan__exact[open] summary {
-  margin-bottom: 0.5rem;
-}
-
+/* The owner's exact time, in its own sheet from the ··· menu: the same
+   fields to type or swipe. */
 .plan__exact-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 0.4rem 0.8rem;
-  margin-bottom: 0.5rem;
+  margin: 0.5rem 0 0.75rem;
+  font-size: 1.05rem;
 }
 
 .plan__exact-row label {
@@ -5070,11 +4988,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   min-height: 2.2rem;
   padding: 0.3rem 0.5rem;
   font-size: 0.85rem;
-}
-
-.plan__exact .btn {
-  display: flex;
-  margin: 0 auto;
 }
 
 .plan__acts {
@@ -5218,20 +5131,15 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-weight: 500;
 }
 
-/* A place with a plan says when, under its suburb on Our list. */
-.pick .pick__plan {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-top: 0.2rem;
-  color: var(--accent-ink);
-  font-size: 0.78rem;
-  font-weight: 600;
+/* A place in the plan says when after its suburb, quietly, in the
+   suburb's grey: the keen button stays the row's one blue thing. */
+.pick__plan {
   white-space: nowrap;
 }
 
 .pick__plan svg {
-  flex: none;
+  margin: 0 0.2rem 0 0.05rem;
+  vertical-align: -0.1em;
 }
 
 /* Plans behind the group, folded at the foot of Our list. */

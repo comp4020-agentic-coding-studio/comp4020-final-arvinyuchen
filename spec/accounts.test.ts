@@ -197,7 +197,7 @@ describe("the owner's tools", () => {
     // account (whoever has its passkey) is out of the group.
     expect(await you(benAgain, id)).toBe("Ben");
     const mine = (await page(benAgain, `/g/${id}`)).querySelector("#list .keen");
-    expect(mine?.getAttribute("aria-pressed")).toBe("true");
+    expect(mine?.getAttribute("aria-label")).toMatch(/^Not keen on .+ any more, 1 keen$/);
     expect(mine?.querySelector(".keen__count")?.textContent).toBe("1");
     expect(await you(ben, id)).toBe("");
   });

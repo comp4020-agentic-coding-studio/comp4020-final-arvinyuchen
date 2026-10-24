@@ -323,7 +323,8 @@ function startField(plain: HTMLInputElement) {
     value: parseMinute(plain.value) ?? min,
     min,
     max,
-    label: "Start",
+    // (its range said with it: "Start, between 1pm and 2pm")
+    label: plain.getAttribute("aria-label") ?? "Start",
     onChange: () => tell(),
   });
   const carrier = field.el.querySelector<HTMLInputElement>('input[type="hidden"]');
