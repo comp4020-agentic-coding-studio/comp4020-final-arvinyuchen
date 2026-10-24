@@ -4429,42 +4429,96 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   display: none;
 }
 
+/* (an iOS context menu: frosted, fitted to its labels, 44px rows split
+   by hairlines, the label left and its icon right in one column) */
 .plan__menu-list {
   position: absolute;
-  top: 2.4rem;
+  top: calc(100% + 0.4rem);
   right: 0;
   z-index: 8;
   display: grid;
-  min-width: 13rem;
+  width: max-content;
+  min-width: 14rem;
+  max-width: calc(100vw - 2rem);
   overflow: hidden;
-  border-radius: 14px;
-  background: var(--card);
-  box-shadow: var(--shadow-float);
+  border-radius: 13px;
+  background: rgb(249 249 251 / 92%);
+  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 8%), var(--shadow-float);
+  backdrop-filter: blur(20px) saturate(1.8);
+  transform-origin: top right;
+  animation: menu-in 0.16s ease-out;
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+.plan__menu-list > form {
+  display: contents;
 }
 
 .plan__menu-list > a,
 .plan__menu-list button {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
   width: 100%;
-  padding: 0.75rem 1rem;
+  min-height: 44px;
+  padding: 0 1rem;
   border: 0;
-  border-top: 1px solid var(--line);
+  border-top: 0.5px solid rgb(60 60 67 / 29%);
   background: none;
   color: var(--ink);
   font: inherit;
-  font-size: 0.95rem;
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
   text-align: left;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.plan__menu-list > :first-child,
-.plan__menu-list > :first-child button {
+.plan__menu-list > :first-child {
   border-top: 0;
 }
 
+.plan__menu-list svg {
+  flex: none;
+}
+
+.plan__menu-list > a:hover,
+.plan__menu-list button:hover,
+.plan__menu-list > a:focus-visible,
+.plan__menu-list button:focus-visible {
+  background: rgb(0 0 0 / 5%);
+  outline: none;
+}
+
+.plan__menu-list > a:active,
+.plan__menu-list button:active {
+  background: rgb(0 0 0 / 11%);
+}
+
+/* (the keyboard's place, as a ring inside the row it's on) */
+.plan__menu-list > a:focus-visible,
+.plan__menu-list button:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
 .plan__menu-list .is-danger {
-  color: var(--food);
+  color: var(--busy-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plan__menu-list {
+    animation: none;
+  }
 }
 
 /* Not answered yet: the two ways to, full width. */

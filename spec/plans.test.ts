@@ -325,6 +325,9 @@ describe("the plan on the group's page", () => {
     const card = doc.querySelector(`#plan-${plan}`);
     expect(card?.getAttribute("data-needs")).toBe("pick");
     expect(card?.textContent).toContain("Everyone's in");
+    // the owner's ··· menu: two short items, calling off asked first
+    expect([...(card?.querySelectorAll('.plan__menu [role="menuitem"]') ?? [])].map((i) => i.textContent?.trim())).toEqual(["Edit plan", "Call off plan"]);
+    expect(card?.querySelector('.plan__menu input[value="off"]')?.closest("form")?.getAttribute("data-confirm")).toContain("Call off");
     // longest first: 2:15–11pm, everyone free
     expect(card?.querySelector(".win__when")?.textContent).toContain("2:15–11pm");
     expect(card?.querySelector(".win__who")?.textContent).toBe("Everyone free");

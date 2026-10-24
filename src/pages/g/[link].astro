@@ -1233,9 +1233,12 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     document.addEventListener("click", (event) => {
       const link = event.target.closest("[data-open-busy], [data-open-start]");
       if (link && !event.metaKey && !event.ctrlKey && !event.shiftKey) {
+        // (from a menu, the sheet gives the focus back to the menu's button)
+        const menu = link.closest("details");
+        menu?.querySelector("summary").focus();
         if (openSheet(document.querySelector(link.matches("[data-open-busy]") ? "#busy" : "#plan-start"))) {
           event.preventDefault();
-          link.closest("details")?.removeAttribute("open");
+          menu?.removeAttribute("open");
         }
         return;
       }
@@ -1336,6 +1339,49 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       if (event.key !== "Escape" || !floating()) return;
       inviteBox.open = false;
       inviteBox.querySelector("summary").focus();
+    });
+
+    // The owner's ··· menu on a plan behaves as a menu: opening it puts the
+    // focus on its first item, the arrows move through them, and Escape, a
+    // click outside or tabbing away closes it (Escape giving the focus back
+    // to the ···). Without a script it's a plain details that opens and shuts.
+    // Delegated, since a live refresh swaps the plan cards.
+    const menus = () => document.querySelectorAll(".plan__menu[open]");
+    const items = (menu) => [...menu.querySelectorAll('[role="menuitem"]')];
+    document.addEventListener(
+      "toggle",
+      (event) => {
+        const menu = event.target;
+        if (!menu.matches?.(".plan__menu") || !menu.open) return;
+        for (const other of menus()) if (other !== menu) other.open = false;
+        items(menu)[0]?.focus();
+      },
+      true,
+    );
+    document.addEventListener("click", (event) => {
+      for (const menu of menus()) if (!menu.contains(event.target)) menu.open = false;
+    });
+    document.addEventListener("focusout", (event) => {
+      const menu = event.target.closest?.(".plan__menu[open]");
+      if (menu && event.relatedTarget && !menu.contains(event.relatedTarget)) menu.open = false;
+    });
+    document.addEventListener("keydown", (event) => {
+      const menu = event.target.closest?.(".plan__menu[open]");
+      if (!menu) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        menu.open = false;
+        menu.querySelector("summary").focus();
+        return;
+      }
+      const all = items(menu);
+      const at = all.indexOf(event.target);
+      const keys = ["ArrowDown", "ArrowUp", "Home", "End"];
+      const step = keys.indexOf(event.key);
+      if (step < 0 || !all.length) return;
+      const to = [at + 1, (at < 0 ? all.length : at) - 1, 0, all.length - 1][step];
+      event.preventDefault();
+      all[(to + all.length) % all.length].focus();
     });
 
     // The link copies with one tap where there's a clipboard; elsewhere it

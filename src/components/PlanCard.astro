@@ -101,19 +101,31 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
         <summary class="plan__more" aria-label="More for this plan">
           <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="4.5" cy="10" r="1.6" fill="currentColor" /><circle cx="10" cy="10" r="1.6" fill="currentColor" /><circle cx="15.5" cy="10" r="1.6" fill="currentColor" /></svg>
         </summary>
-        <div class="plan__menu-list">
-          <a href={`/g/${group.link}?plan=change#plan-start`} data-open-start>Change the day, hours or how long</a>
+        {/* (an iOS context menu: a short label left, its icon right, the
+            destructive one last and in red; Phosphor's bold icons, as the
+            kinds use, MIT: licenses/phosphor-icons.txt) */}
+        <div class="plan__menu-list" role="menu" aria-label="This plan">
+          <a href={`/g/${group.link}?plan=change#plan-start`} data-open-start role="menuitem">
+            <span>Edit plan</span>
+            <svg viewBox="0 0 256 256" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M230.14,70.54,185.46,25.85a20,20,0,0,0-28.29,0L33.86,149.17A19.85,19.85,0,0,0,28,163.31V208a20,20,0,0,0,20,20H92.69a19.86,19.86,0,0,0,14.14-5.86L230.14,98.82a20,20,0,0,0,0-28.28ZM91,204H52V165l84-84,39,39ZM192,103,153,64l18.34-18.34,39,39Z" /></svg>
+          </a>
           {set && (
             <form method="post" action={action} data-plan>
               <input type="hidden" name="action" value="unset" />
               <input type="hidden" name="plan" value={plan.id} />
-              <button>Pick another time</button>
+              <button role="menuitem">
+                <span>Pick another time</span>
+                <svg viewBox="0 0 256 256" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M140,80v41.21l34.17,20.5a12,12,0,1,1-12.34,20.58l-40-24A12,12,0,0,1,116,128V80a12,12,0,0,1,24,0ZM128,28A99.38,99.38,0,0,0,57.24,57.34c-4.69,4.74-9,9.37-13.24,14V64a12,12,0,0,0-24,0v40a12,12,0,0,0,12,12H72a12,12,0,0,0,0-24H57.77C63,86,68.37,80.22,74.26,74.26a76,76,0,1,1,1.58,109,12,12,0,0,0-16.48,17.46A100,100,0,1,0,128,28Z" /></svg>
+              </button>
             </form>
           )}
           <form method="post" action={action} data-plan data-confirm={`Call off ${where} on ${formatDay(plan.day)}? It stays under Past plans.`}>
             <input type="hidden" name="action" value="off" />
             <input type="hidden" name="plan" value={plan.id} />
-            <button class="is-danger">Call it off</button>
+            <button class="is-danger" role="menuitem">
+              <span>Call off plan</span>
+              <svg viewBox="0 0 256 256" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M168.49,104.49,145,128l23.52,23.51a12,12,0,0,1-17,17L128,145l-23.51,23.52a12,12,0,0,1-17-17L111,128,87.51,104.49a12,12,0,0,1,17-17L128,111l23.51-23.52a12,12,0,0,1,17,17ZM236,128A108,108,0,1,1,128,20,108.12,108.12,0,0,1,236,128Zm-24,0a84,84,0,1,0-84,84A84.09,84.09,0,0,0,212,128Z" /></svg>
+            </button>
           </form>
         </div>
       </details>
