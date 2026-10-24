@@ -95,7 +95,7 @@ follow from it; every change has to hold to them.
   first), on a day, with one length for all of it (`src/lib/plans.ts`); only times at least that long are
   offered, never a shorter one; but when none of those has everyone who's
   answered free and a shorter time does, the card says so above them,
-  naming the longest ("All 7 are free 1–4:30pm (3h 30m)", `allFree` in
+  naming the longest ("Everyone's free 1–4:30pm, 30 min short", `allFree` in
   `planView`), and gives the owner "Make it 3h 30m", the change route's
   new length (answers kept). The owner's sheet asks only how long; the
   hours it counts (8am to 11pm unless changed, and only time inside them
@@ -105,7 +105,12 @@ follow from it; every change has to hold to them.
   whole length fits in the window (`start-` and the window's start, read
   by the set route; a plain time input with min and max without a
   script); the windows past the best few sit behind "N more windows", and
-  "Or set an exact time" stays for a time outside them or another end. Times are Canberra's wall clock:
+  "Set exact time" in the owner's ··· menu (a sheet, `PlanExact.astro`,
+  `?plan=exact` without a script) is for a time outside them or another
+  end. The card says each thing once, in as few words: the length under
+  the title (the tile has the date), "Waiting on …" or "Everyone's in",
+  each window's times and who can't (its badge counts who can), and a
+  key that's only the strip's scale. Times are Canberra's wall clock:
   a local date and whole minutes since its midnight, to the minute
   (`src/lib/when.ts`), never the server's zone; on the timeline a drag
   lands on 5 minutes and exact minutes are typed. Nobody sees anyone else's

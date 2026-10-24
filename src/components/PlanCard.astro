@@ -33,8 +33,10 @@ const mineText = mine === null ? "" : mine.length ? `busy ${mine.map(([a, b]) =>
 const total = view.answered.length;
 const waitingNames = view.waiting.map((m) => (m.id === member.id ? "you" : m.name));
 const everyone = (w: PlanWindow) => w.all && view.everyoneIn;
-const whoLine = (w: PlanWindow) =>
-  everyone(w) ? "Everyone free" : w.all ? `All ${total} so far free` : `${w.free.length} of ${total} free · ${names(youFirst(w.cant))} can't`;
+// (a window says only who can't come: its badge already counts who can)
+const whoLine = (w: PlanWindow) => (everyone(w) ? "Everyone free" : w.all ? "Everyone free so far" : `${names(youFirst(w.cant))} can't`);
+// who hasn't answered yet: by name for one or two, else how many
+const waitingOn = waitingNames.length <= 2 ? names(waitingNames) : String(waitingNames.length);
 // The windows as the card lists them, with a heading over each tier when
 // there's more than one: everyone's (or the best count's), then "Longer,
 // with fewer".
@@ -42,9 +44,6 @@ const top = view.windows[0]?.free.length ?? 0;
 const tiered = view.windows.some((w) => w.free.length !== top);
 const tierOf = (w: PlanWindow) =>
   w.free.length !== top ? "Longer, with fewer" : everyone(w) ? "Everyone free" : w.all ? `All ${total} so far` : `${top} of ${total} free`;
-// "Other": a window's own start (which may be any minute), then each 5
-// minutes in it that leaves the plan's length (every minute would make a
-// list too long to look through).
 const long = plan.duration;
 const lasts = formatDuration(long);
 // where the outing goes, its stops in order
@@ -54,7 +53,6 @@ const noneFits = view.windows.length === 0 && view.longestShort > 0;
 const first = view.windows[0];
 const set = plan.set;
 const setWhen = set && `${formatDay(plan.day)}, ${formatMinute(set.start)}`;
-const ownerFirst = view.owner === member.name ? "you" : view.owner;
 ---
 
 <article
@@ -84,10 +82,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
       {set ? (
         <p class="plan__when">{setWhen}</p>
       ) : (
-        <p class="plan__sub">
-          {formatDay(plan.day)} · {formatSpan(plan.range.start, plan.range.end)} · {lasts}
-          {needs === "answer" && <> · when are you busy?</>}
-        </p>
+        <p class="plan__sub">{lasts}</p>
       )}
     </div>
     {isOwner && (
@@ -103,6 +98,13 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
             <span>Edit plan</span>
             <svg viewBox="0 0 256 256" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M230.14,70.54,185.46,25.85a20,20,0,0,0-28.29,0L33.86,149.17A19.85,19.85,0,0,0,28,163.31V208a20,20,0,0,0,20,20H92.69a19.86,19.86,0,0,0,14.14-5.86L230.14,98.82a20,20,0,0,0,0-28.28ZM91,204H52V165l84-84,39,39ZM192,103,153,64l18.34-18.34,39,39Z" /></svg>
           </a>
+          {!set && (
+            <a href={`/g/${group.link}?plan=exact#plan-exact`} data-open-exact role="menuitem">
+              <span>Set exact time</span>
+              {/* (clock) */}
+              <svg viewBox="0 0 256 256" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M128,20A108,108,0,1,0,236,128,108.12,108.12,0,0,0,128,20Zm0,192a84,84,0,1,1,84-84A84.09,84.09,0,0,1,128,212Zm68-84a12,12,0,0,1-12,12H128a12,12,0,0,1-12-12V72a12,12,0,0,1,24,0v44h44A12,12,0,0,1,196,128Z" /></svg>
+            </a>
+          )}
           {set && (
             <form method="post" action={action} data-plan>
               <input type="hidden" name="action" value="unset" />
@@ -146,7 +148,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
       </p>
       {total > 0 && (
         <div class="plan__results plan__results--set">
-          <PlanHeat heat={view.heat} range={plan.range} total={total} mark={{ from: set.start, to: set.end }} markLabel="the set time" />
+          <PlanHeat heat={view.heat} range={plan.range} total={total} mark={{ from: set.start, to: set.end }} />
         </div>
       )}
       {view.changed && (
@@ -193,31 +195,25 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
           {view.waiting.map((m) => <span class="face face--waiting">{initial(m.name)}</span>)}
         </span>
         <span>
-          {view.everyoneIn ? (
-            <><strong>Everyone's in</strong>{isOwner ? "" : ` · ${ownerFirst === "you" ? "you pick" : `${view.owner} picks`} the time`}</>
-          ) : (
-            <><strong>{total} of {view.answered.length + view.waiting.length}</strong> filled in · {names(waitingNames)} {waitingNames.length === 1 && waitingNames[0] !== "you" ? "hasn't" : "haven't"} yet</>
-          )}
+          {view.everyoneIn ? <strong>Everyone's in</strong> : <>Waiting on <strong>{waitingOn}</strong></>}
         </span>
       </p>
 
       {total > 0 && (
         <div class="plan__results">
-          {!view.everyoneIn && <p class="plan__label">So far · {total} answered</p>}
           <PlanHeat
             heat={view.heat}
             range={plan.range}
             total={total}
             mark={isOwner && first ? { from: first.from, to: first.from + long } : first}
-            markLabel={isOwner ? "your pick" : "the best time"}
           />
           {/* (every window long enough leaves someone out, but everyone's
               free for less: said, and for the owner, one tap to fit it) */}
           {view.allFree && (
             <div class="plan__allfree">
               <p>
-                <strong>No {lasts} time works for all {total}{view.everyoneIn ? "" : " so far"}.</strong>{" "}
-                All {total}{view.everyoneIn ? "" : " so far"} are free <span class="plan__span">{formatSpan(view.allFree.from, view.allFree.to)} ({formatDuration(view.allFree.to - view.allFree.from)})</span>.
+                {view.everyoneIn ? "Everyone's" : "Everyone so far is"} free <span class="plan__span">{formatSpan(view.allFree.from, view.allFree.to)}</span>,{" "}
+                <span class="plan__span">{formatDuration(long - (view.allFree.to - view.allFree.from))} short</span>.
               </p>
               {isOwner && (
                 <form method="post" action={action} data-plan>
@@ -268,10 +264,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
                         <label class="win__row" for={id}>
                           <span class="frac" aria-hidden="true">{w.free.length}<small>/{total}</small></span>
                           <span class="win__text">
-                            <span class="win__when">
-                              {formatSpan(w.from, w.to)}{" "}
-                              <small>· {formatDuration(w.to - w.from)}</small>
-                            </span>
+                            <span class="win__when">{formatSpan(w.from, w.to)}</span>
                             <span class="win__who">{whoLine(w)}</span>
                           </span>
                           <span class="win__radio" aria-hidden="true"></span>
@@ -285,14 +278,24 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
                           </label>
                         ) : (
                           <>
-                            <span class="starts__label" id={`${id}-label`}>Start between {formatMinute(w.from)} and {formatMinute(latest)}</span>
+                            {/* (the range said to a screen reader; the field keeps to it) */}
                             <label class="st">
-                              <input type="radio" name="at" id={id} value={`${w.from}-${w.from + long}`} checked={i === 0} aria-describedby={`${id}-label`} />
-                              <span>{formatMinute(w.from)}<small> · earliest</small></span>
+                              <input type="radio" name="at" id={id} value={`${w.from}-${w.from + long}`} checked={i === 0} aria-label={`Start at ${formatMinute(w.from)}, the earliest`} />
+                              <span>{formatMinute(w.from)}</span>
                             </label>
                             <label class="starts__at">
-                              <span class="sr-only">Or a later start</span>
-                              <input type="time" name={`start-${w.from}`} step="60" min={clockOf(w.from)} max={clockOf(latest)} value={clockOf(w.from)} data-start-field data-min={w.from} data-max={latest} />
+                              <input
+                                type="time"
+                                name={`start-${w.from}`}
+                                step="60"
+                                min={clockOf(w.from)}
+                                max={clockOf(latest)}
+                                value={clockOf(w.from)}
+                                aria-label={`Start, between ${formatMinute(w.from)} and ${formatMinute(latest)}`}
+                                data-start-field
+                                data-min={w.from}
+                                data-max={latest}
+                              />
                             </label>
                           </>
                         )}
@@ -304,14 +307,6 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
               <button class="btn btn--primary btn--block plan__set" data-set-label={`Set it: ${formatDay(plan.day)}`}>
                 Set it
               </button>
-              <details class="plan__exact" data-keep-open={`exact-${plan.id}`}>
-                <summary>Or set an exact time</summary>
-                <div class="plan__exact-row" data-set-range data-min={plan.range.start} data-max={plan.range.end}>
-                  <label>From <input type="time" name="set_from" step="60" value={clockOf(first.from)} /></label>
-                  <label>to <input type="time" name="set_to" step="60" value={clockOf(first.from + long)} /></label>
-                </div>
-                <button class="btn btn--small" name="exact" value="1">Set this time</button>
-              </details>
               {view.windows[0]?.youCant && <p class="fine plan__fine">You're busy in this one. You can still set it.</p>}
             </form>
           ) : (
@@ -323,10 +318,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
                     <span class="win__row">
                       <span class="frac" aria-hidden="true">{w.free.length}<small>/{total}</small></span>
                       <span class="win__text">
-                        <span class="win__when">
-                          {formatSpan(w.from, w.to)}{" "}
-                          <small>· {formatDuration(w.to - w.from)}</small>
-                        </span>
+                        <span class="win__when">{formatSpan(w.from, w.to)}</span>
                         <span class="win__who">{whoLine(w)}</span>
                       </span>
                     </span>

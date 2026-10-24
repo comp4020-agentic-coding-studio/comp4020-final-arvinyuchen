@@ -4559,16 +4559,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   border-top: 1px solid var(--line);
 }
 
-.plan__label {
-  margin: 0;
-  padding: 0.7rem 0.9rem 0;
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
 .heat {
   padding: 0.75rem 0.9rem 0.4rem;
 }
@@ -4651,10 +4641,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   height: 0.3rem;
   border-radius: 999px;
   background: linear-gradient(to right, var(--line), color-mix(in srgb, var(--accent) 30%, var(--line)) 45%, var(--accent));
-}
-
-.heat__ringkey {
-  margin-left: auto;
 }
 
 .wins {
@@ -4743,6 +4729,8 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 .win__when {
+  /* (ink, though the owner's row is a label, whose spans are muted) */
+  color: var(--ink);
   font-size: 0.98rem;
   font-weight: 600;
   line-height: 1.25;
@@ -4790,17 +4778,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   display: none;
 }
 
-.starts__label {
-  width: 100%;
-  color: var(--muted);
-  font-size: 0.74rem;
-  font-weight: 600;
-}
-
-.starts__list {
-  display: contents;
-}
-
 .st {
   position: relative;
   cursor: pointer;
@@ -4833,11 +4810,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 /* (the earliest start, picked, unless a start is typed: then the field's) */
-.st small {
-  font-weight: 500;
-  opacity: 0.8;
-}
-
 .starts.is-typed .st input:checked + span {
   background: var(--card);
   box-shadow: inset 0 0 0 1px var(--line-strong);
@@ -4996,31 +4968,16 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 /* The owner's exact time, folded under Set it: the same fields to type or swipe. */
-.plan__exact {
-  margin: -0.3rem 0.9rem 0.9rem;
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
-.plan__exact summary {
-  width: max-content;
-  margin: 0 auto;
-  color: var(--accent-ink);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.plan__exact[open] summary {
-  margin-bottom: 0.5rem;
-}
-
+/* The owner's exact time, in its own sheet from the ··· menu: the same
+   fields to type or swipe. */
 .plan__exact-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 0.4rem 0.8rem;
-  margin-bottom: 0.5rem;
+  margin: 0.5rem 0 0.75rem;
+  font-size: 1.05rem;
 }
 
 .plan__exact-row label {
@@ -5035,11 +4992,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   min-height: 2.2rem;
   padding: 0.3rem 0.5rem;
   font-size: 0.85rem;
-}
-
-.plan__exact .btn {
-  display: flex;
-  margin: 0 auto;
 }
 
 .plan__acts {

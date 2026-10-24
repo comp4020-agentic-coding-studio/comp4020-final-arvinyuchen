@@ -5,6 +5,7 @@ import BusySheet from "../../components/BusySheet.astro";
 import MiniMap from "../../components/MiniMap.astro";
 import NoPasskey from "../../components/NoPasskey.astro";
 import PlanCard from "../../components/PlanCard.astro";
+import PlanExact from "../../components/PlanExact.astro";
 import PlanStart from "../../components/PlanStart.astro";
 import SpotPhoto from "../../components/SpotPhoto.astro";
 import Base from "../../layouts/Base.astro";
@@ -841,14 +842,15 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     <button type="button" class="toast__undo" hidden>Undo</button>
   </div>
 
-  {/* The plan's two sheets: the owner's (start it, or change its day), and
-      everyone's busy times. Always there, even empty, so a live refresh can
+  {/* The plan's sheets: the owner's (start it, or change its day; an exact
+      time), and everyone's busy times. Always there, even empty, so a live refresh can
       bring them in; it leaves them be while one is open. */}
   <div id="plan-sheets">
     {isOwner && (plan || picks.length > 0) && (
       <PlanStart group={group} picks={picks} plan={plan} open={planParam === "new" || planParam === "change"} error={error === "plan-start"} />
     )}
     {view && <BusySheet group={group} view={view} open={Astro.url.searchParams.has("busy")} error={error === "busy"} isOwner={isOwner} />}
+    {view && isOwner && !view.plan.set && <PlanExact group={group} view={view} open={planParam === "exact"} />}
   </div>
 
   <script is:inline define:vars={{ groupId: group.id, isOwner }}>
@@ -1243,12 +1245,12 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     }
     for (const dialog of document.querySelectorAll("#plan-sheets dialog[open]")) openSheet(dialog);
     document.addEventListener("click", (event) => {
-      const link = event.target.closest("[data-open-busy], [data-open-start]");
+      const link = event.target.closest("[data-open-busy], [data-open-start], [data-open-exact]");
       if (link && !event.metaKey && !event.ctrlKey && !event.shiftKey) {
         // (from a menu, the sheet gives the focus back to the menu's button)
         const menu = link.closest("details");
         menu?.querySelector("summary").focus();
-        if (openSheet(document.querySelector(link.matches("[data-open-busy]") ? "#busy" : "#plan-start"))) {
+        if (openSheet(document.querySelector(link.matches("[data-open-busy]") ? "#busy" : link.matches("[data-open-exact]") ? "#plan-exact" : "#plan-start"))) {
           event.preventDefault();
           menu?.removeAttribute("open");
         }
@@ -1266,7 +1268,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         if (!event.target.matches?.("#plan-sheets dialog")) return;
         const url = new URL(location.href);
         for (const key of ["busy", "plan", "error"]) url.searchParams.delete(key);
-        history.replaceState(null, "", url.pathname + url.search + (/^#(busy|plan-start)$/.test(url.hash) ? "#list" : url.hash));
+        history.replaceState(null, "", url.pathname + url.search + (/^#(busy|plan-start|plan-exact)$/.test(url.hash) ? "#list" : url.hash));
         if (sheetsBehind) {
           sheetsBehind = false;
           refresh();

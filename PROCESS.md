@@ -193,8 +193,8 @@ doesn't fit in isn't a choice, so now it isn't offered, and when nothing is
 long enough the card says so ("No 2h stretch works for 2 or more"), with
 the longest there is, and the owner can make it shorter. Later a group
 saw only "6 of 7" times for its 4h plan while all seven were free for
-3h 30m: still never offered, but now named above the list ("No 4h time
-works for all 7. All 7 are free 1–4:30pm (3h 30m)"), with "Make it
+3h 30m: still never offered, but now named above the list ("Everyone's
+free 1–4:30pm, 30 min short"), with "Make it
 3h 30m" for the owner, so the trade between length and everyone is in
 view rather than hidden. Only times when
 at least two are free count. A start the owner picks ends that long after;
@@ -205,8 +205,14 @@ offers its earliest start as one chip and, beside it, the same time field
 to type or swipe as the sheet's, held between that start and the latest
 that still fits; the ring on the strip and "Set it" follow it as it
 turns. "Other…" kept only its other half, the windows past the best few,
-now behind "N more windows"; "Or set an exact time" stays, as the only
-way to a time outside every window or a different end. The sheet first asked for the hours to
+now behind "N more windows"; an exact time stays, as the only way to a
+time outside every window or a different end, but as "Set exact time" in
+the owner's ··· menu rather than a fold on the card. Then the card itself
+was cut to say each thing once: "Thu 29 Oct · 8am–11pm · 4h" under the
+title became "4h" (the tile has the date), "7 of 8 filled in · Ivy hasn't
+yet" became "Waiting on Ivy", "6 of 7 free · Kai can't" became "Kai
+can't" beside its 6/7, and the "So far" header, the ring's key and "Start
+between …" went, the last kept only for screen readers. The sheet first asked for the hours to
 count as well, a start and an end, but with how long asked that's one
 question too many: the hours fold away under it, 8am to 11pm (so night
 is never "free"), shown in grey with Change. The owner can set a time whenever they like,
