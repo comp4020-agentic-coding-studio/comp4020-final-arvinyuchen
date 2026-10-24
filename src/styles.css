@@ -4089,6 +4089,13 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   outline-offset: 2px;
 }
 
+/* (a stop of the plan on now: a small lock, not a Remove) */
+#list[data-editing] .pick__locked {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .pick__by {
   max-width: 7rem;
   margin: 0;

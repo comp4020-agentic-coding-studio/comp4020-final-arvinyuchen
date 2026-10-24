@@ -167,6 +167,41 @@ describe("a plan", () => {
     expect(doc.querySelector("#past-plans")?.textContent).toContain(secondName);
   });
 
+  it("keeps its stops on the list while it's on: a member can't take one off, the owner can", async () => {
+    const c = await crew("Locked crew");
+    // Ben adds two places, and the plan takes in both
+    for (const key of ["nga", "nma"]) await request(c.ben, `${c.api}/picks`, { form: { key } });
+    const boxes = [...(await page(c.ana, c.path)).querySelectorAll<HTMLInputElement>('#plan-start input[name="place"]')];
+    const id: Record<string, string> = Object.fromEntries(boxes.map((b) => [b.dataset.name ?? "", b.value]));
+    const n = id["National Gallery of Australia"];
+    const m = id["National Museum of Australia"];
+    const form = new URLSearchParams([["action", "start"], ["day", soon], ["stops", "1"], ["order", `${n},${m}`], ["place", n], ["place", m]]);
+    expect((await inPage(c.ana, `${c.api}/plans`, form)).status).toBe(204);
+    const row = async (jar: Jar, placeId: string) => (await page(jar, `${c.path}?edit`)).querySelector(`#list li[data-place-id="${placeId}"]`);
+    const pickOf = async (placeId: string) => (await row(c.ana, placeId))?.querySelector<HTMLInputElement>('input[name="pick"]')?.value ?? "";
+
+    // in Edit, Ben's own planned places have no Remove, but a lock
+    expect((await row(c.ben, n))?.querySelector('input[name="remove"]')).toBeNull();
+    expect((await row(c.ben, n))?.querySelector(".pick__locked")?.textContent).toContain("In the plan");
+    expect((await row(c.ana, n))?.querySelector('input[name="remove"]')).toBeTruthy();
+    // and the route refuses him: in the page a 409, a plain form back with a note
+    const nPick = await pickOf(n);
+    expect((await inPage(c.ben, `${c.api}/picks`, { remove: nPick })).status).toBe(409);
+    const plain = await request(c.ben, `${c.api}/picks`, { form: { remove: nPick } });
+    expect(plain.headers.get("location")).toContain("error=remove-planned");
+    expect((await page(c.ben, `${c.path}?edit&error=remove-planned`)).querySelector(".list-note")?.textContent).toContain("in the plan");
+
+    // the owner can: only that stop goes
+    expect((await inPage(c.ana, `${c.api}/picks`, { remove: nPick })).status).toBe(204);
+    expect((await page(c.ben, c.path)).querySelector(".plan h3")?.textContent).toBe("National Museum of Australia");
+
+    // called off, Ben's own place is his to take off again
+    const plan = (await page(c.ana, c.path)).querySelector<HTMLElement>(".plan")?.dataset.planId ?? "";
+    await inPage(c.ana, `${c.api}/plans`, { action: "off", plan });
+    expect((await row(c.ben, m))?.querySelector('input[name="remove"]')).toBeTruthy();
+    expect((await inPage(c.ben, `${c.api}/picks`, { remove: await pickOf(m) })).status).toBe(204);
+  });
+
   it("still reads a plan with one place, as plans were before stops", async () => {
     const c = await crew("One stop crew");
     // the form as it was: one place, no order

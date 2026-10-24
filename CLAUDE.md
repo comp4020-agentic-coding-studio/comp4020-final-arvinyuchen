@@ -72,7 +72,9 @@ follow from it; every change has to hold to them.
   its account stops being a member ends at the next change.
 - **Taking a place off the list is for whoever put it there.** In Edit
   mode (`?edit`), the member who added a place can take it off until
-  someone else is keen on it; the owner can take any off, asked first when
+  someone else is keen on it, and never while it's a stop of the plan on
+  now (not called off, its day not gone: the row shows a lock, "In the
+  plan", and the route refuses); the owner can take any off, asked first when
   others are keen (`removePick` in `src/lib/db.ts`). It goes with its
   keens, so adding it back starts from none; it stays in Explore, and the
   page offers Undo.

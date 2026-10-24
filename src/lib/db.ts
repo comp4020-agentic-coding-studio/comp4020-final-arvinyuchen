@@ -561,17 +561,29 @@ export function addPick(groupId: string, placeId: number, member: Member): boole
   return true;
 }
 
-/** Whether this member may take a place off the list: the owner always,
- *  the one who added it until someone else is keen on it. */
-export const canRemovePick = (group: Group, pick: { addedById: number; othersKeen: number }, member: Member): boolean =>
-  member.id === group.ownerId || (member.id === pick.addedById && pick.othersKeen === 0);
+/** Whether a place is a stop of the group's plan on now (not called off, its day not gone). */
+export const inLivePlan = (groupId: string, placeId: number): boolean =>
+  db
+    .prepare(
+      `SELECT 1 FROM plans pl JOIN plan_places pp ON pp.plan_id = pl.id
+        WHERE pl.group_id = ? AND pp.place_id = ? AND pl.called_off_at IS NULL AND pl.day >= ?`,
+    )
+    .get(groupId, placeId, today()) !== undefined;
+
+/** Whether this member may take a place off the list: the owner always;
+ *  the one who added it until someone else is keen on it, and not while
+ *  it's a stop of the plan on now (the list has settled into a plan). */
+export const canRemovePick = (group: Group, pick: { addedById: number; othersKeen: number; planned?: boolean }, member: Member): boolean =>
+  member.id === group.ownerId || (member.id === pick.addedById && pick.othersKeen === 0 && !pick.planned);
 
 /**
  * Takes a place off a group's list, if this member may. It's deleted with
  * its keens, so putting it back starts from none. The place stays in
- * Explore. Returns the place's id, or undefined if nothing was removed.
+ * Explore. Returns the place's id; "planned" when a member (not the owner)
+ * tries it while it's a stop of the plan on now; undefined if nothing was
+ * removed.
  */
-export function removePick(group: Group, pickId: number, member: Member): number | undefined {
+export function removePick(group: Group, pickId: number, member: Member): number | "planned" | undefined {
   return db.transaction(() => {
     const pick = db
       .prepare(
@@ -580,7 +592,9 @@ export function removePick(group: Group, pickId: number, member: Member): number
            FROM picks k WHERE k.id = ? AND k.group_id = ?`,
       )
       .get(pickId, group.id) as { placeId: number; addedById: number; othersKeen: number } | undefined;
-    if (!pick || !canRemovePick(group, pick, member)) return undefined;
+    if (!pick) return undefined;
+    const planned = inLivePlan(group.id, pick.placeId);
+    if (!canRemovePick(group, { ...pick, planned }, member)) return planned ? "planned" : undefined;
     db.prepare("DELETE FROM votes WHERE pick_id = ?").run(pickId);
     db.prepare("DELETE FROM picks WHERE id = ?").run(pickId);
     // A plan on now with a stop there loses that stop, the others moving
