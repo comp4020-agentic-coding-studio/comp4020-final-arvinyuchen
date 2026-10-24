@@ -182,7 +182,7 @@ describe("a plan", () => {
 
     // in Edit, Ben's own planned places have no Remove, but a lock
     expect((await row(c.ben, n))?.querySelector('input[name="remove"]')).toBeNull();
-    expect((await row(c.ben, n))?.querySelector(".pick__locked")?.textContent).toContain("In the plan");
+    expect((await row(c.ben, n))?.querySelector(".pick__locked")?.getAttribute("aria-label")).toBe("In the plan, only the owner can take it off");
     expect((await row(c.ana, n))?.querySelector('input[name="remove"]')).toBeTruthy();
     // and the route refuses him: in the page a 409, a plain form back with a note
     const nPick = await pickOf(n);

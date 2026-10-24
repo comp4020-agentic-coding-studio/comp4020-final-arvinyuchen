@@ -227,7 +227,7 @@ stop's place taken off the list drops that stop, the rest moving up,
 rather than calling off a whole outing for one part of it; the last one
 going calls it off. A plan is made once the list has settled, so while
 one is on, its stops stay put: a member can't take one off, even one they
-added (the row shows a lock, "In the plan"); only the owner can, and
+added (a grey lock sits where the red minus would be); only the owner can, and
 once the plan is called off or its day has gone the usual rules are
 back. There's no "Went" mark after. The stops live in their own table beside the plan,
 which keeps its first place as before, so plans from before read the

@@ -544,13 +544,15 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
                     data-confirm={othersKeen > 0 ? `Take ${place.name} off the list? ${othersKeen === 1 ? "1 keen goes" : `${othersKeen} keens go`} with it.` : undefined}
                   >
                     <input type="hidden" name="remove" value={id} />
-                    <button class="remove">Remove<span class="sr-only"> {place.name}</span></button>
+                    <button class="remove" title="Take it off the list">
+                      <svg viewBox="0 0 20 20" width="12" height="12" aria-hidden="true"><path d="M5 10h10" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" /></svg>
+                      <span class="sr-only">Remove {place.name}</span>
+                    </button>
                   </form>
                 ) : planned ? (
-                  <p class="pick__remove pick__by pick__locked">
+                  <span class="pick__remove pick__locked" role="img" aria-label="In the plan, only the owner can take it off" title="In the plan, only the owner can take it off">
                     <svg viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="2" fill="currentColor" /><path d="M7 9V6.8a3 3 0 0 1 6 0V9" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
-                    In the plan
-                  </p>
+                  </span>
                 ) : (
                   <p class="pick__remove pick__by">{pick.addedById === member.id ? "Others are keen" : `${pick.addedBy}'s`}</p>
                 )}

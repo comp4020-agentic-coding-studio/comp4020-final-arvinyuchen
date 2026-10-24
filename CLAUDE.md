@@ -73,11 +73,15 @@ follow from it; every change has to hold to them.
 - **Taking a place off the list is for whoever put it there.** In Edit
   mode (`?edit`), the member who added a place can take it off until
   someone else is keen on it, and never while it's a stop of the plan on
-  now (not called off, its day not gone: the row shows a lock, "In the
-  plan", and the route refuses); the owner can take any off, asked first when
-  others are keen (`removePick` in `src/lib/db.ts`). It goes with its
-  keens, so adding it back starts from none; it stays in Explore, and the
-  page offers Undo.
+  now (not called off, its day not gone; the route refuses); the owner can
+  take any off, asked first when others are keen (`removePick` in
+  `src/lib/db.ts`). Edit gives every row one slot where its keen button
+  was (kept, unseen, so rows don't reflow), with exactly one thing in it:
+  a red minus circle to take it off, a grey lock circle the same size on
+  a stop of the plan on (labelled "In the plan, only the owner can take it
+  off"; the row's "Planning … · stop 1 of 2" says which), or, muted on one
+  line, whose it is. It goes with its keens, so adding it back starts from
+  none; it stays in Explore, and the page offers Undo.
 - **The list is always the ranking, and you can see it move.** A live
   change re-ranks Our list straight away, most keen first, and each card
   glides from its old place to its new one (under reduced motion it just
