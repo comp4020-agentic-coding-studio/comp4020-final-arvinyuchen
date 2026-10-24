@@ -42,16 +42,31 @@ describe("a plan", () => {
     expect((await inPage(c.ben, `${c.api}/plans`, { action: "start", place: c.place, day: soon })).status).toBe(403);
     expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: "999999", day: soon })).status).toBe(409);
     expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: addDays(today(), -1) })).status).toBe(409);
-    // hours outside 6am to midnight, or not in 5-minute steps
-    expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: soon, from: "300", to: "1380" })).status).toBe(409);
-    expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: soon, from: "482", to: "1380" })).status).toBe(409);
+    // hours outside 6am to midnight, ending before they start, or not whole minutes
+    for (const [from, to] of [["300", "1380"], ["05:59", "23:00"], ["1380", "1380"], ["22:00", "21:59"], ["480", "1441"], ["482.5", "1380"], ["8am", "11pm"]])
+      expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: soon, from, to })).status).toBe(409);
 
     const id = await planned(c);
     expect(id).toMatch(/^\d+$/);
     expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: c.place, day: soon })).status).toBe(409);
   });
 
-  it("takes your busy times from you alone, in 5-minute steps, the same answer twice changing nothing", async () => {
+  it("counts hours to the minute, sent as minutes or as the plain form's date and time fields", async () => {
+    const c = await crew("Minute crew");
+    // the plain form: a date typed, not a chip; 8:07am to midnight
+    const res = await request(c.ana, `${c.api}/plans`, { form: { action: "start", place: c.place, date: addDays(today(), 20), from: "08:07", to: "00:00" } });
+    expect(res.status).toBe(303);
+    const plan = /#plan-(\d+)$/.exec(res.headers.get("location") ?? "")?.[1] ?? "";
+    const data = () => page(c.ben, c.path).then((doc) => JSON.parse(doc.querySelector("#busy [data-timeline-data]")?.textContent ?? "{}"));
+    expect(await data()).toMatchObject({ day: addDays(today(), 20), start: 487, end: 1440 });
+    // other hours, as the script sends them
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, from: "421", to: "1379" })).status).toBe(204);
+    expect(await data()).toMatchObject({ start: 421, end: 1379 });
+    // and a date more than a year ahead isn't one
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, date: addDays(today(), 400) })).status).toBe(409);
+  });
+
+  it("takes your busy times from you alone, to the minute, the same answer twice changing nothing", async () => {
     const c = await crew("Busy crew");
     const plan = await planned(c);
     // someone who isn't in the group
@@ -59,8 +74,14 @@ describe("a plan", () => {
     await startGroup(olly, "Elsewhere", "Olly");
     expect((await inPage(olly, `${c.api}/busy`, { plan, busy: "540-600" })).status).toBe(403);
 
-    expect((await inPage(c.ben, `${c.api}/busy`, { plan, busy: "541-600" })).status).toBe(409);
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, busy: "541-607" })).status).toBe(204);
     expect((await inPage(c.ben, `${c.api}/busy`, { plan, busy: "600-540" })).status).toBe(409);
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, busy: "540-1441" })).status).toBe(409);
+    // the plain form's time fields: to the minute, an end of 00:00 being midnight
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, from: "09:07", to: "10:21" })).status).toBe(204);
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, from: "22:30", to: "00:00" })).status).toBe(204);
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, from: "10:21", to: "09:07" })).status).toBe(409);
+    expect((await inPage(c.ben, `${c.api}/busy`, { plan, from: "09:07", to: "" })).status).toBe(409);
     const twice = new URLSearchParams([["plan", plan], ["busy", "540-620"], ["busy", "840-1020"]]);
     expect((await inPage(c.ben, `${c.api}/busy`, twice)).status).toBe(204);
     expect((await inPage(c.ben, `${c.api}/busy`, twice)).status).toBe(204);
@@ -77,7 +98,8 @@ describe("a plan", () => {
     const plan = await planned(c);
     expect((await inPage(c.ben, `${c.api}/plans`, { action: "set", plan, at: "855-1000" })).status).toBe(403);
     expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, at: "400-500" })).status).toBe(409);
-    expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, at: "857-1000" })).status).toBe(409);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, at: "1000-857" })).status).toBe(409);
+    expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, at: "857-1003" })).status).toBe(204);
     expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, at: "855-1000" })).status).toBe(204);
     // "Other": a start picked from the list wins over the offered one
     expect((await inPage(c.ana, `${c.api}/plans`, { action: "set", plan, at: "855-1000", other: "900-1000" })).status).toBe(204);
@@ -153,11 +175,12 @@ describe("the plan on the group's page", () => {
     expect(card?.textContent).toContain("Needs your answer");
     expect(card?.getAttribute("data-needs")).toBe("answer");
     expect(doc.querySelector(".tabs__dot")).toBeTruthy();
-    // the plain form: rows of from/to in 5-minute steps, and "I'm free all day"
+    // the plain form: rows of from/to time fields, to the minute, and "I'm free all day"
     const sheet = doc.querySelector("#busy form");
     expect(sheet?.getAttribute("action")).toBe(`${c.api}/busy`);
-    const from = [...(sheet?.querySelector('select[name="from"]')?.querySelectorAll("option") ?? [])].map((o) => o.getAttribute("value"));
-    expect(from.slice(0, 3)).toEqual(["", "480", "485"]);
+    const from = sheet?.querySelector('input[type="time"][name="from"]');
+    expect([from?.getAttribute("min"), from?.getAttribute("max"), from?.getAttribute("step")]).toEqual(["08:00", "22:59", "60"]);
+    expect(sheet?.querySelector('input[type="time"][name="to"]')).toBeTruthy();
     expect(sheet?.querySelector('button[name="free"][value="all"]')).toBeTruthy();
     // the place on the list says it's being planned
     expect(doc.querySelector("#list .pick__plan")?.textContent).toContain("Planning");
@@ -192,6 +215,19 @@ describe("the plan on the group's page", () => {
     expect(doc.querySelector("#list .pick__plan")?.textContent).toContain("2:15pm");
   });
 
+  it("works out when everyone's free to the minute", async () => {
+    const c = await crew("Minute results crew");
+    const plan = await planned(c);
+    await request(c.ana, `${c.api}/busy`, { form: { plan, from: "09:07", to: "10:21" } });
+    await request(c.ben, `${c.api}/busy`, { form: { plan, from: "11:31", to: "14:13" } });
+    const card = (await page(c.ana, c.path)).querySelector(`#plan-${plan}`);
+    expect(card?.querySelector(".win__when")?.textContent).toContain("2:13–11pm");
+    expect(card?.querySelector<HTMLInputElement>('input[name="at"]:checked')?.value).toBe("853-1380");
+    // "Other" offers the window's own start, then every 5 minutes
+    const other = [...(card?.querySelectorAll('select[name="other"] option') ?? [])].map((o) => o.getAttribute("value"));
+    expect(other.slice(0, 3)).toEqual(["", "853-1380", "855-1380"]);
+  });
+
   it("never shows anyone else's busy times, only counts and who can't", async () => {
     const c = await crew("Private crew");
     const plan = await planned(c);
@@ -200,8 +236,8 @@ describe("the plan on the group's page", () => {
     const html = await (await request(c.ben, c.path)).text();
     const doc = await page(c.ben, c.path);
     // Ben's sheet holds Ben's times alone
-    const rows = [...doc.querySelectorAll("#busy select option[selected]")].map((o) => o.getAttribute("value"));
-    expect(rows).toEqual(["840", "1020"]);
+    const rows = [...doc.querySelectorAll<HTMLInputElement>('#busy input[type="time"]')].map((o) => o.getAttribute("value"));
+    expect(rows).toEqual(["14:00", "17:00", "", ""]);
     const data = JSON.parse(doc.querySelector("#busy [data-timeline-data]")?.textContent ?? "{}");
     expect(data.busy).toEqual([[840, 1020]]);
     // one other answered: their counts would be their times, so none

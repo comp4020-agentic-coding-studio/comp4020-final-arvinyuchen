@@ -62,6 +62,18 @@ describe("free times", () => {
     expect(windows[0].free).toEqual(["Arvin", "Zoe"]);
   });
 
+  it("works to the minute", () => {
+    const { windows } = freeTimes(day, people.slice(0, 3), answers({
+      Arvin: "547-621",
+      Mia: "480-603,1087-1243",
+      Leo: "691-853",
+    }));
+    // 2:13–6:07pm, 8:43–11pm and 10:21–11:31am, everyone free
+    expect(spans(windows.filter((w) => w.free.length === 3))).toEqual(["853-1087", "1243-1380", "621-691"]);
+    // 8–9:07am: Arvin and Leo, but not Mia
+    expect(windows.find((w) => w.from === 480 && w.to === 547)?.free).toEqual(["Arvin", "Leo"]);
+  });
+
   it("ignores busy times outside the day it counts", () => {
     const { windows } = freeTimes(day, ["A", "B"], answers({ A: "0-480,1380-1440", B: "" }));
     expect(spans(windows)).toEqual(["480-1380"]);
@@ -69,9 +81,10 @@ describe("free times", () => {
 });
 
 describe("busy times as they come in", () => {
-  it("are whole five minutes inside the day", () => {
+  it("are whole minutes inside the day", () => {
     expect(parseInterval("540-620")).toEqual([540, 620]);
-    expect(parseInterval("541-620")).toBeNull();
+    expect(parseInterval("541-622")).toEqual([541, 622]);
+    expect(parseInterval("541.5-622")).toBeNull();
     expect(parseInterval("620-540")).toBeNull();
     expect(parseInterval("0-1445")).toBeNull();
     expect(parseInterval("nine-ten")).toBeNull();

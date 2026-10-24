@@ -87,7 +87,7 @@ follow from it; every change has to hold to them.
   owner starts one plan at a time, for a place on Our list and a day
   (`src/lib/plans.ts`); each member marks only their own busy times
   (`me()`), and the owner sets the time. Times are Canberra's wall clock:
-  a local date and minutes since its midnight in 5-minute steps
+  a local date and whole minutes since its midnight, to the minute
   (`src/lib/when.ts`), never the server's zone. Nobody sees anyone else's
   busy times: the page shows how many are free when and who can't make a
   window (`src/lib/free.ts`), and the timeline gets the others' counts only

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, dayParts, formatDay, formatDuration, formatMinute, formatSpan, isDay, localNow, today } from "../src/lib/when";
+import { addDays, clockOf, dayParts, formatDay, formatDuration, formatMinute, formatSpan, isDay, localNow, parseMinute, today } from "../src/lib/when";
 
 // Plans live on Canberra's clock while the server runs on UTC. These check
 // the helpers on their own, with the moment passed in.
@@ -51,5 +51,21 @@ describe("Canberra's clock on a UTC server", () => {
     expect(formatDuration(15)).toBe("15 min");
     expect(formatDuration(120)).toBe("2h");
     expect(formatDuration(145)).toBe("2h 25m");
+  });
+});
+
+describe("a time as a form sends it", () => {
+  it("is minutes, or a time field's clock, to the minute", () => {
+    expect(parseMinute("547")).toBe(547);
+    expect(parseMinute("09:07")).toBe(547);
+    expect(parseMinute("9:07:00")).toBe(547);
+    expect(parseMinute("23:59")).toBe(1439);
+    // midnight: the day's start, or, as an end, the midnight it ends on
+    expect(parseMinute("00:00")).toBe(0);
+    expect(parseMinute("00:00", true)).toBe(1440);
+    expect(parseMinute("24:00")).toBe(1440);
+    for (const bad of ["", "9:", "9:7", "09:60", "24:01", "nine", "9am", "-5", "12345"]) expect(parseMinute(bad)).toBeNull();
+    expect(clockOf(547)).toBe("09:07");
+    expect(clockOf(1440)).toBe("00:00");
   });
 });

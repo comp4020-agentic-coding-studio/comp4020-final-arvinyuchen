@@ -171,8 +171,9 @@ For marking busy times on a phone I mocked up four ways: a timeline of the
 day, From and To rows, parts of the day (morning, afternoon, evening), and
 a grid of half hours.
 
-**Decision.** Option 3, on a timeline in 5-minute steps, with no shortest
-time. Busy rather than free, since most of a Saturday is free: less to
+**Decision.** Option 3, on a timeline to the minute (at first 5-minute
+steps, but a class out at 10:07 had to round, and rounding can hide a
+window or make one up), with no shortest time. Busy rather than free, since most of a Saturday is free: less to
 mark, and "I'm free all day" is one tap. The day draws the way phone
 calendars do: a swipe scrolls, a tap adds an hour, a hold (400ms) then a
 drag draws, and a stretch has dots to drag and exact times behind a tap.
@@ -201,6 +202,9 @@ everyone's answers again (the old plan is kept, called off). Times are
 Canberra's, so someone away sees Canberra times. The hold and drag needs
 checking on a real iPhone: Safari decides scrolling from the first touch,
 and the drag relies on stopping the page's scroll once a hold has armed.
+To the minute, a finger moves a few minutes a millimetre, so the stretch
+being dragged says its from–to on itself, and a tap's hour still lands on
+5 minutes.
 
 ## How I worked with the agent
 

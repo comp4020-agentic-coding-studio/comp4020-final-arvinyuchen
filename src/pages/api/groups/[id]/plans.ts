@@ -3,6 +3,7 @@ import { getGroup } from "../../../../lib/db";
 import { changed } from "../../../../lib/events";
 import { parseInterval } from "../../../../lib/free";
 import { clean, me } from "../../../../lib/me";
+import { parseMinute } from "../../../../lib/when";
 import {
   callOffPlan,
   changePlan,
@@ -38,10 +39,12 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
 
   // the day: a page's chosen day, or one typed in its date field
   const day = clean(form.get("date"), 10) || clean(form.get("day"), 10);
-  // the hours to count, or (with none sent) these
+  // the hours to count, to the minute (480, or a time field's "08:00"; an
+  // end of "00:00" is midnight), or (with none sent) these
+  const minute = (key: string, end = false) => parseMinute(clean(form.get(key), 8), end) ?? NaN;
   const range = (or: { start: number; end: number }) => ({
-    start: form.has("from") ? Number(form.get("from")) : or.start,
-    end: form.has("to") ? Number(form.get("to")) : or.end,
+    start: form.has("from") ? minute("from") : or.start,
+    end: form.has("to") ? minute("to", true) : or.end,
   });
 
   if (action === "start") {

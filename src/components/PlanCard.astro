@@ -42,6 +42,13 @@ const top = view.windows[0]?.free.length ?? 0;
 const tiered = view.windows.some((w) => w.free.length !== top);
 const tierOf = (w: PlanWindow) =>
   w.free.length !== top ? "Longer, with fewer" : everyone(w) ? "Everyone free" : w.all ? `All ${total} so far` : `${top} of ${total} free`;
+// "Other": a window's own start (which may be any minute), then each 5
+// minutes in it (every minute would make a list too long to look through).
+const otherStarts = (w: PlanWindow) => {
+  const starts = [w.from];
+  for (let m = Math.floor(w.from / 5) * 5 + 5; m < w.to; m += 5) starts.push(m);
+  return starts;
+};
 const set = plan.set;
 const setWhen = set && `${formatDay(plan.day)}, ${formatMinute(set.start)}`;
 const ownerFirst = view.owner === member.name ? "you" : view.owner;
@@ -224,7 +231,7 @@ const ownerFirst = view.owner === member.name ? "you" : view.owner;
                     <option value="">Other…</option>
                     {[...view.windows, ...view.rest].map((w) => (
                       <optgroup label={`${formatSpan(w.from, w.to)} · ${whoLine(w)}`}>
-                        {Array.from({ length: (w.to - w.from) / 5 }, (_, k) => w.from + k * 5).map((s) => (
+                        {otherStarts(w).map((s) => (
                           <option value={`${s}-${w.to}`}>{formatMinute(s)}</option>
                         ))}
                       </optgroup>

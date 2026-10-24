@@ -1,11 +1,12 @@
 ---
 import type { Group } from "../lib/db";
 import type { PlanView } from "../lib/plans";
-import { formatDay, formatMinute, formatSpan } from "../lib/when";
+import { clockOf, formatDay, formatMinute, formatSpan } from "../lib/when";
 
 // When you're busy on the plan's day. As a plain form it's rows of From
-// and To, in 5-minute steps (a row left on "–" is none, and one empty row
-// is always there for the next); with the script it's a day you draw on
+// and To, time fields to the minute (a row left empty is none, and one
+// empty row is always there for the next; an end of 12:00am is midnight);
+// with the script it's a day you draw on
 // (src/scripts/busy.ts), which writes the same form. Only your own busy
 // times are in it. What the others are free is there as counts, for the
 // timeline's "Others": never whose. A <dialog>, open from the server when
@@ -20,7 +21,6 @@ interface Props {
 const { group, view, open, error, isOwner } = Astro.props;
 const { plan } = view;
 const { start, end } = plan.range;
-const steps = Array.from({ length: (end - start) / 5 + 1 }, (_, i) => start + i * 5);
 // (busy times kept from before the hours changed still show, clipped)
 const rows = (view.mine ?? []).map(([a, b]) => [Math.max(a, start), Math.min(b, end)]).filter(([a, b]) => a < b);
 const timeline = JSON.stringify({
@@ -47,27 +47,21 @@ const timeline = JSON.stringify({
       <span></span>
     </div>
     <div class="sheet__body busy">
-      {error && <p class="notice" role="alert">A busy time needs a start before its end, in 5-minute steps.</p>}
+      {error && <p class="notice" role="alert">A busy time needs a start before its end, both in {formatSpan(start, end)}.</p>}
       {plan.set && !isOwner && (
         <p class="busy__set"><strong>{view.owner} set {formatMinute(plan.set.start)}.</strong> If you're busy then, the card tells {view.owner}, who can move it. Nobody else sees your times.</p>
       )}
       <div class="busy__rows" data-busy-rows>
-        <p class="fine">{formatSpan(start, end)}, in 5-minute steps. Nobody else sees your times, only how many are free when.</p>
+        <p class="fine">{formatSpan(start, end)}, to the minute. Nobody else sees your times, only how many are free when.</p>
         {[...rows, [null, null]].map(([a, b], i) => (
           <div class="busy__row">
             <label>
               <span>From</span>
-              <select name="from" aria-label={`Busy time ${i + 1}: from`}>
-                <option value="">–</option>
-                {steps.slice(0, -1).map((m) => <option value={m} selected={m === a}>{formatMinute(m)}</option>)}
-              </select>
+              <input type="time" name="from" step="60" min={clockOf(start)} max={clockOf(end - 1)} value={a === null ? "" : clockOf(a)} aria-label={`Busy time ${i + 1}: from`} />
             </label>
             <label>
               <span>to</span>
-              <select name="to" aria-label={`Busy time ${i + 1}: to`}>
-                <option value="">–</option>
-                {steps.slice(1).map((m) => <option value={m} selected={m === b}>{formatMinute(m)}</option>)}
-              </select>
+              <input type="time" name="to" step="60" value={b === null ? "" : clockOf(b)} aria-label={`Busy time ${i + 1}: to`} />
             </label>
           </div>
         ))}

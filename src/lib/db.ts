@@ -160,14 +160,14 @@ db.exec(`
 
 // Plans: the owner picks a place on the list and a day; everyone marks when
 // they're busy that day; the owner sets the time (src/lib/plans.ts). A day
-// is a local date and times are minutes since its local midnight, in
-// 5-minute steps (src/lib/when.ts), never instants. An answer with no busy
-// times is "free all day"; no answer is "hasn't said". A plan whose day
-// changed is called off and points at the one that replaced it, so nobody's
-// answers are lost. Times kept to the millisecond, so a change just after
-// the time was set still counts as after it.
-db.exec(`
-  CREATE TABLE IF NOT EXISTS plans (
+// is a local date and times are whole minutes since its local midnight
+// (src/lib/when.ts), never instants. An answer with no busy times is "free
+// all day"; no answer is "hasn't said". A plan whose day changed is called
+// off and points at the one that replaced it, so nobody's answers are lost.
+// Times kept to the millisecond, so a change just after the time was set
+// still counts as after it.
+const planTables = {
+  plans: (name: string) => `CREATE TABLE ${name} (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     group_id TEXT NOT NULL REFERENCES groups(id),
     place_id INTEGER NOT NULL REFERENCES places(id),
@@ -182,9 +182,36 @@ db.exec(`
     called_off_at TEXT,
     replaced_by INTEGER REFERENCES plans(id),
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-    CHECK (range_start % 5 = 0 AND range_end % 5 = 0 AND range_start >= 360 AND range_start < range_end AND range_end <= 1440),
-    CHECK (set_start IS NULL OR (set_start % 5 = 0 AND set_end % 5 = 0 AND set_start >= range_start AND set_start < set_end AND set_end <= range_end))
-  );
+    CHECK (range_start >= 360 AND range_start < range_end AND range_end <= 1440),
+    CHECK (set_start IS NULL OR (set_start >= range_start AND set_start < set_end AND set_end <= range_end))
+  )`,
+  plan_busy: (name: string) => `CREATE TABLE ${name} (
+    plan_id INTEGER NOT NULL REFERENCES plans(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    start_min INTEGER NOT NULL,
+    end_min INTEGER NOT NULL,
+    CHECK (0 <= start_min AND start_min < end_min AND end_min <= 1440)
+  )`,
+};
+// (times were first held to 5-minute steps by these CHECKs, and SQLite can't
+// change a CHECK in place: a database made then has each table copied, row
+// for row, into one with today's checks, so every row it kept stays as it is)
+for (const [table, make] of Object.entries(planTables)) {
+  const sql = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?").pluck().get(table) as string | undefined;
+  if (!sql?.includes("% 5")) continue;
+  const columns = (db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).map((c) => c.name).join(", ");
+  db.pragma("foreign_keys = OFF");
+  db.transaction(() => {
+    db.exec(make(`${table}_to_the_minute`));
+    db.exec(`INSERT INTO ${table}_to_the_minute (${columns}) SELECT ${columns} FROM ${table}`);
+    db.exec(`DROP TABLE ${table}`);
+    db.exec(`ALTER TABLE ${table}_to_the_minute RENAME TO ${table}`);
+    if ((db.pragma("foreign_key_check") as unknown[]).length) throw new Error(`${table}: a reference broke copying it`);
+  })();
+  db.pragma("foreign_keys = ON");
+}
+db.exec(`
+  ${planTables.plans("IF NOT EXISTS plans")};
   CREATE INDEX IF NOT EXISTS plans_group ON plans (group_id, day);
   CREATE TABLE IF NOT EXISTS plan_answers (
     plan_id INTEGER NOT NULL REFERENCES plans(id),
@@ -193,13 +220,7 @@ db.exec(`
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     PRIMARY KEY (plan_id, member_id)
   );
-  CREATE TABLE IF NOT EXISTS plan_busy (
-    plan_id INTEGER NOT NULL REFERENCES plans(id),
-    member_id INTEGER NOT NULL REFERENCES members(id),
-    start_min INTEGER NOT NULL,
-    end_min INTEGER NOT NULL,
-    CHECK (start_min % 5 = 0 AND end_min % 5 = 0 AND 0 <= start_min AND start_min < end_min AND end_min <= 1440)
-  );
+  ${planTables.plan_busy("IF NOT EXISTS plan_busy")};
   CREATE INDEX IF NOT EXISTS plan_busy_answer ON plan_busy (plan_id, member_id);
 `);
 

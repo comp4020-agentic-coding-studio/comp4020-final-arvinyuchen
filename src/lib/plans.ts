@@ -100,7 +100,7 @@ export function pastPlans(groupId: string, now = new Date(), limit = 12): Plan[]
   ).map(toPlan);
 }
 
-/** Whether `range` is a span a plan may count: whole 5 minutes, 6am to midnight. */
+/** Whether `range` is a span a plan may count: whole minutes, 6am to midnight. */
 export const isRange = (r: { start: number; end: number }) =>
   isInterval([r.start, r.end]) && r.start >= EARLIEST && r.end <= LATEST;
 
@@ -137,7 +137,7 @@ export function startPlan(
 /**
  * A member's busy times for the plan's day, all at once: what their page
  * showed, so sending it twice changes nothing. An empty list is "free all
- * day". Each stretch must be whole 5 minutes within the day; overlapping
+ * day". Each stretch must be whole minutes within the day; overlapping
  * ones are made one. Returns whether anything changed, or "invalid".
  */
 export function answerPlan(plan: Plan, member: Member, busy: Interval[], now = new Date()): boolean | "invalid" {

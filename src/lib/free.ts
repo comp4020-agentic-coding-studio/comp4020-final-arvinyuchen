@@ -2,21 +2,21 @@
 // database, so it's tested on its own (spec/free.test.ts).
 //
 // A day is minutes since local midnight (src/lib/when.ts). Everyone marks
-// the stretches they're busy, in 5-minute steps; an empty list is "free all
+// the stretches they're busy, to the minute; an empty list is "free all
 // day", and no answer at all is "hasn't said", which counts neither way.
 // There's no shortest window: two of you free for 15 minutes is a window,
 // the card just says how short it is.
 
 export type Interval = [from: number, to: number];
 
-/** Times are kept in 5-minute steps. */
-export const STEP = 5;
+/** Times are kept to the minute. */
+export const STEP = 1;
 
 /** A plan counts times within this much of the day, at most. */
 export const EARLIEST = 360;
 export const LATEST = 1440;
 
-/** Whether a stretch is whole 5-minute steps inside the day, start before end. */
+/** Whether a stretch is whole minutes inside the day, start before end. */
 export const isInterval = ([from, to]: Interval) =>
   Number.isInteger(from) && Number.isInteger(to) && from % STEP === 0 && to % STEP === 0 && 0 <= from && from < to && to <= 1440;
 

@@ -5371,7 +5371,7 @@ dialog.sheet[open]:not(:modal) {
   font-size: 0.76rem;
 }
 
-.busy__row select {
+.busy__row input {
   min-height: 2.6rem;
   padding: 0.4rem 0.7rem;
 }
@@ -5728,6 +5728,38 @@ dialog.sheet[open]:not(:modal) {
 
 .tl__blk.is-ghost .tl__bs {
   color: rgb(255 255 255 / 80%);
+}
+
+/* The stretch being moved says its from–to on itself, to the minute: a
+   white pill over its top, or just above it when it's too short for one. */
+.tl__live {
+  position: absolute;
+  top: 0.3rem;
+  left: 0.55rem;
+  z-index: 1;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 28%);
+  color: var(--ink);
+  font-family: var(--font-rounded);
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.tl__blk.is-live .tl__bt,
+.tl__blk.is-live .tl__bs {
+  visibility: hidden;
+}
+
+.tl__blk.is-live.is-one .tl__live,
+.tl__blk.is-live.is-tiny .tl__live {
+  top: auto;
+  bottom: calc(100% + 4px);
 }
 
 .tl__blk:focus-visible {

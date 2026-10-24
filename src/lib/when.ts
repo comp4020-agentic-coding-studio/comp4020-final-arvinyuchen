@@ -47,6 +47,26 @@ export function addDays(day: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/**
+ * A time of day as a form sends it: minutes since midnight ("540"), or a
+ * clock as a time field writes it ("09:00", "09:00:00"). As the end of a
+ * stretch, "00:00" (or "24:00") is the midnight the day ends on, 1440.
+ * Null if it's neither.
+ */
+export function parseMinute(text: string, end = false): number | null {
+  const s = text.trim();
+  if (/^\d{1,4}$/.test(s)) return Number(s);
+  const m = /^(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/.exec(s);
+  if (!m) return null;
+  const minute = Number(m[1]) * 60 + Number(m[2]);
+  if (Number(m[2]) > 59 || minute > 1440) return null;
+  return end && minute === 0 ? 1440 : minute;
+}
+
+/** A minute of the day as a time field's value: "09:05" ("00:00" for midnight). */
+export const clockOf = (minute: number) =>
+  `${String(Math.floor(minute / 60) % 24).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
