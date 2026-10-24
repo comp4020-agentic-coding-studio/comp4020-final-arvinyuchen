@@ -38,6 +38,13 @@ const inPage = (jar: Jar, path: string, form: Record<string, string> | URLSearch
 describe("a plan", () => {
   it("is the owner's to start, for a place on the list, one at a time", async () => {
     const c = await crew("Plan crew");
+    // the owner's sheet asks how long; the hours (8am to 11pm) are folded away under it
+    const sheet = (await page(c.ana, c.path)).querySelector("#plan-start");
+    expect([...(sheet?.querySelectorAll(".sheet__rows") ?? [])][0]?.querySelector("[data-length]")).toBeTruthy();
+    const hours = sheet?.querySelector("details[data-hours]");
+    expect(hours?.hasAttribute("open")).toBe(false);
+    expect(hours?.querySelector("summary")?.textContent).toContain("8am–11pm");
+    expect([...(hours?.querySelectorAll('input[type="time"]') ?? [])].map((i) => i.getAttribute("name"))).toEqual(["from", "to"]);
     // not the owner, not a place on the list, not a day gone by
     expect((await inPage(c.ben, `${c.api}/plans`, { action: "start", place: c.place, day: soon })).status).toBe(403);
     expect((await inPage(c.ana, `${c.api}/plans`, { action: "start", place: "999999", day: soon })).status).toBe(409);
@@ -65,6 +72,7 @@ describe("a plan", () => {
     // and its hours as plain time fields, to the minute (12:00am the midnight it ends on)
     const hours = [...(await page(c.ana, c.path)).querySelectorAll('#plan-start input[type="time"]')].map((i) => [i.getAttribute("name"), i.getAttribute("value")]);
     expect(hours).toEqual([["from", "08:07"], ["to", "00:00"]]);
+    expect((await page(c.ana, c.path)).querySelector("#plan-start details[data-hours] summary")?.textContent).toContain("8:07am–midnight");
     // other hours, as the script sends them
     expect((await inPage(c.ana, `${c.api}/plans`, { action: "change", plan, from: "421", to: "1379" })).status).toBe(204);
     expect(await data()).toMatchObject({ start: 421, end: 1379 });

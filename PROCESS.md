@@ -186,7 +186,10 @@ doesn't fit in isn't a choice, so now it isn't offered, and when nothing is
 long enough the card says so ("No 2h stretch works for 2 or more"), with
 the longest there is, and the owner can make it shorter. Only times when
 at least two are free count. A start the owner picks ends that long after;
-an exact time can still be typed. The owner can set a time whenever they like,
+an exact time can still be typed. The sheet first asked for the hours to
+count as well, a start and an end, but with how long asked that's one
+question too many: the hours fold away under it, 8am to 11pm (so night
+is never "free"), shown in grey with Change. The owner can set a time whenever they like,
 and is nudged once everyone's in. After that, someone changing their times
 tells only the owner, with a time to move to, or Keep.
 

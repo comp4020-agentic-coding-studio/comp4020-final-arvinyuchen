@@ -7,10 +7,11 @@
 // out of reach. A chip and the calendar are one choice: the chips keep a
 // day of theirs (the date field emptied), and a day further off is the
 // date field's, with no chip chosen; the form posts as it always did.
-// The hours to count, and how long it takes, are fields to type or swipe
-// (src/scripts/timefield.ts); how long is never more than the hours.
+// How long it takes, and the hours to count (folded under it), are fields
+// to type or swipe (src/scripts/timefield.ts); how long is never more than
+// the hours.
 import { EARLIEST, LATEST } from "../lib/free";
-import { addDays, formatDay, isDay, parseMinute } from "../lib/when";
+import { addDays, formatDay, formatSpan, isDay, parseMinute } from "../lib/when";
 import { fieldInstead, timeField, type TimeField } from "./timefield";
 
 const asDate = (day: string) => new Date(`${day}T12:00:00Z`);
@@ -179,7 +180,8 @@ function calendar(form: HTMLFormElement) {
   render();
 }
 
-// "Count from" as two fields to type or swipe, 6am to midnight, the end
+// The hours to count (From and Until, folded under How long) as two fields
+// to type or swipe, 6am to midnight, the end
 // after the start: moving one past the other takes the other along.
 function countFrom(form: HTMLFormElement, then: (start: number, end: number) => void) {
   const from = form.querySelector<HTMLInputElement>('[data-range] input[name="from"]');
@@ -268,7 +270,12 @@ function enhance(dialog: HTMLDialogElement) {
   form.dataset.enhanced = "";
   calendar(form);
   const length = howLong(form);
-  countFrom(form, (start, end) => length?.bounds(1, end - start));
+  const now = form.querySelector<HTMLElement>("[data-hours-now]");
+  countFrom(form, (start, end) => {
+    length?.bounds(1, end - start);
+    // (the folded line says the hours as they are)
+    if (now) now.textContent = formatSpan(start, end);
+  });
 }
 
 function enhanceAll() {

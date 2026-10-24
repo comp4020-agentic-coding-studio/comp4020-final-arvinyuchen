@@ -86,7 +86,9 @@ follow from it; every change has to hold to them.
 - **A plan is the owner's to decide, from busy times nobody else sees.** The
   owner starts one plan at a time, for a place on Our list, a day and how
   long it takes (`src/lib/plans.ts`); only times at least that long are
-  offered, never a shorter one; each member marks only their own busy times
+  offered, never a shorter one. The owner's sheet asks only how long; the
+  hours it counts (8am to 11pm unless changed, and only time inside them
+  is ever free, so never the night) fold away under it; each member marks only their own busy times
   (`me()`), and the owner sets the time. Times are Canberra's wall clock:
   a local date and whole minutes since its midnight, to the minute
   (`src/lib/when.ts`), never the server's zone; on the timeline a drag

@@ -1,4 +1,4 @@
-// A time you can type or turn: the plan sheet's "Count from" and a busy
+// A time you can type or turn: the plan sheet's How long and hours, and a busy
 // stretch's exact times (src/scripts/plan-start.ts, src/scripts/busy.ts).
 // Each part of it (the hour, the minute, am or pm; or, for a length, its
 // hours and minutes) takes typing, and a vertical drag on it turns it

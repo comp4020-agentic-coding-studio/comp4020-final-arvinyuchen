@@ -170,7 +170,8 @@ one place; your account page renames you everywhere and adds or removes
 passkeys. The person who started a
 group can rename it, write a note for the people they invite, remove or merge
 members, and reset its invite link. They can also plan a day out: a place
-from the list, a day, and how long it takes. Everyone marks when they're busy on that day's
+from the list, a day, and how long it takes (the hours it counts, 8am to
+11pm, fold away under that and can be changed). Everyone marks when they're busy on that day's
 hours, to the minute (tap for an hour, hold and drag to draw in 5-minute
 steps, type exact minutes; without a script, rows of From and To), and the plan's card shows when everyone's
 free for that long, longest first, as counts and who can't make it (or
