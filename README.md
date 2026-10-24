@@ -32,8 +32,9 @@ other's taste.
 - **A set plan holds on the day.** A plan falls apart at the door when the
   gallery shut at five or it poured, so the card says so first, in a few
   quiet words: whether each stop is open for its part of the outing, and
-  the forecast where it's outside. It never guesses: hours nobody has
-  recorded say nothing.
+  the forecast where it's outside; how far apart the stops are; and the
+  way there, one tap into the phone's own maps. It never guesses: hours
+  nobody has recorded say nothing, and a time between stops is "about".
 - **The list is the group's own; the good places are everyone's.** A friend's
   "best chilli oil in Canberra" beats a star rating from a stranger. Every
   group explores one shared pool of places, and a place only gets in when
@@ -162,8 +163,11 @@ other's taste.
   lives on the group's page: a dot on Our list's tab, a note at the foot of
   an open page, and the card asking for your times. The group already has a
   chat for nudging each other.
-- **Booking and directions.** The map shows where a place is; getting there
-  and booking a table are for the apps that already do them well.
+- **Booking, and routing of my own.** The map shows where a place is;
+  booking a table is for the apps that already do it well, and so is
+  turn-by-turn: the plan's Directions hand the stops, in order, to Apple
+  Maps or Google Maps, and the time between stops is only an estimate,
+  said as one.
 
 ## Where it is now
 
@@ -202,4 +206,8 @@ that won't be open for its part of the outing says so in a few words at
 the card's foot ("Questacon closes 5pm", "Closed Mondays"), and so does a
 window whose time it wouldn't fit; an outdoor stop shows the day's forecast
 ("24° · 10% rain") once the day is within the next 16. Unknown hours say
-nothing. Next: saying who's coming once the time is set.
+nothing. With several stops, the card lists them in order with the leg
+between each ("about 13 min drive · 7.2 km", or a walk when it's short),
+and each stop has a link to directions; once the time is set, Directions
+opens the whole route, in Apple Maps on an iPhone or a Mac and Google
+Maps elsewhere. Next: saying who's coming once the time is set.

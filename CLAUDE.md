@@ -59,6 +59,15 @@ follow from it; every change has to hold to them.
   opening_hours.js and Open-Meteo are credited in the footer. The spec
   runs the app with `OUTING_STUB=1`, whose stub (`src/lib/outing-stub.ts`)
   answers instead and logs what would have gone out.
+- **Getting between the stops is an estimate, and says so.** A multi-stop
+  plan's card shows each leg ("about 12 min drive · 6 km", a walk under
+  1.5 km) from the straight line, a road factor and a town speed
+  (`legBetween` in `src/lib/outing.ts`): no routing service, nothing
+  fetched, always "about". Directions are plain links, no key: to each
+  stop, and once the time is set, the whole route in order; Apple Maps'
+  unified URLs on an Apple device (told from the browser), Google Maps'
+  elsewhere, in a new tab with `rel="noopener"` (`directionsUrl`). Never
+  send a member, a group or a plan in one.
 - **One person, one keen.** A member can vote "keen" on a spot once. The
   button sends the state it shows ("on" or "off") and the server sets exactly
   that (`setKeen`), so a double-tap or a second device never undoes a vote.

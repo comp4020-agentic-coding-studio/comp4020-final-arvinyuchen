@@ -320,6 +320,22 @@ table (a museum open 9 to 5, a garden shut on Mondays, a place that times
 out) and logs what it was sent; the spec reads that log to check that no
 member's name, group or plan ever went out.
 
+**Between the stops.** A multi-stop outing lives or dies on the legs. A
+routing service (OSRM's demo server, OpenRouteService) would give real
+times, but the public OSRM server is for light, non-production use and
+OpenRouteService needs a key, and both would be one more thing to call,
+cache and credit for a number the group only needs roughly. So each leg
+is estimated: the straight line, times 1.3 for roads (Canberra's wind
+round the lake and the hills), at 40 km/h with two minutes to park, or on
+foot at 4.8 km/h when the stops are under 1.5 km apart. It's said as an
+estimate ("about 13 min drive · 7.2 km"), and checked against a few legs I
+know (Questacon to the Mount Ainslie lookout comes out at 13 minutes).
+Directions are plain links, which need no key: Apple Maps' unified URLs
+on an Apple device (an iPad's browser says it's a Mac, which also has
+Maps), Google Maps' everywhere else, both from wherever the person is,
+through every stop in order. A link to each stop is there all along; the
+whole route once the time is set, when the order is the plan.
+
 **Trade-offs.** OpenStreetMap's hours are only as good as its mappers;
 plenty of Canberra's places have none, and those say nothing. The first
 person to open a card for a new stop sees it without hours, then the card

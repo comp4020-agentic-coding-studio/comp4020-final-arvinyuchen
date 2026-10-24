@@ -1,7 +1,8 @@
+import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
 import { Jar } from "./authenticator";
 import { baseUrl, join, origin, page, request, startGroup } from "./browser";
-import { forecastText, hoursNote, inForecast, outingStretch, outsideByTags, shares, skyOf, wantsForecast } from "../src/lib/outing";
+import { directionsUrl, forecastText, formatDistance, hoursNote, inForecast, legBetween, legText, metresBetween, onApple, outingStretch, outsideByTags, shares, skyOf, wantsForecast } from "../src/lib/outing";
 import { forecastUrl, overpassQuery } from "../src/lib/outing-fetch";
 import { STUB_FAIL } from "../src/lib/outing-stub";
 import { addDays, dayParts, today } from "../src/lib/when";
@@ -52,6 +53,57 @@ describe("opening hours", () => {
     expect(outingStretch({ duration: 120, set: null }, [])).toBeNull();
     expect(shares([840, 1080], 2)).toEqual([[840, 960], [960, 1080]]);
     expect(shares([600, 700], 3)).toEqual([[600, 633], [633, 667], [667, 700]]);
+  });
+});
+
+describe("between the stops", () => {
+  const questacon = { lat: -35.2985, lon: 149.1313 };
+  it("estimates a leg from the straight line, a road factor and a town speed, and says it's an estimate", () => {
+    // 0.05° of latitude is 5.56 km as the crow flies: 7.2 km by road, 11 min at 40 km/h and 2 to park
+    const far = legBetween(questacon, { lat: -35.2485, lon: 149.1313 });
+    expect(Math.round(metresBetween(questacon, { lat: -35.2485, lon: 149.1313 }))).toBe(5560);
+    expect(far).toMatchObject({ drive: 13, walk: null });
+    expect(legText(far)).toBe("about 13 min drive · 7.2 km");
+  });
+  it("walks a short leg", () => {
+    // 445 m as the crow flies, 580 m on foot at 4.8 km/h
+    const near = legBetween(questacon, { lat: -35.2945, lon: 149.1313 });
+    expect(near.walk).toBe(7);
+    expect(legText(near)).toBe("about 7 min walk · 600 m");
+    expect(legBetween(questacon, { lat: -35.2875, lon: 149.1313 }).walk).toBe(20);
+    expect(legBetween(questacon, { lat: -35.2845, lon: 149.1313 }).walk).toBeNull();
+  });
+  it("says a distance as people do", () => {
+    expect([10, 380, 949, 1240, 9940, 14_300].map(formatDistance)).toEqual(["50 m", "400 m", "950 m", "1.2 km", "9.9 km", "14 km"]);
+  });
+});
+
+describe("directions", () => {
+  const a = { lat: -35.3, lon: 149.13 };
+  const b = { lat: -35.2985, lon: 149.1313 };
+  const c = { lat: -35.2706, lon: 149.1585 };
+  it("opens Google Maps through every stop in order, from wherever you are", () => {
+    expect(directionsUrl([b], false)).toBe("https://www.google.com/maps/dir/?api=1&destination=-35.298500%2C149.131300");
+    const route = new URL(directionsUrl([a, b, c], false));
+    expect(route.origin + route.pathname).toBe("https://www.google.com/maps/dir/");
+    expect(route.searchParams.get("destination")).toBe("-35.270600,149.158500");
+    expect(route.searchParams.get("waypoints")).toBe("-35.300000,149.130000|-35.298500,149.131300");
+    expect(route.searchParams.get("travelmode")).toBe("driving");
+    expect(route.searchParams.has("origin")).toBe(false);
+  });
+  it("opens Apple Maps on an Apple device", () => {
+    expect(directionsUrl([b], true)).toBe("https://maps.apple.com/directions?destination=-35.298500%2C149.131300");
+    const route = new URL(directionsUrl([a, b, c], true));
+    expect(route.origin + route.pathname).toBe("https://maps.apple.com/directions");
+    expect(route.searchParams.get("destination")).toBe("-35.270600,149.158500");
+    expect(route.searchParams.getAll("waypoint")).toEqual(["-35.300000,149.130000", "-35.298500,149.131300"]);
+    expect(route.searchParams.get("mode")).toBe("driving");
+  });
+  it("knows an Apple device by its browser, an iPad's that says it's a Mac too", () => {
+    expect(onApple("Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15")).toBe(true);
+    expect(onApple("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/18.5 Safari/605.1.15")).toBe(true);
+    expect(onApple("Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Chrome/141.0 Mobile Safari/537.36")).toBe(false);
+    expect(onApple("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/141.0 Safari/537.36")).toBe(false);
   });
 });
 
@@ -158,6 +210,42 @@ describe("the plan's card on the day", () => {
     expect(card.querySelector(".win .win__shut")?.textContent).toBe("Stub Museum opens 9am");
   });
 
+  it("shows the leg between stops, a way to each, and once set the whole route, in the device's maps", async () => {
+    const c = await crew("Route crew", [
+      { name: "Stub Museum", kind: "culture", ref: "node/990000001", lat: -35.2985, lon: 149.1313 },
+      { name: "Stub Gardens", kind: "outdoors", ref: "node/990000002", lat: -35.2783, lon: 149.1093 },
+    ]);
+    const id = await plan(c, next("Sat"));
+    const card = async (userAgent = "Mozilla/5.0 (X11; Linux x86_64) Chrome/141.0") =>
+      new JSDOM(await (await fetch(new URL(c.path, baseUrl), { headers: { cookie: c.owner.header, "user-agent": userAgent } })).text()).window.document.querySelector("#plans .plan")!;
+    let now = await card();
+    expect([...now.querySelectorAll(".outing__stop .outing__name")].map((n) => n.textContent)).toEqual(["Stub Museum", "Stub Gardens"]);
+    // 3 km as the crow flies: a drive, said as an estimate
+    expect([...now.querySelectorAll(".outing__leg")].map((l) => l.textContent?.replace("Then ", "").trim())).toEqual(["about 8 min drive · 3.9 km"]);
+    const ways = [...now.querySelectorAll<HTMLAnchorElement>(".outing__go")];
+    expect(ways.map((a) => a.getAttribute("aria-label"))).toEqual([
+      "Directions to Stub Museum, in Google Maps (opens in a new tab)",
+      "Directions to Stub Gardens, in Google Maps (opens in a new tab)",
+    ]);
+    for (const a of ways) {
+      expect(a.href).toMatch(/^https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=/);
+      expect([a.target, a.rel]).toEqual(["_blank", "noopener"]);
+    }
+    // the whole route waits for the time
+    expect(now.querySelector(".outing__route")).toBeNull();
+    expect((await inPage(c.owner, `${c.api}/plans`, { action: "set", plan: id, at: "600-720" })).status).toBe(204);
+    now = await card();
+    const route = now.querySelector<HTMLAnchorElement>(".outing__route")!;
+    expect([route.target, route.rel]).toEqual(["_blank", "noopener"]);
+    expect(new URL(route.href).searchParams.get("waypoints")).toBe("-35.298500,149.131300");
+    // on an iPhone, Apple Maps
+    now = await card("Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148");
+    expect(now.querySelector<HTMLAnchorElement>(".outing__route")?.href).toBe(
+      "https://maps.apple.com/directions?destination=-35.278300%2C149.109300&waypoint=-35.298500%2C149.131300&mode=driving",
+    );
+    expect(now.querySelector<HTMLAnchorElement>(".outing__go")?.href).toMatch(/^https:\/\/maps\.apple\.com\/directions\?destination=/);
+  });
+
   it("still draws the card at once when a service fails, and says nothing it doesn't know", async () => {
     // (a place new to each run, so no failure from before is still being waited out)
     const ref = `${STUB_FAIL.ref}${Date.now() % 100000}`;
@@ -168,7 +256,7 @@ describe("the plan's card on the day", () => {
       const doc = await page(c.owner, c.path);
       expect(performance.now() - started).toBeLessThan(1000);
       expect(doc.querySelector("#plans .plan h3")?.textContent).toBe("Stub Lookout");
-      expect(doc.querySelector("#plans .outing")).toBeNull();
+      expect(doc.querySelector("#plans .outing__note, #plans .outing__sky")).toBeNull();
       await new Promise((r) => setTimeout(r, 800));
     }
     // (it did ask, and the stub failed it)

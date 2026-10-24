@@ -5141,6 +5141,49 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   color: var(--busy-ink);
 }
 
+/* the leg to the next stop, under its number's line, a step quieter */
+.outing__leg {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.05rem 0 0.1rem 1.5rem;
+  font-size: 0.76rem;
+}
+
+/* a stop's way there: a small arrow out at the row's end (with one stop,
+   the word too); the whole route, under the stops */
+.outing__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+  padding: 0.2rem 0 0.2rem 0.4rem;
+  color: var(--accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.outing__acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1rem;
+  margin: 0.35rem 0 0;
+}
+
+.outing__acts a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.outing__go:hover,
+.outing__acts a:hover {
+  text-decoration: underline;
+}
+
 /* (on a window's row, under who can't) */
 .win__shut {
   font-size: 0.76rem;

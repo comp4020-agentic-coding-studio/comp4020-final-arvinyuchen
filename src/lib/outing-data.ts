@@ -7,6 +7,8 @@ import {
   hoursNote,
   type HoursNote,
   inForecast,
+  type Leg,
+  legBetween,
   outingDay,
   outingStretch,
   outsideByTags,
@@ -220,7 +222,11 @@ export interface OutingStop {
 
 export interface Outing {
   day: string;
+  /** whether the time is set (then Directions is for the whole route) */
+  set: boolean;
   stops: OutingStop[];
+  /** from each stop to the next, estimated (null where either has no location) */
+  legs: (Leg | null)[];
   /** for a window starting at `from`, lasting the plan's length: the first stop that won't be open for its share, said ("Questacon closes 5pm") */
   windowNote: (from: number) => { text: string; tone: HoursNote["tone"] } | null;
 }
@@ -254,7 +260,12 @@ export function outingOf(view: PlanView, groupId: string, now = new Date()): Out
   });
   return {
     day,
+    set: plan.set !== null,
     stops,
+    legs: stops.slice(1).map((b, i) => {
+      const a = stops[i];
+      return a.lat !== null && a.lon !== null && b.lat !== null && b.lon !== null ? legBetween({ lat: a.lat, lon: a.lon }, { lat: b.lat, lon: b.lon }) : null;
+    }),
     windowNote: (from) => {
       const each = shares([from, from + plan.duration], rows.length);
       for (const [i, r] of rows.entries()) {

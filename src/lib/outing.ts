@@ -185,3 +185,93 @@ export const outsideByTags = (tags: Record<string, string>) =>
 
 /** Whether a stop gets a forecast: every Outdoors place, and an Activities one OpenStreetMap says is outside. */
 export const wantsForecast = (kind: Kind, outside: boolean) => kind === "outdoors" || (kind === "fun" && outside);
+
+// ---- between the stops -----------------------------------------------------------
+
+// How far apart two stops are, and about how long it takes, with no routing
+// service and no key: the straight line, times a road factor (Canberra's
+// roads wind round the lake and its hills, about a third longer than the
+// crow flies), at an average town speed with a couple of minutes to park;
+// on foot, when the straight line is short. An estimate, said as one
+// ("about 12 min"), never as a route's time.
+export const ROAD_FACTOR = 1.3;
+export const DRIVE_KMH = 40;
+export const PARKING_MIN = 2;
+export const WALK_KMH = 4.8;
+/** Shorter than this as the crow flies, the leg is a walk. */
+export const WALKABLE_M = 1500;
+
+type Point = { lat: number; lon: number };
+
+/** The straight line between two points, in metres (haversine). */
+export function metresBetween(a: Point, b: Point): number {
+  const rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad;
+  const dLon = (b.lon - a.lon) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
+  return 2 * 6_371_000 * Math.asin(Math.sqrt(h));
+}
+
+export interface Leg {
+  /** by road, estimated */
+  metres: number;
+  /** minutes, driving */
+  drive: number;
+  /** minutes on foot, when it's short enough to walk; else null */
+  walk: number | null;
+}
+
+/** The leg from one stop to the next, estimated. */
+export function legBetween(a: Point, b: Point): Leg {
+  const straight = metresBetween(a, b);
+  const metres = straight * ROAD_FACTOR;
+  const km = metres / 1000;
+  return {
+    metres,
+    drive: Math.max(PARKING_MIN + 1, Math.round((km / DRIVE_KMH) * 60) + PARKING_MIN),
+    walk: straight < WALKABLE_M ? Math.max(1, Math.round((km / WALK_KMH) * 60)) : null,
+  };
+}
+
+/** "400 m", "1.2 km", "14 km". */
+export function formatDistance(metres: number): string {
+  if (metres < 950) return `${Math.max(50, Math.round(metres / 50) * 50)} m`;
+  const km = metres / 1000;
+  return km < 9.95 ? `${km.toFixed(1)} km` : `${Math.round(km)} km`;
+}
+
+/** "about 7 min walk · 600 m", "about 13 min drive · 7.2 km". */
+export const legText = (leg: Leg) =>
+  leg.walk !== null ? `about ${leg.walk} min walk · ${formatDistance(leg.metres)}` : `about ${leg.drive} min drive · ${formatDistance(leg.metres)}`;
+
+// ---- directions ------------------------------------------------------------------
+
+/** Whether the browser is on an Apple device, whose Maps app takes its own links (an iPad says Macintosh). */
+export const onApple = (userAgent: string) => /\b(iPhone|iPad|iPod|Macintosh)\b/.test(userAgent);
+
+const at = (p: Point) => `${p.lat.toFixed(6)},${p.lon.toFixed(6)}`;
+
+/**
+ * Directions from wherever the viewer is, through the stops in order, as a
+ * plain link to the maps app: Apple Maps' unified URL on an Apple device
+ * (https://developer.apple.com/documentation/mapkit/unified-map-urls),
+ * Google Maps' everywhere else (https://developers.google.com/maps/documentation/urls/get-started).
+ * Neither needs a key. One stop is the way there.
+ */
+export function directionsUrl(stops: Point[], apple: boolean): string {
+  if (!stops.length) throw new Error("no stops");
+  const end = stops.at(-1)!;
+  const via = stops.slice(0, -1);
+  if (apple) {
+    const params = new URLSearchParams({ destination: at(end) });
+    for (const p of via) params.append("waypoint", at(p));
+    if (via.length) params.set("mode", "driving");
+    return `https://maps.apple.com/directions?${params}`;
+  }
+  const params = new URLSearchParams({ api: "1", destination: at(end) });
+  if (via.length) {
+    params.set("waypoints", via.map(at).join("|"));
+    params.set("travelmode", "driving");
+  }
+  return `https://www.google.com/maps/dir/?${params}`;
+}
