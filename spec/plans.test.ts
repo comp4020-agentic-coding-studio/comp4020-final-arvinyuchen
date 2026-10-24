@@ -333,6 +333,14 @@ describe("the plan on the group's page", () => {
     expect(first).toBe("855-975");
     // the ring round the owner's pick: 2:15 to 4:15pm of 8am to 11pm
     expect(card?.querySelector<HTMLElement>(".heat__mark")?.getAttribute("style")).toBe("left: 41.667%; width: 13.333%");
+    // one unbroken strip: a run per shade, end to end, nothing between
+    const fill = card?.querySelector<HTMLElement>(".heat__fill");
+    expect(fill?.children.length).toBe(0);
+    const stops = [...(fill?.getAttribute("style") ?? "").matchAll(/([\d.]+)% ([\d.]+)%/g)].map((m) => [Number(m[1]), Number(m[2])]);
+    expect(stops.length).toBe(5);
+    expect(stops[0][0]).toBe(0);
+    expect(stops.at(-1)?.[1]).toBe(100);
+    stops.slice(1).forEach(([from], i) => expect(from).toBe(stops[i][1]));
     expect([...(card?.querySelectorAll(".heat__key span") ?? [])].map((k) => k.textContent)).toEqual(["nobody", "all 2", "Outlined: your pick"]);
     await request(c.ana, `${c.api}/plans`, { form: { action: "set", plan, at: first ?? "" } });
 

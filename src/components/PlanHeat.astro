@@ -1,8 +1,11 @@
 ---
 import { formatMinute } from "../lib/when";
 
-// How many are free through the plan's hours, as one strip: deeper blue
-// where more are free, grey where nobody is. A thin blue ring singles out
+// How many are free through the plan's hours, as one unbroken strip:
+// deeper blue where more are free, grey where nobody is. It's painted as
+// one gradient with hard stops, a run per shade (neighbours of the same
+// shade merged), so there are no seams or gaps between stretches; the
+// hours are ticks under it, not cuts in it. A thin blue ring singles out
 // one stretch (the set time, the owner's pick, or the best window), only
 // when there's something to single out: two answers or more, and less
 // than the whole strip.
@@ -27,20 +30,34 @@ const tint = (free: number) => (free && total ? Math.round(((free / total) ** 1.
 const ticks = [];
 for (let m = range.start; m < range.end - 60; m += 180) ticks.push(m);
 ticks.push(range.end);
+// the runs of one shade, end to end over the whole range (any stretch
+// the counts don't cover is grey), as one hard-stop gradient
+const runs: { from: number; to: number; tint: number }[] = [];
+for (const s of [...heat].sort((a, b) => a.from - b.from)) {
+  const from = Math.max(s.from, range.start);
+  const to = Math.min(s.to, range.end);
+  if (to <= from) continue;
+  const last = runs.at(-1);
+  const end = last?.to ?? range.start;
+  if (from > end) runs.push({ from: end, to: from, tint: 0 });
+  const t = tint(s.free);
+  const prev = runs.at(-1);
+  if (prev && prev.tint === t) prev.to = to;
+  else runs.push({ from: Math.max(from, end), to, tint: t });
+}
+if ((runs.at(-1)?.to ?? range.start) < range.end) runs.push({ from: runs.at(-1)?.to ?? range.start, to: range.end, tint: 0 });
+const shade = (t: number) => (t ? `color-mix(in srgb, var(--accent) ${t}%, var(--line))` : "var(--line)");
+const fill = `background: linear-gradient(to right, ${runs.map((r) => `${shade(r.tint)} ${at(r.from)} ${at(r.to)}`).join(", ")})`;
 const hours = [];
 for (let m = Math.ceil(range.start / 60) * 60 + 60; m < range.end; m += 60) hours.push(m);
 ---
 
 <div class="heat" aria-hidden="true" data-from={range.start} data-to={range.end}>
   <div class="heat__bar">
-    <div class="heat__fill">
-      {heat.map((s) => (
-        <i style={`left: ${at(s.from)}; width: ${wide(s.from, s.to)}; background: color-mix(in srgb, var(--accent) ${tint(s.free)}%, var(--line))`}></i>
-      ))}
-      {hours.map((m) => <b style={`left: ${at(m)}`}></b>)}
-    </div>
+    <div class="heat__fill" style={fill}></div>
     {mark && <span class="heat__mark" style={`left: ${at(mark.from)}; width: ${wide(mark.from, mark.to)}`}></span>}
   </div>
+  <div class="heat__ticks">{hours.map((m) => <b style={`left: ${at(m)}`}></b>)}</div>
   <div class="heat__axis">
     {ticks.map((m, i) => (
       <span class:list={{ "is-first": i === 0, "is-last": i === ticks.length - 1 }} style={`left: ${at(m)}`}>{formatMinute(m)}</span>

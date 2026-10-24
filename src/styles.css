@@ -4562,24 +4562,24 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 .heat__fill {
   position: absolute;
   inset: 0;
-  overflow: hidden;
   border-radius: 7px;
   background: var(--line);
 }
 
-.heat__fill i {
-  position: absolute;
-  top: 0;
-  bottom: 0;
+/* (the hours, as small ticks under the strip rather than cuts in it) */
+.heat__ticks {
+  position: relative;
+  height: 4px;
+  margin-top: 3px;
 }
 
-/* (a white hairline on each hour) */
-.heat__fill b {
+.heat__ticks b {
   position: absolute;
   top: 0;
-  bottom: 0;
-  width: 1.5px;
-  background: rgb(255 255 255 / 85%);
+  width: 1px;
+  height: 4px;
+  margin-left: -0.5px;
+  background: var(--line-strong);
 }
 
 .heat__mark {
@@ -4598,7 +4598,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 .heat__axis {
   position: relative;
   height: 1.1rem;
-  margin-top: 0.25rem;
+  margin-top: 0.1rem;
   color: var(--muted);
   font-size: 0.68rem;
   font-variant-numeric: tabular-nums;
