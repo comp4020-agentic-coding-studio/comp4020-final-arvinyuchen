@@ -115,7 +115,8 @@ const due = (row: { checked_at: number | null; failed_at: number | null } | unde
 // One lane per service: a job at a time, then a pause, so neither is ever
 // sent a burst. A job already waiting isn't queued twice; the groups to
 // tell when it's done are gathered on it.
-const PAUSE = { overpass: 1000, meteo: 200 };
+// (stubbed, there's nobody to be polite to, and the spec needn't wait)
+const PAUSE = process.env.OUTING_STUB ? { overpass: 0, meteo: 0 } : { overpass: 1000, meteo: 200 };
 const lanes = { overpass: Promise.resolve(), meteo: Promise.resolve() };
 const waiting = new Map<string, Set<string>>();
 function queue(lane: keyof typeof lanes, key: string, groupId: string, job: () => Promise<boolean>) {

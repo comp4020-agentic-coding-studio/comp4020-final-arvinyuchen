@@ -336,6 +336,17 @@ Maps), Google Maps' everywhere else, both from wherever the person is,
 through every stop in order. A link to each stop is there all along; the
 whole route once the time is set, when the order is the plan.
 
+**Near the plan.** Once the plan is set, the next question is lunch near
+Questacon. Explore already holds the places the group trusts, so "Near
+your plan" is a way of ordering it, not a new list: the places nearest
+any stop first, each card saying how far as the crow flies (a card
+saying "400 m" shouldn't pretend to be a walking route), combined with
+the kind chips rather than replacing them, so Food near the plan is two
+taps, or one from the card's "Find food nearby" (coffee, when a stop is
+already somewhere to eat). It's a plain link (`?near`, `?kind`), so it
+works without a script, and the script swaps Explore in place. Without a
+plan on, there's no chip and the address does nothing.
+
 **Trade-offs.** OpenStreetMap's hours are only as good as its mappers;
 plenty of Canberra's places have none, and those say nothing. The first
 person to open a card for a new stop sees it without hours, then the card

@@ -68,6 +68,15 @@ follow from it; every change has to hold to them.
   unified URLs on an Apple device (told from the browser), Google Maps'
   elsewhere, in a new tab with `rel="noopener"` (`directionsUrl`). Never
   send a member, a group or a plan in one.
+- **"Near your plan" only reorders Explore.** While the group has a plan
+  on with a stop on the map, Explore has one "Near your plan" chip
+  (`src/components/NearPlan.astro`, `?near`, a link, so it works without
+  a script) that puts the places nearest any stop first, each card saying
+  how far ("400 m from Questacon", as the crow flies; `nearPlan` in
+  `src/lib/outing.ts`); it combines with the kind chips, and `?kind` opens
+  on one, as the card's "Find food nearby" does. It shows the same places
+  as ever, a place on the list as it always is; it adds none, and without
+  a plan the chip and `?near` are simply not there.
 - **One person, one keen.** A member can vote "keen" on a spot once. The
   button sends the state it shows ("on" or "off") and the server sets exactly
   that (`setKeen`), so a double-tap or a second device never undoes a vote.

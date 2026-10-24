@@ -350,7 +350,7 @@ const outing = outingOf(view, group.id);
     </>
   )}
 
-  <PlanOuting outing={outing} />
+  <PlanOuting outing={outing} link={group.link} />
 
   {mine !== null && (
     <p class="plan__mine">

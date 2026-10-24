@@ -1335,6 +1335,37 @@ input[type="file"]::file-selector-button {
   color: var(--muted);
 }
 
+/* "Near your plan" (src/components/NearPlan.astro): one quiet pill over
+   Explore's cards while there's a plan, dark when it's on, and what it's
+   doing beside it in grey. Each card then says how far, under its suburb. */
+.near-plan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+  margin: 0 0 0.8rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.near-plan__chip {
+  padding: 0.3rem 0.8rem 0.3rem 0.65rem;
+  text-decoration: none;
+}
+
+.spot__near {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.1rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.spot__near svg {
+  flex: none;
+}
+
 #explore {
   transition: opacity 0.2s;
 }

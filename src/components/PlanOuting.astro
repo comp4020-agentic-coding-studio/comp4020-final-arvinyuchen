@@ -1,7 +1,8 @@
 ---
-import { directionsUrl, legText, onApple, skyOf } from "../lib/outing";
+import { KIND_LABEL } from "../lib/kinds";
+import { directionsUrl, legText, nearbyKind, onApple, skyOf } from "../lib/outing";
 import type { Outing } from "../lib/outing-data";
-import { CAR_ICON, CLOCK_ICON, OUT_ICON, ROUTE_ICON, SKY_ICON, WALK_ICON } from "../lib/outing-icons";
+import { CAR_ICON, CLOCK_ICON, OUT_ICON, PIN_ICON, ROUTE_ICON, SKY_ICON, WALK_ICON } from "../lib/outing-icons";
 
 // The outing on the day, at the foot of the plan's card, quiet:
 // - a stop that won't be open for its part of the plan (amber when it's
@@ -11,13 +12,18 @@ import { CAR_ICON, CLOCK_ICON, OUT_ICON, ROUTE_ICON, SKY_ICON, WALK_ICON } from 
 //   them, estimated ("about 12 min drive · 6 km", a walk when it's short);
 // - directions: a link to each stop, and once the time is set, the whole
 //   route; Apple Maps on an Apple device, Google Maps elsewhere, plain
-//   links that open the maps app in a new tab.
+//   links that open the maps app in a new tab;
+// - "Find food nearby": Explore with "Near your plan" on and Food chosen
+//   (coffee when a stop is already somewhere to eat), the page's script
+//   opening it in place, a plain link without one.
 // It all comes from the cache src/lib/outing-data.ts keeps, so it's drawn
 // at once, script or not.
 interface Props {
   outing: Outing;
+  /** the group's invite link, for Explore's address */
+  link: string;
 }
-const { outing } = Astro.props;
+const { outing, link } = Astro.props;
 const apple = onApple(Astro.request.headers.get("user-agent") ?? "");
 const many = outing.stops.length > 1;
 const located = outing.stops.filter((s) => s.lat !== null && s.lon !== null) as (Outing["stops"][number] & { lat: number; lon: number })[];
@@ -28,6 +34,7 @@ const single = outing.stops[0];
 const cap = (text: string) => text[0].toUpperCase() + text.slice(1);
 const out = { target: "_blank", rel: "noopener" };
 const maps = apple ? "Apple Maps" : "Google Maps";
+const kind = nearbyKind(outing.stops);
 ---
 
 {(many || single.note || single.forecast || way(single)) && (
@@ -68,11 +75,17 @@ const maps = apple ? "Apple Maps" : "Google Maps";
         </>
       ))}
     </ul>
-    {route && (
+    {located.length > 0 && (
       <p class="outing__acts">
-        <a class="outing__route" href={route} {...out}>
-          <svg viewBox="0 0 256 256" width="14" height="14" aria-hidden="true"><path fill="currentColor" d={ROUTE_ICON} /></svg>
-          Directions<span class="sr-only">: the whole route, in {maps} (opens in a new tab)</span>
+        {route && (
+          <a class="outing__route" href={route} {...out}>
+            <svg viewBox="0 0 256 256" width="14" height="14" aria-hidden="true"><path fill="currentColor" d={ROUTE_ICON} /></svg>
+            Directions<span class="sr-only">: the whole route, in {maps} (opens in a new tab)</span>
+          </a>
+        )}
+        <a class="outing__nearby" href={`/g/${link}?near&kind=${kind}#explore-section`} data-near-link={kind}>
+          <svg viewBox="0 0 256 256" width="14" height="14" aria-hidden="true"><path fill="currentColor" d={PIN_ICON} /></svg>
+          Find {KIND_LABEL[kind].toLowerCase()} nearby
         </a>
       </p>
     )}

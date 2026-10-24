@@ -32,8 +32,9 @@ other's taste.
 - **A set plan holds on the day.** A plan falls apart at the door when the
   gallery shut at five or it poured, so the card says so first, in a few
   quiet words: whether each stop is open for its part of the outing, and
-  the forecast where it's outside; how far apart the stops are; and the
-  way there, one tap into the phone's own maps. It never guesses: hours
+  the forecast where it's outside; how far apart the stops are; the way
+  there, one tap into the phone's own maps; and somewhere to eat near
+  them, from the places the group already trusts. It never guesses: hours
   nobody has recorded say nothing, and a time between stops is "about".
 - **The list is the group's own; the good places are everyone's.** A friend's
   "best chilli oil in Canberra" beats a star rating from a stranger. Every
@@ -210,4 +211,7 @@ nothing. With several stops, the card lists them in order with the leg
 between each ("about 13 min drive · 7.2 km", or a walk when it's short),
 and each stop has a link to directions; once the time is set, Directions
 opens the whole route, in Apple Maps on an iPhone or a Mac and Google
-Maps elsewhere. Next: saying who's coming once the time is set.
+Maps elsewhere. And while a plan is on, Explore has a "Near your plan"
+chip: the places nearest its stops first, each saying how far ("400 m
+from Questacon"), with the kind chips still choosing what kind; the
+plan's card goes straight there with "Find food nearby". Next: saying who's coming once the time is set.

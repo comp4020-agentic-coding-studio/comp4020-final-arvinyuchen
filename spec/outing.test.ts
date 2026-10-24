@@ -2,9 +2,27 @@ import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
 import { Jar } from "./authenticator";
 import { baseUrl, join, origin, page, request, startGroup } from "./browser";
-import { directionsUrl, forecastText, formatDistance, hoursNote, inForecast, legBetween, legText, metresBetween, onApple, outingStretch, outsideByTags, shares, skyOf, wantsForecast } from "../src/lib/outing";
+import {
+  directionsUrl,
+  forecastText,
+  formatDistance,
+  hoursNote,
+  inForecast,
+  legBetween,
+  legText,
+  metresBetween,
+  nearbyKind,
+  nearPlan,
+  nearText,
+  onApple,
+  outingStretch,
+  outsideByTags,
+  shares,
+  skyOf,
+  wantsForecast,
+} from "../src/lib/outing";
 import { forecastUrl, overpassQuery } from "../src/lib/outing-fetch";
-import { STUB_FAIL } from "../src/lib/outing-stub";
+import { STUB_DELAY, STUB_FAIL } from "../src/lib/outing-stub";
 import { addDays, dayParts, today } from "../src/lib/when";
 
 // Making the outing work on the day (src/lib/outing.ts): whether each stop
@@ -170,7 +188,7 @@ async function plan(c: Awaited<ReturnType<typeof crew>>, day: string, at?: strin
   return planId;
 }
 /** The plan's card once the background fetch has landed (or the last try). */
-async function cardWhen(c: { owner: Jar; path: string }, ready: (card: Element) => boolean, tries = 30) {
+async function cardWhen(c: { owner: Jar; path: string }, ready: (card: Element) => boolean, tries = 60) {
   let card: Element | null = null;
   for (let i = 0; i < tries; i++) {
     card = (await page(c.owner, c.path)).querySelector("#plans .plan");
@@ -181,7 +199,7 @@ async function cardWhen(c: { owner: Jar; path: string }, ready: (card: Element) 
 }
 const stubbed = async () => (await fetch(new URL("/api/outing-log", baseUrl))).ok;
 
-describe("the plan's card on the day", () => {
+describe("the plan's card on the day", { timeout: 20_000 }, () => {
   it("says when a stop closes during the set time", async () => {
     expect(await stubbed(), "start the app with OUTING_STUB=1 for this spec").toBe(true);
     const c = await crew("Hours crew", [{ name: "Stub Museum", kind: "culture", ref: "node/990000001", lat: -35.2985, lon: 149.1313 }]);
@@ -251,19 +269,34 @@ describe("the plan's card on the day", () => {
     const ref = `${STUB_FAIL.ref}${Date.now() % 100000}`;
     const c = await crew("Offline crew", [{ name: "Stub Lookout", kind: "outdoors", ref, lat: STUB_FAIL.lat, lon: 149.0123 }]);
     await plan(c, next("Thu"), "600-720");
-    for (let i = 0; i < 3; i++) {
+    // (it asks, in the background, and the stub fails both, late, as a timeout would)
+    const asked = async () => {
+      const log = (await (await fetch(new URL("/api/outing-log", baseUrl))).json()) as { url: string; body: string }[];
+      return (
+        log.some((s) => new URLSearchParams(s.body).get("data")?.includes(`node(${ref.slice(5)})`)) &&
+        log.some((s) => s.url.includes(`latitude=${STUB_FAIL.lat}`))
+      );
+    };
+    let both = false;
+    // while it waits on them, and after they've failed, the card is drawn at once, saying nothing it doesn't know
+    for (let i = 0; i < 12; i++) {
       const started = performance.now();
       const doc = await page(c.owner, c.path);
       expect(performance.now() - started).toBeLessThan(1000);
       expect(doc.querySelector("#plans .plan h3")?.textContent).toBe("Stub Lookout");
       expect(doc.querySelector("#plans .outing__note, #plans .outing__sky")).toBeNull();
+      if (both) break;
+      both = await asked();
       await new Promise((r) => setTimeout(r, 800));
     }
-    // (it did ask, and the stub failed it)
-    const log = (await (await fetch(new URL("/api/outing-log", baseUrl))).json()) as { url: string; body: string }[];
-    expect(log.some((s) => new URLSearchParams(s.body).get("data")?.includes(`node(${ref.slice(5)})`))).toBe(true);
-    expect(log.some((s) => s.url.includes(`latitude=${STUB_FAIL.lat}`))).toBe(true);
-  });
+    expect(both).toBe(true);
+    await new Promise((r) => setTimeout(r, STUB_DELAY + 300));
+    const started = performance.now();
+    const doc = await page(c.owner, c.path);
+    expect(performance.now() - started).toBeLessThan(1000);
+    expect(doc.querySelector("#plans .plan h3")?.textContent).toBe("Stub Lookout");
+    expect(doc.querySelector("#plans .outing__note, #plans .outing__sky")).toBeNull();
+  }, 20_000);
 
   it("sends nothing about a member or a group, only places, with the app's name", async () => {
     const c = await crew("Privacy crew Xylophone", [{ name: "Stub Gardens", kind: "outdoors", ref: "node/990000002", lat: -35.2783, lon: 149.1093 }]);
@@ -278,5 +311,76 @@ describe("the plan's card on the day", () => {
       const said = decodeURIComponent(`${sent.url} ${sent.body}`.replace(/\+/g, " "));
       for (const secret of ["Quokkadelia", "Wombatrix", "Xylophone", "crew", c.id, "Stub Gardens", "Good on a day out"]) expect(said).not.toContain(secret);
     }
+  });
+});
+
+describe("near your plan", () => {
+  const stops = [
+    { id: 1, name: "Questacon", lat: -35.2985, lon: 149.1313 },
+    { id: 2, name: "Mount Ainslie", lat: -35.2706, lon: 149.1585 },
+  ];
+  const place = (id: number, lat: number | null, lon: number | null) => ({ id, lat, lon });
+
+  it("puts the places nearest any stop first, a stop itself first of all, and those with no location last", () => {
+    const ranked = nearPlan(
+      [place(10, -35.2805, 149.1313), place(11, null, null), place(1, -35.2985, 149.1313), place(12, -35.2976, 149.1313), place(13, -35.2716, 149.1585)],
+      stops,
+    );
+    expect(ranked.map((n) => n.place.id)).toEqual([1, 12, 13, 10, 11]);
+    expect(ranked.map(nearText)).toEqual(["In your plan", "100 m from Questacon", "100 m from Mount Ainslie", "2.0 km from Questacon", null]);
+  });
+  it("keeps the order it was given among equals, and finds somewhere to eat, or a coffee after food", () => {
+    expect(nearPlan([place(5, -35.3, 149.13), place(4, -35.3, 149.13)], stops).map((n) => n.place.id)).toEqual([5, 4]);
+    expect(nearbyKind([{ kind: "culture" }])).toBe("food");
+    expect(nearbyKind([{ kind: "culture" }, { kind: "food" }])).toBe("coffee");
+  });
+
+  const metres = (text: string) => {
+    const m = /^([\d.]+) (m|km) from /.exec(text);
+    return m ? Number(m[1]) * (m[2] === "km" ? 1000 : 1) : NaN;
+  };
+  it("ranks Explore by distance to the plan's stops, says how far, and keeps to a kind; without a plan, nothing changes", async () => {
+    const c = await crew("Nearby crew", [{ name: "Stub Museum", kind: "culture", ref: "node/990000001", lat: -35.2985, lon: 149.1313 }]);
+    // no plan yet: no chip, and ?near changes nothing
+    const before = await page(c.owner, `${c.path}?near`);
+    expect(before.querySelector(".near-plan")).toBeNull();
+    expect(before.querySelector(".spot__near")).toBeNull();
+    const plain = [...(await page(c.owner, c.path)).querySelectorAll("#explore .spot h3")].map((h) => h.textContent);
+    expect([...before.querySelectorAll("#explore .spot h3")].map((h) => h.textContent)).toEqual(plain);
+
+    await plan(c, next("Sat"));
+    // the chip, off, leading to ?near; the plan's card to food near it
+    let doc = await page(c.owner, c.path);
+    expect(doc.querySelector(".near-plan a")?.getAttribute("href")).toBe(`/g/${c.id}?near#explore-section`);
+    expect(doc.querySelector(".spot__near")).toBeNull();
+    const nearby = doc.querySelector("#plans .outing__nearby");
+    expect([nearby?.textContent?.trim(), nearby?.getAttribute("href")]).toEqual(["Find food nearby", `/g/${c.id}?near&kind=food#explore-section`]);
+
+    doc = await page(c.owner, `${c.path}?near`);
+    expect(doc.querySelector(".near-plan .chip--on")?.getAttribute("href")).toBe(`/g/${c.id}#explore-section`);
+    const cards = [...doc.querySelectorAll("#explore .spot")];
+    expect(cards.length).toBe(plain.length);
+    expect(cards[0].querySelector("h3")?.textContent).toBe("Stub Museum");
+    expect(cards[0].querySelector(".spot__near")?.textContent?.trim()).toBe("In your plan");
+    const away = cards.slice(1).map((li) => li.querySelector(".spot__near")?.textContent?.trim() ?? "");
+    const located = away.filter(Boolean);
+    expect(located.length).toBeGreaterThan(5);
+    expect(located.every((t) => t.endsWith("from Stub Museum"))).toBe(true);
+    const ds = located.map(metres);
+    expect(ds).toEqual([...ds].sort((a, b) => a - b));
+    // (places without a location after every one with)
+    expect(away.slice(0, located.length).every(Boolean)).toBe(true);
+    // a place on the list is as it always is in Explore
+    expect(cards[0].querySelector(".added")?.textContent).toBe("On our list");
+
+    // with a kind, that kind's chip chosen and the rest put away, nearest still first
+    doc = await page(c.owner, `${c.path}?near&kind=food`);
+    expect(doc.querySelector(".filters")?.getAttribute("data-sel")).toBe("food");
+    expect(doc.querySelector('.filters [data-filter="food"]')?.getAttribute("aria-pressed")).toBe("true");
+    const shown = [...doc.querySelectorAll("#explore .spot")].filter((li) => !li.hasAttribute("hidden"));
+    expect(shown.length).toBeGreaterThan(0);
+    expect(shown.every((li) => li.getAttribute("data-kind") === "food")).toBe(true);
+    const food = shown.map((li) => metres(li.querySelector(".spot__near")?.textContent?.trim() ?? "")).filter((m) => !Number.isNaN(m));
+    expect(food).toEqual([...food].sort((a, b) => a - b));
   });
 });

@@ -3,6 +3,7 @@ import CityPhoto from "../../components/CityPhoto.astro";
 import KindIcon from "../../components/KindIcon.astro";
 import BusySheet from "../../components/BusySheet.astro";
 import MiniMap from "../../components/MiniMap.astro";
+import NearPlan from "../../components/NearPlan.astro";
 import NoPasskey from "../../components/NoPasskey.astro";
 import PlanCard from "../../components/PlanCard.astro";
 import PlanExact from "../../components/PlanExact.astro";
@@ -10,7 +11,9 @@ import PlanStart from "../../components/PlanStart.astro";
 import SpotPhoto from "../../components/SpotPhoto.astro";
 import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
-import { canRemovePick, groupByLink, listMembers, listPicks, listPlaces, NOTE_MAX } from "../../lib/db";
+import { canRemovePick, groupByLink, listMembers, listPicks, listPlaces, NOTE_MAX, type Place } from "../../lib/db";
+import { nearPlan, nearText } from "../../lib/outing";
+import { PIN_ICON } from "../../lib/outing-icons";
 import { clean, me, signedIn } from "../../lib/me";
 import { currentPlan, pastPlans, planView, stopNames } from "../../lib/plans";
 import { search } from "../../lib/search";
@@ -156,6 +159,19 @@ const planLine = (placeId: number) => {
   const when = plan.set ? `${day}, ${formatMinute(plan.set.start)}` : day;
   return plan.stops.length > 1 ? `${when}, stop ${at + 1}` : when;
 };
+// "Near your plan" (src/components/NearPlan.astro): with a plan on, ?near
+// puts Explore's places nearest its stops first, each saying how far, and
+// ?kind opens it on that kind's chip ("Find food nearby" on the card). No
+// plan, or none of its stops on the map, and Explore is as it always is.
+const planStops = (plan?.stops ?? [])
+  .map((s) => places.find((p) => p.id === s.id))
+  .filter((p): p is Place & { lat: number; lon: number } => p !== undefined && p.lat !== null && p.lon !== null);
+const nearOn = planStops.length > 0 && Astro.url.searchParams.has("near");
+const near = nearOn ? nearPlan(shown, planStops) : null;
+const listed = near ? near.map((n) => n.place) : shown;
+const nearById = new Map(near?.map((n) => [n.place.id, nearText(n)]));
+const nearLine = (id: number) => nearById.get(id) ?? null;
+const startKind = ((k) => (k in KIND_LABEL ? (k as Kind) : "all"))(Astro.url.searchParams.get("kind") ?? "");
 const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 8.5h14M7 2.8v3M13 2.8v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>`;
 ---
 
@@ -637,9 +653,9 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           <button class="btn btn--primary">Find</button>
         </form>
         {/* (the kinds need the script that filters by them, so it shows them) */}
-        <div class="filters" role="group" aria-label="Show only" data-sel="all" hidden>
+        <div class="filters" role="group" aria-label="Show only" data-sel={startKind} hidden>
           {kinds.map((k) => (
-            <button type="button" class={`chip chip--${k}`} data-filter={k} aria-pressed="false">
+            <button type="button" class:list={["chip", `chip--${k}`, { "chip--on": k === startKind }]} data-filter={k} aria-pressed={k === startKind ? "true" : "false"}>
               <span class="chip__dot"><KindIcon kind={k} /></span>
               <span>{KIND_LABEL[k]}</span>
             </button>
@@ -649,8 +665,9 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           Nothing under <span data-empty-kind></span> yet. <a href="#add" data-tab="add">Share one</a>
         </p>
       </div>
-      <div id="explore" data-q={q || undefined}>
+      <div id="explore" data-q={q || undefined} data-near={nearOn ? "" : undefined}>
         <script type="application/json" id="pins" is:inline set:html={pinsJson} />
+        {planStops.length > 0 && <NearPlan link={group.link} on={nearOn} stops={planStops} q={q} />}
         {found && (
           <p class="ask-meta">
             {found.places.length > 0 ? "Best matches first" : "Nothing shared fits that yet"}
@@ -660,8 +677,8 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           </p>
         )}
         <ul class="spots spots--explore">
-          {shown.map((p) => (
-            <li class={`spot spot--${p.kind}`} data-kind={p.kind} data-place={p.lat !== null ? p.id : undefined}>
+          {listed.map((p) => (
+            <li class={`spot spot--${p.kind}`} data-kind={p.kind} data-place={p.lat !== null ? p.id : undefined} hidden={startKind !== "all" && p.kind !== startKind}>
               <SpotPhoto photo={p.photo} name={p.name} kind={p.kind} />
               <div class="spot__meta">
                 <span class="tag"><KindIcon kind={p.kind} />{KIND_LABEL[p.kind]}</span>
@@ -673,6 +690,12 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
               </div>
               <h3>{p.name}</h3>
               <p class="area">{p.area}</p>
+              {nearLine(p.id) && (
+                <p class="spot__near">
+                  <svg viewBox="0 0 256 256" width="12" height="12" aria-hidden="true"><path fill="currentColor" d={PIN_ICON} /></svg>
+                  {nearLine(p.id)}
+                </p>
+              )}
               <p class="why">{p.addedBy === "Spots" ? p.why : `“${p.why}” — ${p.addedBy}`}</p>
               {member && (
                 <div class="spot__actions">
@@ -877,11 +900,18 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     // swaps in the changed parts, keeping the scroll position, the map and
     // anything typed in the forms.
     const regions = [".group-head h1", ".next-up-slot", ".group-head .who__count", ".group-head .who__grid", ".group-head .who__fold", ".share__row", ".tabs__n", ".tabs__flag", "#plans", "#list", "#past-plans", "#explore", "#settings .people", "#plan-sheets"];
-    // The page as it is now, search included, without one-off notices.
-    const current = () => {
-      const q = new URLSearchParams(location.search).get("q");
-      return location.pathname + (q ? `?q=${encodeURIComponent(q)}` : "");
-    };
+    // The page as it is now, its search and "Near your plan" included,
+    // without one-off notices; or with one of those changed.
+    function exploreUrl(change = {}) {
+      const now = new URLSearchParams(location.search);
+      const keep = new URLSearchParams();
+      const q = "q" in change ? change.q : now.get("q");
+      if (q) keep.set("q", q);
+      if ("near" in change ? change.near : now.has("near")) keep.set("near", "");
+      const query = keep.toString().replace(/near=(&|$)/, "near$1");
+      return location.pathname + (query ? `?${query}` : "");
+    }
+    const current = () => exploreUrl();
     // The list is always in rank order: a live refresh re-ranks it, and
     // each card glides from where it was to its new place, so the group
     // sees what moved (PROCESS.md, "Several people voting at once"). For a
@@ -1127,9 +1157,9 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     );
     const ask = document.querySelector("[data-search]");
     const askInput = ask?.querySelector("input[name=q]");
-    async function showSearch(q, push) {
-      const url = location.pathname + (q ? `?q=${encodeURIComponent(q)}` : "") + "#explore";
-      if (push) history.pushState(null, "", url);
+    // Explore as the address now asks for it (a search, "Near your plan"),
+    // swapped in place; if that fails, the page goes there the plain way.
+    async function showExplore(url, searched) {
       const button = ask.querySelector("button");
       const explore = document.querySelector("#explore");
       button.disabled = true;
@@ -1139,11 +1169,13 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         const next = new DOMParser().parseFromString(html, "text/html").querySelector("#explore");
         if (next) {
           explore.innerHTML = next.innerHTML;
-          if (next.dataset.q) explore.dataset.q = next.dataset.q;
-          else delete explore.dataset.q;
+          for (const key of ["q", "near"]) {
+            if (next.dataset[key] !== undefined) explore.dataset[key] = next.dataset[key];
+            else delete explore.dataset[key];
+          }
         }
         document.dispatchEvent(new Event("spots:refreshed"));
-        document.dispatchEvent(new Event("spots:searched"));
+        if (searched) document.dispatchEvent(new Event("spots:searched"));
       } catch {
         location.href = url;
       } finally {
@@ -1151,6 +1183,29 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         explore.classList.remove("is-asking");
       }
     }
+    async function showSearch(q, push) {
+      const url = exploreUrl({ q }) + "#explore";
+      if (push) history.pushState(null, "", url);
+      await showExplore(url, true);
+    }
+    // "Near your plan" on or off; from the plan's "Find food nearby", on,
+    // with that kind chosen (src/scripts/map.ts takes spots:filter), and
+    // Explore's tab open.
+    async function showNear(on, kind) {
+      const url = exploreUrl({ near: on }) + "#explore-section";
+      history.pushState(null, "", url);
+      if (kind) go("explore", "#explore-section");
+      await showExplore(url, false);
+      if (kind) document.dispatchEvent(new CustomEvent("spots:filter", { detail: kind }));
+    }
+    document.addEventListener("click", (event) => {
+      const chip = event.target.closest("[data-near]");
+      const link = event.target.closest("[data-near-link]");
+      if ((!chip && !link) || event.metaKey || event.ctrlKey || event.shiftKey) return;
+      event.preventDefault();
+      if (link) showNear(true, link.dataset.nearLink);
+      else showNear(chip.dataset.near === "on");
+    });
     ask?.addEventListener("submit", (event) => {
       event.preventDefault();
       showSearch(askInput.value.trim(), true);
@@ -1162,11 +1217,16 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       showSearch("", true);
     });
     window.addEventListener("popstate", () => {
-      // (only when the search itself changed, not on going back a tab)
-      const q = new URLSearchParams(location.search).get("q") ?? "";
-      if (q === (document.querySelector("#explore")?.dataset.q ?? "")) return;
+      // (only when the search itself, or "Near your plan", changed, not on
+      // going back a tab)
+      const params = new URLSearchParams(location.search);
+      const q = params.get("q") ?? "";
+      const explore = document.querySelector("#explore");
+      const nearWas = explore?.dataset.near !== undefined;
+      if (q === (explore?.dataset.q ?? "") && params.has("near") === nearWas) return;
       askInput.value = q;
-      showSearch(q, false);
+      if (q !== (explore?.dataset.q ?? "")) showSearch(q, false);
+      else showExplore(location.href, false);
     });
 
     // Tabs: one part of the group at a time (Our list, Explore, Share a

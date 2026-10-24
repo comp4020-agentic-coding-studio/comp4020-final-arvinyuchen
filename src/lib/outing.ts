@@ -275,3 +275,44 @@ export function directionsUrl(stops: Point[], apple: boolean): string {
   }
   return `https://www.google.com/maps/dir/?${params}`;
 }
+
+// ---- near the plan ---------------------------------------------------------------
+
+export interface NearPlace<T> {
+  place: T;
+  /** as the crow flies to the nearest stop, or null when the place has no location */
+  metres: number | null;
+  /** that stop's name */
+  from: string | null;
+  /** the place is itself a stop of the plan */
+  stop: boolean;
+}
+
+/**
+ * Explore's places nearest the plan first: each by its distance to the
+ * closest stop (lunch near Questacon, whichever stop that is). A stop of
+ * the plan is nearest of all; a place without a location goes last; equals
+ * keep the order they came in.
+ */
+export function nearPlan<T extends { id: number; lat: number | null; lon: number | null }>(
+  places: T[],
+  stops: { id: number; name: string; lat: number; lon: number }[],
+): NearPlace<T>[] {
+  const measured = places.map((place, i): NearPlace<T> & { i: number } => {
+    const stop = stops.some((s) => s.id === place.id);
+    if (place.lat === null || place.lon === null || !stops.length) return { place, metres: null, from: null, stop, i };
+    const p = { lat: place.lat, lon: place.lon };
+    const [best] = stops.map((s) => ({ s, m: metresBetween(p, s) })).sort((a, b) => a.m - b.m);
+    return { place, metres: stop ? 0 : best.m, from: best.s.name, stop, i };
+  });
+  return measured
+    .sort((a, b) => (a.metres ?? Infinity) - (b.metres ?? Infinity) || a.i - b.i)
+    .map(({ i: _, ...near }) => near);
+}
+
+/** What a card in Explore says with "Near your plan" on: "400 m from Questacon", or that it's in the plan. */
+export const nearText = (near: NearPlace<unknown>) =>
+  near.stop ? "In your plan" : near.metres !== null && near.from ? `${formatDistance(near.metres)} from ${near.from}` : null;
+
+/** The kind "Find … nearby" on the plan's card looks for: somewhere to eat, or a coffee when a stop already is one. */
+export const nearbyKind = (stops: { kind: Kind }[]): "food" | "coffee" => (stops.some((s) => s.kind === "food") ? "coffee" : "food");

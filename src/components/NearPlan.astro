@@ -1,0 +1,34 @@
+---
+import { PIN_ICON } from "../lib/outing-icons";
+
+// "Near your plan", at the top of Explore while the group has a plan on:
+// one chip that puts the places nearest its stops first, each card saying
+// how far (src/lib/outing.ts, nearPlan). A link (?near), so it works
+// without a script; with one, the page swaps Explore in place. It sits
+// inside #explore, so a live refresh brings it in or takes it away with
+// the plan.
+interface Props {
+  /** the group's invite link */
+  link: string;
+  on: boolean;
+  /** the plan's stops with a location */
+  stops: { name: string }[];
+  /** the search being shown, kept either way */
+  q: string;
+}
+const { link, on, stops, q } = Astro.props;
+// ("Questacon", "Questacon or Mount Ainslie", "any of its 4 stops")
+const said = stops.length <= 2 ? stops.map((s) => s.name).join(" or ") : `any of its ${stops.length} stops`;
+const href = (near: boolean) => {
+  const params = [near ? "near" : "", q ? `q=${encodeURIComponent(q)}` : ""].filter(Boolean).join("&");
+  return `/g/${link}${params ? `?${params}` : ""}#explore-section`;
+};
+---
+
+<p class="near-plan">
+  <a class:list={["chip", "near-plan__chip", { "chip--on": on }]} href={href(!on)} data-near={on ? "off" : "on"}>
+    <svg viewBox="0 0 256 256" width="14" height="14" aria-hidden="true"><path fill="currentColor" d={PIN_ICON} /></svg>
+    Near your plan<span class="sr-only">{on ? ", on: tap for every place" : ""}</span>
+  </a>
+  {on && <span class="near-plan__what">Nearest {said} first</span>}
+</p>
