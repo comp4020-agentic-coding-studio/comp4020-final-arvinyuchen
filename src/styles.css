@@ -771,23 +771,13 @@ input[type="radio"] {
   color: #fff;
 }
 
-.grid-form {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: 0.75rem;
-  align-items: end;
-}
-
-.grid-form .wide {
-  grid-column: 1 / -1;
-}
-
 /* A place's photo in the Share form: the one found for it, or the one you
-   chose, beside the button to choose one. */
+   chose, beside a dashed tile to choose one (the file field itself out of
+   sight in it). */
 .photo-pick {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: stretch;
   gap: 0.75rem;
 }
 
@@ -816,7 +806,48 @@ input[type="radio"] {
 }
 
 .photo-pick__own {
-  flex: 1 1 14rem;
+  position: relative;
+  display: flex;
+  flex: 1 1 12rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3.5rem;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 12px;
+  color: var(--accent-ink);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.photo-pick__own:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.photo-pick__own:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+/* (the page's label span is a field's caption above it; not here) */
+.photo-pick__own span,
+.add__kind span {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.photo-pick__own .photo-pick__label {
+  display: inline;
+  color: inherit;
+}
+
+.photo-pick__own .photo-pick__opt {
+  display: inline;
+  color: var(--muted);
+  font-weight: 400;
 }
 
 input[type="file"] {
@@ -1858,8 +1889,203 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
 
 /* ---- sharing a place --------------------------------------------------------- */
 
+/* Find, then fill: the search alone first; a match picked (or "by hand"),
+   the form, its button at the card's foot. (data-step is the script's:
+   without it the whole form shows.) */
 .add {
+  display: flex;
+  flex-direction: column;
   margin: 0;
+}
+
+.add__lede {
+  margin: 0.15rem 0 1rem;
+}
+
+.add[data-step="find"] .add__form,
+.add[data-step="fill"] .finder,
+.add--picked .add__where {
+  display: none;
+}
+
+.add__by-hand,
+.add__back {
+  margin-top: 0.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add__back {
+  align-self: flex-start;
+  margin-top: 0;
+}
+
+.add--picked .add__back {
+  display: none;
+}
+
+.add__by-hand:hover,
+.add__back:hover {
+  text-decoration: underline;
+}
+
+.add__form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.add__where label > span,
+.add__why > span,
+.add__kinds legend {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* The place picked: its kind's glyph on a wash of it, its name and where,
+   and Change. */
+.add__picked {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--kind, var(--food)) 8%, var(--card));
+}
+
+.add__picked-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--kind, var(--food));
+  color: #fff;
+}
+
+.add__picked-icon .kind-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.add__picked-words {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.add__picked-words strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.add__picked-words span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.add__where {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+/* The kind: Explore's six glyphs, one chosen, its disc filled. */
+.add__kinds {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.add__kind-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+
+.add__kind {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0;
+  cursor: pointer;
+}
+
+.add__kind input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.add__kind-dot {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--kind, var(--food)) 12%, var(--card));
+  color: var(--kind, var(--food));
+  transition: background 0.15s, color 0.15s, transform 0.12s;
+}
+
+.add__kind-dot .kind-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.add__kind .add__kind-name {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.add__kind:has(input:checked) .add__kind-dot {
+  background: var(--kind, var(--food));
+  color: #fff;
+}
+
+.add__kind:has(input:checked) .add__kind-name {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.add__kind:has(input:focus-visible) .add__kind-dot {
+  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.add__why textarea {
+  min-height: 0;
+  resize: none;
+  line-height: 1.4;
+}
+
+/* (the button at the card's foot, however short the form) */
+.add__foot {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.add__foot .btn {
+  width: 100%;
+  min-height: 3rem;
 }
 
 .finder {
@@ -1950,13 +2176,6 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   color: var(--muted);
 }
 
-.located {
-  margin: 0;
-  padding: 0.5rem 0.75rem;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--outdoors) 12%, white);
-  font-size: 0.9rem;
-}
 
 @media (max-width: 860px) {
   .explore-wrap {

@@ -765,57 +765,79 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
   <div class="group-tools">
   {member && (
     <section id="add" class="card add" aria-labelledby="add-title" data-panel="add">
+      {/* Find, then fill (src/scripts/map.ts): first only the search, its
+          matches numbered in the list and on the map; a match picked, or
+          "Fill it in by hand", brings the form, with the button at the
+          card's foot. Without the script it's the whole form at once. */}
       <h2 id="add-title">Share a good place</h2>
-      <p class="fine">
-        It goes into Explore for every group, so only add somewhere you'd actually send a friend, and say why.
-      </p>
+      <p class="fine add__lede">Somewhere you'd send a friend. It goes into Explore for every group.</p>
       {error === "place" && <p class="notice" role="alert">A place needs a name, a kind and a reason it's good.</p>}
       {error === "photo" && <p class="notice" role="alert">That file isn't a photo we can use. Choose a JPEG, PNG or WebP under 15 MB, or share it without one.</p>}
       <div class="finder" hidden>
-        <label for="find-q"><span>Find it on the map</span></label>
+        <label for="find-q" class="sr-only">Find it on the map</label>
         <div class="finder__row">
-          <input id="find-q" placeholder="e.g. Morning Glory Dickson" autocomplete="off" />
+          <input id="find-q" type="search" enterkeyhint="search" placeholder="Find it: “Morning Glory Dickson”" autocomplete="off" />
           <button type="button" class="btn" id="find-go">Find</button>
         </div>
         <ul class="finder__results" aria-live="polite"></ul>
+        <button type="button" class="add__by-hand" data-by-hand>Not on the map? Fill it in by hand</button>
       </div>
-      <form method="post" action={`/api/groups/${group.id}/places`} class="grid-form" id="add-form" enctype="multipart/form-data">
+      <form method="post" action={`/api/groups/${group.id}/places`} class="add__form" id="add-form" enctype="multipart/form-data">
         <input type="hidden" name="ref" />
         <input type="hidden" name="lat" />
         <input type="hidden" name="lon" />
-        <label>
-          <span>Name</span>
-          <input name="name" required maxlength="80" placeholder="That dumpling place" />
-        </label>
-        <label>
-          <span>Kind</span>
-          <select name="kind" required>
-            {kinds.map((k) => <option value={k}>{KIND_LABEL[k]}</option>)}
-          </select>
-        </label>
-        <label>
-          <span>Suburb</span>
-          <input name="area" maxlength="40" placeholder="Dickson" />
-        </label>
-        <label class="wide">
-          <span>Why it's good (required)</span>
-          <input name="why" required maxlength="160" placeholder="Best chilli oil in Canberra, and open late" />
+        <div class="add__picked" hidden>
+          <span class="add__picked-icon" aria-hidden="true"></span>
+          <span class="add__picked-words">
+            <strong></strong>
+            <span></span>
+          </span>
+          <button type="button" class="btn btn--small" data-change>Change</button>
+        </div>
+        <button type="button" class="add__back" data-change hidden>← Search the map instead</button>
+        <div class="add__where">
+          <label>
+            <span>Name</span>
+            <input name="name" required maxlength="80" placeholder="That dumpling place" />
+          </label>
+          <label>
+            <span>Suburb</span>
+            <input name="area" maxlength="40" placeholder="Dickson" />
+          </label>
+        </div>
+        <fieldset class="add__kinds">
+          <legend>Kind</legend>
+          <div class="add__kind-row">
+            {kinds.map((k, i) => (
+              <label class:list={["add__kind", `spot--${k}`]}>
+                <input type="radio" name="kind" value={k} required={i === 0} checked={i === 0} />
+                <span class="add__kind-dot"><KindIcon kind={k} /></span>
+                <span class="add__kind-name">{KIND_LABEL[k]}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <label class="add__why">
+          <span>Why it's good</span>
+          <textarea name="why" required maxlength="160" rows="3" placeholder="Best chilli oil in Canberra, and open late"></textarea>
         </label>
         {/* A photo of the sharer's own, if they have one; without, its card
             shows its kind's picture. (A place picked that's already shared
             shows its photo instead: src/scripts/map.ts.) */}
-        <div class="photo-pick wide">
+        <div class="photo-pick">
           <figure class="photo-pick__found" hidden>
             <img alt="" />
             <figcaption></figcaption>
           </figure>
           <label class="photo-pick__own">
-            <span class="photo-pick__label">Photo (optional)</span>
-            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/*" />
+            <input class="sr-only" type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/*" />
+            <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h2l1.2-1.6h4.6L13.5 5h2A1.5 1.5 0 0 1 17 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /><circle cx="10" cy="10.3" r="2.8" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>
+            <span class="photo-pick__label">Add a photo <span class="photo-pick__opt">(optional)</span></span>
           </label>
         </div>
-        <p class="located wide" hidden></p>
-        <button class="btn btn--primary wide">Share it and add to our list</button>
+        <div class="add__foot">
+          <button class="btn btn--primary">Share it and add to our list</button>
+        </div>
       </form>
     </section>
   )}

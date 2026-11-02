@@ -658,16 +658,41 @@ if (container) {
   if (document.getElementById("explore")?.dataset.q) frameSearch();
 
   // ---- sharing a place: find it on OpenStreetMap, then pick the match ------
+  // Two steps: the search alone, then, with a match picked (or "Fill it in
+  // by hand"), the form, the place picked at its top with Change to go back.
   const finder = document.querySelector<HTMLElement>(".finder");
   const form = document.querySelector<HTMLFormElement>("#add-form");
-  if (finder && form) {
+  const sharing = document.querySelector<HTMLElement>("#add");
+  if (finder && form && sharing) {
     finder.hidden = false;
     const q = finder.querySelector<HTMLInputElement>("#find-q")!;
     const go = finder.querySelector<HTMLButtonElement>("#find-go")!;
     const list = finder.querySelector<HTMLUListElement>(".finder__results")!;
-    const located = form.querySelector<HTMLElement>(".located")!;
-    const field = (name: string) => form.querySelector<HTMLInputElement | HTMLSelectElement>(`[name="${name}"]`)!;
+    const picked = form.querySelector<HTMLElement>(".add__picked")!;
+    const submit = form.querySelector<HTMLButtonElement>(".add__foot .btn")!;
+    const field = (name: string) => form.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[name="${name}"]`)!;
+    const setKind = (kind: Kind) => {
+      const radio = form.querySelector<HTMLInputElement>(`[name="kind"][value="${kind}"]`);
+      if (radio) radio.checked = true;
+    };
     let preview: maplibregl.Marker | null = null;
+    // (a page that came back with an error opens on the form)
+    const step = (next: "find" | "fill") => (sharing.dataset.step = next);
+    step(new URLSearchParams(location.search).get("error") === "place" ? "fill" : "find");
+
+    // The button waits for a name and a reason, all the form needs from you.
+    const why = field("why");
+    const ready = () => (submit.disabled = !why.value.trim() || !field("name").value.trim());
+    why.addEventListener("input", ready);
+    // (a reason is one line: Return shares it, as a field's would)
+    why.addEventListener("keydown", (event) => {
+      if ((event as KeyboardEvent).key === "Enter" && !(event as KeyboardEvent).isComposing) {
+        event.preventDefault();
+        if (!submit.disabled) form.requestSubmit();
+      }
+    });
+    field("name").addEventListener("input", ready);
+    ready();
 
     // Its photo: the one you choose, shown before you share it, if you do.
     // A place picked that's already shared goes on the list as it is, so it
@@ -683,6 +708,8 @@ if (container) {
       yours = file ? URL.createObjectURL(file) : "";
       const photo = yours || found?.src;
       shown.hidden = !photo;
+      label.firstChild!.textContent = yours ? "Change photo " : "Add a photo ";
+      label.querySelector<HTMLElement>(".photo-pick__opt")!.hidden = Boolean(yours);
       if (!photo) return;
       shown.querySelector("img")!.src = photo;
       shown.querySelector("figcaption")!.textContent = yours
@@ -700,7 +727,8 @@ if (container) {
     const clearLocation = () => {
       for (const name of ["ref", "lat", "lon"]) field(name).value = "";
       showFound(null);
-      located.hidden = true;
+      picked.hidden = true;
+      sharing.classList.remove("add--picked");
       preview?.remove();
       preview = null;
     };
@@ -716,10 +744,17 @@ if (container) {
       field("lon").value = String(r.lon);
       field("name").value = r.name;
       field("area").value = r.area;
-      field("kind").value = r.kind;
+      setKind(r.kind);
       showFound(r.photo ?? null);
-      located.hidden = false;
-      located.textContent = `📍 Found on the map: ${r.name}${r.area ? `, ${r.area}` : ""}. Now say why it's good.`;
+      // (the place picked, at the form's top, in its kind's colour)
+      picked.className = `add__picked spot--${r.kind}`;
+      picked.querySelector(".add__picked-icon")!.replaceChildren(kindIcon(r.kind));
+      picked.querySelector("strong")!.textContent = r.name;
+      picked.querySelector(".add__picked-words > span")!.textContent = r.detail || r.area;
+      picked.hidden = false;
+      sharing.classList.add("add--picked");
+      step("fill");
+      ready();
       list.replaceChildren();
       clearHits();
       preview?.remove();
@@ -743,7 +778,7 @@ if (container) {
         const results: Found[] = res.ok ? await res.json() : [];
         list.replaceChildren();
         if (!Array.isArray(results) || results.length === 0) {
-          list.append(Object.assign(document.createElement("li"), { textContent: "Nothing found in Canberra. Check the spelling, or fill it in by hand below.", className: "fine" }));
+          list.append(Object.assign(document.createElement("li"), { textContent: "Nothing found in Canberra. Check the spelling, or fill it in by hand.", className: "fine" }));
           return;
         }
         // Each match, numbered, in the list and on the map, framed together:
@@ -778,12 +813,31 @@ if (container) {
         if (results.length === 1) map.flyTo({ center: [results[0].lon, results[0].lat], zoom: 15, pitch: 30, ...move() });
         else map.fitBounds(bounds, { padding: 72, maxZoom: 15, pitch: 0, bearing: 0, ...move() });
       } catch {
-        list.replaceChildren(Object.assign(document.createElement("li"), { textContent: "Search isn't available right now. Fill it in by hand below.", className: "fine" }));
+        list.replaceChildren(Object.assign(document.createElement("li"), { textContent: "Search isn't available right now. Fill it in by hand.", className: "fine" }));
       } finally {
         go.disabled = false;
       }
     };
     go.addEventListener("click", search);
+    // Not found: the form, empty, for the name and the rest by hand.
+    finder.querySelector("[data-by-hand]")!.addEventListener("click", () => {
+      clearHits();
+      clearLocation();
+      field("name").value = q.value.trim();
+      step("fill");
+      ready();
+      field("name").focus();
+    });
+    // Change (or, filling it in by hand, "Search the map instead"): back to the search.
+    form.querySelector<HTMLElement>(".add__back")!.hidden = false;
+    for (const back of form.querySelectorAll("[data-change]")) back.addEventListener("click", () => {
+      clearLocation();
+      field("name").value = "";
+      field("area").value = "";
+      step("find");
+      ready();
+      q.focus();
+    });
     // (leaving Share takes its matches off the map)
     document.addEventListener("click", (event) => {
       if ((event.target as HTMLElement).closest('.tabs a[data-tab]:not([data-tab="add"])')) clearHits();
