@@ -10,7 +10,8 @@
     "test": "vitest run",
     "dev": "node scripts/copy-maplibre-worker.mjs && astro dev",
     "build": "node scripts/copy-maplibre-worker.mjs && astro build",
-    "start": "node ./dist/server/entry.mjs"
+    "start": "node ./dist/server/entry.mjs",
+    "seed:preview": "tsx scripts/seed-preview.ts"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
