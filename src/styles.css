@@ -1931,8 +1931,8 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   text-decoration: underline;
 }
 
-/* What sharing does, in three steps above the search; before a search,
-   three to try below it. */
+/* What sharing does, in three steps under the search, until it finds
+   something. */
 .finder:not([hidden]) {
   display: flex;
   flex: 1 1 auto;
@@ -1944,43 +1944,17 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   align-self: stretch;
 }
 
-.add__start {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  align-self: stretch;
-  margin-top: 1.25rem;
-}
-
-.finder:has(.finder__results > li) .add__start {
-  display: none;
-}
-
-.add__start-label {
-  margin: 0 0 0.5rem;
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.add__tries {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-.add__try {
-  color: var(--accent-ink);
-  font-weight: 600;
-}
-
 .add__how {
   display: grid;
   gap: 0.85rem;
   align-self: stretch;
-  margin: 0.75rem 0 1.5rem;
+  margin: 1.25rem 0 0;
   padding: 0;
   list-style: none;
+}
+
+.finder:has(.finder__hit) .add__how {
+  display: none;
 }
 
 .add__how li {
