@@ -1889,17 +1889,14 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
 
 /* ---- sharing a place --------------------------------------------------------- */
 
-/* Find, then fill: the search alone first; a match picked (or "by hand"),
+/* Find, then fill: the search alone first; a match picked (or "by hand"
+   when nothing matches),
    the form, its button at the card's foot. (data-step is the script's:
    without it the whole form shows.) */
 .add {
   display: flex;
   flex-direction: column;
   margin: 0;
-}
-
-.add__lede {
-  margin: 0.15rem 0 1rem;
 }
 
 .add[data-step="find"] .add__form,
@@ -1910,7 +1907,6 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
 
 .add__by-hand,
 .add__back {
-  margin-top: 0.75rem;
   padding: 0;
   border: 0;
   background: none;
@@ -1935,8 +1931,8 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   text-decoration: underline;
 }
 
-/* Before a search: three to try, and what sharing does, in three steps
-   at the card's foot (where the form's button will be). */
+/* What sharing does, in three steps above the search; before a search,
+   three to try below it. */
 .finder:not([hidden]) {
   display: flex;
   flex: 1 1 auto;
@@ -1953,7 +1949,7 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   flex: 1 1 auto;
   flex-direction: column;
   align-self: stretch;
-  margin-top: 1.75rem;
+  margin-top: 1.25rem;
 }
 
 .finder:has(.finder__results > li) .add__start {
@@ -1980,10 +1976,10 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
 
 .add__how {
   display: grid;
-  gap: 1rem;
-  margin: auto 0 0;
-  padding: 1.1rem 0 0;
-  border-top: 1px solid var(--line);
+  gap: 0.85rem;
+  align-self: stretch;
+  margin: 0.75rem 0 1.5rem;
+  padding: 0;
   list-style: none;
 }
 

@@ -767,6 +767,18 @@ if (container) {
       field("why").focus();
     };
 
+    // (nothing found, or no search: a line saying so, and the way to fill it in by hand)
+    const note = (text: string) => {
+      const li = document.createElement("li");
+      li.className = "fine finder__none";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "add__by-hand";
+      button.textContent = "fill it in by hand";
+      button.addEventListener("click", () => byHand());
+      li.append(`${text} `, button);
+      return li;
+    };
     const search = async () => {
       const text = q.value.trim();
       if (text.length < 2) return;
@@ -778,7 +790,7 @@ if (container) {
         const results: Found[] = res.ok ? await res.json() : [];
         list.replaceChildren();
         if (!Array.isArray(results) || results.length === 0) {
-          list.append(Object.assign(document.createElement("li"), { textContent: "Nothing found in Canberra. Check the spelling, or fill it in by hand.", className: "fine" }));
+          list.append(note("Nothing found in Canberra. Check the spelling, or"));
           return;
         }
         // Each match, numbered, in the list and on the map, framed together:
@@ -813,7 +825,7 @@ if (container) {
         if (results.length === 1) map.flyTo({ center: [results[0].lon, results[0].lat], zoom: 15, pitch: 30, ...move() });
         else map.fitBounds(bounds, { padding: 72, maxZoom: 15, pitch: 0, bearing: 0, ...move() });
       } catch {
-        list.replaceChildren(Object.assign(document.createElement("li"), { textContent: "Search isn't available right now. Fill it in by hand.", className: "fine" }));
+        list.replaceChildren(note("Search isn't available right now, but you can"));
       } finally {
         go.disabled = false;
       }
@@ -827,14 +839,14 @@ if (container) {
       });
     }
     // Not found: the form, empty, for the name and the rest by hand.
-    finder.querySelector("[data-by-hand]")!.addEventListener("click", () => {
+    const byHand = () => {
       clearHits();
       clearLocation();
       field("name").value = q.value.trim();
       step("fill");
       ready();
       field("name").focus();
-    });
+    };
     // Change (or, filling it in by hand, "Search the map instead"): back to the search.
     form.querySelector<HTMLElement>(".add__back")!.hidden = false;
     for (const back of form.querySelectorAll("[data-change]")) back.addEventListener("click", () => {
