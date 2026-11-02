@@ -1,12 +1,15 @@
 ---
 import Base from "../layouts/Base.astro";
 import { listPasskeys } from "../lib/accounts";
-import { groupsOfAccount } from "../lib/db";
+import { getGroup, groupsOfAccount, listMembers, memberOfAccount } from "../lib/db";
 import { signedIn } from "../lib/me";
+import { currentPlan, planView, stopNames } from "../lib/plans";
 import { unreadByGroup } from "../lib/talk";
+import { formatDay, formatMinute } from "../lib/when";
 
-// Your account: every group you're in, on any device, your one name, and
-// the passkeys that can sign in as you.
+// Your account: every group you're in, on any device, each with who's in
+// it and where its plan stands for you; then your one name and the
+// passkeys that can sign in as you, one card.
 const account = signedIn(Astro.cookies);
 if (!account) return Astro.redirect("/signin", 303);
 const groups = groupsOfAccount(account.id);
@@ -15,6 +18,25 @@ const passkeys = listPasskeys(account.id);
 const unread = unreadByGroup(account.id);
 const day = (sqlite: string) =>
   new Date(`${sqlite.replace(" ", "T")}Z`).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
+// Each group's faces, and its plan in a line: when it's set, or what it's
+// waiting on, said to you ("waiting on you" first, it's yours to do).
+const cards = groups.map((g) => {
+  const group = getGroup(g.id)!;
+  const members = listMembers(g.id);
+  const you = memberOfAccount(g.id, account.id)!;
+  const plan = currentPlan(g.id);
+  let status: { text: string; yours: boolean } | null = null;
+  if (plan) {
+    const view = planView(plan, members, you, group.ownerId);
+    const when = `${formatDay(plan.day)} · ${stopNames(plan.stops, 2)}`;
+    if (plan.set) status = { text: `${when} · ${formatMinute(plan.set.start)}`, yours: false };
+    else if (view.mine === null) status = { text: `${when} · waiting on you`, yours: true };
+    else if (view.everyoneIn) status = { text: `${when} · ${g.owner ? "everyone's in, pick the time" : "everyone's in"}`, yours: g.owner };
+    else status = { text: `${when} · waiting on ${view.waiting.length}`, yours: false };
+  }
+  return { ...g, members, status };
+});
 const error = Astro.url.searchParams.get("error");
 const done = Astro.url.searchParams.get("done");
 ---
@@ -35,79 +57,97 @@ const done = Astro.url.searchParams.get("done");
       <p class="empty">You're not in any groups right now. <a href="/#start">Start one</a>, or open a friend's invite link.</p>
     ) : (
       <ul class="my-groups">
-        {groups.map((g) => (
+        {cards.map((g) => (
           <li>
             <a class="card my-group" href={`/g/${g.link}`}>
-              <strong>
-                {g.name}
-                {unread.get(g.id) && <span class="my-group__new">{unread.get(g.id)} new</span>}
-              </strong>
+              <span class="my-group__top">
+                <strong class="my-group__name">
+                  {g.name}
+                  {unread.get(g.id) && <span class="my-group__new">{unread.get(g.id)} new</span>}
+                </strong>
+                <span class="faces my-group__faces" aria-hidden="true">
+                  {g.members.slice(0, g.members.length > 5 ? 4 : 5).map((m) => (
+                    <span class="face" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span>
+                  ))}
+                  {g.members.length > 5 && <span class="face face--more">+{g.members.length - 4}</span>}
+                </span>
+              </span>
               <span class="fine">
                 {g.people} {g.people === 1 ? "person" : "people"}
                 {g.owner && " · you're the owner"}
               </span>
+              {g.status && (
+                <span class:list={["my-group__plan", { "is-yours": g.status.yours }]}>
+                  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                  {g.status.text}
+                </span>
+              )}
             </a>
           </li>
         ))}
       </ul>
     )}
 
+    {/* Your account, one card: your name, then the passkeys that sign in as
+        you, under a hairline. */}
     <section class="card account" id="you" aria-labelledby="you-title">
-      <h2 id="you-title">Your name</h2>
+      <h2 id="you-title">Your account</h2>
       {done === "renamed" && <p class="notice notice--ok" role="status">Saved. It's your name in every group now.</p>}
       {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
       <form method="post" action="/api/account" class="settings__row">
         <label class="grow">
-          <span class="sr-only">Your name</span>
+          <span>Your name</span>
           <input name="name" required maxlength="40" value={account.name} autocomplete="nickname" data-hint="Type a name, so your friends know it's you." />
         </label>
         <button class="btn">Save</button>
       </form>
-      <p class="fine">One name for you everywhere: changing it here changes it in all your groups.</p>
+      <p class="fine">The same in all your groups: changing it here changes it everywhere.</p>
+
+      <div class="account__keys" id="keys">
+        <h3>Passkeys</h3>
+        {done === "removed" && <p class="notice notice--ok" role="status">Removed. That passkey can't sign in any more.</p>}
+        {error === "last" && <p class="notice" role="alert">That's your only passkey, so it stays: it's your way in.</p>}
+        <ul class="keys">
+          {passkeys.map((p) => (
+            <li>
+              <span class="keys__icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" width="18" height="18"><circle cx="7" cy="10" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M10.6 10H17.5M15 10v2.6M17.5 10v1.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+              </span>
+              <div>
+                <strong>{p.keeper ?? p.madeOn ?? "A passkey"}</strong>
+                <span class="fine">
+                  {p.keeper && p.madeOn && `Made on ${p.madeOn} · `}
+                  {p.synced ? "syncs to your other devices" : "on this one device only"}
+                  {` · added ${day(p.createdAt)}`}
+                  {p.lastUsedAt && ` · last used ${day(p.lastUsedAt)}`}
+                </span>
+              </div>
+              {passkeys.length > 1 && (
+                <form
+                  method="post"
+                  action="/api/passkeys/remove"
+                  data-confirm="Remove this passkey? It won't sign in to Spots any more. Remove it from your password manager too."
+                >
+                  <input type="hidden" name="id" value={p.id} />
+                  <button class="btn btn--small btn--ghost">Remove</button>
+                </form>
+              )}
+            </li>
+          ))}
+        </ul>
+        <div class="account__add" data-passkey-only>
+          <a class="btn" href="/add-device">Add another device</a>
+          <span class="fine">
+            or <button type="button" class="linkish" data-passkey="register">save a passkey on this one</button>
+          </span>
+          <span class="passkey-msg" aria-live="polite"></span>
+        </div>
+      </div>
     </section>
 
-    <section class="card account" id="keys" aria-labelledby="keys-title">
-      <h2 id="keys-title">Your passkeys</h2>
-      {done === "removed" && <p class="notice notice--ok" role="status">Removed. That passkey can't sign in any more.</p>}
-      {error === "last" && <p class="notice" role="alert">That's your only passkey, so it stays: it's your way in.</p>}
-      <ul class="keys">
-        {passkeys.map((p) => (
-          <li>
-            <div>
-              <strong>{p.keeper ?? p.madeOn ?? "A passkey"}</strong>
-              <span class="fine">
-                {p.keeper && p.madeOn && `Made on ${p.madeOn} · `}
-                {p.synced ? "syncs to your other devices" : "on this one device only"}
-                {` · added ${day(p.createdAt)}`}
-                {p.lastUsedAt && ` · last used ${day(p.lastUsedAt)}`}
-              </span>
-            </div>
-            {passkeys.length > 1 && (
-              <form
-                method="post"
-                action="/api/passkeys/remove"
-                data-confirm="Remove this passkey? It won't sign in to Spots any more. Remove it from your password manager too."
-              >
-                <input type="hidden" name="id" value={p.id} />
-                <button class="btn btn--small btn--ghost">Remove</button>
-              </form>
-            )}
-          </li>
-        ))}
-      </ul>
-      <div data-passkey-only class="stack-row">
-        <button type="button" class="btn" data-passkey="register">Add a passkey on this device</button>
-        <a class="btn" href="/add-device">Add another device</a>
-        <span class="passkey-msg" aria-live="polite"></span>
-      </div>
-      <p class="fine">
-        A phone or computer that doesn't have your passkey? <strong>Add another device</strong> shows a code to scan
-        there.
-      </p>
-      <form method="post" action="/api/signout">
-        <button class="btn btn--ghost">Sign out</button>
-      </form>
-    </section>
+    <form method="post" action="/api/signout" class="me__out">
+      <button class="linkish">Sign out</button>
+    </form>
   </div>
   <script>
     import "../scripts/passkeys";
