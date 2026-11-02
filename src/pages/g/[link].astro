@@ -340,13 +340,6 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           </a>
         )}
       </p>
-      <div class="group-note-slot">
-        {group.note && (
-          <p class="group-note">
-            “{group.note}” <span class="fine">{owner ? `${owner.name}, to the group` : ""}</span>
-          </p>
-        )}
-      </div>
       {/* Who's in, as faces with names: the owner's has a crown, yours a
           ring. Past six, the last face is "+N more", the summary of a
           <details>, so it unfolds everyone without a script, and folds
@@ -927,7 +920,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     // reload by the viewer. The page asks the server for itself again and
     // swaps in the changed parts, keeping the scroll position, the map and
     // anything typed in the forms.
-    const regions = [".group-head h1", ".next-up-slot", ".group-note-slot", ".joined-slot", ".group-head .who__count", ".group-head .who__grid", ".group-head .who__fold", ".share__row", ".tabs__n", ".tabs__flag", "#plans", "#list", "#past-plans", "#explore", "#settings .people", "#plan-sheets"];
+    const regions = [".group-head h1", ".next-up-slot", ".joined-slot", ".group-head .who__count", ".group-head .who__grid", ".group-head .who__fold", ".share__row", ".tabs__n", ".tabs__flag", "#plans", "#list", "#past-plans", "#explore", "#settings .people", "#plan-sheets"];
     // The page as it is now, its search and "Near your plan" included,
     // without one-off notices; or with one of those changed.
     function exploreUrl(change = {}) {

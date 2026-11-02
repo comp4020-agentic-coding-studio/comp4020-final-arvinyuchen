@@ -169,8 +169,6 @@ describe("the owner's tools", () => {
     let note = await invitee();
     expect(note?.querySelector("blockquote")?.textContent).toBe("Where are we going Friday? Add yours by Wednesday.");
     expect(note?.querySelector("figcaption")?.textContent).toContain("Ana");
-    // Members see the same words under the group's name.
-    expect((await page(ben, `/g/${id}`)).querySelector(".group-note")?.textContent).toContain("Add yours by Wednesday.");
 
     await act(ben, { action: "note", note: "Ben was here" });
     expect((await invitee())?.querySelector("blockquote")?.textContent).not.toContain("Ben was here");

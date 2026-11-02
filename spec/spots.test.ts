@@ -158,7 +158,7 @@ describe("a group", () => {
     expect(owners.querySelector(".share__qr svg")).toBeTruthy();
     expect((await page(ben, path)).querySelector("#invite-note")).toBeNull();
 
-    // Saved in the page, it's the group's note at once.
+    // Saved in the page, it's on the invite at once.
     const saved = await fetch(new URL(`${api}/owner`, baseUrl), {
       method: "POST",
       headers: { origin, cookie: ana.header, "x-spots": "in-page" },
@@ -166,7 +166,7 @@ describe("a group", () => {
       redirect: "manual",
     });
     expect(saved.status).toBe(204);
-    expect((await page(ben, path)).querySelector(".group-note-slot")?.textContent).toContain("Pick yours by Friday");
+    expect((await page(new Jar(), path)).querySelector(".welcome__note")?.textContent).toContain("Pick yours by Friday");
   });
 
   it("tells each member who joined since they last looked, until they dismiss it", async () => {

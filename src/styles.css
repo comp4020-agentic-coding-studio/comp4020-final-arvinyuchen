@@ -8131,12 +8131,6 @@ dialog.sheet[open]:not(:modal) {
   }
 }
 
-/* The owner's note on the group's own page, under its name. */
-.group-note {
-  margin: 0.25rem 0 0.6rem;
-  font-size: 1.05rem;
-}
-
 /* Under the invite card, the list's own card. */
 .welcome__listcard {
   margin-top: 1rem;
