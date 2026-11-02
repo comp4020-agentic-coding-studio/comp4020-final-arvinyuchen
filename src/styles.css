@@ -2740,6 +2740,14 @@ html:not(.in-app) .no-passkey__app {
   margin: 0.5rem 0 0;
 }
 
+.account__name-note {
+  display: none;
+}
+
+.account form:focus-within + .account__name-note {
+  display: block;
+}
+
 /* (the passkeys under the name, under a hairline) */
 .account__keys {
   margin-top: 1.5rem;
