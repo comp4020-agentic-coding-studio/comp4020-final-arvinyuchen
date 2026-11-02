@@ -4990,19 +4990,9 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 .heat__key {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
+  margin: 0;
   color: var(--muted);
-  font-size: 0.7rem;
-}
-
-/* (the scale itself: the strip's grey to its blue, as it deepens) */
-.heat__scale {
-  width: 3.2rem;
-  height: 0.3rem;
-  border-radius: 999px;
-  background: linear-gradient(to right, var(--line), color-mix(in srgb, var(--accent) 30%, var(--line)) 45%, var(--accent));
+  font-size: 0.75rem;
 }
 
 .wins {
