@@ -34,7 +34,7 @@ const cards = groups.map((g) => {
     if (plan.set) status = { ...when, state: `Set for ${formatMinute(plan.set.start)}`, yours: false };
     else if (view.mine === null) status = { ...when, state: "Waiting on you", yours: true };
     else if (view.everyoneIn) status = { ...when, state: g.owner ? "Everyone's in: pick the time" : "Everyone's in", yours: g.owner };
-    else status = { ...when, state: `Waiting on ${view.waiting.length}`, yours: false };
+    else status = { ...when, state: `${view.answered.length} of ${members.length} have said when they're free`, yours: false };
   }
   return { ...g, members, status };
 });
