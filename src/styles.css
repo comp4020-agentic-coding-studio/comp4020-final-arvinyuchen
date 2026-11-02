@@ -2948,7 +2948,7 @@ body:has(.home) .top nav a:hover {
   width: min(100vw - 2rem, 46rem, (100svh - 3rem) * 560 / 493);
   margin: 0;
   translate: -50% -50%;
-  opacity: var(--card, 0);
+  opacity: var(--landed, 0);
 }
 
 .fly.is-live .fly__card:not(.is-on) {
@@ -2971,7 +2971,7 @@ body:has(.home) .top nav a:hover {
   bottom: 0.5rem;
   display: block;
   margin: 0;
-  opacity: calc((1 - var(--photo, 1)) * (1 - var(--card, 0)));
+  opacity: calc((1 - var(--photo, 1)) * (1 - var(--landed, 0)));
   font-size: 0.7rem;
 }
 
@@ -2993,7 +2993,7 @@ body:has(.home) .top nav a:hover {
   position: absolute;
   z-index: 2;
   margin: 0;
-  opacity: var(--card, 0);
+  opacity: var(--landed, 0);
 }
 
 .fly.is-live .fly__stage > .start:not(.is-on) {
@@ -3018,7 +3018,7 @@ body:has(.home) .top nav a:hover {
   top: 50%;
   left: calc(50% - (var(--wide) + var(--gap) + var(--form)) / 2 + var(--wide) + var(--gap));
   width: var(--form);
-  translate: 0 calc(-50% + (1 - var(--card, 0)) * 1rem);
+  translate: 0 calc(-50% + (1 - var(--landed, 0)) * 1rem);
 }
 
 /* on a narrow one, the card over the form, the pair in the room under the
@@ -3041,7 +3041,7 @@ body:has(.home) .top nav a:hover {
   top: calc(var(--from) + var(--tall) + var(--gap));
   left: 50%;
   width: min(100vw - 2rem, 30rem);
-  translate: -50% calc((1 - var(--card, 0)) * 1rem);
+  translate: -50% calc((1 - var(--landed, 0)) * 1rem);
   --pad: 1.1rem;
 }
 
@@ -3059,7 +3059,7 @@ body:has(.home) .top nav a:hover {
   padding-top: 0.5rem;
   padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
   border-top: 0;
-  opacity: var(--card, 0);
+  opacity: var(--landed, 0);
 }
 
 .fly.is-live.is-under .fly__stage > .foot:not(.is-on) {
