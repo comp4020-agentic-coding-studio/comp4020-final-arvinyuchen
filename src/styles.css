@@ -1935,6 +1935,83 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   text-decoration: underline;
 }
 
+/* Before a search: three to try, and what sharing does, in three steps
+   at the card's foot (where the form's button will be). */
+.finder:not([hidden]) {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.finder > :is(.finder__row, .finder__results) {
+  align-self: stretch;
+}
+
+.add__start {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-self: stretch;
+  margin-top: 1.75rem;
+}
+
+.finder:has(.finder__results > li) .add__start {
+  display: none;
+}
+
+.add__start-label {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.add__tries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.add__try {
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.add__how {
+  display: grid;
+  gap: 1rem;
+  margin: auto 0 0;
+  padding: 1.1rem 0 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.add__how li {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.add__how strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.add__how-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
 .add__form {
   display: flex;
   flex: 1 1 auto;

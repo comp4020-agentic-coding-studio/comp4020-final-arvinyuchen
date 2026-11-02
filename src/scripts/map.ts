@@ -819,6 +819,13 @@ if (container) {
       }
     };
     go.addEventListener("click", search);
+    // (a search to try, tapped: typed in and found)
+    for (const chip of finder.querySelectorAll<HTMLElement>("[data-try]")) {
+      chip.addEventListener("click", () => {
+        q.value = chip.dataset.try!;
+        search();
+      });
+    }
     // Not found: the form, empty, for the name and the rest by hand.
     finder.querySelector("[data-by-hand]")!.addEventListener("click", () => {
       clearHits();

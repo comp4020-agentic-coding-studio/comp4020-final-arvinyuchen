@@ -776,11 +776,35 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       <div class="finder" hidden>
         <label for="find-q" class="sr-only">Find it on the map</label>
         <div class="finder__row">
-          <input id="find-q" type="search" enterkeyhint="search" placeholder="Find it: “Morning Glory Dickson”" autocomplete="off" />
+          <input id="find-q" type="search" enterkeyhint="search" placeholder="Find it: “Lonsdale Street Roasters”" autocomplete="off" />
           <button type="button" class="btn" id="find-go">Find</button>
         </div>
         <ul class="finder__results" aria-live="polite"></ul>
         <button type="button" class="add__by-hand" data-by-hand>Not on the map? Fill it in by hand</button>
+        {/* (before a search: a few to try, and what sharing does; gone once
+            there are matches) */}
+        <div class="add__start">
+          <p class="add__start-label">Try</p>
+          <div class="add__tries">
+            {["Cafe in Dickson", "Mount Ainslie", "Bakery Kingston"].map((t) => (
+              <button type="button" class="chip add__try" data-try={t}>{t}</button>
+            ))}
+          </div>
+          <ol class="add__how">
+            <li>
+              <span class="add__how-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18"><path d="M8.75 15a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Zm4.5-1.75 4.25 4.25" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg></span>
+              <span><strong>Find it</strong> by its name, or what it is and where.</span>
+            </li>
+            <li>
+              <span class="add__how-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18"><path d="M10 3.5c-3.9 0-7 2.5-7 5.6 0 1.8 1 3.4 2.7 4.4-.1.9-.6 1.7-1.2 2.3 1.4.1 2.7-.4 3.6-1.2.6.1 1.2.2 1.9.2 3.9 0 7-2.5 7-5.7s-3.1-5.6-7-5.6Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg></span>
+              <span><strong>Say why it's good</strong>, in a line: what to order, when to go.</span>
+            </li>
+            <li>
+              <span class="add__how-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18"><path d="M4 10.5 8 14.5 16 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+              <span><strong>It's on Our list</strong> for {group.name}, and in Explore for every group.</span>
+            </li>
+          </ol>
+        </div>
       </div>
       <form method="post" action={`/api/groups/${group.id}/places`} class="add__form" id="add-form" enctype="multipart/form-data">
         <input type="hidden" name="ref" />
