@@ -3966,6 +3966,12 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     overscroll-behavior: contain;
   }
 
+  /* (Share's card, or Settings', at least as tall as the map beside it, so
+     the columns end on one line however short the card is) */
+  .group-page.is-tabbed > .group-tools > section {
+    min-height: 100%;
+  }
+
 }
 
 /* ---- Our list, a ranking ---------------------------------------------------- */
