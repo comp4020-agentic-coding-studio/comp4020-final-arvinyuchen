@@ -121,12 +121,11 @@ describe("a group", () => {
     expect(image.status).toBe(200);
     expect(image.headers.get("content-type")).toContain("image/jpeg");
 
-    // Private channels, each carrying the link; never a public feed.
-    const hrefs = [...doc.querySelectorAll<HTMLAnchorElement>(".share__by a")].map((a) => a.getAttribute("href") ?? "");
-    expect(hrefs.map((h) => h.split(/[?:]/)[0])).toEqual(["sms", "https", "https", "mailto"]);
-    expect(hrefs.some((h) => h.startsWith("https://wa.me/"))).toBe(true);
-    expect(hrefs.some((h) => h.startsWith("https://t.me/share/url"))).toBe(true);
-    for (const href of hrefs) expect(decodeURIComponent(href)).toContain(link);
+    // Private channels only: the link to copy and Share… (the system sheet), never a public feed.
+    expect(doc.querySelector("[data-copy='#share-link']")).toBeTruthy();
+    const share = doc.querySelector<HTMLButtonElement>("[data-share]");
+    expect(share?.dataset.title).toBe("Join Share crew on Spots");
+    expect(doc.querySelectorAll(".share a[href]")).toHaveLength(0);
     expect(doc.body.innerHTML).not.toMatch(/facebook\.com\/sharer|twitter\.com\/intent|x\.com\/intent/);
   });
 
@@ -137,8 +136,9 @@ describe("a group", () => {
     await join(new Jar(), id, id, "Ben");
     expect((await invite(path))?.hasAttribute("open")).toBe(false);
     expect((await invite(`${path}?new=1`))?.hasAttribute("open")).toBe(true);
-    // Folded, the invite is still all there, its links included.
-    expect((await invite(path))?.querySelector(".share__by a[href^='https://wa.me/']")).toBeTruthy();
+    // Folded, the invite is still all there: the link and Share….
+    expect((await invite(path))?.querySelector("#share-link")).toBeTruthy();
+    expect((await invite(path))?.querySelector("[data-share]")).toBeTruthy();
 
     // Each tab is a link to its part, and without a script every part is on the page.
     const doc = await page(ana, path);

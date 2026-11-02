@@ -95,8 +95,9 @@ follow from it; every change has to hold to them.
   new account, joins again by the link, and the owner merges their old
   member into it. Never add a way in that isn't a passkey.
 - **The invite goes person to person.** Whoever holds the link can join, so
-  it's shared through private channels only: the system share sheet, Messages,
-  WhatsApp, Telegram, email. Never add a button that posts it to a
+  it's shared through private channels only: the link to copy and the
+  system share sheet (no app icons of our own: the sheet already has every
+  chat app). Never add a button that posts it to a
   public feed (a Facebook post, X, a story). A link preview may name the group
   (Open Graph, `src/layouts/Base.astro`), never its members or votes.
 - **Accounts are passkeys only.** No passwords, no email, no "sign in with"
