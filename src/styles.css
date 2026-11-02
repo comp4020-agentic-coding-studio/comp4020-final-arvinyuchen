@@ -1604,7 +1604,8 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 10%)) drop-shadow(0 10px 18px rgb(13 43 54 / 18%));
 }
 
-.maplibregl-popup-content {
+/* (MapLibre's own sheet loads after this one, so these outrank it) */
+.maplibregl-map .maplibregl-popup .maplibregl-popup-content {
   padding: 0;
   border-radius: var(--radius);
   background: #fff;
