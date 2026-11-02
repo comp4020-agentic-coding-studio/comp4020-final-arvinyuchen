@@ -1269,7 +1269,8 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     // place, Settings), the open one in the URL's #, so a reload, the back
     // button or a form that lands on #settings opens the right one. On a
     // wide screen Our list is always there in the left column, so the tabs
-    // choose what's beside it: Explore (with the map), Share or Settings.
+    // choose what's beside it: Explore, Share or Settings, the map staying
+    // on the right whichever it is (Share's finder shows what it finds on it).
     const page = document.querySelector(".group-page");
     const tabLinks = [...document.querySelectorAll(".tabs a[data-tab]")];
     const panels = [...document.querySelectorAll("[data-panel]")];
@@ -1287,7 +1288,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       const beside = wide.matches && tab === "list" ? "explore" : tab;
       for (const panel of panels) {
         const kind = panel.dataset.panel;
-        panel.hidden = !(kind === beside || (wide.matches && kind === "list"));
+        panel.hidden = !(kind === beside || (wide.matches && (kind === "list" || kind === "explore")));
       }
       for (const a of tabLinks) {
         if (a.dataset.tab === beside) a.setAttribute("aria-current", "page");
