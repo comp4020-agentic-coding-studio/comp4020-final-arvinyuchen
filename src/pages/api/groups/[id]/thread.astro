@@ -1,0 +1,28 @@
+---
+import TalkThread from "../../../../components/TalkThread.astro";
+import { getGroup } from "../../../../lib/db";
+import { me } from "../../../../lib/me";
+import { placeName, thread } from "../../../../lib/talk";
+
+// One place's thread, as a piece of a page: what the group page's script
+// asks for when a thread opens, when the stream says something changed in
+// it, and for "Earlier messages". Only a member of the group gets it, and
+// only for a place on its list (src/lib/talk.ts). Reading the newest marks
+// it read. ?place=, and ?before=<id> for the page before a message, or
+// ?from=<id> for everything from one on.
+export const partial = true;
+
+const group = getGroup(Astro.params.id ?? "");
+const member = group && me(Astro.cookies, group.id);
+if (!group || !member) return new Response(null, { status: 403 });
+const params = Astro.url.searchParams;
+const placeId = Number(params.get("place"));
+const before = Number(params.get("before")) || undefined;
+const from = Number(params.get("from")) || undefined;
+const shown = thread(group, member, placeId, { before, from });
+if (!shown) return new Response(null, { status: 404 });
+const name = placeName(placeId);
+Astro.response.headers.set("cache-control", "no-store");
+---
+
+<TalkThread group={group} thread={shown} placeName={name} base={`/g/${group.link}?talk=${placeId}`} />

@@ -82,6 +82,7 @@ const day = (sqlite: string) =>
                   <th>Owner</th>
                   <th>People</th>
                   <th>On list</th>
+                  <th>Talk</th>
                   <th>Last active</th>
                 </tr>
               </thead>
@@ -93,6 +94,8 @@ const day = (sqlite: string) =>
                     <td>{g.owner ?? "–"}</td>
                     <td>{g.people}</td>
                     <td>{g.picks}</td>
+                    {/* (how many messages, never what they say) */}
+                    <td>{g.messages}</td>
                     <td>{day(g.lastActive)}</td>
                   </tr>
                 ))}

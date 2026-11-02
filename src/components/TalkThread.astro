@@ -1,0 +1,119 @@
+---
+import type { Group } from "../lib/db";
+import type { Thread } from "../lib/talk";
+import { addDays, formatDay, formatMinute, localNow, today } from "../lib/when";
+
+// A place's thread: its messages, oldest at the top, each with who said it
+// and when (Canberra's clock), yours on the right. A run of messages from
+// one person close together says their name once. A deleted message is a
+// stub without its words; your own, while it can be, has Undo. Your own
+// has a ··· (with a script, a long press too) with Delete in it. Words are
+// text, never HTML: a web address in them is a link, and only that.
+// The page's thread (?talk=) and the thread route (a live refresh, Earlier
+// messages) both draw it.
+interface Props {
+  group: Group;
+  thread: Thread;
+  placeName: string;
+  /** where "Earlier messages" goes without a script */
+  base: string;
+}
+const { group, thread, placeName, base } = Astro.props;
+const { messages, earlier, placeId } = thread;
+const action = `/api/groups/${group.id}/talk`;
+
+const now = today();
+const dayLabel = (day: string) => (day === now ? "Today" : day === addDays(now, -1) ? "Yesterday" : formatDay(day));
+const said = messages.map((m, i) => {
+  const at = localNow(new Date(m.createdAt));
+  const prev = messages[i - 1];
+  const prevAt = prev && localNow(new Date(prev.createdAt));
+  const newDay = !prevAt || prevAt.day !== at.day;
+  // (the same person again within five minutes: no name, closer under the last)
+  const run = !newDay && prev && prev.memberId === m.memberId && !prev.deleted && !m.deleted && at.minute - prevAt.minute < 5;
+  return { ...m, day: at.day, time: formatMinute(at.minute), newDay, run };
+});
+
+// A web address in the words, as a link (http and https only); the rest as text.
+const link = /\bhttps?:\/\/[^\s<>"']+/g;
+const parts = (text: string) => {
+  const out: { text: string; href?: string }[] = [];
+  let last = 0;
+  for (const match of text.matchAll(link)) {
+    // (a full stop or a bracket after an address is the sentence's, not the address's)
+    const href = match[0].replace(/[.,;:!?)\]]+$/, "");
+    out.push({ text: text.slice(last, match.index) }, { text: href, href });
+    last = match.index + href.length;
+  }
+  out.push({ text: text.slice(last) });
+  return out.filter((p) => p.text);
+};
+---
+
+<div class="talk__thread" data-thread={placeId} data-first={messages[0]?.id} data-last={messages.at(-1)?.id}>
+  {earlier && (
+    <a class="talk__earlier" href={`${base}&before=${messages[0].id}#talk`} data-talk-earlier={messages[0].id}>Earlier messages</a>
+  )}
+  {messages.length === 0 ? (
+    <p class="talk__empty">Nothing said yet. Ask the group about {placeName}: only they see it.</p>
+  ) : (
+    <ol class="talk__list" aria-label={`Talk about ${placeName}`}>
+      {said.map((m) => (
+        <>
+          {m.newDay && <li class="talk__day" aria-hidden="true">{dayLabel(m.day)}</li>}
+          <li
+            id={`msg-${m.id}`}
+            class:list={["msg", { "msg--mine": m.mine, "msg--run": m.run, "msg--removed": m.deleted }]}
+            data-msg={m.id}
+          >
+            {m.deleted ? (
+              <div class="msg__stub">
+                <span>{m.mine ? "You removed this message" : "Message removed"}</span>
+                {m.undoable && (
+                  <form method="post" action={action} data-talk data-talk-undo>
+                    <input type="hidden" name="action" value="undo" />
+                    <input type="hidden" name="place" value={placeId} />
+                    <input type="hidden" name="message" value={m.id} />
+                    <button class="msg__undo">Undo</button>
+                  </form>
+                )}
+              </div>
+            ) : (
+              <>
+                {!m.run && (
+                  <p class="msg__who">
+                    {!m.mine && <strong>{m.name}</strong>}
+                    <time datetime={m.createdAt}>{m.time}</time>
+                  </p>
+                )}
+                <div class="msg__row">
+                  <p class="msg__bubble" data-long-press={m.mine ? "" : undefined}>
+                    <span class="sr-only">{m.mine ? "You" : m.name}{m.run && `, ${m.time}`}: </span>
+                    {parts(m.body ?? "").map((p) => (p.href ? <a href={p.href} rel="nofollow noopener noreferrer ugc" target="_blank">{p.text}</a> : p.text))}
+                  </p>
+                  {m.mine && (
+                    <details class="msg__more">
+                      <summary aria-label="More for your message">
+                        <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="4.5" cy="10" r="1.6" fill="currentColor" /><circle cx="10" cy="10" r="1.6" fill="currentColor" /><circle cx="15.5" cy="10" r="1.6" fill="currentColor" /></svg>
+                      </summary>
+                      <form method="post" action={action} class="msg__menu" data-talk data-talk-delete>
+                        <input type="hidden" name="action" value="delete" />
+                        <input type="hidden" name="place" value={placeId} />
+                        <input type="hidden" name="message" value={m.id} />
+                        <button class="msg__delete">
+                          Delete
+                          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 6h12M8 6V4.5h4V6m-6.5 0 .7 10h7.6l.7-10M8.5 9v4.5m3-4.5v4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                        </button>
+                      </form>
+                    </details>
+                  )}
+                </div>
+              </>
+            )}
+          </li>
+        </>
+      ))}
+    </ol>
+  )}
+  <span id="talk-end"></span>
+</div>

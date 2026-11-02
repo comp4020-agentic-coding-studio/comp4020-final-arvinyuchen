@@ -74,7 +74,9 @@ follow from it; every change has to hold to them.
   change has to call `changed(groupId)`; a change to the shared places also
   calls `placesChanged()` so every group's Explore catches up. The stream
   answers only a signed-in member of that group (`me()`), and one open when
-  its account stops being a member ends at the next change.
+  its account stops being a member ends at the next change. Talk says only
+  which thread changed (`talked(groupId, placeId)`, "event: talk" with the
+  place's id): never words on the stream.
 - **Taking a place off the list is for whoever put it there.** In Edit
   mode (`?edit`), the member who added a place can take it off until
   someone else is keen on it, and never while it's a stop of the plan on
@@ -128,6 +130,30 @@ follow from it; every change has to hold to them.
   new plan, the old one called off and kept. A stop whose place leaves the
   list is dropped, the others moving up; a plan whose last stop goes is
   called off and kept. Changing the stops keeps everyone's times.
+- **Talk is about a place on the list, and stays in the group.** Each place
+  on Our list has one thread (`src/lib/talk.ts`), kept by group and place
+  (`comments`), never by pick, so a place taken off and put back finds its
+  thread again; while it's off, its thread is hidden and takes nothing.
+  There's no group-wide chat and no Talk on a place in Explore that isn't
+  on the list. Only the group's members read or write (`me()`, checked by
+  the thread route and the post route alike). A message is plain text, 500
+  characters at most, drawn as text with a web address as a link and
+  nothing else; 10 a minute and 300 a day per member; a nonce sends a
+  double tap once; a thread shows 50 at a time, "Earlier messages" for
+  more. Only its author can delete a message, never the owner; deleted, it's
+  a "Message removed" stub its author can undo for a day, and then its
+  words are cleared (`clearDeleted`: as the module loads, hourly, and before
+  every read or write, since there's no cron). Its words never reach a link
+  preview, the invite's preview, another group, Explore, search or Voyage,
+  the live stream, or `/admin` (which counts messages, never shows them);
+  `spec/talk.test.ts` holds each of those. People find out in the app, never
+  by push, email or a share button: the bubble on the row (its count, blue
+  and bold with what's new to you, `comment_reads`), the dot on Our list's
+  tab, "N new" on My groups. On a phone the thread is a sheet over the list
+  sized to the visual viewport (the keyboard); on a wide screen it takes
+  Explore's column and the map flies to the place. The box is outside
+  anything a refresh redraws, so a half-typed message survives others'.
+  No editing, reactions, images, @mentions or typing dots.
 - **Nothing is lost.** All state lives in the one SQLite file on `/data`.
   Schema changes are additive only; never drop or rewrite data a group made.
   A place's kind is stored by its key (`src/lib/kinds.ts`), so a key is never
@@ -135,9 +161,13 @@ follow from it; every change has to hold to them.
   The exceptions: a starter place taken off the
   list in `src/lib/catalogue.ts` is deleted, with its keens, its place
   on every list and any plans for it (`src/lib/db.ts`); a place a member takes off their group's
-  list goes from that list with its keens; and the site admin
+  list goes from that list with its keens (its Talk stays, hidden, for when
+  it's back); a message its author deleted has its words cleared a day
+  later, the stub kept (the one change to what someone wrote, and theirs to
+  make); and the site admin
   (`src/lib/admin.ts`) archives a group first (closed, restorable), and only
-  an archived group can be deleted for good, by an admin, after a confirm.
+  an archived group can be deleted for good, by an admin, after a confirm,
+  its Talk with it (as a deleted starter place takes its threads).
   An admin can hide a shared place. An admin is a passkey account that once entered
   `ADMIN_CODE` (a Fly secret); never add another way to become one.
 - **Signed in, it works without JavaScript**, as plain forms posting and
@@ -156,7 +186,7 @@ follow from it; every change has to hold to them.
   (and lives in `mise.local.toml` locally); it never goes to the browser or
   into git. Without it, or with Voyage down, search falls back to matching
   words and still works. Only card text and prompts go to Voyage, never
-  names of members or anything about a group.
+  names of members or anything about a group, and never what's said in Talk.
 - **Motion is a guide, not a show.** The map flies to a place so you can see
   where it is; under `prefers-reduced-motion` it jumps instead. Every page's
   entrance, and the invite's scroll and pin-drop animations, are off there

@@ -509,6 +509,11 @@ if (container) {
     const card = target.closest<HTMLElement>("[data-place]");
     if (card?.dataset.place) fly(Number(card.dataset.place));
   });
+  // (a place's Talk opened on a wide screen: the map goes to it, src/scripts/talk.ts)
+  document.addEventListener("spots:fly", (event) => {
+    const id = (event as CustomEvent<number>).detail;
+    if (Number.isFinite(id)) fly(id);
+  });
 
   // Kind filters: the chips show and hide cards and their pins together.
   let filter = "all";
