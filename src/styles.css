@@ -3823,10 +3823,13 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     position: static;
     height: 100%;
     max-height: none;
-    padding-top: 0.25rem;
+    /* (a box with the cards' own width and corners, as Explore's cards
+       have, so the panel scrolled half out of sight is still rounded at
+       the top; its rows fade out at its foot rather than being cut off) */
+    margin: 0;
+    padding: 0;
+    border-radius: var(--radius);
     overscroll-behavior: contain;
-    /* (rows fade out at its foot, as Explore's cards do, rather than being
-       cut off square; its top stays level with the other two) */
     mask-image: linear-gradient(#000 calc(100% - 1rem), transparent);
   }
 
@@ -8293,6 +8296,7 @@ main:has(.welcome) {
    viewport: src/scripts/talk.ts), its box at the foot; with the keyboard
    up it climbs nearer the top, for room. */
 dialog.sheet--talk {
+  background: var(--card);
   inset: auto 0 auto;
   top: calc(var(--talk-top, 0px) + 2.75rem);
   height: calc(var(--talk-h, 100dvh) - 2.75rem);
@@ -8317,20 +8321,40 @@ dialog.sheet--talk.is-typing {
   height: 100%;
 }
 
+/* Its head, as a card's: the place's name on the left, a round close on
+   the right. */
 .talk__bar {
   flex: none;
-  border-bottom: 0.5px solid rgb(0 0 0 / 10%);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem max(1rem, env(safe-area-inset-right)) 0.75rem max(1.1rem, env(safe-area-inset-left));
 }
 
 .talk__bar h2 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
   overflow: hidden;
+  font-size: 1.15rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.talk__done {
-  justify-self: end;
-  font-weight: 600;
+.talk__close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--muted);
+}
+
+.talk__close:hover {
+  background: var(--fill-strong);
+  color: var(--ink);
 }
 
 .talk__body {
@@ -8356,12 +8380,42 @@ dialog.sheet--talk.is-typing {
   padding: 0.75rem max(1rem, env(safe-area-inset-right)) 0.9rem max(1rem, env(safe-area-inset-left));
 }
 
+/* Nothing said yet: a bubble, two short lines, in the middle. */
+.talk__thread:has(> .talk__empty) {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+}
+
 .talk__empty {
-  margin: auto 0 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  margin: auto 0;
   padding: 2rem 1.5rem;
-  color: var(--muted);
-  font-size: 0.9rem;
   text-align: center;
+}
+
+.talk__empty-icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 0.4rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.talk__empty-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.talk__empty-sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
 }
 
 .talk__earlier {
@@ -8440,8 +8494,7 @@ dialog.sheet--talk.is-typing {
   margin: 0;
   padding: 0.5rem 0.8rem;
   border-radius: 18px;
-  background: var(--card);
-  box-shadow: var(--shadow-sm);
+  background: var(--fill);
   font-size: 0.95rem;
   line-height: 1.35;
   white-space: pre-wrap;
@@ -8597,8 +8650,6 @@ dialog.sheet--talk.is-typing {
   display: grid;
   gap: 0.4rem;
   padding: 0.55rem max(0.75rem, env(safe-area-inset-right)) calc(0.6rem + env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
-  border-top: 0.5px solid rgb(0 0 0 / 10%);
-  background: color-mix(in srgb, var(--bg) 90%, white);
 }
 
 .is-typing .talk__compose {
@@ -8609,14 +8660,16 @@ dialog.sheet--talk.is-typing {
   display: flex;
   align-items: flex-end;
   gap: 0.4rem;
-  padding: 0.25rem 0.25rem 0.25rem 0.9rem;
-  border: 1px solid var(--line-strong);
-  border-radius: 20px;
-  background: var(--card);
+  padding: 0.3rem 0.3rem 0.3rem 0.95rem;
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  background: var(--fill);
 }
 
 .talk__field:focus-within {
   border-color: var(--accent);
+  background: var(--card);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .talk__field textarea {
@@ -8700,17 +8753,14 @@ dialog.sheet--talk.is-typing {
     height: 100%;
     margin: 0;
     border-radius: var(--radius);
-    background: var(--bg);
-    box-shadow: inset 0 0 0 1px var(--line);
+    background: var(--card);
+    box-shadow: var(--shadow-sm);
   }
 
   .explore-wrap:has(> dialog.sheet--talk.is-column[open]) :is(.explore-head, #explore) {
     display: none;
   }
 
-  .is-column .talk__bar {
-    background: var(--card);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

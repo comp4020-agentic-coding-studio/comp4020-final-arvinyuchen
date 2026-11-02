@@ -41,13 +41,11 @@ const nonce = crypto.randomUUID();
   data-place={open?.placeId}
 >
   <div class="talk">
-    <div class="sheet__bar talk__bar">
-      <span></span>
-      <div>
-        <h2 id="talk-title">{open?.name ?? "Talk"}</h2>
-        <p class="sheet__sub">Talk · only {group.name} sees it</p>
-      </div>
-      <a class="sheet__cancel talk__done" href={`/g/${group.link}#list`} data-talk-close>Done</a>
+    <div class="talk__bar">
+      <h2 id="talk-title">{open?.name ?? "Talk"}</h2>
+      <a class="talk__close" href={`/g/${group.link}#list`} data-talk-close aria-label="Close">
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" /></svg>
+      </a>
     </div>
     <div class="talk__body">
       {/* (it scrolls from the foot, so it opens on the newest, and the
