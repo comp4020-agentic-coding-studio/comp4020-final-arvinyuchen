@@ -8505,7 +8505,10 @@ dialog.sheet--talk.is-typing {
 .msg--mine .msg__bubble {
   background: var(--accent-soft);
   box-shadow: none;
-  /* (a long press is the message's menu, not the phone's) */
+}
+
+/* (a long press opens the message's reactions, not the phone's menu) */
+.msg__bubble {
   -webkit-touch-callout: none;
 }
 
@@ -8544,72 +8547,180 @@ dialog.sheet--talk.is-typing {
   cursor: pointer;
 }
 
-/* Your message's ···: quiet beside it, opening a menu of one, Delete, in red. */
-.msg__more {
-  position: relative;
+/* Beside a message, out of sight until the pointer is over it (on a
+   phone, after a long press): a smiley that opens the reactions, and on
+   yours a bin, red on hover, that deletes it (Undo follows). */
+.msg__tools {
+  display: flex;
   flex: none;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.15s;
 }
 
-.msg__more summary {
+.msg--mine .msg__tools {
+  flex-direction: row-reverse;
+}
+
+.msg:hover .msg__tools,
+.msg.is-armed .msg__tools,
+.msg__tools:focus-within {
+  opacity: 1;
+}
+
+.msg__del {
+  margin: 0;
+}
+
+.msg__tool {
   display: grid;
   place-items: center;
   width: 1.75rem;
   height: 1.75rem;
-  border-radius: 50%;
-  color: var(--muted);
-  list-style: none;
-  cursor: pointer;
-}
-
-.msg__more summary::-webkit-details-marker {
-  display: none;
-}
-
-.msg__more summary:hover,
-.msg__more[open] summary {
-  background: var(--fill);
-}
-
-.msg__menu {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 0.3rem);
-  z-index: 2;
-  min-width: 10rem;
-  overflow: hidden;
-  border-radius: 13px;
-  background: color-mix(in srgb, var(--card) 88%, transparent);
-  box-shadow: var(--shadow-float);
-  backdrop-filter: blur(20px) saturate(1.8);
-}
-
-/* (yours sits on the right: its menu opens over it, not off the screen) */
-.msg--mine .msg__menu {
-  right: auto;
-  left: 0;
-}
-
-.msg__delete {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  width: 100%;
-  min-height: 2.75rem;
-  padding: 0 1rem;
+  padding: 0;
   border: 0;
+  border-radius: 50%;
   background: none;
-  color: var(--busy-strong);
-  font: inherit;
-  font-size: 0.95rem;
-  text-align: left;
+  color: var(--muted);
   cursor: pointer;
+  transition: background 0.15s, color 0.15s;
 }
 
-.msg__delete:hover,
-.msg__delete:focus-visible {
+.msg__tool:hover,
+.msg__tool:focus-visible,
+.msg__tool[aria-expanded="true"] {
+  background: var(--fill);
+  color: var(--ink);
+  outline: none;
+}
+
+.msg__tool--delete:hover,
+.msg__tool--delete:focus-visible {
+  background: color-mix(in srgb, var(--busy-strong) 12%, transparent);
+  color: var(--busy-strong);
+}
+
+/* The five reactions: a floating pill over the message, from its side. */
+.msg__row {
+  position: relative;
+}
+
+.msg__picker {
+  position: absolute;
+  bottom: calc(100% + 0.3rem);
+  left: 0;
+  z-index: 2;
+  display: flex;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: var(--shadow-float);
+  animation: pick-in 0.16s ease-out;
+}
+
+.msg--mine .msg__picker {
+  right: 0;
+  left: auto;
+}
+
+@keyframes pick-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.96);
+  }
+}
+
+/* (no room above, at the top of the thread: under it instead) */
+.msg__picker.is-below {
+  top: calc(100% + 0.3rem);
+  bottom: auto;
+}
+
+.msg__pick {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.12s, background 0.12s;
+}
+
+.msg__pick:hover,
+.msg__pick:focus-visible {
   background: var(--fill);
   outline: none;
+  transform: scale(1.15);
+}
+
+.msg__pick.is-mine {
+  background: var(--accent-soft);
+}
+
+/* Under the message: each reaction once, with how many when it's more than
+   one, and who on hover; yours in the blue of you. A tap on one adds yours
+   (or, on yours, takes it back). */
+.msg__reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: -0.1rem 0.4rem 0;
+}
+
+.msg__chip {
+  display: inline-flex;
+  gap: 0.25rem;
+  align-items: center;
+  height: 1.6rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.msg__chip:hover {
+  border-color: var(--line-strong);
+}
+
+.msg__chip.is-mine {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: var(--accent-soft);
+}
+
+.msg__chip-n {
+  color: var(--muted);
+  font-family: var(--font-rounded);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.msg__chip.is-mine .msg__chip-n {
+  color: var(--accent-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg__tools,
+  .msg__tool,
+  .msg__pick {
+    transition: none;
+  }
+
+  .msg__picker {
+    animation: none;
+  }
 }
 
 /* "Message removed. Undo", for a moment, at the top of the thread, clear

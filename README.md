@@ -234,8 +234,9 @@ Every place on the list has its Talk: a speech
 bubble on its row, with how many have been said (blue and bold when some
 are new to you), opens the place's thread, a sheet over the list on a
 phone, and on a wide screen Explore's column, with the map flown to the
-place. Only the group sees it. Messages arrive live; your own has a ··· (or
-a long press) to delete it, with Undo, and leaves "Message removed"; a
-day later its words are gone for good. Without a script it's a link and
+place. Only the group sees it. Messages arrive live, and any one takes a
+quick reaction (👍 ❤️ 😂 😮 🎉, one each) shown under it. Your own has a
+small bin (on hover, or after a long press) to delete it, with Undo; it
+leaves "Message removed", and a day later its words are gone for good. Without a script it's a link and
 plain forms. Next: saying who's coming once the time is set, and Talk on
 the plan itself.

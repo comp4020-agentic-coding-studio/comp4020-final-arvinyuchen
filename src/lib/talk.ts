@@ -21,6 +21,9 @@ export const PAGE = 50;
 /** How many messages one member may send: a minute's, a day's. */
 export const PER_MINUTE = 10;
 export const PER_DAY = 300;
+/** The quick reactions a message can have, one each, in the picker's order. */
+export const REACTIONS = ["👍", "❤️", "😂", "😮", "🎉"] as const;
+
 /** How long a deleted message keeps its words, so its author can undo it. */
 export const CLEAR_AFTER_MS = 24 * 60 * 60 * 1000;
 
@@ -36,6 +39,15 @@ export interface Message {
   deleted: boolean;
   /** deleted, and its words still there: its author can undo it */
   undoable: boolean;
+  /** its quick reactions, in the picker's order (none on a deleted one) */
+  reactions: Reaction[];
+}
+
+export interface Reaction {
+  emoji: string;
+  /** who, oldest first */
+  names: string[];
+  mine: boolean;
 }
 
 export interface Thread {
@@ -152,6 +164,55 @@ export function undoDelete(group: Group, member: Member, id: number, now = Date.
   return own.placeId;
 }
 
+/**
+ * Reacts to one of the group's messages, as this member: one reaction each,
+ * so another replaces it, and the same again takes it back. Not on a
+ * deleted message. Returns its place's id, or undefined if nothing changed.
+ */
+export function react(group: Group, member: Member, id: number, emoji: string): number | undefined {
+  if (!(REACTIONS as readonly string[]).includes(emoji)) return undefined;
+  const message = db
+    .prepare(
+      `SELECT c.place_id AS placeId FROM comments c JOIN picks k ON k.group_id = c.group_id AND k.place_id = c.place_id
+        WHERE c.id = ? AND c.group_id = ? AND c.deleted_at IS NULL`,
+    )
+    .get(id, group.id) as { placeId: number } | undefined;
+  if (!message) return undefined;
+  const had = db.prepare("SELECT emoji FROM comment_reactions WHERE comment_id = ? AND member_id = ?").pluck().get(id, member.id);
+  if (had === emoji) db.prepare("DELETE FROM comment_reactions WHERE comment_id = ? AND member_id = ?").run(id, member.id);
+  else
+    db.prepare(
+      `INSERT INTO comment_reactions (comment_id, member_id, emoji) VALUES (?, ?, ?)
+       ON CONFLICT (comment_id, member_id) DO UPDATE SET emoji = excluded.emoji, created_at = excluded.created_at`,
+    ).run(id, member.id, emoji);
+  return message.placeId;
+}
+
+/** The reactions on these messages, by message id. */
+function reactionsOn(ids: number[], member: Member): Map<number, Reaction[]> {
+  const out = new Map<number, Reaction[]>();
+  if (ids.length === 0) return out;
+  const rows = db
+    .prepare(
+      `SELECT r.comment_id AS id, r.emoji, r.member_id AS memberId, m.name
+         FROM comment_reactions r JOIN members m ON m.id = r.member_id
+        WHERE r.comment_id IN (${ids.map(() => "?").join(", ")})
+        ORDER BY r.created_at, r.rowid`,
+    )
+    .all(...ids) as { id: number; emoji: string; memberId: number; name: string }[];
+  for (const r of rows) {
+    const list = out.get(r.id) ?? [];
+    let reaction = list.find((x) => x.emoji === r.emoji);
+    if (!reaction) list.push((reaction = { emoji: r.emoji, names: [], mine: false }));
+    reaction.names.push(r.memberId === member.id ? "You" : r.name);
+    reaction.mine ||= r.memberId === member.id;
+    out.set(r.id, list);
+  }
+  const order = (e: string) => (REACTIONS as readonly string[]).indexOf(e);
+  for (const list of out.values()) list.sort((a, b) => order(a.emoji) - order(b.emoji));
+  return out;
+}
+
 /** This member has seen the thread up to message `upTo` (never back). */
 export function markRead(member: Member, groupId: string, placeId: number, upTo: number): void {
   db.prepare(
@@ -195,6 +256,10 @@ export function thread(
     const last = db.prepare("SELECT MAX(id) FROM comments WHERE group_id = ? AND place_id = ?").pluck().get(group.id, placeId) as number | null;
     if (last) markRead(member, group.id, placeId, last);
   }
+  const reactions = reactionsOn(
+    rows.filter((r) => !r.deletedAt).map((r) => r.id),
+    member,
+  );
   return {
     placeId,
     earlier,
@@ -207,6 +272,7 @@ export function thread(
       mine: r.memberId === member.id,
       deleted: r.deletedAt !== null,
       undoable: r.deletedAt !== null && r.clearedAt === null && r.memberId === member.id,
+      reactions: r.deletedAt ? [] : (reactions.get(r.id) ?? []),
     })),
   };
 }

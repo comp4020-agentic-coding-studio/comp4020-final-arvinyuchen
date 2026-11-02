@@ -3,7 +3,7 @@
 // tablet) it's a sheet over Our list, sized to what the keyboard leaves of
 // the screen; on a wide screen it takes Explore's column while it's open,
 // and the map flies to the place, so the list and the map stay in view.
-// Sending, deleting and Undo post in the background (x-spots: in-page),
+// Sending, deleting, Undo and reactions post in the background (x-spots: in-page),
 // so the stream stays open and what you're typing stays where it is: a
 // refresh swaps only the thread, never the box. Without this script, the
 // bubble is a link to ?talk=<place> and the forms post and come back.
@@ -59,10 +59,12 @@ function talk(sheet: HTMLDialogElement) {
         compose.hidden = false;
         const fresh = new DOMParser().parseFromString(await res.text(), "text/html").querySelector(".talk__thread");
         if (!fresh) return;
-        // (the menus open in it stay open)
-        const open = [...scroll.querySelectorAll<HTMLElement>(".msg:has(.msg__more[open])")].map((m) => m.dataset.msg);
+        // (tools a long press showed stay shown, and an open picker open)
+        const armed = [...scroll.querySelectorAll<HTMLElement>(".msg.is-armed")].map((m) => m.dataset.msg);
+        const picking = scroll.querySelector<HTMLElement>(".msg__picker:not([hidden])")?.closest<HTMLElement>(".msg")?.dataset.msg;
         scroll.replaceChildren(fresh);
-        for (const msg of open) scroll.querySelector(`.msg[data-msg="${msg}"] .msg__more`)?.setAttribute("open", "");
+        for (const msg of armed) scroll.querySelector(`.msg[data-msg="${msg}"]`)?.classList.add("is-armed");
+        if (picking) pick(scroll.querySelector<HTMLElement>(`.msg[data-msg="${picking}"]`));
       } finally {
         loading = null;
       }
@@ -204,14 +206,41 @@ function talk(sheet: HTMLDialogElement) {
         .catch(() => (location.href = earlier.href));
       return;
     }
-    // (a click outside an open ··· menu closes it)
-    for (const menu of sheet.querySelectorAll<HTMLDetailsElement>(".msg__more[open]")) if (!menu.contains(target)) menu.open = false;
+    // (the smiley opens its message's reactions, or shuts them)
+    const smiley = target.closest<HTMLElement>("[data-react-open]");
+    if (smiley) {
+      const msg = smiley.closest<HTMLElement>(".msg");
+      pick(smiley.getAttribute("aria-expanded") === "true" ? null : msg);
+      return;
+    }
+    // (a tap elsewhere shuts the reactions and hides what a long press showed)
+    if (!target.closest(".msg__picker")) pick(null);
+    for (const msg of sheet.querySelectorAll<HTMLElement>(".msg.is-armed")) if (!msg.contains(target)) msg.classList.remove("is-armed");
   });
+
+  /** Opens one message's reactions (none: shuts them), above it if there's room. */
+  function pick(msg: HTMLElement | null) {
+    for (const open of scroll.querySelectorAll<HTMLElement>(".msg__picker:not([hidden])")) {
+      if (open.closest(".msg") === msg) continue;
+      open.hidden = true;
+      open.closest(".msg")?.querySelector("[data-react-open]")?.setAttribute("aria-expanded", "false");
+    }
+    const picker = msg?.querySelector<HTMLElement>(".msg__picker");
+    if (!msg || !picker) return;
+    picker.hidden = false;
+    msg.querySelector("[data-react-open]")?.setAttribute("aria-expanded", "true");
+    picker.classList.remove("is-below");
+    if (picker.getBoundingClientRect().top < scroll.getBoundingClientRect().top) picker.classList.add("is-below");
+  }
   // (in the column, Escape closes it as it does the sheet)
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape" || !sheet.open || sheet.matches(":modal")) return;
-    const menu = sheet.querySelector<HTMLDetailsElement>(".msg__more[open]");
-    if (menu) menu.open = false;
+    const picker = scroll.querySelector<HTMLElement>(".msg__picker:not([hidden])");
+    const armed = sheet.querySelector<HTMLElement>(".msg.is-armed");
+    if (picker) {
+      pick(null);
+      picker.closest(".msg")?.querySelector<HTMLElement>("[data-react-open]")?.focus();
+    } else if (armed) armed.classList.remove("is-armed");
     else close();
   });
 
@@ -282,6 +311,10 @@ function talk(sheet: HTMLDialogElement) {
     if (form.dataset.sending) return;
     if (form === compose && !box.value.trim()) return;
     const body = new FormData(form);
+    // (a reaction is the button that sent it)
+    const by = (event as SubmitEvent).submitter as HTMLButtonElement | null;
+    if (by?.name) body.set(by.name, by.value);
+    if (form.matches("[data-talk-react]")) pick(null);
     form.dataset.sending = "true";
     try {
       const res = await post(body);
@@ -313,25 +346,27 @@ function talk(sheet: HTMLDialogElement) {
         });
       }
     } catch {
+      if (by?.name) form.append(Object.assign(document.createElement("input"), { type: "hidden", name: by.name, value: by.value }));
       form.submit();
     } finally {
       delete form.dataset.sending;
     }
   });
 
-  // A long press on your own message opens its menu, as on a phone's
-  // Messages: the ··· beside it does the same for a click or a key.
+  // A long press on a message opens its reactions and shows its tools (on
+  // yours, the bin), as a phone has no hover; with a mouse they show when
+  // the pointer is over the message.
   let press: ReturnType<typeof setTimeout> | undefined;
   let pressedAt: { x: number; y: number } | null = null;
   scroll.addEventListener("pointerdown", (event) => {
-    const bubble = (event.target as HTMLElement).closest(".msg--mine .msg__bubble");
+    const bubble = (event.target as HTMLElement).closest(".msg__bubble");
     if (!bubble || event.button !== 0) return;
     pressedAt = { x: event.clientX, y: event.clientY };
     press = setTimeout(() => {
-      const menu = bubble.closest(".msg")?.querySelector<HTMLDetailsElement>(".msg__more");
-      if (!menu) return;
-      menu.open = true;
-      menu.querySelector("button")?.focus({ preventScroll: true });
+      const msg = bubble.closest<HTMLElement>(".msg");
+      if (!msg) return;
+      msg.classList.add("is-armed");
+      pick(msg);
       if (!still.matches) navigator.vibrate?.(10);
     }, 450);
   });
@@ -343,6 +378,6 @@ function talk(sheet: HTMLDialogElement) {
   });
   // (the long press is ours, not the browser's menu)
   scroll.addEventListener("contextmenu", (event) => {
-    if ((event.target as HTMLElement).closest(".msg--mine .msg__bubble") && !finePointer.matches) event.preventDefault();
+    if ((event.target as HTMLElement).closest(".msg__bubble") && !finePointer.matches) event.preventDefault();
   });
 }

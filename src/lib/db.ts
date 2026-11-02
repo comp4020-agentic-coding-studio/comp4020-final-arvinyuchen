@@ -274,6 +274,14 @@ db.exec(`
     last_read_id INTEGER NOT NULL,
     PRIMARY KEY (member_id, place_id)
   );
+  -- (a quick reaction on a message: one each, from TALK_REACTIONS)
+  CREATE TABLE IF NOT EXISTS comment_reactions (
+    comment_id INTEGER NOT NULL REFERENCES comments(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    emoji TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    PRIMARY KEY (comment_id, member_id)
+  );
 `);
 
 // The checked starter places, upserted by key so a corrected coordinate,
@@ -332,6 +340,7 @@ db.transaction(() => {
   }
   // (and its Talk in every group, with who'd read how far)
   db.prepare(`DELETE FROM comment_reads WHERE place_id IN (${bare})`).run();
+  db.prepare(`DELETE FROM comment_reactions WHERE comment_id IN (SELECT id FROM comments WHERE place_id IN (${bare}))`).run();
   db.prepare(`DELETE FROM comments WHERE place_id IN (${bare})`).run();
   db.prepare(`DELETE FROM places WHERE id IN (${bare})`).run();
 })();
@@ -544,6 +553,9 @@ export function mergeMembers(group: Group, fromId: number, intoId: number): bool
     // read each thread as far as either of them had. (A nonce only stops a
     // double tap, so it needn't come along.)
     db.prepare("UPDATE comments SET member_id = ?, nonce = NULL WHERE member_id = ?").run(intoId, fromId);
+    // (their reactions too, where the one they really are hasn't reacted)
+    db.prepare("UPDATE OR IGNORE comment_reactions SET member_id = ? WHERE member_id = ?").run(intoId, fromId);
+    db.prepare("DELETE FROM comment_reactions WHERE member_id = ?").run(fromId);
     db.prepare(
       `INSERT INTO comment_reads (member_id, group_id, place_id, last_read_id)
          SELECT ?, group_id, place_id, last_read_id FROM comment_reads WHERE member_id = ?

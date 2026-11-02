@@ -193,7 +193,10 @@ follow from it; every change has to hold to them.
   more. Only its author can delete a message, never the owner; deleted, it's
   a "Message removed" stub its author can undo for a day, and then its
   words are cleared (`clearDeleted`: as the module loads, hourly, and before
-  every read or write, since there's no cron). Its words never reach a link
+  every read or write, since there's no cron). Any member can react to a
+  message that isn't deleted, one reaction each from five
+  (`REACTIONS`, `comment_reactions`); another replaces it, the same again
+  takes it back. Its words never reach a link
   preview, the invite's preview, another group, Explore, search or Voyage,
   the live stream, or `/admin` (which counts messages, never shows them);
   `spec/talk.test.ts` holds each of those. People find out in the app, never

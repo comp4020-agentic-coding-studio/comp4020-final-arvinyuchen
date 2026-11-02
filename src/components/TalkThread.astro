@@ -1,13 +1,16 @@
 ---
 import type { Group } from "../lib/db";
-import type { Thread } from "../lib/talk";
+import { REACTIONS, type Thread } from "../lib/talk";
 import { addDays, formatDay, formatMinute, localNow, today } from "../lib/when";
 
 // A place's thread: its messages, oldest at the top, each with who said it
 // and when (Canberra's clock), yours on the right. A run of messages from
 // one person close together says their name once. A deleted message is a
 // stub without its words; your own, while it can be, has Undo. Your own
-// has a ··· (with a script, a long press too) with Delete in it. Words are
+// has a small bin beside it, shown on hover (on a phone, after a long
+// press), that deletes it, with Undo after. Any message can have quick
+// reactions, one each: a smiley beside it (the same hover or long press)
+// opens five, and they show under it, a tap on one adding yours. Words are
 // text, never HTML: a web address in them is a link, and only that.
 // The page's thread (?talk=) and the thread route (a live refresh, Earlier
 // messages) both draw it.
@@ -93,27 +96,68 @@ const parts = (text: string) => {
                   </p>
                 )}
                 <div class="msg__row">
-                  <p class="msg__bubble" data-long-press={m.mine ? "" : undefined}>
+                  <p class="msg__bubble">
                     <span class="sr-only">{m.mine ? "You" : m.name}{m.run && `, ${m.time}`}: </span>
                     {parts(m.body ?? "").map((p) => (p.href ? <a href={p.href} rel="nofollow noopener noreferrer ugc" target="_blank">{p.text}</a> : p.text))}
                   </p>
-                  {m.mine && (
-                    <details class="msg__more">
-                      <summary aria-label="More for your message">
-                        <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="4.5" cy="10" r="1.6" fill="currentColor" /><circle cx="10" cy="10" r="1.6" fill="currentColor" /><circle cx="15.5" cy="10" r="1.6" fill="currentColor" /></svg>
-                      </summary>
-                      <form method="post" action={action} class="msg__menu" data-talk data-talk-delete>
+                  <div class="msg__tools">
+                    <button
+                      type="button"
+                      class="msg__tool"
+                      aria-label="React"
+                      aria-expanded="false"
+                      aria-controls={`react-${m.id}`}
+                      data-react-open
+                    >
+                      <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="10" cy="10" r="6.75" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M7.4 11.6c.6.9 1.5 1.4 2.6 1.4s2-.5 2.6-1.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /><circle cx="7.7" cy="8.4" r="1" fill="currentColor" /><circle cx="12.3" cy="8.4" r="1" fill="currentColor" /></svg>
+                    </button>
+                    {m.mine && (
+                      <form method="post" action={action} class="msg__del" data-talk data-talk-delete>
                         <input type="hidden" name="action" value="delete" />
                         <input type="hidden" name="place" value={placeId} />
                         <input type="hidden" name="message" value={m.id} />
-                        <button class="msg__delete">
-                          Delete
-                          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 6h12M8 6V4.5h4V6m-6.5 0 .7 10h7.6l.7-10M8.5 9v4.5m3-4.5v4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                        <button class="msg__tool msg__tool--delete" aria-label="Delete your message">
+                          <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><path d="M4.5 6h11M8 6V4.5h4V6m-6 0 .6 9.2a1 1 0 0 0 1 .8h4.8a1 1 0 0 0 1-.8L14 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
                         </button>
                       </form>
-                    </details>
-                  )}
+                    )}
+                  </div>
+                  <form method="post" action={action} class="msg__picker" id={`react-${m.id}`} hidden data-talk data-talk-react>
+                    <input type="hidden" name="action" value="react" />
+                    <input type="hidden" name="place" value={placeId} />
+                    <input type="hidden" name="message" value={m.id} />
+                    {REACTIONS.map((emoji) => (
+                      <button
+                        name="emoji"
+                        value={emoji}
+                        class:list={["msg__pick", { "is-mine": m.reactions.some((r) => r.mine && r.emoji === emoji) }]}
+                        aria-label={`React ${emoji}`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </form>
                 </div>
+                {m.reactions.length > 0 && (
+                  <form method="post" action={action} class="msg__reactions" data-talk data-talk-react>
+                    <input type="hidden" name="action" value="react" />
+                    <input type="hidden" name="place" value={placeId} />
+                    <input type="hidden" name="message" value={m.id} />
+                    {m.reactions.map((r) => (
+                      <button
+                        name="emoji"
+                        value={r.emoji}
+                        class:list={["msg__chip", { "is-mine": r.mine }]}
+                        aria-pressed={r.mine ? "true" : "false"}
+                        aria-label={`${r.emoji} from ${r.names.join(", ")}`}
+                        title={r.names.join(", ")}
+                      >
+                        {r.emoji}
+                        {r.names.length > 1 && <span class="msg__chip-n">{r.names.length}</span>}
+                      </button>
+                    ))}
+                  </form>
+                )}
               </>
             )}
           </li>
