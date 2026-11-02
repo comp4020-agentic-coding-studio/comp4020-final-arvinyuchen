@@ -721,20 +721,11 @@ input[type="radio"] {
   font-size: 0.82rem;
 }
 
-/* The owner's note to invitees, opened. */
-.share__note-form {
-  display: grid;
-  gap: 0.45rem;
-}
-
-.share__note-form textarea {
-  min-height: 0;
-  resize: none;
+/* The owner's note to invitees, opened: one line with Save inside it, as
+   Explore's search has Find. */
+.ask.share__note-form input {
+  padding-left: 0.9rem;
   font-size: 0.95rem;
-}
-
-.share__note-form .btn {
-  justify-self: end;
 }
 
 .join {

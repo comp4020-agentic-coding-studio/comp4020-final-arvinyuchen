@@ -456,11 +456,11 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           <figcaption>Scan with a phone's camera to join</figcaption>
         </figure>
         {isOwner && (
-          <form class="share__note-form" id="invite-note" hidden method="post" action={`/api/groups/${group.id}/owner`} data-note>
+          <form class="share__note-form ask" id="invite-note" hidden method="post" action={`/api/groups/${group.id}/owner`} data-note>
             <input type="hidden" name="action" value="note" />
             <label for="invite-note-text" class="sr-only">A note for the people you invite, the first thing they see</label>
-            <textarea id="invite-note-text" name="note" rows="2" maxlength={NOTE_MAX} placeholder="Where are we going Friday?">{group.note ?? ""}</textarea>
-            <button class="btn btn--primary btn--small">Save</button>
+            <input id="invite-note-text" name="note" maxlength={NOTE_MAX} value={group.note ?? ""} placeholder="Where are we going Friday?" enterkeyhint="done" autocomplete="off" />
+            <button class="btn btn--primary">Save</button>
           </form>
         )}
       </div>
