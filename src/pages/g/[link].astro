@@ -453,7 +453,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
             <input type="hidden" name="action" value="note" />
             <label for="invite-note-text" class="sr-only">A note for the people you invite, the first thing they see</label>
             <input id="invite-note-text" name="note" maxlength={NOTE_MAX} value={group.note ?? ""} placeholder="Where are we going Friday?" enterkeyhint="done" autocomplete="off" />
-            <button class="btn btn--primary">Save</button>
+            <button class="btn">Save</button>
           </form>
         )}
       </div>
@@ -685,7 +685,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
             autocomplete="off"
             placeholder="Describe it: “cheap dumplings near Dickson”, “a walk with a view”"
           />
-          <button class="btn btn--primary">Find</button>
+          <button class="btn">Find</button>
         </form>
         {/* (the kinds need the script that filters by them, so it shows them) */}
         <div class="filters" role="group" aria-label="Show only" data-sel={startKind} hidden>
