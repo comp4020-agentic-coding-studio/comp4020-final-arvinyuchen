@@ -211,12 +211,16 @@ follow from it; every change has to hold to them.
   its Talk with it (as a deleted starter place takes its threads).
   An admin can hide a shared place. An admin is a passkey account that once entered
   `ADMIN_CODE` (a Fly secret); never add another way to become one.
-- **Signed in, it works without JavaScript**, as plain forms posting and
-  redirecting. The live layer, the map and the place finder are additions on
-  top, not the only way to act. Making an account and signing in need a
-  passkey, so they need JavaScript and a browser that has passkeys; where
-  there's none (another app's built-in browser, an old one), the page says
-  to open it in Safari or Chrome (`src/components/NoPasskey.astro`).
+- **The page's script is assumed; every action is still a plain route.**
+  Making an account and signing in need a passkey, so they need JavaScript
+  and a browser that has passkeys; where there's none (another app's
+  built-in browser, an old one), the page says to open it in Safari or
+  Chrome (`src/components/NoPasskey.astro`). So everyone signed in has the
+  script, and new UI may rely on it, with no version for a page without it
+  (#116). Every action stays a plain HTTP route, a form post that
+  redirects or answers 204 in the page, because that's what `spec/`
+  drives. The no-script fallbacks already there can stay; take one out
+  when it's in the way of a change.
 - **Search answers with cards, never prose.** A prompt comes back as the
   matching places, best first, and their pins: no generated text, nothing
   said about a place that its card doesn't say. Ranking is cosine similarity

@@ -33,6 +33,13 @@ ever run on one machine; that's what `fly.toml` fixes anyway. A page re-fetches
 itself on each change rather than receiving a diff, which is simple but heavier
 with a big group.
 
+**Later.** For a while that became a rule: signed in, everything works
+without JavaScript. Once every member was a passkey account, nobody could
+sign in without it, so the rule only made each new piece of UI carry a
+version nobody would see. It was dropped (#116): the page's script is
+assumed, and what stays is the reason the forms were chosen, every action a
+plain HTTP route the spec can drive.
+
 ## Search by meaning
 
 **Context.** I wanted people to find places the way they'd ask a friend
