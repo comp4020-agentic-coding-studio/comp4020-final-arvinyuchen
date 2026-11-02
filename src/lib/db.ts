@@ -434,17 +434,15 @@ export function listMembers(groupId: string): Member[] {
 
 /** Who joined the group after this member, and since they last closed the
  *  note saying so, oldest first: never themselves, nor anyone since removed. */
-export function newcomers(groupId: string, memberId: number): string[] {
-  return (
-    db
-      .prepare(
-        `SELECT m.name FROM members m, members me
-          WHERE me.id = ? AND me.group_id = ? AND m.group_id = me.group_id AND m.removed_at IS NULL
-            AND m.id > MAX(me.id, COALESCE(me.joins_seen_id, 0))
-          ORDER BY m.id`,
-      )
-      .all(memberId, groupId) as { name: string }[]
-  ).map((row) => row.name);
+export function newcomers(groupId: string, memberId: number): { id: number; name: string }[] {
+  return db
+    .prepare(
+      `SELECT m.id, m.name FROM members m, members me
+        WHERE me.id = ? AND me.group_id = ? AND m.group_id = me.group_id AND m.removed_at IS NULL
+          AND m.id > MAX(me.id, COALESCE(me.joins_seen_id, 0))
+        ORDER BY m.id`,
+    )
+    .all(memberId, groupId) as { id: number; name: string }[];
 }
 
 /** Closes the "Mia joined" note for this member: everyone in now is seen. */

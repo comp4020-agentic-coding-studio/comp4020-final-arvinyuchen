@@ -104,11 +104,12 @@ follow from it; every change has to hold to them.
   public feed (a Facebook post, X, a story). A link preview may name the group
   (Open Graph, `src/layouts/Base.astro`), never its members or votes.
 - **Who joined is said in the app, until you close it.** Under the faces,
-  each member sees who joined after them and since they last closed the
-  note ("Mia and Leo joined", `newcomers` in `src/lib/db.ts`, by member id
-  in `joins_seen_id`); it arrives live and waits across visits, since
-  nothing is pushed, and closing it (`/api/groups/[id]/seen`) is theirs
-  alone (#120).
+  each member sees who joined after them and since they last dismissed it
+  (`newcomers` in `src/lib/db.ts`, by member id in `joins_seen_id`): a
+  green NEW on their faces and one quiet line of text, "Mia and Leo
+  joined · Dismiss", never shaped like a button. It arrives live and
+  waits across visits, since nothing is pushed, and dismissing it
+  (`/api/groups/[id]/seen`) is theirs alone (#120).
 - **Accounts are passkeys only.** No passwords, no email, no "sign in with"
   providers. An account is made from a name and a passkey
   (`src/pages/api/passkeys/`), its sessions store only a hash of their token,

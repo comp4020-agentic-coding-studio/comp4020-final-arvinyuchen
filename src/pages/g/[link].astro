@@ -51,10 +51,12 @@ const qr = renderSVG(shareUrl, { border: 1 });
 // Who joined since you last looked (#120), until you close it: "Mia joined",
 // "Mia and Leo joined", "Mia, Leo and Zoe joined", "Mia, Leo and 3 others".
 const joined = member ? newcomers(group.id, member.id) : [];
+const joinedIds = new Set(joined.map((j) => j.id));
+const joinedNames = joined.map((j) => j.name);
 const joinedText =
-  joined.length > 3
-    ? `${joined.slice(0, 2).join(", ")} and ${joined.length - 2} others joined`
-    : `${joined.length > 1 ? `${joined.slice(0, -1).join(", ")} and ` : ""}${joined.at(-1)} joined`;
+  joinedNames.length > 3
+    ? `${joinedNames.slice(0, 2).join(", ")} and ${joinedNames.length - 2} others joined`
+    : `${joinedNames.length > 1 ? `${joinedNames.slice(0, -1).join(", ")} and ` : ""}${joinedNames.at(-1)} joined`;
 // The link as people say it, without the "https://".
 const shortUrl = shareUrl.replace(/^https?:\/\//, "");
 const error = Astro.url.searchParams.get("error");
@@ -355,6 +357,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
                     <span class="crown"><svg viewBox="0 0 16 16"><path fill="currentColor" d={crown} /></svg></span>
                   )}
                   {mine && <span class="who__you">YOU</span>}
+                  {joinedIds.has(m.id) && <span class="who__you who__new">NEW</span>}
                 </span>
                 <span class={`who__name${mine ? " is-you" : ""}${owns ? " is-owner" : ""}`}>
                   {m.name}
@@ -381,15 +384,14 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           </summary>
         </details>
       </div>
-      {/* Who joined since you last looked, until you close it: there's no
-          push, so it waits here, and arrives live (#120). */}
+      {/* Who joined since you last looked, until you dismiss it: a NEW on
+          their faces and one quiet line of text, since there's no push it
+          waits here, and arrives live (#120). */}
       <div class="joined-slot">
         {joined.length > 0 && (
           <form class="joined" method="post" action={`/api/groups/${group.id}/seen`} data-seen role="status">
             <span class="joined__text">{joinedText}</span>
-            <button class="joined__close" aria-label="Close">
-              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
-            </button>
+            <button class="joined__close">Dismiss</button>
           </form>
         )}
       </div>
@@ -434,29 +436,34 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           </button>
           <figure class="share__qr">
             <span class="share__code" role="img" aria-label="QR code of the invite link" set:html={qr} />
-            <figcaption>Or scan it with a phone</figcaption>
+            <figcaption>
+              <strong>Scan to join</strong>
+              <span>Point a phone's camera at it.</span>
+            </figcaption>
           </figure>
         </div>
         {/* The owner's note to the people they invite, written where they
-            send the invite; outside what a refresh redraws, so it isn't
+            send the invite: one quiet line (the note, or "Add a note"), that
+            opens to a field; outside what a refresh redraws, so it isn't
             lost mid-sentence (#118). */}
         {isOwner && (
-          <div class="share__note">
-          <form class="settings__row" method="post" action={`/api/groups/${group.id}/owner`} data-note>
-            <input type="hidden" name="action" value="note" />
-            <label class="grow">
-              <span>A note for the people you invite</span>
-              <input
-                name="note"
-                maxlength={NOTE_MAX}
-                value={group.note ?? ""}
-                placeholder="Where are we going Friday? Add yours by Wednesday."
-              />
-            </label>
-            <button class="btn">Save</button>
-          </form>
-          <p class="fine">It's the first thing they see when they open the link. Leave it empty to take it down.</p>
-          </div>
+          <details class="share__note">
+            <summary class="share__note-sum">
+              <svg class="share__note-icon" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M10 3.5c-3.9 0-7 2.5-7 5.6 0 1.8 1 3.4 2.7 4.4-.1.9-.6 1.7-1.2 2.3 1.4.1 2.7-.4 3.6-1.2.6.1 1.2.2 1.9.2 3.9 0 7-2.5 7-5.7s-3.1-5.6-7-5.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
+              <span class="share__note-text" data-empty="Add a note for the people you invite">{group.note ? `“${group.note}”` : ""}</span>
+              <span class="share__note-label">A note for the people you invite</span>
+              <span class="share__note-act">{group.note ? "Edit" : "Add"}</span>
+            </summary>
+            <form class="share__note-form" method="post" action={`/api/groups/${group.id}/owner`} data-note>
+              <input type="hidden" name="action" value="note" />
+              <label for="invite-note" class="sr-only">A note for the people you invite</label>
+              <textarea id="invite-note" name="note" rows="2" maxlength={NOTE_MAX} placeholder="Where are we going Friday? Add yours by Wednesday.">{group.note ?? ""}</textarea>
+              <div class="share__note-foot">
+                <p class="fine">The first thing they see when they open the link. Empty takes it down.</p>
+                <button class="btn btn--primary btn--small">Save</button>
+              </div>
+            </form>
+          </details>
         )}
       </div>
     </details>
@@ -1125,7 +1132,14 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         }
         if (!res.ok) throw new Error(String(res.status));
         await refresh();
-        if (form.matches("[data-note]")) say(form.elements.note.value.trim() ? "Note saved. It's the first thing people see when they open the link." : "Note taken down.");
+        if (form.matches("[data-note]")) {
+          const note = form.elements.note.value.trim().replace(/\s+/g, " ");
+          const box = form.closest("details");
+          box.querySelector(".share__note-text").textContent = note ? `“${note}”` : "";
+          box.querySelector(".share__note-act").textContent = note ? "Edit" : "Add";
+          box.open = false;
+          say(note ? "Note saved. It's the first thing people see when they open the link." : "Note taken down.");
+        }
       } catch {
         if (by?.name) form.insertAdjacentHTML("beforeend", `<input type="hidden" name="${by.name}" value="${by.value}">`);
         form.submit();

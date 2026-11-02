@@ -153,7 +153,7 @@ describe("a group", () => {
     await join(ben, id, id, "Ben");
     // The note's field is the owner's, in the invite card; the code carries the link.
     const owners = await page(ana, path);
-    expect(owners.querySelector(".share__note form[data-note] input[name='note']")).toBeTruthy();
+    expect(owners.querySelector(".share__note form[data-note] [name='note']")).toBeTruthy();
     expect(owners.querySelector("#settings input[name='note']")).toBeNull();
     expect(owners.querySelector(".share__qr svg")).toBeTruthy();
     expect((await page(ben, path)).querySelector(".share__note")).toBeNull();

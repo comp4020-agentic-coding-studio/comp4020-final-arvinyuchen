@@ -652,7 +652,8 @@ input[type="radio"] {
 }
 
 /* On a computer, the link as a QR code under the button, for phones round
-   the table to scan (#119); a phone has the share sheet instead. */
+   the table to scan (#119), with what it's for beside it; a phone has the
+   share sheet instead. */
 .share__qr {
   display: none;
   margin: 0;
@@ -662,16 +663,17 @@ input[type="radio"] {
   .share__qr {
     display: flex;
     align-items: center;
-    gap: 0.9rem;
+    gap: 0.85rem;
+    padding: 0 0.55rem;
   }
 }
 
 .share__code {
   flex: none;
-  width: 6.5rem;
-  height: 6.5rem;
-  padding: 0.3rem;
-  border-radius: 12px;
+  width: 4.75rem;
+  height: 4.75rem;
+  padding: 0.25rem;
+  border-radius: 10px;
   background: #fff;
   box-shadow: inset 0 0 0 1px var(--line);
 }
@@ -683,19 +685,110 @@ input[type="radio"] {
 }
 
 .share__qr figcaption {
+  display: grid;
+  gap: 0.1rem;
+  line-height: 1.3;
+}
+
+.share__qr figcaption strong {
+  font-size: 0.92rem;
+}
+
+.share__qr figcaption span {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
 }
 
-/* The owner's note to invitees, under the link (#118). */
+/* The owner's note to invitees (#118): one quiet line, the note in quotes
+   or "Add a note", with Edit or Add at its end; opened, a field with Save. */
 .share__note {
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--line);
+  margin: 0 -0.35rem;
 }
 
-.share__note .fine {
-  margin: 0.45rem 0 0;
-  font-size: 0.8rem;
+.share__note-sum {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.5rem;
+  padding: 0.3rem 0.35rem;
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.share__note-sum::-webkit-details-marker {
+  display: none;
+}
+
+.share__note-sum:hover {
+  background: var(--fill);
+}
+
+.share__note-icon {
+  flex: none;
+  color: var(--accent-ink);
+}
+
+.share__note-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share__note-text:empty::before {
+  content: attr(data-empty);
+  color: var(--muted);
+}
+
+.share__note-act {
+  flex: none;
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.share__note-label,
+.share__note[open] .share__note-text {
+  display: none;
+}
+
+/* (opened, the line says what the field is for, and the field has the note) */
+.share__note[open] .share__note-label {
+  flex: 1;
+  display: block;
+}
+
+.share__note[open] .share__note-act {
+  visibility: hidden;
+}
+
+.share__note-form {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.25rem 0.35rem 0.1rem;
+}
+
+.share__note-form textarea {
+  min-height: 0;
+  resize: none;
+  font-size: 0.95rem;
+}
+
+.share__note-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.share__note-foot .fine {
+  flex: 1;
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
 .join {
@@ -8041,48 +8134,51 @@ dialog.sheet[open]:not(:modal) {
   text-align: center;
 }
 
-/* Who joined since you last looked, under the faces, until you close it
-   (#120). */
+/* Who joined since you last looked (#120): NEW on their faces, in green
+   where YOU is blue, and one quiet line of text under the faces, with
+   Dismiss as a plain link, so it's never taken for one of the buttons. */
+.who__new {
+  background: #248a3d;
+}
+
 .joined {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  max-width: 100%;
-  margin-top: 0.6rem;
-  padding: 0.3rem 0.3rem 0.3rem 0.8rem;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  font-size: 0.88rem;
-  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.6rem;
+  margin-top: 0.55rem;
+  font-size: 0.85rem;
 }
 
 .joined__text {
   min-width: 0;
+  color: var(--ink);
   overflow-wrap: anywhere;
 }
 
+.joined__text::before {
+  content: "";
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: #34c759;
+  vertical-align: 0.08em;
+}
+
 .joined__close {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
   padding: 0;
   border: 0;
-  border-radius: 50%;
   background: none;
-  color: inherit;
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .joined__close:hover {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-}
-
-.joined__close:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+  text-decoration: underline;
 }
 
 /* The owner's note on the group's own page, under its name. */
