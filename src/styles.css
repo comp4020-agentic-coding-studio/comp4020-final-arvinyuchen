@@ -2139,6 +2139,10 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   margin-bottom: 1rem;
 }
 
+.add h2 {
+  margin-bottom: 1.25rem;
+}
+
 .finder__row {
   display: flex;
   gap: 0.5rem;
