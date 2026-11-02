@@ -29,6 +29,13 @@ other's taste.
   when everyone's free, best first. The others see how many are free when,
   and who can't make each time, never anyone's busy times. Nobody votes on a
   time: the owner sets it.
+- **A set plan holds on the day.** A plan falls apart at the door when the
+  gallery shut at five or it poured, so the card says so first, in a few
+  quiet words: whether each stop is open for its part of the outing, and
+  the forecast where it's outside; how far apart the stops are; the way
+  there, one tap into the phone's own maps; and somewhere to eat near
+  them, from the places the group already trusts. It never guesses: hours
+  nobody has recorded say nothing, and a time between stops is "about".
 - **The list is the group's own; the good places are everyone's.** A friend's
   "best chilli oil in Canberra" beats a star rating from a stranger. Every
   group explores one shared pool of places, and a place only gets in when
@@ -130,6 +137,13 @@ other's taste.
   scrolls. Spots asks about one day, the owner's, for busy times (most of a
   Saturday is free, so there's less to mark), on a timeline drawn the
   calendar way.
+- Whether a stop will be open: Overture's places, which Find searches
+  first, carry no opening hours, so they come from OpenStreetMap's
+  `opening_hours` tag, asked of the Overpass API one place at a time and
+  kept for a week, and read with opening_hours.js, the parser
+  OpenStreetMap's own tools use, which knows the ACT's public holidays.
+  Forecasts come from Open-Meteo, free and keyless; only a place's
+  coordinates and the date are sent.
 - Voyage AI's embeddings turn each card and each search prompt into a
   vector; cards are ranked by how close they are in meaning (cosine
   similarity). Only card text and prompts are sent, nothing about a group.
@@ -160,8 +174,11 @@ other's taste.
   push, email or share button for it, just a count on the place's row, a
   dot on Our list and "N new" on My groups. No editing, reactions, photos,
   @mentions or typing dots either: it's for a few lines about a place.
-- **Booking and directions.** The map shows where a place is; getting there
-  and booking a table are for the apps that already do them well.
+- **Booking, and routing of my own.** The map shows where a place is;
+  booking a table is for the apps that already do it well, and so is
+  turn-by-turn: the plan's Directions hand the stops, in order, to Apple
+  Maps or Google Maps, and the time between stops is only an estimate,
+  said as one.
 
 ## Where it is now
 
@@ -195,7 +212,20 @@ that long in one tap. The owner sets the
 time: a window's earliest start in one tap, or any later start that still
 fits, typed or swiped to the minute (or an exact time of their own, from the plan's ··· menu); it shows under the group's name as Next up and on the place's row in
 the list, and if someone's times change after that, only the owner hears,
-with a time to move to. Every place on the list has its Talk: a speech
+with a time to move to. The card also looks after the day itself: a stop
+that won't be open for its part of the outing says so in a few words at
+the card's foot ("Questacon closes 5pm", "Closed Mondays"), and so does a
+window whose time it wouldn't fit; an outdoor stop shows the day's forecast
+("24° · 10% rain") once the day is within the next 16. Unknown hours say
+nothing. With several stops, the card lists them in order with the leg
+between each ("about 13 min drive · 7.2 km", or a walk when it's short),
+and each stop has a link to directions; once the time is set, Directions
+opens the whole route, in Apple Maps on an iPhone or a Mac and Google
+Maps elsewhere. And while a plan is on, Explore has a "Near your plan"
+chip: the places nearest its stops first, each saying how far ("400 m
+from Questacon"), with the kind chips still choosing what kind; the
+plan's card goes straight there with "Find food nearby".
+Every place on the list has its Talk: a speech
 bubble on its row, with how many have been said (blue and bold when some
 are new to you), opens the place's thread, a sheet over the list on a
 phone, and on a wide screen Explore's column, with the map flown to the

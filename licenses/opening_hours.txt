@@ -1,0 +1,13 @@
+opening_hours.js 3.15.0
+https://github.com/opening-hours/opening_hours.js
+
+Spots uses this library, unmodified, as a dependency (package.json) to read
+OpenStreetMap's opening_hours tags on the server (src/lib/outing.ts).
+
+The library is free software under the GNU Lesser General Public License,
+version 3 only (LGPL-3.0-only); a few of its data files are CC0-1.0 or, for
+OpenStreetMap data, ODbL-1.0. The full licence texts ship with the package,
+in node_modules/opening_hours/LICENSES/, and at
+https://www.gnu.org/licenses/lgpl-3.0.html.
+
+Copyright opening_hours.js contributors.

@@ -561,6 +561,10 @@ if (container) {
     });
   }
   showAll?.addEventListener("click", () => choose("all"));
+  // (the page can open on a kind, ?kind, as the plan's "Find food nearby"
+  // does, and that link chooses it in place)
+  if (filters?.dataset.sel && filters.dataset.sel !== "all") choose(filters.dataset.sel);
+  document.addEventListener("spots:filter", (event) => choose(String((event as CustomEvent).detail ?? "all")));
 
   sync();
   document.addEventListener("spots:refreshed", () => {

@@ -1,0 +1,93 @@
+---
+import { KIND_LABEL } from "../lib/kinds";
+import { directionsUrl, legText, nearbyKind, onApple, skyOf } from "../lib/outing";
+import type { Outing } from "../lib/outing-data";
+import { CAR_ICON, CLOCK_ICON, OUT_ICON, PIN_ICON, ROUTE_ICON, SKY_ICON, WALK_ICON } from "../lib/outing-icons";
+
+// The outing on the day, at the foot of the plan's card, quiet:
+// - a stop that won't be open for its part of the plan (amber when it's
+//   only some of it, red when it's none), and outside, the day's forecast
+//   once it's within range; unknown hours and days beyond say nothing;
+// - with several stops, each in order with the leg to the next between
+//   them, estimated ("about 12 min drive · 6 km", a walk when it's short);
+// - directions: a link to each stop, and once the time is set, the whole
+//   route; Apple Maps on an Apple device, Google Maps elsewhere, plain
+//   links that open the maps app in a new tab;
+// - "Find food nearby": Explore with "Near your plan" on and Food chosen
+//   (coffee when a stop is already somewhere to eat), the page's script
+//   opening it in place, a plain link without one.
+// It all comes from the cache src/lib/outing-data.ts keeps, so it's drawn
+// at once, script or not.
+interface Props {
+  outing: Outing;
+  /** the group's invite link, for Explore's address */
+  link: string;
+}
+const { outing, link } = Astro.props;
+const apple = onApple(Astro.request.headers.get("user-agent") ?? "");
+const many = outing.stops.length > 1;
+const located = outing.stops.filter((s) => s.lat !== null && s.lon !== null) as (Outing["stops"][number] & { lat: number; lon: number })[];
+const way = (s: { lat: number | null; lon: number | null }) => (s.lat !== null && s.lon !== null ? directionsUrl([{ lat: s.lat, lon: s.lon }], apple) : null);
+// (the whole route once it's set, through every stop with a location)
+const route = outing.set && many && located.length > 1 ? directionsUrl(located, apple) : null;
+const single = outing.stops[0];
+const cap = (text: string) => text[0].toUpperCase() + text.slice(1);
+const out = { target: "_blank", rel: "noopener" };
+const maps = apple ? "Apple Maps" : "Google Maps";
+const kind = nearbyKind(outing.stops);
+---
+
+{(many || single.note || single.forecast || way(single)) && (
+  <div class="outing">
+    <ul class:list={["outing__stops", { "outing__stops--many": many }]}>
+      {outing.stops.map((s, i) => (
+        <>
+          {(many || s.note || s.forecast || way(s)) && (
+            <li class="outing__stop">
+              {many && <span class="outing__n" aria-hidden="true">{i + 1}</span>}
+              {many ? <span class="outing__name">{s.name}</span> : <span class="sr-only">{s.name}:</span>}
+              {s.note && (
+                <span class:list={["outing__note", `outing__note--${s.note.tone}`]}>
+                  <svg viewBox="0 0 256 256" width="13" height="13" aria-hidden="true"><path fill="currentColor" d={CLOCK_ICON} /></svg>
+                  {many ? s.note.text : cap(s.note.text)}
+                </span>
+              )}
+              {s.forecast && (
+                <span class="outing__sky">
+                  <svg viewBox="0 0 256 256" width="14" height="14" role="img" aria-label={skyOf(s.forecast.code).label}><path fill="currentColor" d={SKY_ICON[skyOf(s.forecast.code).sky]} /></svg>
+                  {s.forecast.text}
+                </span>
+              )}
+              {way(s) && (
+                <a class:list={["outing__go", { "outing__go--word": !many }]} href={way(s)} {...out} aria-label={`Directions to ${s.name}, in ${maps} (opens in a new tab)`}>
+                  {!many && <span aria-hidden="true">Directions</span>}
+                  <svg viewBox="0 0 256 256" width="14" height="14" aria-hidden="true"><path fill="currentColor" d={OUT_ICON} /></svg>
+                </a>
+              )}
+            </li>
+          )}
+          {outing.legs[i] && (
+            <li class="outing__leg">
+              <svg viewBox="0 0 256 256" width="13" height="13" aria-hidden="true"><path fill="currentColor" d={outing.legs[i]!.walk !== null ? WALK_ICON : CAR_ICON} /></svg>
+              <span class="sr-only">Then </span>{legText(outing.legs[i]!)}
+            </li>
+          )}
+        </>
+      ))}
+    </ul>
+    {located.length > 0 && (
+      <p class="outing__acts">
+        {route && (
+          <a class="outing__route" href={route} {...out}>
+            <svg viewBox="0 0 256 256" width="14" height="14" aria-hidden="true"><path fill="currentColor" d={ROUTE_ICON} /></svg>
+            Directions<span class="sr-only">: the whole route, in {maps} (opens in a new tab)</span>
+          </a>
+        )}
+        <a class="outing__nearby" href={`/g/${link}?near&kind=${kind}#explore-section`} data-near-link={kind}>
+          <svg viewBox="0 0 256 256" width="14" height="14" aria-hidden="true"><path fill="currentColor" d={PIN_ICON} /></svg>
+          Find {KIND_LABEL[kind].toLowerCase()} nearby
+        </a>
+      </p>
+    )}
+  </div>
+)}
