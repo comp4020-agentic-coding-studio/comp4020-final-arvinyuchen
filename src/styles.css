@@ -505,8 +505,7 @@ input[type="radio"] {
   gap: 0.9rem;
 }
 
-/* The invite's one button, the width of the card: what it does on top,
-   the link under it. */
+/* The invite's one button, the width of the card. */
 .share__copy {
   display: flex;
   align-items: center;
@@ -564,14 +563,6 @@ input[type="radio"] {
 .share__do {
   font-weight: 600;
   color: var(--accent-ink);
-}
-
-.share__url {
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 0.82rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .share__dup,
@@ -736,28 +727,14 @@ input[type="radio"] {
   gap: 0.45rem;
 }
 
-.share__note-form label {
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
 .share__note-form textarea {
   min-height: 0;
   resize: none;
   font-size: 0.95rem;
 }
 
-.share__note-foot {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.share__note-foot .fine {
-  flex: 1;
-  margin: 0;
-  font-size: 0.78rem;
-  line-height: 1.35;
+.share__note-form .btn {
+  justify-self: end;
 }
 
 .join {

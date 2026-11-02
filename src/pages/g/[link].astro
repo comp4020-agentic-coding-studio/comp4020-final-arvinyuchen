@@ -57,8 +57,6 @@ const joinedText = `${
     ? `${joinedNames.slice(0, 2).join(", ")} and ${joinedNames.length - 2} others`
     : `${joinedNames.length > 1 ? `${joinedNames.slice(0, -1).join(", ")} and ` : ""}${joinedNames.at(-1)}`
 } joined ${group.name}`;
-// The link as people say it, without the "https://".
-const shortUrl = shareUrl.replace(/^https?:\/\//, "");
 const error = Astro.url.searchParams.get("error");
 const done = Astro.url.searchParams.get("done");
 const DONE: Record<string, string> = {
@@ -415,7 +413,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       </summary>
       {/* The invite as one panel and one button: on a touch screen with a
           share sheet it opens the sheet (which has Copy too), elsewhere it
-          copies the link, which shows under its label. Never a public feed
+          copies the link. Never a public feed
           (CLAUDE.md). */}
       <div class={`share card${isNew ? " share--new" : ""}`}>
         <h2 class="share__title">{isNew ? "Your group is ready" : `Invite friends to ${group.name}`}</h2>
@@ -431,7 +429,6 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
                 <span class="share__say share__say--sheet">Share invite</span>
                 <span class="share__say share__say--done">Copied</span>
               </span>
-              <span class="share__url">{shortUrl}</span>
             </span>
             <svg class="share__dup" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
             <svg class="share__out" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3.5v11M8 7.5l4-4 4 4M7 11H6a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 18 11h-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -461,12 +458,9 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         {isOwner && (
           <form class="share__note-form" id="invite-note" hidden method="post" action={`/api/groups/${group.id}/owner`} data-note>
             <input type="hidden" name="action" value="note" />
-            <label for="invite-note-text">A note for the people you invite</label>
-            <textarea id="invite-note-text" name="note" rows="2" maxlength={NOTE_MAX} placeholder="Where are we going Friday? Add yours by Wednesday.">{group.note ?? ""}</textarea>
-            <div class="share__note-foot">
-              <p class="fine">The first thing they see when they open the link. Empty takes it down.</p>
-              <button class="btn btn--primary btn--small">Save</button>
-            </div>
+            <label for="invite-note-text" class="sr-only">A note for the people you invite, the first thing they see</label>
+            <textarea id="invite-note-text" name="note" rows="2" maxlength={NOTE_MAX} placeholder="Where are we going Friday?">{group.note ?? ""}</textarea>
+            <button class="btn btn--primary btn--small">Save</button>
           </form>
         )}
       </div>
@@ -1565,8 +1559,8 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         button.classList.add("is-copied");
         setTimeout(() => button.classList.remove("is-copied"), 2000);
       } catch {
-        // No clipboard: the link under the label, selected, to copy by hand.
-        getSelection()?.selectAllChildren(button.querySelector(".share__url"));
+        // No clipboard: the link in a box of its own, to copy by hand.
+        window.prompt("Copy the invite link", url);
       }
     });
     // Under the invite's button, Show QR code and Add a note each open their
