@@ -153,10 +153,10 @@ describe("a group", () => {
     await join(ben, id, id, "Ben");
     // The note's field is the owner's, in the invite card; the code carries the link.
     const owners = await page(ana, path);
-    expect(owners.querySelector(".share__note form[data-note] [name='note']")).toBeTruthy();
+    expect(owners.querySelector("#invite-note[data-note] [name='note']")).toBeTruthy();
     expect(owners.querySelector("#settings input[name='note']")).toBeNull();
     expect(owners.querySelector(".share__qr svg")).toBeTruthy();
-    expect((await page(ben, path)).querySelector(".share__note")).toBeNull();
+    expect((await page(ben, path)).querySelector("#invite-note")).toBeNull();
 
     // Saved in the page, it's the group's note at once.
     const saved = await fetch(new URL(`${api}/owner`, baseUrl), {
@@ -169,22 +169,22 @@ describe("a group", () => {
     expect((await page(ben, path)).querySelector(".group-note-slot")?.textContent).toContain("Pick yours by Friday");
   });
 
-  it("tells each member who joined since they last looked, until they close it", async () => {
+  it("tells each member who joined since they last looked, until they dismiss it", async () => {
     const { jar: ana, id, path, api } = await started("Joining crew");
     const joinedFor = async (jar: Jar) => (await page(jar, path)).querySelector(".joined__text")?.textContent?.trim();
     expect(await joinedFor(ana)).toBeUndefined();
 
     const ben = new Jar();
     await join(ben, id, id, "Ben");
-    expect(await joinedFor(ana)).toBe("Ben joined");
+    expect(await joinedFor(ana)).toBe("Ben joined Joining crew");
     expect(await joinedFor(ben)).toBeUndefined(); // never your own joining, nor those before you
-    expect(await joinedFor(ana)).toBe("Ben joined"); // still there on the next visit
+    expect(await joinedFor(ana)).toBe("Ben joined Joining crew"); // still there on the next visit
 
     await join(new Jar(), id, id, "Cat");
-    expect(await joinedFor(ana)).toBe("Ben and Cat joined");
-    expect(await joinedFor(ben)).toBe("Cat joined");
+    expect(await joinedFor(ana)).toBe("Ben and Cat joined Joining crew");
+    expect(await joinedFor(ben)).toBe("Cat joined Joining crew");
 
-    // Closed, it's gone for that member only, until someone else joins.
+    // Dismissed, it's gone for that member only, until someone else joins.
     const closed = await fetch(new URL(`${api}/seen`, baseUrl), {
       method: "POST",
       headers: { origin, cookie: ana.header, "x-spots": "in-page" },
@@ -192,10 +192,10 @@ describe("a group", () => {
     });
     expect(closed.status).toBe(204);
     expect(await joinedFor(ana)).toBeUndefined();
-    expect(await joinedFor(ben)).toBe("Cat joined");
+    expect(await joinedFor(ben)).toBe("Cat joined Joining crew");
     for (const name of ["Dev", "Eve", "Fay"]) await join(new Jar(), id, id, name);
-    expect(await joinedFor(ana)).toBe("Dev, Eve and Fay joined");
-    expect(await joinedFor(ben)).toBe("Cat, Dev and 2 others joined");
+    expect(await joinedFor(ana)).toBe("Dev, Eve and Fay joined Joining crew");
+    expect(await joinedFor(ben)).toBe("Cat, Dev and 2 others joined Joining crew");
   });
 
   it("doesn't let anyone who isn't a member add or vote, signed in or not", async () => {
