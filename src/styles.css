@@ -3723,54 +3723,76 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     grid-column: 2;
   }
 
-  /* With the script (the tabs work), the left column (the group's panel,
-     the tabs, the plan and Our list) is as long as it is, every row of the
-     list showing, and the page scrolls it. The header stays at the top,
-     and beside the list, Explore and the map (or Share, or Settings) stay
-     put under it, a screen tall: anything in them longer than that (the
-     cards) scrolls inside, held there so it never hands on to the page.
-     --top-h is the header's height, kept by the page's script. */
-  body:has(.group-page.is-tabbed) > .top {
-    position: sticky;
-    top: 0;
-    z-index: 30;
-    background: color-mix(in srgb, var(--bg) 86%, transparent);
-    backdrop-filter: blur(20px) saturate(1.8);
-    /* (the bar runs to the screen's edges, the header's content as ever) */
-    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--bg) 86%, transparent);
-    clip-path: inset(0 -100vmax);
+  /* With the script (the tabs work), the page is the window, exactly, and
+     never scrolls: the header, the three columns under it, all level at
+     the top whatever's scrolled, and the footer. Each column scrolls on
+     its own, held so it never hands on to the page: the left one whole
+     (the group's panel, the tabs, the plan and every row of Our list, so
+     the list is never a box under a panel that stays), Explore's cards
+     inside their column (or Share, or Settings), and the map fills its
+     own. (#115: the page scrolling the left column beside sticky ones
+     left their tops apart, #97 and #41 before it.) */
+  body:has(.group-page.is-tabbed) {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body:has(.group-page.is-tabbed) > :is(.top, .foot) {
+    flex: none;
+    width: 100%;
+  }
+
+  body:has(.group-page.is-tabbed) > main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    padding-top: 0.75rem;
+    padding-bottom: 1rem;
+  }
+
+  /* (the footer a line under the columns; Credits opened scrolls in
+     itself rather than pushing the columns up off the screen) */
+  body:has(.group-page.is-tabbed) > .foot {
+    padding-top: 0.6rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  }
+
+  body:has(.group-page.is-tabbed) .foot__credits[open] p {
+    max-height: 7.5rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .group-page.is-tabbed {
-    --stay: calc(var(--top-h, 4.4rem) + 1.5rem);
+    flex: 1 1 auto;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+    min-height: 0;
     margin-top: 0;
   }
 
   .group-page.is-tabbed .group-side {
     grid-row: 1;
     position: static;
+    height: 100%;
     max-height: none;
-    overflow: visible;
-  }
-
-  /* (a link to what's beside the list, #explore, #add, #settings, finds it
-     already in view: the page, landing on it, stays at its top) */
-  .group-page.is-tabbed :is(#explore-section, #explore, #add, #settings) {
-    scroll-margin-top: 100vh;
-  }
-
-  /* (a row the page lands on, a vote without the script, clear of the bar) */
-  .group-page.is-tabbed .picks > li {
-    scroll-margin-top: calc(var(--top-h, 4.4rem) + 1rem);
+    padding-top: 0.25rem;
+    overscroll-behavior: contain;
+    /* (rows fade out at its foot, as Explore's cards do, rather than being
+       cut off square; its top stays level with the other two) */
+    mask-image: linear-gradient(#000 calc(100% - 1rem), transparent);
   }
 
   .group-page.is-tabbed .explore-wrap,
   .group-page.is-tabbed > .group-tools {
     grid-row: 1;
-    position: sticky;
-    top: var(--stay);
-    height: calc(100vh - var(--stay) - 1rem);
-    height: calc(100dvh - var(--stay) - 1rem);
+    height: 100%;
+    min-height: 0;
   }
 
   .group-page.is-tabbed .explore-wrap {
