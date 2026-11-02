@@ -237,6 +237,44 @@ describe("the owner's tools", () => {
     expect(await you(ben, id)).toBe("");
   });
 
+  it("asks the owner about the same person twice: said so on joining again, or the same name", async () => {
+    const { owner, ben, id, people, act } = await crew();
+    const asks = async () => [...(await page(owner, `/g/${id}`)).querySelectorAll("#settings .same li")].map((li) => li.textContent?.replace(/\s+/g, " ") ?? "");
+    // Ben joined twice under one name: a pair to check, flagged above the list too.
+    expect(await asks()).toEqual([expect.stringContaining("has the same name as Ben")]);
+    expect((await page(owner, `/g/${id}`)).querySelector(".joined-slot a.joined")?.textContent).toContain("Two Bens here");
+
+    // Cat loses every device, makes an account as Kit, and says who she was.
+    const cat = new Jar();
+    await join(cat, id, id, "Cat");
+    const kit = new Jar();
+    await signUp(kit, "Kit");
+    const choices = [...(await page(kit, `/g/${id}`)).querySelectorAll<HTMLInputElement>('#join input[name="was"]')];
+    const [, , , catMember] = await people();
+    // (anyone but the owner, who'd have nobody to confirm it)
+    expect(choices.map((c) => c.closest("label")?.textContent?.trim().slice(1))).toEqual(["Ben", "Ben", "Cat"]);
+    expect(choices.map((c) => c.value)).toContain(catMember.id);
+    await request(kit, `/api/groups/${id}/join`, { form: { link: id, was: catMember.id! } });
+    expect((await page(kit, `/g/${id}`)).querySelector(".joined-slot p.joined")?.textContent).toContain("You said you're Cat from before");
+    expect((await asks()).at(-1)).toContain("Kit, joined");
+    expect((await asks()).at(-1)).toContain("says they're Cat");
+
+    // Only the owner answers; Not them leaves both and stops asking.
+    const [, benOld, benNew, , kitMember] = await people();
+    await act(ben, { action: "keep", member: benOld.id!, into: benNew.id! });
+    expect(await asks()).toHaveLength(2);
+    await act(owner, { action: "keep", member: benOld.id!, into: benNew.id! });
+    expect(await asks()).toHaveLength(1);
+    expect((await people()).map((p) => p.name)).toEqual(["Ana", "Ben", "Ben", "Cat", "Kit"]);
+
+    // Same person: Cat's member folds into Kit's account, and the ask is answered.
+    await act(owner, { action: "merge", member: catMember.id!, into: kitMember.id! });
+    expect(await asks()).toEqual([]);
+    expect((await people()).map((p) => p.name)).toEqual(["Ana", "Ben", "Ben", "Kit"]);
+    expect(await you(cat, id)).toBe("");
+    expect((await page(kit, `/g/${id}`)).querySelector(".joined-slot p.joined")).toBeNull();
+  });
+
   it("removes someone: they can't act any more, and their keens go", async () => {
     const { owner, ben, id, people, act } = await crew();
     await request(owner, `/api/groups/${id}/picks`, { form: { key: "arboretum" } });

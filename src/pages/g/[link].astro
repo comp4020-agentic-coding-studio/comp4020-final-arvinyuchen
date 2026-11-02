@@ -12,7 +12,19 @@ import SpotPhoto from "../../components/SpotPhoto.astro";
 import TalkSheet from "../../components/TalkSheet.astro";
 import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
-import { canRemovePick, groupByLink, listMembers, listPicks, listPlaces, newcomers, NOTE_MAX, type Place } from "../../lib/db";
+import {
+  canRemovePick,
+  claimable,
+  groupByLink,
+  listMembers,
+  listPicks,
+  listPlaces,
+  mergeAsks,
+  newcomers,
+  NOTE_MAX,
+  pendingClaim,
+  type Place,
+} from "../../lib/db";
 import { renderSVG } from "uqr";
 import { nearPlan, nearText } from "../../lib/outing";
 import { PIN_ICON } from "../../lib/outing-icons";
@@ -34,6 +46,15 @@ if (!byLink.current) return member ? Astro.redirect(`/g/${group.link}`, 303) : A
 const account = signedIn(Astro.cookies);
 const isOwner = member !== undefined && member.id === group.ownerId;
 const members = listMembers(group.id);
+const ownerName = members.find((m) => m.id === group.ownerId)?.name ?? "the owner";
+// The same person twice (src/lib/db.ts): for the owner, who's asked to be
+// merged; for someone who said who they were, that it's waiting on the
+// owner; and for someone joining, who they could say they were.
+const asks = isOwner ? mergeAsks(group) : [];
+const claimed = member && !isOwner ? pendingClaim(group, member) : undefined;
+const before = member ? [] : claimable(group);
+const joinedOn = (sqlite: string) =>
+  new Date(`${sqlite.replace(" ", "T")}Z`).toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 const picks = listPicks(group.id);
 const places = listPlaces();
 const onList = new Set(picks.map((p) => p.place.id));
@@ -64,6 +85,7 @@ const DONE: Record<string, string> = {
   noted: "Note saved. It's what people see above the join form.",
   removed: "Removed from the group.",
   merged: "Merged: their keens and places are now one person's.",
+  kept: "Kept apart: they're two people.",
   reset: "New invite link made. The old one no longer lets anyone join; send this one instead.",
 };
 
@@ -254,6 +276,24 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
               </div>
             </>
           )}
+          {before.length > 0 && (
+            <details class="welcome__again">
+              <summary>Been in this group before, on a device you lost?</summary>
+              <fieldset>
+                <legend>Who were you?</legend>
+                <div class="welcome__was">
+                  {before.map((m) => (
+                    <label class="welcome__was-one">
+                      <input type="radio" name="was" value={m.id} />
+                      <span class="face" aria-hidden="true" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span>
+                      <span>{m.name}</span>
+                    </label>
+                  ))}
+                </div>
+                <p class="fine">{ownerName} confirms it's you, and your keens and places come back.</p>
+              </fieldset>
+            </details>
+          )}
           <button class="btn btn--primary welcome__join">
             <span>Join {group.name}</span>
             <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
@@ -324,6 +364,24 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
         </button>
       </form>
+    )}
+    {asks.length > 0 && (
+      <a class="joined" href="#settings" data-tab="settings">
+        <span class="joined__dot joined__dot--ask" aria-hidden="true"></span>
+        <span class="joined__text">
+          {asks.length > 1
+            ? `${asks.length} people may have joined twice. Same person?`
+            : asks[0].claimed
+              ? `${asks[0].into.name} says they're ${asks[0].from.name} from before. Same person?`
+              : `Two ${asks[0].into.name}s here. Same person?`}
+        </span>
+      </a>
+    )}
+    {claimed && (
+      <p class="joined" role="status">
+        <span class="joined__dot joined__dot--ask" aria-hidden="true"></span>
+        <span class="joined__text">You said you're {claimed.name} from before: once {ownerName} confirms, their keens and places are yours.</span>
+      </p>
     )}
   </div>
   <section class="group-head group-head--split">
@@ -891,29 +949,35 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         ))}
       </ul>
 
-      {members.length > 1 && (
-        <form method="post" action={`/api/groups/${group.id}/owner`} class="settings__row merge">
-          <input type="hidden" name="action" value="merge" />
-          <label>
-            <span>Same person twice? Merge</span>
-            <select name="member" required>
-              {members.map((m) => <option value={m.id}>{m.name} (#{m.id})</option>)}
-            </select>
-          </label>
-          <label>
-            <span>into</span>
-            <select name="into" required>
-              {members.map((m, i) => <option value={m.id} selected={i === 0}>{m.name} (#{m.id})</option>)}
-            </select>
-          </label>
-          <button class="btn">Merge</button>
-        </form>
-      )}
-      {members.length > 1 && (
-        <p class="fine">
-          Someone who lost every passkey makes a new account and joins again by the link: merge their old name into
-          the new one, and their keens and places come with them.
-        </p>
+      {/* The same person twice: whoever joined again saying who they were,
+          or the same name twice. Merge folds the earlier into the newer;
+          Not them leaves both, and stops asking. */}
+      {asks.length > 0 && (
+        <ul class="same" aria-label="Same person?">
+          {asks.map((a) => (
+            <li>
+              <p>
+                <strong>{a.into.name}</strong>, joined {joinedOn(a.into.joinedAt)},{" "}
+                {a.claimed ? <>says they're <strong>{a.from.name}</strong> from {joinedOn(a.from.joinedAt)}.</> : <>has the same name as <strong>{a.from.name}</strong>, here since {joinedOn(a.from.joinedAt)}.</>}{" "}
+                <span class="fine">Merging gives them {a.from.name}'s keens and places.</span>
+              </p>
+              <div class="same__acts">
+                <form method="post" action={`/api/groups/${group.id}/owner`}>
+                  <input type="hidden" name="action" value="merge" />
+                  <input type="hidden" name="member" value={a.from.id} />
+                  <input type="hidden" name="into" value={a.into.id} />
+                  <button class="btn btn--small">Same person</button>
+                </form>
+                <form method="post" action={`/api/groups/${group.id}/owner`}>
+                  <input type="hidden" name="action" value="keep" />
+                  <input type="hidden" name="member" value={a.from.id} />
+                  <input type="hidden" name="into" value={a.into.id} />
+                  <button class="btn btn--small btn--ghost">Not them</button>
+                </form>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
 
       <h3>Invite link</h3>

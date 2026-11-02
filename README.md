@@ -69,12 +69,12 @@ other's taste.
   place. One account has one name, and can have several passkeys (an iPhone's
   and a Windows laptop's), never none. A device without yours is added from
   one you're signed in on: it shows a code to scan, and the new device makes
-  its own passkey with it. Lose every passkey and there's no
-  reset: make a new account, join again, and the group's owner merges your
-  old name into it. Inside Instagram's or Facebook's own browser, where
+  its own passkey with it. Lose every device and there's no
+  reset: make a new account, join again saying who you were, and the group's
+  owner confirms it's you, so your old keens and places come back. Inside Instagram's or Facebook's own browser, where
   passkeys don't work, the invite says to open it in Safari or Chrome.
 - **Whoever starts a group can look after it.** Rename it, write a line to
-  the people they invite, take someone out, merge someone who joined twice,
+  the people they invite, take someone out, confirm someone who joined twice is one person,
   and reset the invite link if it spread too far, without losing anything
   the group made.
 - **It remembers.** What the group added and voted for stays, across visits,
@@ -157,8 +157,9 @@ other's taste.
   made them optional, and found the cost both times: a friend on a second
   device became a second person, and a name typed into a form proved nothing.
   So every member is an account now, and a passkey keeps that to one tap.
-  There's no email, so there's no account recovery either; the owner's merge
-  is the way back. Passkeys belong to the site that made them, so there's no
+  There's no email, so there's no account recovery either: a new device is
+  added from one you're signed in on, and if you lose them all, the group
+  vouches for you (you say who you were, its owner confirms). Passkeys belong to the site that made them, so there's no
   "sign in with WhatsApp or Instagram" to offer, and I wouldn't want one.
 - **Public reviews and star ratings.** Spots is about what this group thinks.
 - **A directory of every place in Canberra.** A short checked starter list,

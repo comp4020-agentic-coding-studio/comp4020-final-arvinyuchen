@@ -95,9 +95,12 @@ follow from it; every change has to hold to them.
   there shows a code (and its QR code, ten minutes, once, the newest only),
   and with it the new device makes its own passkey for that account; the code
   never signs anyone in by itself (`newDeviceCode` in `src/lib/accounts.ts`). There's
-  no recovery but the owner's merge: someone who lost every passkey makes a
-  new account, joins again by the link, and the owner merges their old
-  member into it. Never add a way in that isn't a passkey.
+  no recovery but the owner's merge: someone who lost every device makes a
+  new account and joins again by the link, saying who they were (the join
+  form's "Been in this group before?", anyone but the owner); the owner is
+  asked "Same person?" in Settings, as for two members with one name, and
+  Same person merges the old member into the new one, Not them stops asking
+  (`mergeAsks` in `src/lib/db.ts`). Never add a way in that isn't a passkey.
 - **The invite goes person to person.** Whoever holds the link can join, so
   it's shared through private channels only, by one button: the system
   share sheet on a touch screen that has one, a copy of the link elsewhere

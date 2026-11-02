@@ -1,15 +1,16 @@
 // Groups to look at the UI with, locally: one per situation a plan can be
 // in (just you, a few, a crowd; nobody answered, some, all; a time that
 // works, none that does, a time set), each with you as its owner and a
-// plan a few days out. Run it again and each group's answers are put back
-// as they were; the groups and the made-up people in them are reused.
+// plan a few days out, and one with the same person twice. Run it again
+// and each is put back as it was; the groups and the made-up people in
+// them are reused.
 //
 //   pnpm seed:preview          (as whoever signed in here last)
 //   pnpm seed:preview 279      (as that account)
 //
 // Never against the live database: it refuses in production.
 import { createAccount, getAccount } from "../src/lib/accounts";
-import { addPick, createGroup, db, getGroup, joinGroup, listMembers, placeIdForSeed, type Member } from "../src/lib/db";
+import { addPick, claimMember, createGroup, db, getGroup, joinGroup, listMembers, placeIdForSeed, type Member } from "../src/lib/db";
 import type { Interval } from "../src/lib/free";
 import { answerPlan, currentPlan, setPlanTime, startPlan } from "../src/lib/plans";
 import { addDays, today } from "../src/lib/when";
@@ -62,8 +63,8 @@ const me = accountId ? getAccount(accountId) : undefined;
 if (!me) throw new Error("no account: sign in on localhost first, or pass an account id");
 
 // the made-up people, one account each, kept by handle across runs
-const person = (name: string) => {
-  const handle = `preview-${name.toLowerCase()}`;
+const person = (name: string, as = name) => {
+  const handle = `preview-${as.toLowerCase()}`;
   const id = db.prepare("SELECT id FROM accounts WHERE handle = ?").pluck().get(handle) as number | undefined;
   return id ? getAccount(id)! : createAccount(handle, name);
 };
@@ -100,4 +101,27 @@ for (const s of SCENARIOS) {
   if (s.set) setPlanTime(plan, h(14), h(16));
 
   console.log(`${s.name.padEnd(30)} http://localhost:4410/g/${group.id}`);
+}
+
+// The same person twice, for Settings' "Same person?": two Mias (one name),
+// and Kit, who says she's Leo's lost account. (Answered asks come back.)
+{
+  const name = "Test · same person twice";
+  const found = db
+    .prepare("SELECT g.id FROM groups g JOIN members m ON m.id = g.owner_member_id WHERE g.name = ? AND m.account_id = ?")
+    .pluck()
+    .get(name, me.id) as string | undefined;
+  const group = getGroup(found ?? createGroup(name, me).group.id)!;
+  const members = listMembers(group.id);
+  const add = (who: string, handle = who) => {
+    const account = person(who, handle);
+    return members.find((m) => m.accountId === account.id) ?? joinGroup(group.id, account);
+  };
+  add("Mia");
+  const leo = add("Leo");
+  add("Mia", "Mia2");
+  const kit = add("Kit");
+  db.prepare("DELETE FROM member_claims WHERE group_id = ?").run(group.id);
+  claimMember(group, kit, leo.id);
+  console.log(`${name.padEnd(30)} http://localhost:4410/g/${group.id}`);
 }

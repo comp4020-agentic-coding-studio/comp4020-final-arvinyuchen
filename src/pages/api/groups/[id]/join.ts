@@ -1,11 +1,11 @@
 import type { APIRoute } from "astro";
-import { getGroup, joinGroup } from "../../../../lib/db";
+import { claimMember, getGroup, joinGroup } from "../../../../lib/db";
 import { changed } from "../../../../lib/events";
 import { clean, me, signedIn } from "../../../../lib/me";
 
 // Joining needs the group's current invite link (once the owner resets it,
 // the old link lets nobody new in) and an account: you join as yourself,
-// under your account's name.
+// under your account's name, and may say who you were here before.
 export const POST: APIRoute = async ({ params, cookies, request, redirect }) => {
   const group = getGroup(params.id ?? "");
   if (!group) return redirect("/", 303);
@@ -14,7 +14,10 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   const account = signedIn(cookies);
   if (!account) return redirect(`/g/${group.link}?error=account#join`, 303);
   if (me(cookies, group.id)) return redirect(`/g/${group.link}`, 303);
-  joinGroup(group.id, account);
+  const member = joinGroup(group.id, account);
+  // (back after losing every device: who they were, for the owner to confirm)
+  const was = Number(form.get("was"));
+  if (was) claimMember(group, member, was);
   changed(group.id);
   return redirect(`/g/${group.link}`, 303);
 };
