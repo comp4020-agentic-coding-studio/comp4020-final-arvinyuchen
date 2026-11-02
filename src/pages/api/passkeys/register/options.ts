@@ -1,20 +1,26 @@
 import { generateRegistrationOptions } from "@simplewebauthn/server";
 import type { APIRoute } from "astro";
-import { listPasskeys, newHandle } from "../../../../lib/accounts";
+import { accountForDeviceCode, listPasskeys, newHandle } from "../../../../lib/accounts";
 import { clean, signedIn } from "../../../../lib/me";
-import { begin, relyingParty } from "../../../../lib/passkeys";
+import { begin, CODE_GONE, relyingParty } from "../../../../lib/passkeys";
 
 // Step one of saving a passkey. Either someone signed in adds another one
-// (say, for a laptop on a different ecosystem), or someone new makes an
-// account: a name and this passkey. That's the only way in to Spots, and
-// the only thing needed before starting or joining a group.
+// (say, for a laptop on a different ecosystem), a new device adds one with
+// the code a signed-in device showed (src/pages/add-device.astro), or
+// someone new makes an account: a name and this passkey. That's the only
+// way in to Spots, and the only thing needed before starting or joining a
+// group.
 export const POST: APIRoute = async ({ cookies, request, url }) => {
-  const body = (await request.json().catch(() => ({}))) as { name?: string };
+  const body = (await request.json().catch(() => ({}))) as { name?: string; code?: string };
   const account = signedIn(cookies);
   const name = clean(body.name ?? null, 40);
+  const code = clean(body.code ?? null, 20);
+  const linking = !account && code ? accountForDeviceCode(code) : undefined;
 
   let ceremony;
   if (account) ceremony = { accountId: account.id, handle: account.handle, name: account.name };
+  else if (code && !linking) return Response.json({ error: CODE_GONE }, { status: 400 });
+  else if (linking) ceremony = { accountId: linking.id, handle: linking.handle, name: linking.name, code };
   else if (name) ceremony = { accountId: null, handle: newHandle(), name };
   else return Response.json({ error: "Type your name first, so your friends know it's you." }, { status: 400 });
 

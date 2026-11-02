@@ -264,7 +264,8 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           {!account && (
             <p class="fine passkey-alt">
               You'll save a passkey for Spots: your face, fingerprint or phone PIN. Have one?{" "}
-              <button type="button" class="linkish" data-passkey="signin" data-then="#join">Sign in</button>
+              <button type="button" class="linkish" data-passkey="signin" data-then="#join">Sign in</button>, or on a new
+              device, <a href={`/add-device?next=${encodeURIComponent(`/g/${group.link}`)}`}>add it with a code</a>.
             </p>
           )}
         </form>

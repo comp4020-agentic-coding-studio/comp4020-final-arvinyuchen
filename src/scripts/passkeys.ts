@@ -9,7 +9,9 @@ import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
 // - [data-passkey="signin"]: signs in with a passkey this device has (or a
 //   phone's, by QR code), then goes to data-then: a page, "reload", or a
 //   form's #id to send (join, once you're you).
-// - [data-passkey="register"]: adds a passkey to the signed-in account.
+// - [data-passkey="register"]: adds a passkey to the signed-in account, or,
+//   with data-code, to the account a signed-in device's code is for (then
+//   goes to data-then).
 //
 // Whether they show at all is decided in the page's head (Base.astro):
 // where passkeys can't work, src/components/NoPasskey.astro shows instead,
@@ -50,8 +52,8 @@ function then(where: string | undefined) {
   } else location.assign(url);
 }
 
-const register = async (name?: string) => {
-  const optionsJSON = await post("/api/passkeys/register/options", { name });
+const register = async (name?: string, code?: string) => {
+  const optionsJSON = await post("/api/passkeys/register/options", { name, code });
   await post("/api/passkeys/register/verify", await startRegistration({ optionsJSON }));
 };
 
@@ -79,8 +81,8 @@ document.addEventListener("click", (event) => {
   if (!button) return;
   busy(button, button, async () => {
     if (button.dataset.passkey === "register") {
-      await register();
-      then("reload");
+      await register(undefined, button.dataset.code);
+      then(button.dataset.then ?? "reload");
     } else {
       await signIn();
       then(button.dataset.then);

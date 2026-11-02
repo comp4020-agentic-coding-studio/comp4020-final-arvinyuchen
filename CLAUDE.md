@@ -90,7 +90,11 @@ follow from it; every change has to hold to them.
 - **Everyone is a passkey account.** Starting or joining a group needs one,
   made in the same step from a name and a passkey (the home page's form, the
   invite, `/signin`); signed in, joining is one button. One account has one
-  name, the same in every group, and one or more passkeys, never none. There's
+  name, the same in every group, and one or more passkeys, never none. A
+  device without your passkey is added from one signed in: `/add-device`
+  there shows a code (and its QR code, ten minutes, once, the newest only),
+  and with it the new device makes its own passkey for that account; the code
+  never signs anyone in by itself (`newDeviceCode` in `src/lib/accounts.ts`). There's
   no recovery but the owner's merge: someone who lost every passkey makes a
   new account, joins again by the link, and the owner merges their old
   member into it. Never add a way in that isn't a passkey.

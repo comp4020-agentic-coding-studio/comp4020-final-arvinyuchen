@@ -20,6 +20,11 @@ if (signedIn(Astro.cookies)) return Astro.redirect(next, 303);
     <div class="card__actions stack" data-passkey-only>
       <button type="button" class="btn btn--primary" data-passkey="signin" data-then={next}>Sign in with a passkey</button>
       <span class="passkey-msg" aria-live="polite"></span>
+      <p class="fine">
+        Your passkey isn't on this device, and no phone to scan with?
+        <a href={`/add-device${next !== "/me" ? `?next=${encodeURIComponent(next)}` : ""}`}>Add it with a code</a> from one
+        you're signed in on.
+      </p>
 
       <form class="stack signin__new" data-account="new" data-then={next}>
         <h2>New to Spots?</h2>
@@ -30,8 +35,8 @@ if (signedIn(Astro.cookies)) return Astro.redirect(next, 303);
         <button class="btn">Make an account</button>
         <span class="passkey-msg" aria-live="polite"></span>
         <p class="fine">
-          It's your name and a passkey, nothing else. Lost every passkey one day? There's no reset: make a new account,
-          and each group's owner can merge your old name into it.
+          It's your name and a passkey, nothing else. Lost every device one day? There's no reset: make a new account,
+          join your groups again and say who you were, and each group's owner gives you your old self back.
         </p>
       </form>
     </div>

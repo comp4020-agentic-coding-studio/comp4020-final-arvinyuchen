@@ -97,8 +97,13 @@ const done = Astro.url.searchParams.get("done");
       </ul>
       <div data-passkey-only class="stack-row">
         <button type="button" class="btn" data-passkey="register">Add a passkey on this device</button>
+        <a class="btn" href="/add-device">Add another device</a>
         <span class="passkey-msg" aria-live="polite"></span>
       </div>
+      <p class="fine">
+        A phone or computer that doesn't have your passkey? <strong>Add another device</strong> shows a code to scan
+        there.
+      </p>
       <form method="post" action="/api/signout">
         <button class="btn btn--ghost">Sign out</button>
       </form>

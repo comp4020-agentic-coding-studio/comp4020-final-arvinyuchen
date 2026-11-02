@@ -2504,6 +2504,47 @@ html:not(.in-app) .no-passkey__app {
   margin: 1.5rem auto;
 }
 
+/* Adding a device: the code to scan, and under it the same code to type. */
+.add-device__qr {
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  margin: 1.25rem 0;
+  padding: 1.25rem;
+  border-radius: 16px;
+  background: var(--fill);
+}
+
+.add-device__qr figcaption {
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.add-device__code {
+  color: var(--ink);
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+.add-device__form {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.add-device__form input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .notice-page h1 {
   font-size: clamp(1.9rem, 7vw, 2.4rem);
   letter-spacing: -0.02em;

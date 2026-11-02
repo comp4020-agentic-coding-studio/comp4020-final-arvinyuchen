@@ -67,7 +67,9 @@ other's taste.
   button. Nobody can vote as someone else by typing their name, a friend on a
   second device is still the same person, and all your groups are in one
   place. One account has one name, and can have several passkeys (an iPhone's
-  and a Windows laptop's), never none. Lose every passkey and there's no
+  and a Windows laptop's), never none. A device without yours is added from
+  one you're signed in on: it shows a code to scan, and the new device makes
+  its own passkey with it. Lose every passkey and there's no
   reset: make a new account, join again, and the group's owner merges your
   old name into it. Inside Instagram's or Facebook's own browser, where
   passkeys don't work, the invite says to open it in Safari or Chrome.

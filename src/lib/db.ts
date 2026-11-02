@@ -119,6 +119,11 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     expires_at TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS device_codes (
+    code_hash TEXT PRIMARY KEY,
+    account_id INTEGER NOT NULL REFERENCES accounts(id),
+    expires_at TEXT NOT NULL
+  );
   CREATE TABLE IF NOT EXISTS group_links (
     slug TEXT PRIMARY KEY,
     group_id TEXT NOT NULL REFERENCES groups(id),

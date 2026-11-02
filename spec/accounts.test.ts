@@ -35,6 +35,43 @@ describe("accounts by passkey", () => {
     expect((await page(laptop, "/me")).body.textContent).toContain("Passkey crew");
   });
 
+  it("adds a device with a code from a signed-in one: once, for that account, never signing in by itself", async () => {
+    const phone = new Jar();
+    await signUp(phone, "Ana");
+    const id = await startGroup(phone, "Device crew", "Ana");
+    const code = (await page(phone, "/add-device")).querySelector(".add-device__code")?.textContent ?? "";
+    expect(code).toMatch(/^[2-9A-Z]{4}-[2-9A-Z]{4}$/);
+
+    // Only someone signed in gets a code.
+    expect((await page(new Jar(), "/add-device")).querySelector(".add-device__code")).toBeNull();
+
+    // The new device names whose account it joins, and opening it signs nobody in.
+    const laptop = new Jar();
+    const lower = code.toLowerCase().replace("-", "");
+    expect((await page(laptop, `/add-device?code=${lower}`)).querySelector("h1")?.textContent).toBe("Add this device to Ana's Spots");
+    expect(await you(laptop, id)).toBe("");
+
+    const add = async (jar: Jar, key: Authenticator) => {
+      const res = await request(jar, "/api/passkeys/register/options", { json: { code } });
+      if (!res.ok) return res;
+      return request(jar, "/api/passkeys/register/verify", { json: key.create(await res.json(), origin) });
+    };
+    const laptopKey = new Authenticator();
+    expect((await add(laptop, laptopKey)).status).toBe(200);
+    expect(await you(laptop, id)).toBe("Ana");
+    // Its passkey signs in as Ana from now on.
+    expect((await signInWith(new Jar(), laptopKey)).res.status).toBe(200);
+
+    // Used up: a second device can't use it, nor can a made-up one.
+    expect((await add(new Jar(), new Authenticator())).status).toBe(400);
+    expect((await request(new Jar(), "/api/passkeys/register/options", { json: { code: "ABCD-EFGH" } })).status).toBe(400);
+
+    // A newer code replaces the one before.
+    const first = (await page(phone, "/add-device")).querySelector(".add-device__code")?.textContent ?? "";
+    await page(phone, "/add-device");
+    expect((await request(new Jar(), "/api/passkeys/register/options", { json: { code: first } })).status).toBe(400);
+  });
+
   it("refuses a passkey it never stored, a forged signature, and a replayed one", async () => {
     const real = new Authenticator();
     await signUp(new Jar(), "Ana", real);
