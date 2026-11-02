@@ -2139,7 +2139,8 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   margin-bottom: 1rem;
 }
 
-.add h2 {
+/* (over the side panels' tighter titles: the search wants room) */
+.card.add h2 {
   margin-bottom: 1.25rem;
 }
 
