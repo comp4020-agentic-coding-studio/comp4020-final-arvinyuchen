@@ -29,6 +29,7 @@ const href = (near: boolean) => {
   <a class:list={["chip", "near-plan__chip", { "chip--on": on }]} href={href(!on)} data-near={on ? "off" : "on"}>
     <svg viewBox="0 0 256 256" width="14" height="14" aria-hidden="true"><path fill="currentColor" d={PIN_ICON} /></svg>
     Near your plan<span class="sr-only">{on ? ", on: tap for every place" : ""}</span>
+    {on && <svg class="near-plan__off" viewBox="0 0 20 20" width="12" height="12" aria-hidden="true"><path d="m6 6 8 8m0-8-8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>}
   </a>
   {on && <span class="near-plan__what">Closest to {said} first</span>}
 </p>
