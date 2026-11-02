@@ -272,7 +272,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
               <div class="welcome__field">
                 {/* The face you'll have in the group, filled in as you type (src/scripts/welcome.ts). */}
                 <span class="face welcome__you" aria-hidden="true"></span>
-                <input id="join-name" name="name" required maxlength="40" autocomplete="nickname" placeholder="Your first name" />
+                <input id="join-name" name="name" required maxlength="40" autocomplete="nickname" placeholder="Your first name" data-hint="Type your name, so the group knows it's you." />
               </div>
             </>
           )}
@@ -871,7 +871,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         <div class="add__where">
           <label>
             <span>Name</span>
-            <input name="name" required maxlength="80" placeholder="That dumpling place" />
+            <input name="name" required maxlength="80" placeholder="That dumpling place" data-hint="What's it called?" />
           </label>
           <label>
             <span>Suburb</span>
@@ -892,7 +892,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         </fieldset>
         <label class="add__why">
           <span>Why it's good</span>
-          <textarea name="why" required maxlength="160" rows="3" placeholder="Best chilli oil in Canberra, and open late"></textarea>
+          <textarea name="why" required maxlength="160" rows="3" placeholder="Best chilli oil in Canberra, and open late" data-hint="Say why it's good, in a line."></textarea>
         </label>
         {/* A photo of the sharer's own, if they have one; without, its card
             shows its kind's picture. (A place picked that's already shared
@@ -925,7 +925,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         <input type="hidden" name="action" value="rename" />
         <label class="grow">
           <span>Group name</span>
-          <input name="name" required maxlength="60" value={group.name} />
+          <input name="name" required maxlength="60" value={group.name} data-hint="Give the group a name." />
         </label>
         <button class="btn">Rename</button>
       </form>

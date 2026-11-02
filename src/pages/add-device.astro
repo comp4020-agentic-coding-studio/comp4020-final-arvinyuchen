@@ -77,6 +77,7 @@ const linking = !account && typed ? accountForDeviceCode(typed) : undefined;
             autocapitalize="characters"
             spellcheck="false"
             placeholder="XXXX-XXXX"
+            data-hint="Type the code your other device shows."
           />
           {next !== "/me" && <input type="hidden" name="next" value={next} />}
           <button class="btn">Next</button>

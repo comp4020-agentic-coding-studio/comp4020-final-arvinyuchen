@@ -30,7 +30,7 @@ if (signedIn(Astro.cookies)) return Astro.redirect(next, 303);
         <h2>New to Spots?</h2>
         <label>
           <span>Your name</span>
-          <input name="name" required maxlength="40" placeholder="What your friends call you" autocomplete="nickname" />
+          <input name="name" required maxlength="40" placeholder="What your friends call you" autocomplete="nickname" data-hint="Type your name, so your friends know it's you." />
         </label>
         <button class="btn">Make an account</button>
         <span class="passkey-msg" aria-live="polite"></span>

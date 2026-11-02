@@ -59,12 +59,12 @@ const account = signedIn(Astro.cookies);
       {error === "account" && <p class="notice" role="alert">Starting a group needs an account: your name and a passkey.</p>}
       <label>
         <span>Group name</span>
-        <input name="group" required maxlength="60" placeholder="Saturday crew" autocomplete="off" />
+        <input name="group" required maxlength="60" placeholder="Saturday crew" autocomplete="off" data-hint="Give the group a name." />
       </label>
       {!account && (
         <label>
           <span>Your name</span>
-          <input name="name" required maxlength="40" placeholder="What your friends call you" autocomplete="nickname" />
+          <input name="name" required maxlength="40" placeholder="What your friends call you" autocomplete="nickname" data-hint="Type your name, so your friends know it's you." />
         </label>
       )}
       <button class="btn btn--primary start__go">

@@ -59,7 +59,7 @@ const done = Astro.url.searchParams.get("done");
       <form method="post" action="/api/account" class="settings__row">
         <label class="grow">
           <span class="sr-only">Your name</span>
-          <input name="name" required maxlength="40" value={account.name} autocomplete="nickname" />
+          <input name="name" required maxlength="40" value={account.name} autocomplete="nickname" data-hint="Type a name, so your friends know it's you." />
         </label>
         <button class="btn">Save</button>
       </form>
