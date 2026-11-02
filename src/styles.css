@@ -4243,6 +4243,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 .plan {
+  position: relative;
   overflow: hidden;
   border-radius: var(--radius);
   background: var(--card);
@@ -4250,8 +4251,16 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   scroll-margin-top: 5rem;
 }
 
-.plan--needs {
-  box-shadow: 0 0 0 2px var(--accent), var(--shadow-sm);
+/* (the blue ring drawn inside the card's edge, over what's in it, so a
+   scrolling column that clips at its sides can't cut it) */
+.plan--needs::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 2px solid var(--accent);
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 .plan__nudge {
@@ -4558,8 +4567,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 .plan .faces .face--waiting {
-  border: 1.5px dashed #aeaeb2;
-  background: var(--card);
+  background: #ececf0;
   color: #8e8e93;
 }
 
@@ -5159,8 +5167,8 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-size: 0.76rem;
 }
 
-/* a stop's way there: a small arrow out at the row's end (with one stop,
-   the word too); the whole route, under the stops */
+/* a stop's way there: a small arrow out at its row's end (with one stop,
+   the word too, at the end of Find food nearby's row) */
 .outing__go {
   display: inline-flex;
   align-items: center;
@@ -5172,11 +5180,23 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   text-decoration: none;
 }
 
+/* Find food nearby, and at the row's end the way there (with several
+   stops, the whole route) */
 .outing__acts {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.3rem 1rem;
-  margin: 0.35rem 0 0;
+  margin: 0;
+}
+
+.outing__stops + .outing__acts {
+  margin-top: 0.35rem;
+}
+
+.outing__acts .outing__go,
+.outing__acts .outing__route {
+  margin-left: auto;
 }
 
 .outing__acts a {
