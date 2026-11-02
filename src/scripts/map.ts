@@ -36,6 +36,58 @@ maplibregl.setWorkerUrl("/vendor/maplibre/maplibre-gl-worker.mjs");
 
 const CANBERRA: [number, number] = [149.128, -35.285];
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+// The map's flights can be switched off, on the map itself (its own button
+// under the zoom), for anyone they make dizzy; it's remembered on this
+// device. Off, or with reduced motion asked for, the map jumps.
+const MOTION_KEY = "spots:map-motion";
+let motionOff = false;
+try {
+  motionOff = localStorage.getItem(MOTION_KEY) === "off";
+} catch {}
+const still = () => motionOff || reducedMotion.matches;
+const move = () => (still() ? { duration: 0 } : {});
+
+interface Found {
+  ref: string;
+  name: string;
+  detail: string;
+  area: string;
+  kind: Kind;
+  lat: number;
+  lon: number;
+  photo?: Photo | null;
+}
+
+/** The map's button that switches its flights off and on. */
+class MotionControl implements maplibregl.IControl {
+  private box?: HTMLElement;
+  onAdd() {
+    this.box = document.createElement("div");
+    this.box.className = "maplibregl-ctrl maplibregl-ctrl-group map-motion";
+    const button = document.createElement("button");
+    button.type = "button";
+    const draw = () => {
+      button.setAttribute("aria-pressed", String(!motionOff));
+      button.title = motionOff ? "Map animation off: tap to turn it on" : "Map animation on: tap to turn it off";
+      button.setAttribute("aria-label", "Map animation");
+    };
+    button.innerHTML = `<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path class="map-motion__on" d="M3 7.5c2.5-2 4.5 2 7 0s4.5-2 7 0M3 12.5c2.5-2 4.5 2 7 0s4.5-2 7 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path class="map-motion__off" d="M3 7.5h14M3 12.5h14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`;
+    button.addEventListener("click", () => {
+      motionOff = !motionOff;
+      try {
+        localStorage.setItem(MOTION_KEY, motionOff ? "off" : "on");
+      } catch {}
+      draw();
+    });
+    draw();
+    this.box.append(button);
+    return this.box;
+  }
+  onRemove() {
+    this.box?.remove();
+  }
+}
 const container = document.getElementById("map");
 
 // The one lettering of the tiles' own the map keeps: street names, which
@@ -65,6 +117,7 @@ if (container) {
     cooperativeGestures: true,
   });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+  map.addControl(new MotionControl(), "top-right");
   // Spots' map look (src/scripts/map-look.ts), with buildings that stand up
   // as the map flies down into a street.
   map.once("load", () => {
@@ -487,14 +540,15 @@ if (container) {
     // (on a phone the place lands above the middle, clear of its card at the map's foot)
     const offset: [number, number] = [0, narrow.matches ? -46 : 0];
     const target = { center: [pin.lon, pin.lat] as [number, number], zoom: 16.4, pitch: 58, bearing: -20, offset };
-    if (reducedMotion.matches) {
+    if (still()) {
       map.easeTo({ ...target, duration: 0 });
       open(id);
       return;
     }
     // Out a little, across, and down into the street: flyTo's curve does the
     // zoom-out-and-in; the pitch and bearing swing the camera as it lands.
-    map.flyTo({ ...target, speed: 0.9, curve: 1.6, essential: true });
+    // (Brisk, and never more than two seconds: a long flight makes some dizzy.)
+    map.flyTo({ ...target, speed: 1.4, curve: 1.5, maxDuration: 2000, essential: true });
     map.once("moveend", () => {
       if (active === id) open(id);
     });
@@ -585,11 +639,11 @@ if (container) {
   function frameSearch() {
     const searching = Boolean(document.getElementById("explore")?.dataset.q);
     const pins = [...markers.values()].map(({ pin }) => pin);
-    const move = reducedMotion.matches ? { duration: 0 } : { duration: 1400 };
+    const motion = still() ? { duration: 0 } : { duration: 1000 };
     if (!searching || pins.length === 0) {
       active = null;
       close();
-      map.easeTo({ center: CANBERRA, zoom: 11.3, pitch: 0, bearing: 0, ...move });
+      map.easeTo({ center: CANBERRA, zoom: 11.3, pitch: 0, bearing: 0, ...motion });
       return;
     }
     if (pins.length === 1) {
@@ -598,7 +652,7 @@ if (container) {
     }
     const bounds = new maplibregl.LngLatBounds();
     for (const pin of pins) bounds.extend([pin.lon, pin.lat]);
-    map.fitBounds(bounds, { padding: 64, maxZoom: 15, pitch: 30, bearing: 0, ...move });
+    map.fitBounds(bounds, { padding: 64, maxZoom: 15, pitch: 30, bearing: 0, ...motion });
   }
   document.addEventListener("spots:searched", frameSearch);
   if (document.getElementById("explore")?.dataset.q) frameSearch();
@@ -653,52 +707,76 @@ if (container) {
     // Typing a different name by hand means it's no longer the place found.
     field("name").addEventListener("input", clearLocation);
 
+    // What the finder found, on the map while you choose.
+    const hits: maplibregl.Marker[] = [];
+    const clearHits = () => hits.splice(0).forEach((hit) => hit.remove());
+    const choose = (r: Found) => {
+      field("ref").value = r.ref;
+      field("lat").value = String(r.lat);
+      field("lon").value = String(r.lon);
+      field("name").value = r.name;
+      field("area").value = r.area;
+      field("kind").value = r.kind;
+      showFound(r.photo ?? null);
+      located.hidden = false;
+      located.textContent = `📍 Found on the map: ${r.name}${r.area ? `, ${r.area}` : ""}. Now say why it's good.`;
+      list.replaceChildren();
+      clearHits();
+      preview?.remove();
+      // The place found, not yet shared: its chip, named, over the rest.
+      const el = mark(r.kind);
+      el.classList.add("map-mark--preview");
+      dress(el, { n: null, name: r.name, placing: { named: true, shift: 0, below: false } });
+      preview = new maplibregl.Marker({ element: el }).setLngLat([r.lon, r.lat]).addTo(map);
+      map.flyTo({ center: [r.lon, r.lat], zoom: 16, pitch: 50, essential: true, ...move() });
+      field("why").focus();
+    };
+
     const search = async () => {
       const text = q.value.trim();
       if (text.length < 2) return;
       go.disabled = true;
+      clearHits();
       list.replaceChildren(Object.assign(document.createElement("li"), { textContent: "Searching…", className: "fine" }));
       try {
         const res = await fetch(`/api/lookup?q=${encodeURIComponent(text)}`);
-        const results = res.ok ? await res.json() : [];
+        const results: Found[] = res.ok ? await res.json() : [];
         list.replaceChildren();
         if (!Array.isArray(results) || results.length === 0) {
           list.append(Object.assign(document.createElement("li"), { textContent: "Nothing found in Canberra. Check the spelling, or fill it in by hand below.", className: "fine" }));
           return;
         }
-        for (const r of results) {
+        // Each match, numbered, in the list and on the map, framed together:
+        // a tap on either picks it.
+        const bounds = new maplibregl.LngLatBounds();
+        results.forEach((r, i) => {
           const li = document.createElement("li");
           const button = document.createElement("button");
           button.type = "button";
-          button.className = "finder__hit";
+          button.className = `finder__hit spot--${r.kind}`;
+          const n = document.createElement("i");
+          n.className = "finder__n";
+          n.textContent = String(i + 1);
+          const words = document.createElement("span");
           const name = document.createElement("strong");
           name.textContent = r.name;
           const where = document.createElement("span");
           where.textContent = r.detail;
-          button.append(name, where);
-          button.addEventListener("click", () => {
-            field("ref").value = r.ref;
-            field("lat").value = String(r.lat);
-            field("lon").value = String(r.lon);
-            field("name").value = r.name;
-            field("area").value = r.area;
-            field("kind").value = r.kind;
-            showFound(r.photo ?? null);
-            located.hidden = false;
-            located.textContent = `📍 Found on the map: ${r.name}${r.area ? `, ${r.area}` : ""}. Now say why it's good.`;
-            list.replaceChildren();
-            preview?.remove();
-            // The place found, not yet shared: its chip, named, over the rest.
-            const el = mark(r.kind);
-            el.classList.add("map-mark--preview");
-            dress(el, { n: null, name: r.name, placing: { named: true, shift: 0, below: false } });
-            preview = new maplibregl.Marker({ element: el }).setLngLat([r.lon, r.lat]).addTo(map);
-            map.flyTo({ center: [r.lon, r.lat], zoom: 16, pitch: 50, essential: true, ...(reducedMotion.matches ? { duration: 0 } : {}) });
-            field("why").focus();
-          });
+          words.append(name, where);
+          button.append(n, words);
+          button.addEventListener("click", () => choose(r));
           li.append(button);
           list.append(li);
-        }
+          const el = mark(r.kind, "button");
+          el.classList.add("map-mark--hit");
+          el.setAttribute("aria-label", `${i + 1}: ${r.name}`);
+          dress(el, { n: i + 1, name: r.name, placing: { named: true, shift: 0, below: false } });
+          el.addEventListener("click", () => choose(r));
+          hits.push(new maplibregl.Marker({ element: el }).setLngLat([r.lon, r.lat]).addTo(map));
+          bounds.extend([r.lon, r.lat]);
+        });
+        if (results.length === 1) map.flyTo({ center: [results[0].lon, results[0].lat], zoom: 15, pitch: 30, ...move() });
+        else map.fitBounds(bounds, { padding: 72, maxZoom: 15, pitch: 0, bearing: 0, ...move() });
       } catch {
         list.replaceChildren(Object.assign(document.createElement("li"), { textContent: "Search isn't available right now. Fill it in by hand below.", className: "fine" }));
       } finally {
@@ -706,6 +784,10 @@ if (container) {
       }
     };
     go.addEventListener("click", search);
+    // (leaving Share takes its matches off the map)
+    document.addEventListener("click", (event) => {
+      if ((event.target as HTMLElement).closest('.tabs a[data-tab]:not([data-tab="add"])')) clearHits();
+    });
     q.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         event.preventDefault();
