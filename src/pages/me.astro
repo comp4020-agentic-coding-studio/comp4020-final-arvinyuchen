@@ -3,6 +3,7 @@ import Base from "../layouts/Base.astro";
 import { listPasskeys } from "../lib/accounts";
 import { groupsOfAccount } from "../lib/db";
 import { signedIn } from "../lib/me";
+import { unreadByGroup } from "../lib/talk";
 
 // Your account: every group you're in, on any device, your one name, and
 // the passkeys that can sign in as you.
@@ -10,6 +11,8 @@ const account = signedIn(Astro.cookies);
 if (!account) return Astro.redirect("/signin", 303);
 const groups = groupsOfAccount(account.id);
 const passkeys = listPasskeys(account.id);
+// (what's new in each group's Talk: people find out here, never by push)
+const unread = unreadByGroup(account.id);
 const day = (sqlite: string) =>
   new Date(`${sqlite.replace(" ", "T")}Z`).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 const error = Astro.url.searchParams.get("error");
@@ -35,7 +38,10 @@ const done = Astro.url.searchParams.get("done");
         {groups.map((g) => (
           <li>
             <a class="card my-group" href={`/g/${g.link}`}>
-              <strong>{g.name}</strong>
+              <strong>
+                {g.name}
+                {unread.get(g.id) && <span class="my-group__new">{unread.get(g.id)} new</span>}
+              </strong>
               <span class="fine">
                 {g.people} {g.people === 1 ? "person" : "people"}
                 {g.owner && " · you're the owner"}

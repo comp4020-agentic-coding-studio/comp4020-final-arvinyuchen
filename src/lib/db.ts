@@ -241,6 +241,38 @@ db.exec(`
     SELECT id, place_id, 1 FROM plans WHERE id NOT IN (SELECT plan_id FROM plan_places);
 `);
 
+// Talk: a thread on each place on a group's list (src/lib/talk.ts). It
+// hangs on the group and the place, never on the pick: a pick goes when
+// the place leaves the list, and the thread has to be there when it comes
+// back. A message deleted by its author keeps its words for a day (so it
+// can be undone), then they're cleared: body '' and cleared_at set; the
+// row stays as the "Message removed" stub. Each member's place in each
+// thread is the last message they've seen there. Times to the millisecond.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_id TEXT NOT NULL REFERENCES groups(id),
+    place_id INTEGER NOT NULL REFERENCES places(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    body TEXT NOT NULL,
+    nonce TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    deleted_at TEXT,
+    cleared_at TEXT
+  );
+  CREATE INDEX IF NOT EXISTS comments_thread ON comments (group_id, place_id, id);
+  CREATE INDEX IF NOT EXISTS comments_member ON comments (member_id, created_at);
+  CREATE UNIQUE INDEX IF NOT EXISTS comments_nonce ON comments (member_id, nonce);
+  CREATE INDEX IF NOT EXISTS comments_to_clear ON comments (deleted_at) WHERE deleted_at IS NOT NULL AND cleared_at IS NULL;
+  CREATE TABLE IF NOT EXISTS comment_reads (
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    group_id TEXT NOT NULL REFERENCES groups(id),
+    place_id INTEGER NOT NULL REFERENCES places(id),
+    last_read_id INTEGER NOT NULL,
+    PRIMARY KEY (member_id, place_id)
+  );
+`);
+
 // The checked starter places, upserted by key so a corrected coordinate,
 // blurb or photo reaches the live database on the next deploy.
 const seed = db.prepare(`
@@ -295,6 +327,9 @@ db.transaction(() => {
     for (const table of ["plan_places", "plan_busy", "plan_answers"]) db.prepare(`DELETE FROM ${table} WHERE plan_id IN (${goneIds})`).run();
     db.prepare(`DELETE FROM plans WHERE id IN (${goneIds})`).run();
   }
+  // (and its Talk in every group, with who'd read how far)
+  db.prepare(`DELETE FROM comment_reads WHERE place_id IN (${bare})`).run();
+  db.prepare(`DELETE FROM comments WHERE place_id IN (${bare})`).run();
   db.prepare(`DELETE FROM places WHERE id IN (${bare})`).run();
 })();
 
@@ -442,7 +477,9 @@ export function setNote(groupId: string, note: string): void {
 }
 
 /** Takes someone out of the group: they can't act any more, and their keens go.
- *  (Their answers to plans stay, but count for nothing: plans count members.) */
+ *  (Their answers to plans stay, but count for nothing: plans count members.
+ *  What they said in Talk stays, under their name, as what they added does;
+ *  how far they'd read goes, since they can't read it now.) */
 export function removeMember(group: Group, memberId: number): boolean {
   if (memberId === group.ownerId) return false;
   return db.transaction(() => {
@@ -450,6 +487,7 @@ export function removeMember(group: Group, memberId: number): boolean {
       .prepare("UPDATE members SET removed_at = datetime('now') WHERE id = ? AND group_id = ? AND removed_at IS NULL")
       .run(memberId, group.id);
     if (changes) db.prepare("DELETE FROM votes WHERE member_id = ?").run(memberId);
+    if (changes) db.prepare("DELETE FROM comment_reads WHERE member_id = ?").run(memberId);
     return changes > 0;
   })();
 }
@@ -479,6 +517,16 @@ export function mergeMembers(group: Group, fromId: number, intoId: number): bool
     db.prepare(`UPDATE plan_busy SET member_id = ? WHERE member_id = ? AND ${unanswered}`).run(intoId, fromId, intoId);
     db.prepare(`UPDATE plan_answers SET member_id = ? WHERE member_id = ? AND ${unanswered}`).run(intoId, fromId, intoId);
     db.prepare("UPDATE plans SET created_by = ? WHERE created_by = ?").run(intoId, fromId);
+    // What they said in Talk is theirs (so theirs to delete), and they've
+    // read each thread as far as either of them had. (A nonce only stops a
+    // double tap, so it needn't come along.)
+    db.prepare("UPDATE comments SET member_id = ?, nonce = NULL WHERE member_id = ?").run(intoId, fromId);
+    db.prepare(
+      `INSERT INTO comment_reads (member_id, group_id, place_id, last_read_id)
+         SELECT ?, group_id, place_id, last_read_id FROM comment_reads WHERE member_id = ?
+       ON CONFLICT (member_id, place_id) DO UPDATE SET last_read_id = MAX(last_read_id, excluded.last_read_id)`,
+    ).run(intoId, fromId);
+    db.prepare("DELETE FROM comment_reads WHERE member_id = ?").run(fromId);
     if (into.account_id === null && from.account_id !== null) {
       db.prepare("UPDATE members SET account_id = ? WHERE id = ?").run(from.account_id, intoId);
     }

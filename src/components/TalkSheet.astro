@@ -1,0 +1,78 @@
+---
+import type { Group } from "../lib/db";
+import { MESSAGE_MAX, type Thread } from "../lib/talk";
+import TalkThread from "./TalkThread.astro";
+
+// A place's Talk: its thread, and a box to say something. On a phone a
+// sheet risen over Our list, as the plan's are; on a wide screen, with the
+// script, it takes Explore's column while it's open and the map flies to
+// the place (src/scripts/talk.ts). A <dialog>, open from the server when
+// the URL asks (?talk=<place>), and otherwise there, empty, for the script
+// to open on any place. A live refresh of the page never redraws it: the
+// script swaps the thread inside it (.talk__scroll), never the box you're
+// typing in.
+interface Props {
+  group: Group;
+  /** the place it's open on, without a script, and its thread */
+  open: { placeId: number; name: string; thread: Thread } | null;
+  error: string | null;
+}
+const { group, open, error } = Astro.props;
+const action = `/api/groups/${group.id}/talk`;
+const ERROR: Record<string, string> = {
+  "talk-empty": "Write something first.",
+  "talk-long": `That's more than ${MESSAGE_MAX} characters. Say it shorter, or in two.`,
+  "talk-slow": "That's a lot at once. Wait a minute, then send it again.",
+  "talk-not-yours": "Only whoever said it can delete it.",
+};
+// (a new one each time the page is drawn: the same form sent twice is one message)
+const nonce = crypto.randomUUID();
+---
+
+<dialog
+  id="talk"
+  class="sheet sheet--talk"
+  open={open !== null}
+  tabindex="-1"
+  aria-labelledby="talk-title"
+  data-talk-sheet
+  data-group={group.id}
+  data-link={group.link}
+  data-place={open?.placeId}
+>
+  <div class="talk">
+    <div class="sheet__bar talk__bar">
+      <span></span>
+      <div>
+        <h2 id="talk-title">{open?.name ?? "Talk"}</h2>
+        <p class="sheet__sub">Talk · only {group.name} sees it</p>
+      </div>
+      <a class="sheet__cancel talk__done" href={`/g/${group.link}#list`} data-talk-close>Done</a>
+    </div>
+    <div class="talk__body">
+      {/* (it scrolls from the foot, so it opens on the newest, and the
+          newest stays in view as more arrive) */}
+      <div class="talk__scroll" data-talk-scroll>
+        {open && <TalkThread group={group} thread={open.thread} placeName={open.name} base={`/g/${group.link}?talk=${open.placeId}`} />}
+      </div>
+      <div class="talk__toast" role="status" hidden>
+        <span class="talk__toast-text"></span>
+        <button type="button" class="talk__toast-undo" hidden>Undo</button>
+      </div>
+    </div>
+    <form method="post" action={action} class="talk__compose" data-talk data-talk-send>
+      {error && ERROR[error] && <p class="notice talk__error" role="alert">{ERROR[error]}</p>}
+      <input type="hidden" name="action" value="send" />
+      <input type="hidden" name="place" value={open?.placeId ?? ""} />
+      <input type="hidden" name="nonce" value={nonce} />
+      <div class="talk__field">
+        <label for="talk-body" class="sr-only">Message</label>
+        <textarea id="talk-body" name="body" rows="1" maxlength={MESSAGE_MAX} required placeholder="Message" enterkeyhint="send" autocomplete="off"></textarea>
+        <button class="talk__send" aria-label="Send">
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M10 15.5v-11M5.5 9 10 4.5 14.5 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
+      </div>
+      <p class="talk__left" aria-live="polite" hidden></p>
+    </form>
+  </div>
+</dialog>

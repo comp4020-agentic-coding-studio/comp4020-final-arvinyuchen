@@ -357,6 +357,53 @@ Node's fetch gave each of Overpass's addresses only 250 ms to connect from
 Canberra before giving up on all of them, so the server now gives each
 2.5 s.
 
+## Talking it over
+
+**Context.** Spots settled where and when, and the "why" behind each place
+was one sentence from whoever shared it. Everything else ("is it open
+Mondays?", "the upstairs bit is better", "who's been?") went back to the
+group chat, far from the place it was about.
+
+**Options.**
+1. *A group chat inside Spots.* Familiar, but it competes head-on with the
+   chat the group already has, loses, and drifts away from the list.
+2. *A thread on each place on the list.* Talk sits where the deciding is,
+   and stays short.
+3. *Emoji reactions.* Cheap, but they blur "one person, one keen".
+
+**Decision.** Option 2, named Talk, and only for places on the list (not
+Explore, so there's nothing to talk about that the group hasn't picked).
+A thread is kept by the group and the place, not by the list's row,
+because a row is deleted when a place is taken off, and putting it back
+should bring its thread back too; while it's off, the thread is hidden.
+Only a message's author can delete it, not the owner: the owner looks
+after the group, not what people say in it. Deleted, a message is a
+"Message removed" stub its author can undo for a day, then its words are
+cleared from the database; there's no cron, so the clearing runs when the
+server starts, every hour, and before every thread is read or written.
+The site admin sees how many messages a group has, never what they say.
+The live stream says only which thread changed; the page then asks a
+members-only route for it, and swaps only the thread, never the box
+someone is typing in. People find out on the page (a count on the row,
+blue when it's new, a dot on Our list, "N new" on My groups), never by
+push, since web push needs the site added to an iPhone's home screen,
+which "no app to install" rules out.
+
+On a phone the thread is a sheet over the list, as the plan's are, sized
+to what the keyboard leaves of the screen (Safari doesn't shrink a fixed
+sheet for its keyboard; the visual viewport says how much is left). On a
+wide screen the three columns are the list, Explore and the map; Talk
+takes Explore's column while it's open and the map flies to the place,
+so the list stays to switch threads from and the map says where the
+place is. A sheet in the middle would have covered both.
+
+**Trade-offs.** One more thing to read, and threads can sprawl; the limits
+(500 characters, 10 a minute, 300 a day, 50 shown at a time) keep a thread
+a few lines about a place. Without push, a message waits until someone
+opens Spots. Undo lasts a day, so a regretted message's words are in the
+database for that day. The keyboard handling needs checking on a real
+iPhone: a desktop browser can only fake a short screen.
+
 ## How I worked with the agent
 
 - I chose the idea and the audience; the agent offered options and pushed

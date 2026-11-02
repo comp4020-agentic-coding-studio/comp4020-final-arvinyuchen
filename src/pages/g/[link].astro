@@ -9,6 +9,7 @@ import PlanCard from "../../components/PlanCard.astro";
 import PlanExact from "../../components/PlanExact.astro";
 import PlanStart from "../../components/PlanStart.astro";
 import SpotPhoto from "../../components/SpotPhoto.astro";
+import TalkSheet from "../../components/TalkSheet.astro";
 import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
 import { canRemovePick, groupByLink, listMembers, listPicks, listPlaces, NOTE_MAX, type Place } from "../../lib/db";
@@ -17,6 +18,7 @@ import { PIN_ICON } from "../../lib/outing-icons";
 import { clean, me, signedIn } from "../../lib/me";
 import { currentPlan, pastPlans, planView, stopNames } from "../../lib/plans";
 import { search } from "../../lib/search";
+import { talkCounts, thread } from "../../lib/talk";
 import { dayParts, formatDay, formatMinute } from "../../lib/when";
 
 // The link is the invite. After the owner resets it, the old one still
@@ -144,6 +146,17 @@ const needs = !view
         ? "changed"
         : "";
 const planParam = Astro.url.searchParams.get("plan");
+
+// Talk (src/lib/talk.ts): a thread on each place on the list, for members.
+// Without a script, ?talk=<place> opens one (and ?before=<message> pages
+// back), which marks it read, so it's read before the counts are.
+const talkId = Number(Astro.url.searchParams.get("talk"));
+const talkPick = member && talkId ? picks.find((p) => p.place.id === talkId) : undefined;
+const talkThread = talkPick && member ? thread(group, member, talkId, { before: Number(Astro.url.searchParams.get("before")) || undefined }) : undefined;
+const talkOpen = talkPick && talkThread ? { placeId: talkId, name: talkPick.place.name, thread: talkThread } : null;
+const talk = member ? talkCounts(group.id, member) : new Map<number, { total: number; unread: number }>();
+const talkNew = [...talk.values()].reduce((sum, t) => sum + t.unread, 0);
+const bubble = `<path d="M10 3.2c-4.2 0-7.3 2.7-7.3 6 0 1.9 1 3.6 2.6 4.7-.1 1-.6 2-1.4 2.7 1.6 0 3-.6 4-1.4.7.2 1.4.2 2.1.2 4.2 0 7.3-2.7 7.3-6.1S14.2 3.2 10 3.2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>`;
 const PLAN_ERROR: Record<string, string> = {
   "plan-exists": "There's a plan on already. Call it off first to start another.",
   "plan-gone": "That plan has changed since this page loaded: here it is now.",
@@ -456,7 +469,11 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     <a href="#list" data-tab="list">
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
       <span>Our list</span> <span class="tabs__n">{picks.length}</span>
-      <span class="tabs__flag">{needs && <span class="tabs__dot"><span class="sr-only">: the plan needs you</span></span>}</span>
+      <span class="tabs__flag">
+        {(needs || talkNew > 0) && (
+          <span class="tabs__dot"><span class="sr-only">: {[needs && "the plan needs you", talkNew > 0 && `${talkNew} new in Talk`].filter(Boolean).join(", ")}</span></span>
+        )}
+      </span>
     </a>
     <a href="#explore-section" data-tab="explore">
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Zm0 0v14m6-12v14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -517,6 +534,9 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       {error === "remove-planned" && (
         <p class="notice list-note" role="alert">That one's in the plan: while the plan's on, only the owner can take it off.</p>
       )}
+      {(error === "talk-gone" || (talkId > 0 && !talkOpen)) && (
+        <p class="notice list-note" role="alert">That place isn't on the list now, so its Talk is put away. Add it back and it's there again.</p>
+      )}
       {picks.length === 0 ? (
         <p class="empty">Nothing on the list yet. Add something from Explore.</p>
       ) : (
@@ -541,19 +561,36 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
                 <div class="pick__main">
                   {lead && <p class="pick__lead">Most keen</p>}
                   <h3>{place.name}</h3>
-                  {(place.area || planLine(place.id)) && (
-                    <p class="area">
-                      {place.area}
-                      {planLine(place.id) && (
-                        <span class="pick__plan">
-                          {place.area && <span aria-hidden="true"> · </span>}
-                          <svg viewBox="0 0 20 20" width="12" height="12" aria-hidden="true" set:html={calendar} />
-                          <span class="sr-only">In the plan, </span>
-                          {planLine(place.id)}
-                        </span>
-                      )}
-                    </p>
-                  )}
+                  <p class="area">
+                    {place.area}
+                    {planLine(place.id) && (
+                      <span class="pick__plan">
+                        {place.area && <span aria-hidden="true"> · </span>}
+                        <svg viewBox="0 0 20 20" width="12" height="12" aria-hidden="true" set:html={calendar} />
+                        <span class="sr-only">In the plan, </span>
+                        {planLine(place.id)}
+                      </span>
+                    )}
+                    {/* Talk about it: a bubble with how many messages, blue
+                        and bold when some are new to you. A link to its
+                        thread, which the script opens in place. */}
+                    {(() => {
+                      const t = talk.get(place.id);
+                      const label = `Talk about ${place.name}${t ? `: ${t.total} ${t.total === 1 ? "message" : "messages"}${t.unread ? `, ${t.unread} new` : ""}` : ""}`;
+                      return (
+                        <a
+                          class:list={["pick__talk", { "is-new": t?.unread, "is-empty": !t }]}
+                          href={`/g/${group.link}?talk=${place.id}#talk`}
+                          data-talk-open={place.id}
+                          data-talk-name={place.name}
+                          aria-label={label}
+                        >
+                          <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true" set:html={bubble} />
+                          {t && <span>{t.unread ? `${t.unread} new` : t.total}</span>}
+                        </a>
+                      );
+                    })()}
+                  </p>
                 </div>
                 <form method="post" action={`/api/groups/${group.id}/keen`} data-keen>
                   <input type="hidden" name="pick" value={id} />
@@ -892,6 +929,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     {view && <BusySheet group={group} view={view} open={Astro.url.searchParams.has("busy")} error={error === "busy"} isOwner={isOwner} />}
     {view && isOwner && !view.plan.set && <PlanExact group={group} view={view} open={planParam === "exact"} />}
   </div>
+  <TalkSheet group={group} open={talkOpen} error={talkOpen && error?.startsWith("talk-") ? error : null} />
 
   <script is:inline define:vars={{ groupId: group.id, isOwner }}>
     // Live: anyone joining, picking or voting in this group, or any group
@@ -1128,9 +1166,18 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     const source = new EventSource(`/api/events?group=${encodeURIComponent(groupId)}`);
     source.addEventListener("change", refresh);
     source.addEventListener("places", refresh);
+    // Something new in a Talk thread: which place's, never what was said.
+    // The Talk script reads the thread if it's open, then asks for the
+    // page (the counts on the list, the dot on its tab).
+    const talked = (place) => document.dispatchEvent(new CustomEvent("spots:talk", { detail: { place } }));
+    source.addEventListener("talk", (event) => talked(JSON.parse(event.data).place));
+    document.addEventListener("spots:refresh", () => refresh());
     let opened = false;
     source.addEventListener("open", () => {
-      if (opened) refresh();
+      if (opened) {
+        refresh();
+        talked(null);
+      }
       opened = true;
     });
     // Owner actions that can't be undone ask first.
@@ -1151,7 +1198,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     document.addEventListener(
       "submit",
       (event) => {
-        if (!event.target.matches("[data-search], [data-keen], [data-remove], [data-plan], [data-busy], [data-plan-start]")) source.close();
+        if (!event.target.matches("[data-search], [data-keen], [data-remove], [data-plan], [data-busy], [data-plan-start], [data-talk]")) source.close();
       },
       true,
     );
@@ -1545,5 +1592,6 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     import "../../scripts/welcome";
     import "../../scripts/busy";
     import "../../scripts/plan-start";
+    import "../../scripts/talk";
   </script>
 </Base>
