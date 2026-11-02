@@ -30,7 +30,7 @@ describe("a group", () => {
     expect(where).toMatch(/^\/g\/[\w-]+/);
     const doc = await page(jar, where);
     expect(doc.querySelector("h1")?.textContent).toBe("Spec crew");
-    expect(doc.querySelector<HTMLInputElement>("#share-link")?.value).toContain("/g/");
+    expect(doc.querySelector<HTMLButtonElement>("#share-link")?.dataset.invite).toContain("/g/");
   });
 
   it("keeps what people add and vote for, and counts each person once", async () => {
@@ -111,7 +111,7 @@ describe("a group", () => {
   it("shares its invite person to person, with a card that names the group", async () => {
     const { jar, path } = await started("Share crew");
     const doc = await page(jar, path);
-    const link = doc.querySelector<HTMLInputElement>("#share-link")?.value ?? "";
+    const link = doc.querySelector<HTMLButtonElement>("#share-link")?.dataset.invite ?? "";
     const meta = (property: string) => doc.querySelector(`meta[property="${property}"]`)?.getAttribute("content");
 
     // The card a chat app builds from the link.
@@ -121,10 +121,11 @@ describe("a group", () => {
     expect(image.status).toBe(200);
     expect(image.headers.get("content-type")).toContain("image/jpeg");
 
-    // Private channels only: the link to copy and Share… (the system sheet), never a public feed.
-    expect(doc.querySelector("[data-copy='#share-link']")).toBeTruthy();
-    const share = doc.querySelector<HTMLButtonElement>("[data-share]");
-    expect(share?.dataset.title).toBe("Join Share crew on Spots");
+    // One button, private channels only (the share sheet or a copy of the link), never a public feed.
+    const invite = doc.querySelectorAll<HTMLButtonElement>(".share button");
+    expect(invite).toHaveLength(1);
+    expect(invite[0].dataset.invite).toBe(link);
+    expect(invite[0].dataset.title).toBe("Join Share crew on Spots");
     expect(doc.querySelectorAll(".share a[href]")).toHaveLength(0);
     expect(doc.body.innerHTML).not.toMatch(/facebook\.com\/sharer|twitter\.com\/intent|x\.com\/intent/);
   });
@@ -136,9 +137,8 @@ describe("a group", () => {
     await join(new Jar(), id, id, "Ben");
     expect((await invite(path))?.hasAttribute("open")).toBe(false);
     expect((await invite(`${path}?new=1`))?.hasAttribute("open")).toBe(true);
-    // Folded, the invite is still all there: the link and Share….
-    expect((await invite(path))?.querySelector("#share-link")).toBeTruthy();
-    expect((await invite(path))?.querySelector("[data-share]")).toBeTruthy();
+    // Folded, the invite is still all there: its one button, with the link.
+    expect((await invite(path))?.querySelector<HTMLButtonElement>("#share-link")?.dataset.invite).toContain("/g/");
 
     // Each tab is a link to its part, and without a script every part is on the page.
     const doc = await page(ana, path);

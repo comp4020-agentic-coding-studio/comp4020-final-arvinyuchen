@@ -482,9 +482,8 @@ input[type="radio"] {
   height: 1.2em;
 }
 
-/* The invite panel (src/pages/g/[link].astro): a heading, the link as one
-   button that copies it, Share… where there's a share sheet, the private
-   channels as their apps' icons. */
+/* The invite panel (src/pages/g/[link].astro): a heading and one button,
+   the share sheet on a touch screen, a copy of the link elsewhere. */
 .share {
   display: grid;
   gap: 0.9rem;
@@ -506,59 +505,13 @@ input[type="radio"] {
   gap: 0.9rem;
 }
 
-/* The link: a field to select it in, without a script; with one, the
-   field gives way to the copy button. */
-.share__link {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  min-width: 0;
-  padding: 0.55rem 0.95rem 0.55rem 0.55rem;
-  border: 1.5px solid transparent;
-  border-radius: 16px;
-  background: var(--fill);
-}
-
-.share__link:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
-}
-
-.share__link input {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--ink);
-  font-size: 0.92rem;
-  text-overflow: ellipsis;
-  box-shadow: none;
-  outline: none;
-}
-
+/* The invite's one button, the width of the card: what it does on top,
+   the link under it. */
 .share__copy {
-  display: none;
-}
-
-.can-copy .share__link {
-  padding: 0;
-  border: 0;
-  background: none;
-  box-shadow: none;
-}
-
-.can-copy .share__link > :not(.share__copy) {
-  display: none;
-}
-
-/* The whole row is the button: what it does on top, the link under it. */
-.can-copy .share__copy {
   display: flex;
-  flex: 1;
   align-items: center;
   gap: 0.7rem;
+  width: 100%;
   min-width: 0;
   padding: 0.55rem 0.95rem 0.55rem 0.55rem;
   border: 1.5px solid transparent;
@@ -621,10 +574,32 @@ input[type="radio"] {
   white-space: nowrap;
 }
 
-.share__dup {
+.share__dup,
+.share__out {
   flex: none;
   color: var(--accent-ink);
   transition: opacity 0.2s;
+}
+
+/* Copy where there's no share sheet (a computer), Share on a touch screen
+   that has one (.can-sheet, set by the page's script), Copied for a moment
+   after a copy. */
+.share__say--sheet,
+.share__say--done,
+.share__out,
+.can-sheet .share__say--copy,
+.can-sheet .share__dup,
+.is-copied .share__say--copy {
+  display: none;
+}
+
+.can-sheet .share__say--sheet,
+.is-copied .share__say--done {
+  display: inline;
+}
+
+.can-sheet .share__out {
+  display: block;
 }
 
 .share__tick {
@@ -670,20 +645,10 @@ input[type="radio"] {
   .share__glyph,
   .share__chain,
   .share__tick,
-  .share__dup {
+  .share__dup,
+  .share__out {
     transition: none;
   }
-}
-
-/* Only where the browser has a system share sheet (set by the page script). */
-.share__native {
-  display: none;
-  width: 100%;
-}
-
-.can-share .share__native {
-  display: inline-flex;
-  justify-content: center;
 }
 
 .join {
