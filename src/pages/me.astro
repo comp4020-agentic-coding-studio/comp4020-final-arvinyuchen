@@ -19,24 +19,30 @@ const unread = unreadByGroup(account.id);
 const day = (sqlite: string) =>
   new Date(`${sqlite.replace(" ", "T")}Z`).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
-// Each group's faces, and its plan in a line: when it's set, or what it's
-// waiting on, said to you ("waiting on you" first, it's yours to do).
+// Each group's faces, and its plan: the day and where, then where it
+// stands, said to you ("Waiting on you" is yours to do). Each part is its
+// own piece of type, never strung together with dots.
 const cards = groups.map((g) => {
   const group = getGroup(g.id)!;
   const members = listMembers(g.id);
   const you = memberOfAccount(g.id, account.id)!;
   const plan = currentPlan(g.id);
-  let status: { text: string; yours: boolean } | null = null;
+  let status: { day: string; where: string; state: string; yours: boolean } | null = null;
   if (plan) {
     const view = planView(plan, members, you, group.ownerId);
-    const when = `${formatDay(plan.day)} · ${stopNames(plan.stops, 2)}`;
-    if (plan.set) status = { text: `${when} · ${formatMinute(plan.set.start)}`, yours: false };
-    else if (view.mine === null) status = { text: `${when} · waiting on you`, yours: true };
-    else if (view.everyoneIn) status = { text: `${when} · ${g.owner ? "everyone's in, pick the time" : "everyone's in"}`, yours: g.owner };
-    else status = { text: `${when} · waiting on ${view.waiting.length}`, yours: false };
+    const when = { day: formatDay(plan.day), where: stopNames(plan.stops, 2) };
+    if (plan.set) status = { ...when, state: `Set for ${formatMinute(plan.set.start)}`, yours: false };
+    else if (view.mine === null) status = { ...when, state: "Waiting on you", yours: true };
+    else if (view.everyoneIn) status = { ...when, state: g.owner ? "Everyone's in: pick the time" : "Everyone's in", yours: g.owner };
+    else status = { ...when, state: `Waiting on ${view.waiting.length}`, yours: false };
   }
   return { ...g, members, status };
 });
+// "Mac · Chrome", as a passkey's device is kept, said as "Chrome on Mac"
+const device = (madeOn: string) => {
+  const [on, browser] = madeOn.split(" · ");
+  return browser ? `${browser} on ${on}` : on;
+};
 const error = Astro.url.searchParams.get("error");
 const done = Astro.url.searchParams.get("done");
 ---
@@ -72,14 +78,18 @@ const done = Astro.url.searchParams.get("done");
                   {g.members.length > 5 && <span class="face face--more">+{g.members.length - 4}</span>}
                 </span>
               </span>
-              <span class="fine">
+              <span class="fine my-group__who">
                 {g.people} {g.people === 1 ? "person" : "people"}
-                {g.owner && " · you're the owner"}
+                {g.owner && <span class="owner-tag">You're the owner</span>}
               </span>
               {g.status && (
                 <span class:list={["my-group__plan", { "is-yours": g.status.yours }]}>
-                  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
-                  {g.status.text}
+                  <span class="my-group__when">
+                    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    <strong>{g.status.day}</strong>
+                    <span>{g.status.where}</span>
+                  </span>
+                  <span class="my-group__state">{g.status.state}</span>
                 </span>
               )}
             </a>
@@ -114,12 +124,13 @@ const done = Astro.url.searchParams.get("done");
                 <svg viewBox="0 0 20 20" width="18" height="18"><circle cx="7" cy="10" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M10.6 10H17.5M15 10v2.6M17.5 10v1.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
               </span>
               <div>
-                <strong>{p.keeper ?? p.madeOn ?? "A passkey"}</strong>
+                <strong>
+                  {p.keeper ?? (p.madeOn ? device(p.madeOn) : "A passkey")}
+                  <span class="keys__sync">{p.synced ? "Syncs" : "This device only"}</span>
+                </strong>
                 <span class="fine">
-                  {p.keeper && p.madeOn && `Made on ${p.madeOn} · `}
-                  {p.synced ? "syncs to your other devices" : "on this one device only"}
-                  {` · added ${day(p.createdAt)}`}
-                  {p.lastUsedAt && ` · last used ${day(p.lastUsedAt)}`}
+                  Added {day(p.createdAt)}{p.keeper && p.madeOn && ` on ${device(p.madeOn)}`}
+                  {p.lastUsedAt && <span class="keys__used">Last used {day(p.lastUsedAt)}</span>}
                 </span>
               </div>
               {passkeys.length > 1 && (
