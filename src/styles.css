@@ -3834,6 +3834,21 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     mask-image: linear-gradient(#000 calc(100% - 1rem), transparent);
   }
 
+  /* (each column scrolls under the pointer without a bar of its own: a bar
+     would lie over the cards' edge, which runs to the column's; the fade at
+     a column's foot says there's more) */
+  .group-page.is-tabbed .group-side,
+  .group-page.is-tabbed #explore,
+  .group-page.is-tabbed > .group-tools {
+    scrollbar-width: none;
+  }
+
+  .group-page.is-tabbed .group-side::-webkit-scrollbar,
+  .group-page.is-tabbed #explore::-webkit-scrollbar,
+  .group-page.is-tabbed > .group-tools::-webkit-scrollbar {
+    display: none;
+  }
+
   .group-page.is-tabbed .explore-wrap,
   .group-page.is-tabbed > .group-tools {
     grid-row: 1;
@@ -3857,7 +3872,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     mask-image: linear-gradient(transparent, #000 0.9rem, #000 calc(100% - 1rem), transparent);
     overflow-y: auto;
     overscroll-behavior: contain;
-    scrollbar-width: thin;
   }
 
   /* (a box that scrolls can take focus, so a link to #explore, as a search
@@ -3894,7 +3908,6 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     border-radius: var(--radius);
     overflow-y: auto;
     overscroll-behavior: contain;
-    scrollbar-width: thin;
   }
 
 }
