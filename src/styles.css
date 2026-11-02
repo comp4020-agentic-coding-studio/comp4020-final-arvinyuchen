@@ -3839,13 +3839,14 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     height: 100%;
     max-height: none;
     /* (a box with the cards' own width and corners, as Explore's cards
-       have, so the panel scrolled half out of sight is still rounded at
-       the top; its rows fade out at its foot rather than being cut off) */
+       and the map have: all three columns start and end on the same lines,
+       a card scrolled half out of sight is cut by the box's round corner,
+       never faded, and scrolled to the end the last card's foot is the
+       column's) */
     margin: 0;
     padding: 0;
     border-radius: var(--radius);
     overscroll-behavior: contain;
-    mask-image: linear-gradient(#000 calc(100% - 1rem), transparent);
   }
 
   /* (each column scrolls under the pointer without a bar of its own: a bar
@@ -3879,13 +3880,14 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   .group-page.is-tabbed #explore {
     min-height: 0;
     height: 100%;
-    padding-bottom: 1rem;
+    padding-bottom: 0;
     border-radius: var(--radius);
-    /* cards fade as they slide under the search, and in at the foot,
-       rather than being cut off square */
-    mask-image: linear-gradient(transparent, #000 0.9rem, #000 calc(100% - 1rem), transparent);
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+
+  .group-page.is-tabbed #explore > :last-child {
+    margin-bottom: 0;
   }
 
   /* (a box that scrolls can take focus, so a link to #explore, as a search
@@ -3906,9 +3908,11 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     margin: 0;
   }
 
+  /* (the map, a card like the others beside it, with their quiet shadow) */
   .group-page.is-tabbed #map {
     height: 100%;
     min-height: 0;
+    box-shadow: var(--shadow-sm);
   }
 
   /* (Share and Settings take Explore's place; with neither open the tools
