@@ -190,9 +190,14 @@ every open page, and the list re-ranks itself, each card gliding to its new
 place. Our list's Edit takes a place off again: yours until someone else is
 keen on it or while it's in the plan on now (a grey lock where the red minus would be), any for the owner, with Undo; put back, it starts from no keens.
 The group's page is in tabs (Our list, Explore, Share a place, and
-Settings for whoever started it), and the invite folds behind one button. On a
-wide screen they're side by side: Our list, every row of it, scrolls with the
-page, while Explore and the map stay in view beside it. Search Explore by describing what you're after: the answer is
+Settings for whoever started it), and the invite folds behind one button:
+inside, one button shares the link (the phone's share sheet) or copies it (a
+computer, which also shows it as a QR code for the phones round the table),
+and the owner writes the note for the people they invite right there.
+Whoever joined since you last looked is named under the faces ("Mia and Leo
+joined") until you close it, since nothing is pushed. On a wide screen the
+page is the window, the three side by side: Our list with the group's panel,
+Explore's cards and the map each scroll on their own, their tops level. Search Explore by describing what you're after: the answer is
 the matching cards, best first, and the map frames their pins. Everyone signs
 in with a passkey, is themselves on any device, and sees all their groups in
 one place; your account page renames you everywhere and adds or removes

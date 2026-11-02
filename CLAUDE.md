@@ -97,10 +97,18 @@ follow from it; every change has to hold to them.
 - **The invite goes person to person.** Whoever holds the link can join, so
   it's shared through private channels only, by one button: the system
   share sheet on a touch screen that has one, a copy of the link elsewhere
-  (no app icons of our own: the sheet already has every chat app). Never
-  add a button that posts it to a
+  (no app icons of our own: the sheet already has every chat app). On a
+  computer the card also shows the link as a QR code, drawn on the server
+  (`uqr`), nothing fetched (#119); the owner writes the note to invitees
+  in the card itself (#118). Never add a button that posts it to a
   public feed (a Facebook post, X, a story). A link preview may name the group
   (Open Graph, `src/layouts/Base.astro`), never its members or votes.
+- **Who joined is said in the app, until you close it.** Under the faces,
+  each member sees who joined after them and since they last closed the
+  note ("Mia and Leo joined", `newcomers` in `src/lib/db.ts`, by member id
+  in `joins_seen_id`); it arrives live and waits across visits, since
+  nothing is pushed, and closing it (`/api/groups/[id]/seen`) is theirs
+  alone (#120).
 - **Accounts are passkeys only.** No passwords, no email, no "sign in with"
   providers. An account is made from a name and a passkey
   (`src/pages/api/passkeys/`), its sessions store only a hash of their token,

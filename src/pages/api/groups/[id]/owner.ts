@@ -26,6 +26,8 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   if (action === "note") {
     setNote(group.id, clean(form.get("note"), NOTE_MAX).replace(/\s+/g, " "));
     changed(group.id);
+    // (from the invite card, in the page: it says so itself)
+    if (request.headers.get("x-spots") === "in-page") return new Response(null, { status: 204 });
     return back(group.link, "noted");
   }
   if (action === "remove") {

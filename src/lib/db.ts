@@ -137,6 +137,9 @@ addColumn("members", "account_id", "INTEGER REFERENCES accounts(id)");
 // they were merged into.
 addColumn("members", "removed_at", "TEXT");
 addColumn("members", "merged_into", "INTEGER REFERENCES members(id)");
+// Who joined since a member last looked: the newest member they've closed
+// the note about ("Mia joined"), by id, so it's exact (#120).
+addColumn("members", "joins_seen_id", "INTEGER");
 // Site admin (src/pages/admin.astro): an archived group is closed to
 // everyone but can be restored; a hidden place leaves Explore and the map.
 addColumn("accounts", "is_admin", "INTEGER NOT NULL DEFAULT 0");
@@ -427,6 +430,28 @@ export function listMembers(groupId: string): Member[] {
   return db
     .prepare(`SELECT ${MEMBER_COLUMNS} FROM members WHERE group_id = ? AND removed_at IS NULL ORDER BY id`)
     .all(groupId) as Member[];
+}
+
+/** Who joined the group after this member, and since they last closed the
+ *  note saying so, oldest first: never themselves, nor anyone since removed. */
+export function newcomers(groupId: string, memberId: number): string[] {
+  return (
+    db
+      .prepare(
+        `SELECT m.name FROM members m, members me
+          WHERE me.id = ? AND me.group_id = ? AND m.group_id = me.group_id AND m.removed_at IS NULL
+            AND m.id > MAX(me.id, COALESCE(me.joins_seen_id, 0))
+          ORDER BY m.id`,
+      )
+      .all(memberId, groupId) as { name: string }[]
+  ).map((row) => row.name);
+}
+
+/** Closes the "Mia joined" note for this member: everyone in now is seen. */
+export function seeJoins(groupId: string, memberId: number): void {
+  db.prepare(
+    "UPDATE members SET joins_seen_id = (SELECT MAX(id) FROM members WHERE group_id = ?) WHERE id = ? AND group_id = ?",
+  ).run(groupId, memberId, groupId);
 }
 
 /** The account's member in a group, if it has one there. */

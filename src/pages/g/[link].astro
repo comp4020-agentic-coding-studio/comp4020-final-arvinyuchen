@@ -12,7 +12,8 @@ import SpotPhoto from "../../components/SpotPhoto.astro";
 import TalkSheet from "../../components/TalkSheet.astro";
 import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
-import { canRemovePick, groupByLink, listMembers, listPicks, listPlaces, NOTE_MAX, type Place } from "../../lib/db";
+import { canRemovePick, groupByLink, listMembers, listPicks, listPlaces, newcomers, NOTE_MAX, type Place } from "../../lib/db";
+import { renderSVG } from "uqr";
 import { nearPlan, nearText } from "../../lib/outing";
 import { PIN_ICON } from "../../lib/outing-icons";
 import { clean, me, signedIn } from "../../lib/me";
@@ -44,6 +45,16 @@ const isNew = Astro.url.searchParams.has("new");
 // link to copy works everywhere; where there's a share sheet (a phone, Safari)
 // Share… opens it, with Messages, WhatsApp, Instagram, WeChat and the rest.
 const invite = `Join ${group.name} on Spots: we're picking places to go together.`;
+// The link as a QR code for phones round the table, drawn here, nothing
+// fetched (#119); shown only on a computer, by the stylesheet.
+const qr = renderSVG(shareUrl, { border: 1 });
+// Who joined since you last looked (#120), until you close it: "Mia joined",
+// "Mia and Leo joined", "Mia, Leo and Zoe joined", "Mia, Leo and 3 others".
+const joined = member ? newcomers(group.id, member.id) : [];
+const joinedText =
+  joined.length > 3
+    ? `${joined.slice(0, 2).join(", ")} and ${joined.length - 2} others joined`
+    : `${joined.length > 1 ? `${joined.slice(0, -1).join(", ")} and ` : ""}${joined.at(-1)} joined`;
 // The link as people say it, without the "https://".
 const shortUrl = shareUrl.replace(/^https?:\/\//, "");
 const error = Astro.url.searchParams.get("error");
@@ -315,11 +326,13 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           </a>
         )}
       </p>
-      {group.note && (
-        <p class="group-note">
-          “{group.note}” <span class="fine">{owner ? `${owner.name}, to the group` : ""}</span>
-        </p>
-      )}
+      <div class="group-note-slot">
+        {group.note && (
+          <p class="group-note">
+            “{group.note}” <span class="fine">{owner ? `${owner.name}, to the group` : ""}</span>
+          </p>
+        )}
+      </div>
       {/* Who's in, as faces with names: the owner's has a crown, yours a
           ring. Past six, the last face is "+N more", the summary of a
           <details>, so it unfolds everyone without a script, and folds
@@ -368,6 +381,18 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           </summary>
         </details>
       </div>
+      {/* Who joined since you last looked, until you close it: there's no
+          push, so it waits here, and arrives live (#120). */}
+      <div class="joined-slot">
+        {joined.length > 0 && (
+          <form class="joined" method="post" action={`/api/groups/${group.id}/seen`} data-seen role="status">
+            <span class="joined__text">{joinedText}</span>
+            <button class="joined__close" aria-label="Close">
+              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+            </button>
+          </form>
+        )}
+      </div>
     </div>
     {/* (on a wide screen, where this is the group's panel: the home page's
         Canberra across its top) */}
@@ -407,7 +432,32 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
             <svg class="share__dup" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
             <svg class="share__out" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3.5v11M8 7.5l4-4 4 4M7 11H6a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 18 11h-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
           </button>
+          <figure class="share__qr">
+            <span class="share__code" role="img" aria-label="QR code of the invite link" set:html={qr} />
+            <figcaption>Or scan it with a phone</figcaption>
+          </figure>
         </div>
+        {/* The owner's note to the people they invite, written where they
+            send the invite; outside what a refresh redraws, so it isn't
+            lost mid-sentence (#118). */}
+        {isOwner && (
+          <div class="share__note">
+          <form class="settings__row" method="post" action={`/api/groups/${group.id}/owner`} data-note>
+            <input type="hidden" name="action" value="note" />
+            <label class="grow">
+              <span>A note for the people you invite</span>
+              <input
+                name="note"
+                maxlength={NOTE_MAX}
+                value={group.note ?? ""}
+                placeholder="Where are we going Friday? Add yours by Wednesday."
+              />
+            </label>
+            <button class="btn">Save</button>
+          </form>
+          <p class="fine">It's the first thing they see when they open the link. Leave it empty to take it down.</p>
+          </div>
+        )}
       </div>
     </details>
   </section>
@@ -787,21 +837,6 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         <button class="btn">Rename</button>
       </form>
 
-      <form method="post" action={`/api/groups/${group.id}/owner`} class="settings__row">
-        <input type="hidden" name="action" value="note" />
-        <label class="grow">
-          <span>A note for people you invite</span>
-          <input
-            name="note"
-            maxlength={NOTE_MAX}
-            value={group.note ?? ""}
-            placeholder="Where are we going Friday? Add yours by Wednesday."
-          />
-        </label>
-        <button class="btn">Save</button>
-      </form>
-      <p class="fine">It's the first thing someone sees when they open your invite link. Leave it empty to take it down.</p>
-
       <h3>People</h3>
       <ul class="people">
         {members.map((m) => (
@@ -887,7 +922,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     // reload by the viewer. The page asks the server for itself again and
     // swaps in the changed parts, keeping the scroll position, the map and
     // anything typed in the forms.
-    const regions = [".group-head h1", ".next-up-slot", ".group-head .who__count", ".group-head .who__grid", ".group-head .who__fold", ".share__row", ".tabs__n", ".tabs__flag", "#plans", "#list", "#past-plans", "#explore", "#settings .people", "#plan-sheets"];
+    const regions = [".group-head h1", ".next-up-slot", ".group-note-slot", ".joined-slot", ".group-head .who__count", ".group-head .who__grid", ".group-head .who__fold", ".share__row", ".tabs__n", ".tabs__flag", "#plans", "#list", "#past-plans", "#explore", "#settings .people", "#plan-sheets"];
     // The page as it is now, its search and "Near your plan" included,
     // without one-off notices; or with one of those changed.
     function exploreUrl(change = {}) {
@@ -1033,7 +1068,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     // A keen, a Remove, or anything for the plan posts in the background, so
     // the page (and its order) stays put. If that fails, the form posts the
     // plain way.
-    const inPage = "[data-keen], [data-remove], [data-plan], [data-busy], [data-plan-start]";
+    const inPage = "[data-keen], [data-remove], [data-plan], [data-busy], [data-plan-start], [data-note], [data-seen]";
     // (moving the plan to another day starts its answers afresh: asked
     // first, but only when the day really changes)
     const asks = (form) => {
@@ -1090,6 +1125,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         }
         if (!res.ok) throw new Error(String(res.status));
         await refresh();
+        if (form.matches("[data-note]")) say(form.elements.note.value.trim() ? "Note saved. It's the first thing people see when they open the link." : "Note taken down.");
       } catch {
         if (by?.name) form.insertAdjacentHTML("beforeend", `<input type="hidden" name="${by.name}" value="${by.value}">`);
         form.submit();

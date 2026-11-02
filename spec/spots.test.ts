@@ -122,7 +122,7 @@ describe("a group", () => {
     expect(image.headers.get("content-type")).toContain("image/jpeg");
 
     // One button, private channels only (the share sheet or a copy of the link), never a public feed.
-    const invite = doc.querySelectorAll<HTMLButtonElement>(".share button");
+    const invite = doc.querySelectorAll<HTMLButtonElement>(".share__row button");
     expect(invite).toHaveLength(1);
     expect(invite[0].dataset.invite).toBe(link);
     expect(invite[0].dataset.title).toBe("Join Share crew on Spots");
@@ -145,6 +145,57 @@ describe("a group", () => {
     const tabs = [...doc.querySelectorAll<HTMLAnchorElement>(".tabs a[data-tab]")].map((a) => a.getAttribute("href"));
     expect(tabs).toEqual(["#list", "#explore-section", "#add", "#settings"]);
     for (const hash of tabs) expect(doc.querySelector(`${hash}[data-panel]`)).toBeTruthy();
+  });
+
+  it("lets the owner write the invitees' note in the invite card, with the link as a QR code beside it", async () => {
+    const { jar: ana, id, path, api } = await started("Card crew");
+    const ben = new Jar();
+    await join(ben, id, id, "Ben");
+    // The note's field is the owner's, in the invite card; the code carries the link.
+    const owners = await page(ana, path);
+    expect(owners.querySelector(".share__note form[data-note] input[name='note']")).toBeTruthy();
+    expect(owners.querySelector("#settings input[name='note']")).toBeNull();
+    expect(owners.querySelector(".share__qr svg")).toBeTruthy();
+    expect((await page(ben, path)).querySelector(".share__note")).toBeNull();
+
+    // Saved in the page, it's the group's note at once.
+    const saved = await fetch(new URL(`${api}/owner`, baseUrl), {
+      method: "POST",
+      headers: { origin, cookie: ana.header, "x-spots": "in-page" },
+      body: new URLSearchParams({ action: "note", note: "Pick yours by Friday" }),
+      redirect: "manual",
+    });
+    expect(saved.status).toBe(204);
+    expect((await page(ben, path)).querySelector(".group-note-slot")?.textContent).toContain("Pick yours by Friday");
+  });
+
+  it("tells each member who joined since they last looked, until they close it", async () => {
+    const { jar: ana, id, path, api } = await started("Joining crew");
+    const joinedFor = async (jar: Jar) => (await page(jar, path)).querySelector(".joined__text")?.textContent?.trim();
+    expect(await joinedFor(ana)).toBeUndefined();
+
+    const ben = new Jar();
+    await join(ben, id, id, "Ben");
+    expect(await joinedFor(ana)).toBe("Ben joined");
+    expect(await joinedFor(ben)).toBeUndefined(); // never your own joining, nor those before you
+    expect(await joinedFor(ana)).toBe("Ben joined"); // still there on the next visit
+
+    await join(new Jar(), id, id, "Cat");
+    expect(await joinedFor(ana)).toBe("Ben and Cat joined");
+    expect(await joinedFor(ben)).toBe("Cat joined");
+
+    // Closed, it's gone for that member only, until someone else joins.
+    const closed = await fetch(new URL(`${api}/seen`, baseUrl), {
+      method: "POST",
+      headers: { origin, cookie: ana.header, "x-spots": "in-page" },
+      redirect: "manual",
+    });
+    expect(closed.status).toBe(204);
+    expect(await joinedFor(ana)).toBeUndefined();
+    expect(await joinedFor(ben)).toBe("Cat joined");
+    for (const name of ["Dev", "Eve", "Fay"]) await join(new Jar(), id, id, name);
+    expect(await joinedFor(ana)).toBe("Dev, Eve and Fay joined");
+    expect(await joinedFor(ben)).toBe("Cat, Dev and 2 others joined");
   });
 
   it("doesn't let anyone who isn't a member add or vote, signed in or not", async () => {
