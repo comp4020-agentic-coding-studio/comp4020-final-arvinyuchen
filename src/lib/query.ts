@@ -21,7 +21,17 @@ export interface ParsedQuery {
   near: Anchor | null;
   /** A kind the prompt clearly asks for, or null when it names none or several. */
   kind: Kind | null;
+  /** Whether it asks for bad weather ("a rainy day"): what it wants is somewhere indoors, not the rain. */
+  indoors: boolean;
 }
+
+// (a rainy day reads to the vectors as a lake or a forest, the weather;
+// what someone means is a roof)
+const BAD_WEATHER = /\b(?:rain|rainy|raining|rains|wet|stormy|freezing)\b/;
+
+/** What goes to the vectors: the rest, but for bad weather the weather swapped for "somewhere indoors". */
+export const forMeaning = (q: ParsedQuery): string =>
+  q.indoors ? `${q.rest.replace(new RegExp(BAD_WEATHER, "g"), " ").replace(/\s+/g, " ").trim()}, somewhere indoors` : q.rest;
 
 /** How far "near X" reaches. Canberra suburbs are about two kilometres across. */
 export const NEAR_KM = 3;
@@ -33,6 +43,11 @@ const LANDMARKS: Anchor[] = [
   { label: "uni", name: "ANU", lat: -35.2777, lon: 149.1185 },
   { label: "civic", name: "Civic", lat: -35.2809, lon: 149.13 },
   { label: "the city", name: "the city", lat: -35.2809, lon: 149.13 },
+  // (the town centres people say, though no place's suburb is called that:
+  // Woden is Phillip, Tuggeranong is Greenway; OpenStreetMap's points)
+  { label: "woden", name: "Woden", lat: -35.3463, lon: 149.0858 },
+  { label: "tuggeranong", name: "Tuggeranong", lat: -35.4167, lon: 149.0659 },
+  { label: "weston creek", name: "Weston Creek", lat: -35.3407, lon: 149.0525 },
 ];
 
 const NEAR_WORDS = "near|around|in|by|close to|next to|walking distance (?:of|from)|at";
@@ -83,7 +98,7 @@ export function parseQuery(query: string, anchors: Anchor[]): ParsedQuery {
   }
   const words = new Set(tokens(rest));
   const asked = (Object.keys(KIND_WORDS) as Kind[]).filter((k) => KIND_WORDS[k].some((w) => words.has(w)));
-  return { rest, near, kind: asked.length === 1 ? asked[0] : null };
+  return { rest, near, kind: asked.length === 1 ? asked[0] : null, indoors: BAD_WEATHER.test(rest) };
 }
 
 const STOP = new Set(
