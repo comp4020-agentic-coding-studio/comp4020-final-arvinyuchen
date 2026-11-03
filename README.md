@@ -117,9 +117,18 @@ other's taste.
   credited on each card. The other sixty-seven were picked for breadth, one for
   each kind of thing a group might search for (a cuisine, a bar, bowling, a
   river swim, a stage) across the suburbs, after a "mexican food" search
-  found nothing. Each cites the local guide or paper that recommends it, and
-  its picture is an illustration made for Spots, a dish or what you do
-  there, never the venue, labelled "Illustration" on its card. Finding a free photo of every café and bar
+  found nothing. Then the pool grew to about seven hundred, so a search
+  for almost anything finds something: 330 cafés, restaurants and bars
+  that Toque, the owner's Canberra food app, already knew were open and
+  that an editorial article recommends, and about three hundred
+  activities, walks, wineries and stages from local guides, Parks ACT and
+  VisitCanberra. Each cites the source that recommends it, with its reason
+  in our words from that source (no chains, nothing a directory merely
+  lists), and its picture is an illustration, a dish or what you do
+  there, never the venue, labelled "Illustration" on its card; places of
+  one kind share a few (Toque's DishArt for the dishes). With that many,
+  Explore shows them a page at a time, of the kind you pick, and the map
+  draws every one. Finding a free photo of every café and bar
   proved hopeless (Commons has few, and a venue's own are its own), so a
   place a person shares has the photo they upload, if any, kept with its
   location and every other bit of metadata stripped, and credited to them.

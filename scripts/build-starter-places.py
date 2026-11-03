@@ -39,11 +39,19 @@ chosen = [{"name": n, "lat": float(la), "lon": float(lo)} for la, lo, n in re.fi
 def candidates():
     for e in json.load(open(CAND / "build/food-dish.json")):
         yield {**e, "art": f"dish/{e['dish']}"}
-    for name in ("outdoors-x10", "culture-x10", "fun-x10"):
+    for name in ("outdoors-x10", "culture-x10", "fun-x10", "drinks-farms-x10", "more-x10"):
         if not (CAND / f"{name}.json").exists():
             continue
         for e in json.load(open(CAND / f"{name}.json")):
-            yield {**e, "art": f"do/{slug(e['covers'])}"}
+            yield {**e, "art": f"do/{drawn(slug(e['covers']))}"}
+
+# A kind of thing many places share has a few drawings (bushwalk, bushwalk-2,
+# bushwalk-3), taken in turn so neighbouring cards differ.
+turns = {}
+def drawn(cover):
+    ways = [cover] + [f"{cover}-{n}" for n in range(2, 6) if (DO_ART / f"{cover}-{n}.png").exists()]
+    turns[cover] = turns.get(cover, -1) + 1
+    return ways[turns[cover] % len(ways)]
 
 out, dropped = [], []
 for e in candidates():

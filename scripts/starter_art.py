@@ -1,11 +1,11 @@
-"""Turn a square illustration into a Spots place picture: padded to 3:2 with
-its own paper colour (the median of its border), 900x600 webp, quality 80.
+"""Turn a square illustration into a Spots place picture: on one paper,
+padded to 3:2, 900x600 webp, quality 80.
 
   (used by scripts/build-starter-places.py)
 """
 import statistics, subprocess, sys, tempfile
 from pathlib import Path
-from PIL import Image, ImageChops, ImageStat
+from PIL import Image, ImageChops, ImageFilter, ImageStat
 
 def paper(img):
     w, h = img.size
@@ -15,9 +15,8 @@ def paper(img):
 
 PAPER = (242, 238, 232)
 
-# Paper for the illustrations drawn on plain white: an empty corner of one drawn on
-# paper, mirrored into a sheet so it has no seams. Multiplying puts the
-# drawing on it, as ink on paper.
+# The paper: an empty corner of a DishArt drawn on paper, mirrored into a
+# sheet so it has no seams.
 PAPER_FROM = Path.home() / "Documents/Works/toque/ios/Toque/Resources/Assets.xcassets/Dishes/dish-coffee-iced.imageset/coffee-iced.heic"
 _sheet = None
 
@@ -48,16 +47,17 @@ def make(src, out):
         subprocess.run(["sips", "-s", "format", "png", str(src), "--out", str(tmp)], check=True, capture_output=True)
         src = tmp
     img = Image.open(src).convert("RGB").resize((600, 600), Image.LANCZOS)
+    # Every picture goes onto the same paper, whatever it was drawn on: its
+    # own paper lifted to white, then multiplied with the sheet, as ink on
+    # paper, so a page of cards is one paper and no square shows.
     own = paper(img)
-    if min(own) >= 246:
-        # (its own off-white lifted to white first, so no square shows)
-        img = Image.merge("RGB", [band.point(lambda v, k=255 / own[i]: min(255, round(v * k))) for i, band in enumerate(img.split())])
-        white = Image.new("RGB", (900, 600), "white")
-        white.paste(img, (150, 0))
-        canvas = ImageChops.multiply(white, sheet())
-    else:
-        canvas = Image.new("RGB", (900, 600), paper(img))
-        canvas.paste(img, (150, 0))
+    img = Image.merge("RGB", [band.point(lambda v, k=255 / own[i]: min(255, round(v * k))) for i, band in enumerate(img.split())])
+    white = Image.new("RGB", (900, 600), "white")
+    white.paste(img, (150, 0))
+    # (and its edges faded into the sheet, where its paper wasn't even)
+    edge = Image.new("L", (900, 600), 0)
+    edge.paste(255, (150 + 48, 48, 750 - 48, 600 - 48))
+    canvas = Image.composite(ImageChops.multiply(white, sheet()), sheet(), edge.filter(ImageFilter.GaussianBlur(28)))
     Path(out).parent.mkdir(parents=True, exist_ok=True)
     canvas.save(out, "WEBP", quality=80)
     return paper(img)
