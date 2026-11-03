@@ -1659,7 +1659,7 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
 }
 
 /* (each kind a small disc in its colour, stacked like faces, its icon in
-   white: six fit in the width of three) */
+   white) */
 .map-gather .kind-icon {
   box-sizing: border-box;
   width: 16px;
@@ -1672,8 +1672,26 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   color: #fff;
 }
 
-.map-gather .kind-icon + .kind-icon {
+.map-gather :is(.kind-icon, .map-gather__more) + :is(.kind-icon, .map-gather__more) {
   margin-left: -6px;
+}
+
+/* (the kinds past the first three, as a grey disc the same size) */
+.map-gather__more {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 2px;
+  border: 1.5px solid #fff;
+  border-radius: 999px;
+  background: var(--muted);
+  color: #fff;
+  font-size: 0.56rem;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .map-gather span {

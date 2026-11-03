@@ -90,8 +90,9 @@ follow from it; every change has to hold to them.
   Explore could show: those on our list as chips, the rest as dots drawn by
   the map itself (a circle layer), one becoming a mark under the pointer
   or when flown to. Across the city three or more dots close together
-  gather into a frosted chip: a small disc for each kind it holds, most
-  first, in the kind's colour with its icon, then how many, in the page's
+  gather into a frosted chip: a small disc for each of the three kinds it
+  holds most of, in the kind's colour with its icon, "+2" for any more
+  kinds, then how many, in the page's
   font, under our list's chips, until the camera is down
   among the suburbs (zoom 13); a tap zooms in to where it comes apart. Its callout on a place whose card isn't showing puts
   that card first (`?at`). A search's answers are all on the map, its

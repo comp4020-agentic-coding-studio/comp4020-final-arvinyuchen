@@ -490,8 +490,8 @@ if (container) {
   }
 
   // A gathering (three or more) is a mark like a chip, in the page's font:
-  // the icons of the kinds it holds, most first, each in its colour, then
-  // how many places, quieter than our list's numbered chips. A tap zooms
+  // the kinds it holds most of (three, and "+2" for the rest), each a disc
+  // in its colour with its icon, then how many places, quieter than our list's numbered chips. A tap zooms
   // in to where it comes apart.
   const gatherings = new Map<number, { marker: maplibregl.Marker; el: HTMLButtonElement }>();
   function gather() {
@@ -532,11 +532,18 @@ if (container) {
     }
   }
   function dressGathering(el: HTMLButtonElement, count: number, held: { kind: Kind; n: number }[]) {
-    const icons = held.map(({ kind }) => {
+    // (the three it holds most of; any more, a "+2" disc after them)
+    const icons: Element[] = held.slice(0, 3).map(({ kind }) => {
       const icon = kindIcon(kind);
       icon.style.setProperty("--kind", `var(--${kind})`);
       return icon;
     });
+    if (held.length > 3) {
+      const more = document.createElement("i");
+      more.className = "map-gather__more";
+      more.textContent = `+${held.length - 3}`;
+      icons.push(more);
+    }
     const n = document.createElement("span");
     n.textContent = String(count);
     el.replaceChildren(...icons, n);
