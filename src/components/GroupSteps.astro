@@ -1,10 +1,12 @@
 ---
-// Where a group is on Spots' one way through, as four nodes on a line:
-// List (places on Our list), Plan (the owner started one), Times (everyone
-// said when they're free) and Set (the owner set the time). Steps done are
-// blue dots on a blue line; the one it's at is a blue ring (for Times,
-// filling as people answer); the rest are grey. Under it, only the step
-// it's at, in a word or two: blue when it's yours to do.
+// Where a group is on Spots' one way through, as four steps on a line,
+// each a small round icon that says what it is: a pin (places on Our
+// list), a calendar (the owner started a plan), a clock (everyone said
+// when they're free) and a tick (the time is set). Steps done are blue
+// with a white icon, on a blue line; the one it's at is a blue ring round
+// a blue icon (for Times, the ring fills as people answer); the rest are
+// grey. Beside them, only the step it's at, in a word or two: blue when
+// it's yours to do. Each step's name shows on hover.
 interface Props {
   /** the step it's at, 0 to 3, or 4 when they're all done */
   at: number;
@@ -16,39 +18,40 @@ interface Props {
   said: string;
 }
 const { at, part = 0, label, yours = false, said } = Astro.props;
-const x = [7, 24.3, 41.7, 59];
-const R = 4.6;
-const ARC = 2 * Math.PI * R;
+const STEPS = [
+  {
+    name: "Places on the list",
+    icon: `<path d="M8 14.2s4.6-4.1 4.6-7.6a4.6 4.6 0 0 0-9.2 0c0 3.5 4.6 7.6 4.6 7.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="8" cy="6.6" r="1.6" fill="currentColor"/>`,
+  },
+  {
+    name: "A plan",
+    icon: `<rect x="2.3" y="3.3" width="11.4" height="10.4" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2.3 6.8h11.4M5.5 1.8v2.6M10.5 1.8v2.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>`,
+  },
+  {
+    name: "Everyone's free times",
+    icon: `<circle cx="8" cy="8" r="5.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 4.8V8l2.2 1.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  {
+    name: "The time set",
+    icon: `<path d="m3.8 8.4 2.7 2.7 5.7-6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+];
 ---
 
 <span class="steps" role="img" aria-label={said} title={said}>
-  <svg viewBox="0 0 66 14" width="66" height="14" aria-hidden="true">
-    {x.slice(0, -1).map((cx, i) => (
-      <line class:list={["steps__line", { "is-done": i < at }]} x1={cx + R + 1.5} x2={x[i + 1] - R - 1.5} y1="7" y2="7" />
+  <span class="steps__nodes" aria-hidden="true">
+    {STEPS.map((s, i) => (
+      <>
+        {i > 0 && <i class:list={["steps__link", { "is-done": i <= at }]} />}
+        <span
+          class:list={["steps__node", i < at ? "is-done" : i === at ? "is-now" : "is-next"]}
+          style={i === at && part > 0 && part < 1 ? `--part: ${part.toFixed(3)}` : undefined}
+          title={s.name}
+        >
+          <svg viewBox="0 0 16 16" width="13" height="13" set:html={s.icon} />
+        </span>
+      </>
     ))}
-    {x.map((cx, i) =>
-      i < at ? (
-        <circle class="steps__done" cx={cx} cy="7" r={R} />
-      ) : i === at ? (
-        part > 0 && part < 1 ? (
-          <>
-            <circle class="steps__track" cx={cx} cy="7" r={R} />
-            <circle
-              class="steps__now"
-              cx={cx}
-              cy="7"
-              r={R}
-              stroke-dasharray={`${(ARC * part).toFixed(2)} ${ARC.toFixed(2)}`}
-              transform={`rotate(-90 ${cx} 7)`}
-            />
-          </>
-        ) : (
-          <circle class="steps__now" cx={cx} cy="7" r={R} />
-        )
-      ) : (
-        <circle class="steps__next" cx={cx} cy="7" r="3" />
-      ),
-    )}
-  </svg>
+  </span>
   <span class:list={["steps__label", { "is-yours": yours }]}>{label}</span>
 </span>
