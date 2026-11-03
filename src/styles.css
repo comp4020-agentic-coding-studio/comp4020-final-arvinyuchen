@@ -1630,6 +1630,115 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   scale: 1.35;
 }
 
+/* Places gathered across the city: a frosted chip with the kinds it
+   holds, most first, and how many, quieter than our list's numbered chips
+   and under them. */
+.map-gather {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px 0 4px;
+  border: 1.5px solid rgb(255 255 255 / 90%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 82%);
+  box-shadow: 0 1px 3px rgb(13 43 54 / 22%);
+  backdrop-filter: blur(4px);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+#map .map-gather {
+  z-index: 1;
+}
+
+/* (each kind a small disc in its colour, stacked like faces, its icon in
+   white) */
+.map-gather .kind-icon {
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  padding: 3px;
+  border: 1.5px solid #fff;
+  border-radius: 50%;
+  background: var(--kind);
+  color: #fff;
+}
+
+.map-gather :is(.kind-icon, .map-gather__more) + :is(.kind-icon, .map-gather__more) {
+  margin-left: -6px;
+}
+
+/* (the kinds past the first three, as a grey disc the same size) */
+.map-gather__more {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 2px;
+  border: 1.5px solid #fff;
+  border-radius: 999px;
+  background: var(--muted);
+  color: #fff;
+  font-size: 0.56rem;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.map-gather span {
+  margin-left: 4px;
+}
+
+.map-gather:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+/* (bigger on a computer's map, where they're seen from further away) */
+@media (min-width: 861px) {
+  .map-gather {
+    height: 32px;
+    padding: 0 10px 0 5px;
+    font-size: 0.86rem;
+  }
+
+  .map-gather .kind-icon {
+    width: 22px;
+    height: 22px;
+    padding: 4px;
+    border-width: 2px;
+  }
+
+  .map-gather__more {
+    min-width: 22px;
+    height: 22px;
+    border-width: 2px;
+    font-size: 0.68rem;
+  }
+
+  .map-gather :is(.kind-icon, .map-gather__more) + :is(.kind-icon, .map-gather__more) {
+    margin-left: -7px;
+  }
+
+  .map-gather span {
+    margin-left: 5px;
+  }
+}
+
+/* (while the zoom changes they fade, and come back gathered afresh) */
+#map.is-zooming .map-gather {
+  opacity: 0;
+}
+
 /* While its callout is open, the callout is the place's chip. */
 .map-mark.is-open .map-chip {
   visibility: hidden;
