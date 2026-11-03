@@ -62,6 +62,18 @@ prompt has its own baseline ("brunch spot" scores even the worst card at
 0.26). So a prompt gets no cards if its best is under 0.18, and otherwise a
 card must reach 60% of the way from that prompt's median score to its best.
 
+With 702 places that wasn't enough to say "nothing": "Ethiopian food"
+(there's no Ethiopian restaurant among them) came back with Nepalese and
+Greek places, its best only 0.24 above its median, which is where broad
+prompts that do have answers also sit ("cheap date night" 0.16, "free
+things to do" 0.17). What tells them apart is a word no card uses. Over
+111 real prompts and 13 with no answer, a prompt with a word of four
+letters or more that no card contains, and a lift under 0.26 on meaning
+alone, was always one with no answer (Ethiopian, Russian, snorkelling,
+casino, beach volleyball, bingo), and no answerable prompt changed; one
+with an unknown word that lifts well ("ice hockey", 0.35, finds the ice
+rink) still answers.
+
 **Trade-offs.** Card text and prompts go to a third party, and search needs
 a network call; without the key or with Voyage down it falls back to matching
 words, so it degrades rather than breaks. Embeddings are weak at "not" ("not

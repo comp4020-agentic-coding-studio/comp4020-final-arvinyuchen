@@ -19,6 +19,13 @@ import { anchorsFrom, cosine, distanceKm, forMeaning, keywords, NEAR_KM, parseQu
 const FLOOR = 0.18;
 /** How far up from the median towards the best a card must reach. */
 const REACH = 0.6;
+/**
+ * Below this lift (best over median), a prompt with a word no card uses
+ * ("Ethiopian food", "snorkelling") is asking for something no place
+ * has: its weak best matches are only near it in meaning, so it's answered
+ * with nothing. Prompts the places do answer lift well over it (PROCESS.md).
+ */
+const UNHEARD_LIFT = 0.26;
 const KIND_NUDGE = 0.02;
 const MAX_RESULTS = 8;
 
@@ -102,18 +109,17 @@ export async function search(prompt: string, places: Place[]): Promise<SearchRes
   const asked = ready ? await queryVector(forMeaning(parsed) || prompt) : null;
   if (asked && vectors) {
     // Scored across every place, so the baseline doesn't shift with "near".
-    const scores = new Map(
-      places.map((p) => {
-        const v = vectors!.get(p.id);
-        return [p.id, (v ? cosine(asked, v.vec) : 0) + (parsed.kind === p.kind ? KIND_NUDGE : 0)];
-      }),
-    );
+    const meant = new Map(places.map((p) => [p.id, vectors!.has(p.id) ? cosine(asked, vectors!.get(p.id)!.vec) : 0]));
+    const scores = new Map(places.map((p) => [p.id, meant.get(p.id)! + (parsed.kind === p.kind ? KIND_NUDGE : 0)]));
     const all = [...scores.values()].sort((a, b) => b - a);
     const median = all[Math.floor(all.length / 2)] ?? 0;
     const best = Math.max(0, ...pool.map((p) => scores.get(p.id)!));
     const bar = Math.max(FLOOR, median + REACH * (all[0] - median));
+    // (how far the best stands out on meaning alone, before the kind's nudge)
+    const plain = [...meant.values()].sort((a, b) => b - a);
+    const lift = plain[0] - plain[Math.floor(plain.length / 2)];
     const ranked =
-      best < FLOOR
+      best < FLOOR || (lift < UNHEARD_LIFT && unheard(forMeaning(parsed), places))
         ? []
         : pool
             .filter((p) => scores.get(p.id)! >= Math.min(bar, best))
@@ -122,6 +128,15 @@ export async function search(prompt: string, places: Place[]): Promise<SearchRes
     return { places: ranked, by: "meaning", near: nearLabel };
   }
   return { places: byWords(parsed.rest || prompt, pool, parsed.kind), by: "words", near: nearLabel };
+}
+
+/** Whether the prompt has a word (four letters or more) that no place's card uses. */
+function unheard(text: string, places: Place[]): boolean {
+  const words = keywords(text).filter((w) => w.length >= 4).map(stem);
+  if (words.length === 0) return false;
+  const known = new Set(places.flatMap((p) => keywords(cardText(p)).map(stem)));
+  // (a word heard as the start of a longer one counts: "climb" in "climbing")
+  return words.some((w) => !known.has(w) && ![...known].some((k) => k.length >= 4 && (k.startsWith(w) || w.startsWith(k))));
 }
 
 /** Matching words, for when there are no vectors: name counts most, then suburb and kind, then the reason. */
