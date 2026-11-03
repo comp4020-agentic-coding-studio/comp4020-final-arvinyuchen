@@ -86,10 +86,14 @@ follow from it; every change has to hold to them.
   of the kind its chip asks for (`?kind`, asked of the server, so a live
   refresh redraws a page, never hundreds). Unsearched, places on a group's
   list and places members shared lead, then the starter places take turns
-  by kind, so the first page shows every kind. The map has every place
-  Explore could show: those on our list as chips, the rest as dots drawn by
-  the map itself (a circle layer), one becoming a mark under the pointer
-  or when flown to. Across the city three or more dots close together
+  by kind, so the first page shows every kind. The group's map has two
+  modes, switched on the map (top left), so neither covers the other: Our
+  list, only the list's numbered chips with their names; Explore, every
+  place Explore could show as a dot drawn by the map itself (a circle
+  layer), one becoming a mark under the pointer or when flown to. A list
+  row or a place's Talk turns it to Our list; an Explore card, a search or
+  a kind chip to Explore; it opens on Explore when the address asks for
+  one (`?q`, `?kind`, `?near`) or the list is empty. Across the city three or more dots close together
   gather into a frosted chip: a small disc for each of the three kinds it
   holds most of, in the kind's colour with its icon, "+2" for any more
   kinds, then how many, in the page's
