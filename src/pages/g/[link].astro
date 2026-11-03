@@ -1125,7 +1125,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           const field = radio.closest(".starts").querySelector("input[data-start-field]");
           if (field && typed) {
             field.value = clockOf(minuteOf(typed));
-            radio.closest(".starts").classList.toggle("is-typed", minuteOf(typed) !== Number(field.dataset.min));
+            radio.closest(".starts").classList.toggle("is-typed", minuteOf(typed) !== Number(field.dataset.start ?? field.dataset.min));
           }
         }
         const toggle = fresh.querySelector(".wins__more-toggle");
@@ -1575,7 +1575,9 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         const starts = event.target.closest(".starts");
         const radio = starts.querySelector("input[name=at]");
         radio.checked = true;
-        starts.classList.toggle("is-typed", minuteOf(event.target.value) !== Number(radio.value.split("-")[0]));
+        // (typed: other than the start its chip offers)
+        const offered = starts.querySelector("[data-start-field]")?.dataset.start ?? radio.value.split("-")[0];
+        starts.classList.toggle("is-typed", minuteOf(event.target.value) !== Number(offered));
       }
       planLabel();
     });

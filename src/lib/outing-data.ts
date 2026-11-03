@@ -9,6 +9,7 @@ import {
   inForecast,
   type Leg,
   legBetween,
+  openOn,
   outingDay,
   outingStretch,
   outsideByTags,
@@ -230,6 +231,8 @@ export interface Outing {
   legs: (Leg | null)[];
   /** for a window starting at `from`, lasting the plan's length: the first stop that won't be open for its share, said ("Questacon closes 5pm") */
   windowNote: (from: number) => { text: string; tone: HoursNote["tone"] } | null;
+  /** a window's start to offer first: the earliest from `from` to `latest` at which every stop is open for its share (a stop opening later than the window, say), or `from` when none is or the hours aren't known */
+  fitStart: (from: number, latest: number) => number;
 }
 
 /**
@@ -255,10 +258,22 @@ export function outingOf(view: PlanView, groupId: string, now = new Date()): Out
       kind: r.kind,
       lat: r.lat,
       lon: r.lon,
-      note: hoursNote(h?.hours ?? null, day, parts ? parts[i] : null),
+      // (before the time's set, each window's row says it for its own
+      // time, so here only a stop shut all day: said once, not twice)
+      note: hoursNote(h?.hours ?? null, day, plan.set && parts ? parts[i] : null),
       forecast: forecast && { ...forecast, text: forecastText(forecast) },
     };
   });
+  const windowNote = (from: number) => {
+    const each = shares([from, from + plan.duration], rows.length);
+    for (const [i, r] of rows.entries()) {
+      // (a stop shut all day is said once, on the card, not on every row)
+      if (hoursNote(hours[i]?.hours ?? null, day, null)) continue;
+      const note = hoursNote(hours[i]?.hours ?? null, day, each[i]);
+      if (note) return { text: `${r.name} ${note.text}`, tone: note.tone };
+    }
+    return null;
+  };
   return {
     day,
     set: plan.set !== null,
@@ -267,15 +282,17 @@ export function outingOf(view: PlanView, groupId: string, now = new Date()): Out
       const a = stops[i];
       return a.lat !== null && a.lon !== null && b.lat !== null && b.lon !== null ? legBetween({ lat: a.lat, lon: a.lon }, { lat: b.lat, lon: b.lon }) : null;
     }),
-    windowNote: (from) => {
-      const each = shares([from, from + plan.duration], rows.length);
-      for (const [i, r] of rows.entries()) {
-        // (a stop shut all day is said once, on the card, not on every row)
-        if (hoursNote(hours[i]?.hours ?? null, day, null)) continue;
-        const note = hoursNote(hours[i]?.hours ?? null, day, each[i]);
-        if (note) return { text: `${r.name} ${note.text}`, tone: note.tone };
-      }
-      return null;
+    windowNote,
+    fitStart: (from, latest) => {
+      if (!windowNote(from)) return from;
+      // (the starts worth trying: each stop's openings, less the stops
+      // before it, since each takes an even share of the plan)
+      const share = plan.duration / rows.length;
+      const tries = rows
+        .flatMap((_, i) => (openOn(hours[i]?.hours ?? null, day) ?? []).map(([open]) => Math.ceil(open - i * share)))
+        .filter((t) => t > from && t <= latest)
+        .sort((a, b) => a - b);
+      return tries.find((t) => !windowNote(t)) ?? from;
     },
   };
 }

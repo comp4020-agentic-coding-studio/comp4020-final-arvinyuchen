@@ -226,6 +226,10 @@ describe("the plan's card on the day", { timeout: 20_000 }, () => {
     // free 8am–11pm, a 2h plan from 8am: the museum opens at 9
     const card = await cardWhen(c, (card) => card.querySelector(".win__shut") !== null);
     expect(card.querySelector(".win .win__shut")?.textContent).toBe("Stub Museum opens 9am");
+    // its start is offered from when it opens, and the foot doesn't say it again
+    expect(card.querySelector(".starts .st span")?.textContent).toBe("9am");
+    expect(card.querySelector<HTMLInputElement>(".starts input[data-start-field]")?.value).toBe("09:00");
+    expect(card.querySelector(".outing__note")).toBeNull();
   });
 
   it("shows the leg between stops, a way to each, and once set the whole route, in the device's maps", async () => {

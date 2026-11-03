@@ -309,8 +309,9 @@ function exactTime(row: HTMLElement) {
 // A window's start on the plan card: its plain time field (min and max
 // keeping the whole length inside the window) becomes one to type or
 // swipe. A change picks the window and says so to the page's script (the
-// button and the strip's ring follow); the window's "earliest" chip puts
-// the field back to its start.
+// button and the strip's ring follow); the window's chip puts the field
+// back to the start it offers (its earliest, or the earliest the stops
+// are open for).
 const startFields = new WeakMap<HTMLElement, TimeField>();
 function startField(plain: HTMLInputElement) {
   if (plain.dataset.enhanced !== undefined) return;
@@ -336,7 +337,8 @@ document.addEventListener("click", (event) => {
   const starts = chip?.closest<HTMLElement>(".starts");
   const field = starts && startFields.get(starts);
   if (!starts || !field) return;
-  field.set(Number(starts.querySelector<HTMLInputElement>("[data-start-field]")?.dataset.min), false);
+  const plain = starts.querySelector<HTMLInputElement>("[data-start-field]");
+  field.set(Number(plain?.dataset.start ?? plain?.dataset.min), false);
   starts.querySelector('input[type="hidden"][name^="start-"]')?.dispatchEvent(new Event("change", { bubbles: true }));
 });
 

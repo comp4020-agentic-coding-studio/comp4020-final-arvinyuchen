@@ -247,12 +247,15 @@ const outing = outingOf(view, group.id);
               <input type="hidden" name="action" value="set" />
               <input type="hidden" name="plan" value={plan.id} />
               {/* (each window, then the rest behind "N more windows": picking
-                  one opens its start under it, the earliest as one chip and
-                  any later one, to the minute, in a time field) */}
+                  one opens its start under it, the earliest as one chip (the
+                  earliest the stops are open for, when they open later) and
+                  any other, to the minute, in a time field) */}
               <ol class="wins">
                 {[...view.windows, ...view.rest].map((w, i) => {
                   const more = i >= view.windows.length;
                   const latest = w.to - long;
+                  // (offered first: the earliest start the stops are open for)
+                  const start = outing.fitStart(w.from, latest);
                   const id = `at-${plan.id}-${i}`;
                   return (
                     <>
@@ -286,8 +289,15 @@ const outing = outingOf(view, group.id);
                           <>
                             {/* (the range said to a screen reader; the field keeps to it) */}
                             <label class="st">
-                              <input type="radio" name="at" id={id} value={`${w.from}-${w.from + long}`} checked={i === 0} aria-label={`Start at ${formatMinute(w.from)}, the earliest`} />
-                              <span>{formatMinute(w.from)}</span>
+                              <input
+                                type="radio"
+                                name="at"
+                                id={id}
+                                value={`${w.from}-${w.from + long}`}
+                                checked={i === 0}
+                                aria-label={`Start at ${formatMinute(start)}, ${start === w.from ? "the earliest" : "the earliest it's open for"}`}
+                              />
+                              <span>{formatMinute(start)}</span>
                             </label>
                             <label class="starts__at">
                               <input
@@ -296,9 +306,10 @@ const outing = outingOf(view, group.id);
                                 step="60"
                                 min={clockOf(w.from)}
                                 max={clockOf(latest)}
-                                value={clockOf(w.from)}
+                                value={clockOf(start)}
                                 aria-label={`Start, between ${formatMinute(w.from)} and ${formatMinute(latest)}`}
                                 data-start-field
+                                data-start={start}
                                 data-min={w.from}
                                 data-max={latest}
                               />

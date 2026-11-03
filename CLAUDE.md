@@ -38,9 +38,11 @@ follow from it; every change has to hold to them.
   is only a finder's: none of it is in Explore until someone shares it.
   Overture, Photon, map tiles and data are credited.
 - **The outing on the day asks politely, and only about places.** The
-  plan's card says, quietly at its foot, when a stop won't be open for its
-  part of the plan ("Questacon closes 5pm", "Closed Mondays"; a window's
-  row says it too) and, for a stop outside, the day's forecast
+  plan's card says, quietly, when a stop won't be open for its part of
+  the plan, once: on each window's row until the time is set ("Questacon
+  opens 9am", that window's start then offered from 9am, `fitStart`), at
+  the card's foot after ("Closes 5pm"), and a stop shut all day at the
+  foot either way ("Closed Mondays"); and, for a stop outside, the day's forecast
   ("24° · 10% rain") once it's within Open-Meteo's 16 days
   (`src/lib/outing.ts`, `src/components/PlanOuting.astro`). Hours are
   OpenStreetMap's `opening_hours` tag (Overture's places carry none),
