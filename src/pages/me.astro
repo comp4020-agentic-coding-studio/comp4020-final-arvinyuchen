@@ -21,8 +21,9 @@ const unread = unreadByGroup(account.id);
 const day = (sqlite: string) =>
   new Date(`${sqlite.replace(" ", "T")}Z`).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
-// Each group's faces, and its plan in a sentence: where and when, then
-// where it stands for you ("waiting on you" is yours to do, in blue).
+// Each group's faces, and its plan in a sentence: where (its first stop,
+// "+ 2 more" for the rest) and when, then where it stands for you
+// ("waiting on you" is yours to do, in blue).
 const cards = groups.map((g) => {
   const group = getGroup(g.id)!;
   const members = listMembers(g.id);
@@ -31,7 +32,7 @@ const cards = groups.map((g) => {
   let status: { when: string; state: string; yours: boolean } | null = null;
   if (plan) {
     const view = planView(plan, members, you, group.ownerId);
-    const where = `${stopNames(plan.stops, 2)} on ${formatDay(plan.day)}`;
+    const where = `${stopNames(plan.stops, 1)} on ${formatDay(plan.day)}`;
     if (plan.set) status = { when: `${where} at ${formatMinute(plan.set.start)}`, state: "", yours: false };
     else if (view.mine === null) status = { when: where, state: "waiting on you", yours: true };
     else if (view.everyoneIn) status = { when: where, state: g.owner ? "everyone's in, pick the time" : "everyone's in", yours: g.owner };
