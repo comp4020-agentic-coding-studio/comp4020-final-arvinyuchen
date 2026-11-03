@@ -33,6 +33,11 @@ const LANDMARKS: Anchor[] = [
   { label: "uni", name: "ANU", lat: -35.2777, lon: 149.1185 },
   { label: "civic", name: "Civic", lat: -35.2809, lon: 149.13 },
   { label: "the city", name: "the city", lat: -35.2809, lon: 149.13 },
+  // (the town centres people say, though no place's suburb is called that:
+  // Woden is Phillip, Tuggeranong is Greenway; OpenStreetMap's points)
+  { label: "woden", name: "Woden", lat: -35.3463, lon: 149.0858 },
+  { label: "tuggeranong", name: "Tuggeranong", lat: -35.4167, lon: 149.0659 },
+  { label: "weston creek", name: "Weston Creek", lat: -35.3407, lon: 149.0525 },
 ];
 
 const NEAR_WORDS = "near|around|in|by|close to|next to|walking distance (?:of|from)|at";

@@ -31,6 +31,12 @@ describe("reading a search prompt", () => {
     expect(parseQuery("lunch near campus", anchors).near?.name).toBe("ANU");
   });
 
+  it("knows the town centres people say, though no place's suburb is called that", () => {
+    expect(parseQuery("food near Woden", anchors).near?.name).toBe("Woden");
+    expect(parseQuery("a walk near Tuggeranong", anchors).near?.name).toBe("Tuggeranong");
+    expect(parseQuery("coffee in Weston Creek", anchors).near?.name).toBe("Weston Creek");
+  });
+
   it("doesn't read a where into a word that only starts like a suburb", () => {
     expect(parseQuery("near dicksonville", anchors).near).toBeNull();
     expect(parseQuery("a place with a view", anchors).near).toBeNull();
