@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { anchorsFrom, cosine, distanceKm, parseQuery } from "../src/lib/query";
+import { anchorsFrom, cosine, distanceKm, forMeaning, parseQuery } from "../src/lib/query";
 
 // Reading a search prompt: the "where" in it is a hard filter, so it has to
 // be read exactly. These run on their own, no app needed.
@@ -17,6 +17,14 @@ describe("reading a search prompt", () => {
     const q = parseQuery("Cheap dumplings near Dickson for a rainy night", anchors);
     expect(q.near?.name).toBe("Dickson");
     expect(q.rest).toBe("cheap dumplings for a rainy night");
+    expect(q.indoors).toBe(true);
+  });
+
+  it("reads bad weather as wanting somewhere indoors, and only bad weather", () => {
+    expect(parseQuery("something to do on a rainy day", anchors).indoors).toBe(true);
+    expect(parseQuery("a walk by the lake", anchors).indoors).toBe(false);
+    expect(parseQuery("rainforest walk", anchors).indoors).toBe(false);
+    expect(forMeaning(parseQuery("what to do when it's raining", anchors))).toBe("what to do when it's, somewhere indoors");
   });
 
   it("puts a suburb at the middle of its places", () => {

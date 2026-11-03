@@ -250,7 +250,11 @@ follow from it; every change has to hold to them.
   matching places, best first, and their pins: no generated text, nothing
   said about a place that its card doesn't say. Ranking is cosine similarity
   between Voyage embeddings of the prompt and each card (`src/lib/search.ts`);
-  "near X" is a hard distance filter, never left to the vectors. When nothing
+  "near X" is a hard distance filter, never left to the vectors (a suburb,
+  a shared place, or a town centre people say: Civic, Woden,
+  Tuggeranong, Weston Creek). Bad weather ("a rainy day") is read as
+  wanting somewhere indoors, the weather words swapped out before the
+  vectors see them (`forMeaning` in `src/lib/query.ts`). When nothing
   is close enough, say so; don't pad with the least-bad matches.
 - **The embeddings key stays on the server.** `VOYAGE_API_KEY` is a Fly secret
   (and lives in `mise.local.toml` locally); it never goes to the browser or

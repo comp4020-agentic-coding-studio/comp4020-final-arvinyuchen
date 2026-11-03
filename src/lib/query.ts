@@ -21,7 +21,17 @@ export interface ParsedQuery {
   near: Anchor | null;
   /** A kind the prompt clearly asks for, or null when it names none or several. */
   kind: Kind | null;
+  /** Whether it asks for bad weather ("a rainy day"): what it wants is somewhere indoors, not the rain. */
+  indoors: boolean;
 }
+
+// (a rainy day reads to the vectors as a lake or a forest, the weather;
+// what someone means is a roof)
+const BAD_WEATHER = /\b(?:rain|rainy|raining|rains|wet|stormy|freezing)\b/;
+
+/** What goes to the vectors: the rest, but for bad weather the weather swapped for "somewhere indoors". */
+export const forMeaning = (q: ParsedQuery): string =>
+  q.indoors ? `${q.rest.replace(new RegExp(BAD_WEATHER, "g"), " ").replace(/\s+/g, " ").trim()}, somewhere indoors` : q.rest;
 
 /** How far "near X" reaches. Canberra suburbs are about two kilometres across. */
 export const NEAR_KM = 3;
@@ -88,7 +98,7 @@ export function parseQuery(query: string, anchors: Anchor[]): ParsedQuery {
   }
   const words = new Set(tokens(rest));
   const asked = (Object.keys(KIND_WORDS) as Kind[]).filter((k) => KIND_WORDS[k].some((w) => words.has(w)));
-  return { rest, near, kind: asked.length === 1 ? asked[0] : null };
+  return { rest, near, kind: asked.length === 1 ? asked[0] : null, indoors: BAD_WEATHER.test(rest) };
 }
 
 const STOP = new Set(

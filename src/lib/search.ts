@@ -1,7 +1,7 @@
 import { KIND_LABEL } from "./catalogue";
 import { listPlaces, listVectors, saveVector, type Place, type PlaceVector } from "./db";
 import { canEmbed, embed, EMBEDDING_MODEL } from "./embed";
-import { anchorsFrom, cosine, distanceKm, keywords, NEAR_KM, parseQuery } from "./query";
+import { anchorsFrom, cosine, distanceKm, forMeaning, keywords, NEAR_KM, parseQuery } from "./query";
 
 // Search the shared places by describing what you're after. Every card is a
 // vector (its name, kind, suburb and the reason someone gave for it); the
@@ -94,7 +94,7 @@ export async function search(prompt: string, places: Place[]): Promise<SearchRes
   }
 
   const ready = await indexPlaces(places);
-  const asked = ready ? await queryVector(parsed.rest || prompt) : null;
+  const asked = ready ? await queryVector(forMeaning(parsed) || prompt) : null;
   if (asked && vectors) {
     // Scored across every place, so the baseline doesn't shift with "near".
     const scores = new Map(
