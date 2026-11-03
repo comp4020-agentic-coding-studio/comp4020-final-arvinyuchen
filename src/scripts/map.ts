@@ -714,7 +714,9 @@ if (container) {
       shown.querySelector("img")!.src = photo;
       shown.querySelector("figcaption")!.textContent = yours
         ? "Your photo"
-        : `Photo: ${found!.credit}${found!.license ? `, ${found!.license}` : ""}`;
+        : found!.license === "Illustration"
+          ? "Illustration"
+          : `Photo: ${found!.credit}${found!.license ? `, ${found!.license}` : ""}`;
     };
     const showFound = (photo: Photo | null) => {
       found = photo;

@@ -1,11 +1,12 @@
 ---
-import type { Kind, Photo } from "../lib/catalogue";
+import { ILLUSTRATED, type Kind, type Photo } from "../lib/catalogue";
 import { KIND_ART } from "../lib/kind-art";
 import { KIND_LABEL } from "../lib/kinds";
 import KindIcon from "./KindIcon.astro";
 
 // A spot's photo with its credit: a Commons photo with its author and
-// licence, or the sharer's own with their name; the panel's tint in the
+// licence, the sharer's own with their name, or a starter place's
+// illustration, said to be one; the panel's tint in the
 // kind's colour shows while it loads. A place without one shows its kind's
 // picture (src/lib/kind-art.ts), or the kind's icon, named with the kind so
 // it isn't taken for a photo of the place. Small, on Our list, there's no
@@ -31,10 +32,14 @@ const label = KIND_LABEL[kind];
         <span class="photo__badge"><KindIcon kind={kind} /><span class="sr-only">{label}</span></span>
       ) : (
         <figcaption>
-          <a href={photo.page} rel="noopener">
-            Photo: {photo.credit}
-            {photo.license && `, ${photo.license}`}
-          </a>
+          {photo.license === ILLUSTRATED ? (
+            <span>Illustration</span>
+          ) : (
+            <a href={photo.page} rel="noopener">
+              Photo: {photo.credit}
+              {photo.license && `, ${photo.license}`}
+            </a>
+          )}
         </figcaption>
       )}
     </figure>

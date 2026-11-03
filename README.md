@@ -112,9 +112,14 @@ other's taste.
   into the page (and one streets picture beside it) by
   `scripts/build-hero-map.ts`, so nothing on it is drawn by hand and the site
   never queries OpenStreetMap for it. Its hills are shaded once from
-  Mapzen's terrain by `scripts/build-hero-relief.ts`. The starter places were
-  checked against Wikipedia, with photos from Wikimedia Commons credited on
-  each card where there is one. Finding a free photo of every café and bar
+  Mapzen's terrain by `scripts/build-hero-relief.ts`. The first starter
+  places were checked against Wikipedia, with photos from Wikimedia Commons
+  credited on each card. The other sixty were picked for breadth, one for
+  each kind of thing a group might search for (a cuisine, a bar, bowling, a
+  river swim, a stage) across the suburbs, after a "mexican food" search
+  found nothing. Each cites the local guide or paper that recommends it, and
+  its picture is an illustration made for Spots, a dish or what you do
+  there, never the venue, labelled "Illustration" on its card. Finding a free photo of every café and bar
   proved hopeless (Commons has few, and a venue's own are its own), so a
   place a person shares has the photo they upload, if any, kept with its
   location and every other bit of metadata stripped, and credited to them.

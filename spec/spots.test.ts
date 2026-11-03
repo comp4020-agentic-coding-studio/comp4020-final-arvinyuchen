@@ -309,7 +309,8 @@ describe("a group", () => {
     const doc = await page(jar, path);
     const pins = JSON.parse(doc.querySelector("#pins")?.textContent ?? "[]") as { name: string; lat: number }[];
     expect(pins.map((p) => p.name)).toContain("Questacon");
-    expect(pins.every((p) => p.lat < -35 && p.lat > -36)).toBe(true);
+    // (Canberra, and the Canberra District wineries just over the border at Murrumbateman)
+    expect(pins.every((p) => p.lat < -34.9 && p.lat > -36)).toBe(true);
     expect(doc.querySelector("#map")).toBeTruthy();
   });
 
