@@ -1703,6 +1703,37 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   outline-offset: 2px;
 }
 
+/* (bigger on a computer's map, where they're seen from further away) */
+@media (min-width: 861px) {
+  .map-gather {
+    height: 32px;
+    padding: 0 10px 0 5px;
+    font-size: 0.86rem;
+  }
+
+  .map-gather .kind-icon {
+    width: 22px;
+    height: 22px;
+    padding: 4px;
+    border-width: 2px;
+  }
+
+  .map-gather__more {
+    min-width: 22px;
+    height: 22px;
+    border-width: 2px;
+    font-size: 0.68rem;
+  }
+
+  .map-gather :is(.kind-icon, .map-gather__more) + :is(.kind-icon, .map-gather__more) {
+    margin-left: -7px;
+  }
+
+  .map-gather span {
+    margin-left: 5px;
+  }
+}
+
 /* (while the zoom changes they fade, and come back gathered afresh) */
 #map.is-zooming .map-gather {
   opacity: 0;

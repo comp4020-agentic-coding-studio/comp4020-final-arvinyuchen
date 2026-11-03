@@ -594,7 +594,7 @@ if (container) {
       listed.map(({ pin, at }) => ({ x: at.x, y: at.y, wide: measure(pin.name, font) })),
       width,
       height,
-      [...shown.map(({ at }) => around(at.x, at.y, 6)), ...dots.map((at) => around(at.x, at.y, 6)), ...gathered.map((at) => around(at.x, at.y, 16)), ...controls()],
+      [...shown.map(({ at }) => around(at.x, at.y, 6)), ...dots.map((at) => around(at.x, at.y, 6)), ...gathered.map((at) => around(at.x, at.y, narrow.matches ? 16 : 22)), ...controls()],
     );
     // (a picked place's chip, filled with its colour above its card, always says its name)
     listed.forEach(({ pin, el }, i) => {
