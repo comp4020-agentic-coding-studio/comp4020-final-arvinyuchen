@@ -8,8 +8,10 @@ import { unreadByGroup } from "../lib/talk";
 import { formatDay, formatMinute } from "../lib/when";
 
 // Your account: every group you're in, on any device, each with who's in
-// it and where its plan stands for you; then your one name and the
-// passkeys that can sign in as you, one card.
+// it and where its plan stands for you; then your one name, the passkeys
+// that can sign in as you, and Sign out. Each is a list under a small
+// heading, every row the same: a round lead, a title and a grey line under
+// it, and at its end a count or a way in (the .list styles).
 const account = signedIn(Astro.cookies);
 if (!account) return Astro.redirect("/signin", 303);
 const groups = groupsOfAccount(account.id);
@@ -19,22 +21,21 @@ const unread = unreadByGroup(account.id);
 const day = (sqlite: string) =>
   new Date(`${sqlite.replace(" ", "T")}Z`).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
-// Each group's faces, and its plan: the day and where, then where it
-// stands, said to you ("Waiting on you" is yours to do). Each part is its
-// own piece of type, never strung together with dots.
+// Each group's faces, and its plan in a sentence: where and when, then
+// where it stands for you ("waiting on you" is yours to do, in blue).
 const cards = groups.map((g) => {
   const group = getGroup(g.id)!;
   const members = listMembers(g.id);
   const you = memberOfAccount(g.id, account.id)!;
   const plan = currentPlan(g.id);
-  let status: { day: string; where: string; state: string; yours: boolean } | null = null;
+  let status: { when: string; state: string; yours: boolean } | null = null;
   if (plan) {
     const view = planView(plan, members, you, group.ownerId);
-    const when = { day: formatDay(plan.day), where: stopNames(plan.stops, 2) };
-    if (plan.set) status = { ...when, state: `Set for ${formatMinute(plan.set.start)}`, yours: false };
-    else if (view.mine === null) status = { ...when, state: "Waiting on you", yours: true };
-    else if (view.everyoneIn) status = { ...when, state: g.owner ? "Everyone's in: pick the time" : "Everyone's in", yours: g.owner };
-    else status = { ...when, state: `${view.answered.length} of ${members.length} have said when they're free`, yours: false };
+    const where = `${stopNames(plan.stops, 2)} on ${formatDay(plan.day)}`;
+    if (plan.set) status = { when: `${where} at ${formatMinute(plan.set.start)}`, state: "", yours: false };
+    else if (view.mine === null) status = { when: where, state: "waiting on you", yours: true };
+    else if (view.everyoneIn) status = { when: where, state: g.owner ? "everyone's in, pick the time" : "everyone's in", yours: g.owner };
+    else status = { when: where, state: `${view.answered.length} of ${members.length} have said when they're free`, yours: false };
   }
   return { ...g, members, status };
 });
@@ -59,106 +60,116 @@ const done = Astro.url.searchParams.get("done");
       )}
     </section>
 
+    <h2 class="list-head" id="groups-title">Groups</h2>
     {groups.length === 0 ? (
-      <p class="empty">You're not in any groups right now. <a href="/#start">Start one</a>, or open a friend's invite link.</p>
+      <p class="card empty">You're not in any groups right now. <a href="/#start">Start one</a>, or open a friend's invite link.</p>
     ) : (
-      <ul class="my-groups">
+      <ul class="card list my-groups" aria-labelledby="groups-title">
         {cards.map((g) => (
           <li>
-            <a class="card my-group" href={`/g/${g.link}`}>
-              <span class="my-group__top">
-                <strong class="my-group__name">
-                  {g.name}
-                  {unread.get(g.id) && <span class="my-group__new">{unread.get(g.id)} new</span>}
-                </strong>
-                <span class="faces my-group__faces" aria-hidden="true">
-                  {g.members.slice(0, g.members.length > 5 ? 4 : 5).map((m) => (
-                    <span class="face" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span>
-                  ))}
-                  {g.members.length > 5 && <span class="face face--more">+{g.members.length - 4}</span>}
+            <a class="row my-group" href={`/g/${g.link}`}>
+              <span class="row__faces" aria-hidden="true">
+                {g.members.slice(0, 2).map((m) => (
+                  <span class="face" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span>
+                ))}
+              </span>
+              <span class="row__body">
+                <strong class="row__title">{g.name}</strong>
+                <span class="row__sub">
+                  {g.people} {g.people === 1 ? "person" : "people"}{g.owner && ", you started it"}
                 </span>
-              </span>
-              <span class="fine my-group__who">
-                {g.people} {g.people === 1 ? "person" : "people"}
-                {g.owner && <span class="owner-tag">You're the owner</span>}
-              </span>
-              {g.status && (
-                <span class:list={["my-group__plan", { "is-yours": g.status.yours }]}>
-                  <span class="my-group__when">
-                    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
-                    <strong>{g.status.day}</strong>
-                    <span>{g.status.where}</span>
+                {g.status && (
+                  <span class="row__sub">
+                    {g.status.when}
+                    {g.status.state && <>: <span class:list={{ "is-yours": g.status.yours }}>{g.status.state}</span></>}
                   </span>
-                  <span class="my-group__state">{g.status.state}</span>
-                </span>
-              )}
+                )}
+              </span>
+              <span class="row__end">
+                {unread.get(g.id) && <span class="badge my-group__new">{unread.get(g.id)} new</span>}
+                <svg class="row__chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m6 3.5 4.5 4.5L6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </span>
             </a>
           </li>
         ))}
       </ul>
     )}
 
-    {/* Your account, one card: your name, then the passkeys that sign in as
-        you, under a hairline. */}
-    <section class="card account" id="you" aria-labelledby="you-title">
-      <h2 id="you-title">Your account</h2>
-      {done === "renamed" && <p class="notice notice--ok" role="status">Saved. It's your name in every group now.</p>}
-      {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
-      <form method="post" action="/api/account" class="settings__row">
-        <label class="grow">
-          <span>Your name</span>
-          <input name="name" required maxlength="40" value={account.name} autocomplete="nickname" data-hint="Type a name, so your friends know it's you." />
-        </label>
-        <button class="btn">Save</button>
-      </form>
-      {/* (said only while you're changing it) */}
-      <p class="fine account__name-note">The same in all your groups: changing it here changes it everywhere.</p>
+    {/* Your one name: typed straight into its row, saved by Save or Enter. */}
+    <h2 class="list-head" id="you">Account</h2>
+    {done === "renamed" && <p class="notice notice--ok" role="status">Saved. It's your name in every group now.</p>}
+    {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
+    <form method="post" action="/api/account" class="card list">
+      <label class="row row--field">
+        <span class="row__label">Name</span>
+        <input class="row__input" name="name" required maxlength="40" value={account.name} autocomplete="nickname" data-hint="Type a name, so your friends know it's you." />
+        <button class="btn btn--small row__save">Save</button>
+      </label>
+    </form>
+    {/* (said only while you're changing it) */}
+    <p class="list-foot account__name-note">The same in all your groups: changing it here changes it everywhere.</p>
 
-      <div class="account__keys" id="keys">
-        <h3>Passkeys</h3>
-        {done === "removed" && <p class="notice notice--ok" role="status">Removed. That passkey can't sign in any more.</p>}
-        {error === "last" && <p class="notice" role="alert">That's your only passkey, so it stays: it's your way in.</p>}
-        <ul class="keys">
-          {passkeys.map((p) => (
-            <li>
-              <span class="keys__icon" aria-hidden="true">
-                <svg viewBox="0 0 20 20" width="18" height="18"><circle cx="7" cy="10" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M10.6 10H17.5M15 10v2.6M17.5 10v1.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+    <h2 class="list-head" id="keys-title">Passkeys</h2>
+    {done === "removed" && <p class="notice notice--ok" role="status">Removed. That passkey can't sign in any more.</p>}
+    {error === "last" && <p class="notice" role="alert">That's your only passkey, so it stays: it's your way in.</p>}
+    <div class="card list" id="keys" aria-labelledby="keys-title">
+      <ul class="rows keys">
+        {passkeys.map((p) => (
+          <li class="row">
+            <span class="row__lead" aria-hidden="true">
+              <svg viewBox="0 0 20 20" width="18" height="18"><circle cx="7" cy="10" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M10.6 10H17.5M15 10v2.6M17.5 10v1.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+            </span>
+            <span class="row__body">
+              <strong class="row__title">{p.keeper ?? (p.madeOn ? device(p.madeOn) : "A passkey")}</strong>
+              <span class="row__sub">
+                {p.synced ? "Syncs to your other devices" : "On this one device only"}, added {day(p.createdAt)}
+                {p.keeper && p.madeOn && ` on ${device(p.madeOn)}`}
               </span>
-              <div>
-                <strong>
-                  {p.keeper ?? (p.madeOn ? device(p.madeOn) : "A passkey")}
-                  <span class="keys__sync">{p.synced ? "Syncs" : "This device only"}</span>
-                </strong>
-                <span class="fine">
-                  Added {day(p.createdAt)}{p.keeper && p.madeOn && ` on ${device(p.madeOn)}`}
-                  {p.lastUsedAt && <span class="keys__used">Last used {day(p.lastUsedAt)}</span>}
-                </span>
-              </div>
-              {passkeys.length > 1 && (
-                <form
-                  method="post"
-                  action="/api/passkeys/remove"
-                  data-confirm="Remove this passkey? It won't sign in to Spots any more. Remove it from your password manager too."
-                >
-                  <input type="hidden" name="id" value={p.id} />
-                  <button class="btn btn--small btn--ghost">Remove</button>
-                </form>
-              )}
-            </li>
-          ))}
-        </ul>
-        <div class="account__add" data-passkey-only>
-          <a class="btn" href="/add-device">Add another device</a>
-          <span class="fine">
-            or <button type="button" class="linkish" data-passkey="register">save a passkey on this one</button>
-          </span>
-          <span class="passkey-msg" aria-live="polite"></span>
-        </div>
-      </div>
-    </section>
+              {p.lastUsedAt && <span class="row__sub">Last used {day(p.lastUsedAt)}</span>}
+            </span>
+            {passkeys.length > 1 && (
+              <form
+                class="row__end"
+                method="post"
+                action="/api/passkeys/remove"
+                data-confirm="Remove this passkey? It won't sign in to Spots any more. Remove it from your password manager too."
+              >
+                <input type="hidden" name="id" value={p.id} />
+                <button class="row__remove">Remove</button>
+              </form>
+            )}
+          </li>
+        ))}
+      </ul>
+      <ul class="rows" data-passkey-only>
+        <li>
+          <a class="row row--action" href="/add-device">
+            <span class="row__lead" aria-hidden="true">
+              <svg viewBox="0 0 20 20" width="18" height="18"><path d="M10 4.5v11M4.5 10h11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" /></svg>
+            </span>
+            <span class="row__body">
+              <span class="row__title">Add another device</span>
+              <span class="row__sub">A phone or computer without your passkey: it shows a code to scan there</span>
+            </span>
+            <svg class="row__chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m6 3.5 4.5 4.5L6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </a>
+        </li>
+        <li>
+          <button type="button" class="row row--action" data-passkey="register">
+            <span class="row__lead" aria-hidden="true">
+              <svg viewBox="0 0 20 20" width="18" height="18"><rect x="5.5" y="2.5" width="9" height="15" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M9 14.8h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+            </span>
+            <span class="row__body">
+              <span class="row__title">Save a passkey on this device</span>
+            </span>
+          </button>
+          <span class="passkey-msg row__msg" aria-live="polite"></span>
+        </li>
+      </ul>
+    </div>
 
-    <form method="post" action="/api/signout" class="me__out">
-      <button class="linkish">Sign out</button>
+    <form method="post" action="/api/signout" class="card list me__out">
+      <button class="row row--danger">Sign out</button>
     </form>
   </div>
   <script>
