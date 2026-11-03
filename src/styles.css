@@ -1630,21 +1630,22 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   scale: 1.35;
 }
 
-/* Places gathered across the city: a frosted chip with how many, quieter
-   than our list's numbered chips and under them, in the chosen kind's
-   colour (grey for every kind). */
+/* Places gathered across the city: a frosted chip with the kinds it
+   holds, most first, and how many, quieter than our list's numbered chips
+   and under them. */
 .map-gather {
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 26px;
   height: 26px;
-  padding: 0 7px;
+  padding: 0 8px 0 4px;
   border: 1.5px solid rgb(255 255 255 / 90%);
   border-radius: 999px;
   background: rgb(255 255 255 / 82%);
   box-shadow: 0 1px 3px rgb(13 43 54 / 22%);
   backdrop-filter: blur(4px);
-  color: var(--kind, var(--muted));
+  color: var(--muted);
   font-family: inherit;
   font-size: 0.74rem;
   font-weight: 600;
@@ -1655,6 +1656,28 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
 
 #map .map-gather {
   z-index: 1;
+}
+
+/* (each kind a small disc in its colour, stacked like faces, its icon in
+   white: six fit in the width of three) */
+.map-gather .kind-icon {
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  padding: 3px;
+  border: 1.5px solid #fff;
+  border-radius: 50%;
+  background: var(--kind);
+  color: #fff;
+}
+
+.map-gather .kind-icon + .kind-icon {
+  margin-left: -6px;
+}
+
+.map-gather span {
+  margin-left: 4px;
 }
 
 .map-gather:focus-visible {

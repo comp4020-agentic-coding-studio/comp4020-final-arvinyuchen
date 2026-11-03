@@ -438,7 +438,18 @@ if (container) {
   });
   function dotsLayer() {
     if (map.getSource("spots-dots")) return;
-    map.addSource("spots-dots", { type: "geojson", data: dotData(), cluster: true, clusterRadius: 56, clusterMinPoints: 3, clusterMaxZoom: GATHER_UNTIL });
+    map.addSource("spots-dots", {
+      type: "geojson",
+      data: dotData(),
+      cluster: true,
+      clusterRadius: 56,
+      clusterMinPoints: 3,
+      clusterMaxZoom: GATHER_UNTIL,
+      // (how many of each kind, for the icons on a gathering's chip)
+      clusterProperties: Object.fromEntries(
+        (Object.keys(KIND_LABEL) as Kind[]).map((k) => [k, ["+", ["case", ["==", ["get", "kind"], k], 1, 0]]]),
+      ),
+    });
     map.addLayer({
       id: "spots-dots",
       type: "circle",
@@ -479,8 +490,9 @@ if (container) {
   }
 
   // A gathering (three or more) is a mark like a chip, in the page's font:
-  // how many places are there, quieter than our list's numbered chips, in
-  // the chosen kind's colour. A tap zooms in to where it comes apart.
+  // the icons of the kinds it holds, most first, each in its colour, then
+  // how many places, quieter than our list's numbered chips. A tap zooms
+  // in to where it comes apart.
   const gatherings = new Map<number, { marker: maplibregl.Marker; el: HTMLButtonElement }>();
   function gather() {
     const source = map.getSource("spots-dots") as maplibregl.GeoJSONSource | undefined;
@@ -492,18 +504,20 @@ if (container) {
       seen.add(id);
       const count = Number(f.properties?.point_count);
       const at = (f.geometry as unknown as { coordinates: [number, number] }).coordinates;
+      const held = (Object.keys(KIND_LABEL) as Kind[])
+        .map((kind) => ({ kind, n: Number(f.properties?.[kind]) || 0 }))
+        .filter(({ n }) => n > 0)
+        .sort((a, b) => b.n - a.n);
       const had = gatherings.get(id);
       if (had) {
         had.marker.setLngLat(at);
-        had.el.textContent = String(count);
+        dressGathering(had.el, count, held);
         continue;
       }
       const el = document.createElement("button");
       el.type = "button";
       el.className = "map-gather";
-      if (filter !== "all") el.style.setProperty("--kind", `var(--${filter})`);
-      el.textContent = String(count);
-      el.setAttribute("aria-label", `${count} places here: zoom in`);
+      dressGathering(el, count, held);
       el.addEventListener("click", async (event) => {
         event.stopPropagation();
         const zoom = await source.getClusterExpansionZoom(id);
@@ -516,6 +530,17 @@ if (container) {
       marker.remove();
       gatherings.delete(id);
     }
+  }
+  function dressGathering(el: HTMLButtonElement, count: number, held: { kind: Kind; n: number }[]) {
+    const icons = held.map(({ kind }) => {
+      const icon = kindIcon(kind);
+      icon.style.setProperty("--kind", `var(--${kind})`);
+      return icon;
+    });
+    const n = document.createElement("span");
+    n.textContent = String(count);
+    el.replaceChildren(...icons, n);
+    el.setAttribute("aria-label", `${count} places here (${held.map(({ kind, n: k }) => `${k} ${KIND_LABEL[kind]}`).join(", ")}): zoom in`);
   }
   let dotsFor = "all";
   function filterDots() {
