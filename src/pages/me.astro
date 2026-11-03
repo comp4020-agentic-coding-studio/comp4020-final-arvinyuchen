@@ -22,9 +22,9 @@ const day = (sqlite: string) =>
   new Date(`${sqlite.replace(" ", "T")}Z`).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
 // Each group's faces, and one short line under its name: its plan, where
-// (the first stop, "+ 2 more" for the rest) and when, and where it stands
-// ("waiting on you" and "pick the time" are yours to do, in blue); with
-// no plan, how many are in it.
+// (the first stop, "+ 2 more" for the rest) and when, and what's yours to
+// do, in blue ("waiting on you", "pick the time"); with no plan, how many
+// are in it.
 const cards = groups.map((g) => {
   const group = getGroup(g.id)!;
   const members = listMembers(g.id);
@@ -37,7 +37,7 @@ const cards = groups.map((g) => {
     if (plan.set) status = { when: `${where}, ${formatMinute(plan.set.start)}`, state: "", yours: false };
     else if (view.mine === null) status = { when: where, state: "waiting on you", yours: true };
     else if (view.everyoneIn) status = { when: where, state: g.owner ? "pick the time" : "everyone's in", yours: g.owner };
-    else status = { when: where, state: `${view.answered.length} of ${members.length} replied`, yours: false };
+    else status = { when: where, state: "", yours: false };
   }
   return { ...g, members, status };
 });
