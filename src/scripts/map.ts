@@ -129,10 +129,18 @@ if (container) {
     // Across the city it's the suburbs that say where you are; a main
     // road's name waits until the camera is close enough to read it.
     map.setLayerZoomRange("highway-name-major", 14, 24);
+    dotsLayer();
     ready();
   });
 
+  // Every place the map shows is in `pins`. Hundreds of them are only
+  // dots, so those are drawn by the map itself (a circle layer, "spots-dots"),
+  // and only the places that need more are marks over it: those on our
+  // list, the place flown to, and a dot under the pointer, which becomes a
+  // mark for its hover name and its click.
+  const pins = new Map<number, Pin>();
   const markers = new Map<number, { marker: maplibregl.Marker; pin: Pin; el: HTMLElement }>();
+  let hovered: number | null = null;
   const readPins = (): Pin[] => {
     try {
       return JSON.parse(document.getElementById("pins")?.textContent ?? "[]");
@@ -257,9 +265,13 @@ if (container) {
   // Its card in Explore, brought into view: in its column on a wide screen,
   // at the top of the box under the map on a phone (the page doesn't scroll
   // there), and without the script's tabs under the stuck map.
-  function reveal(id: number) {
+  function reveal(id: number, asked = false) {
     const target = spot(id);
-    if (!target) return;
+    if (!target) {
+      // (Explore shows a page of cards: the page asks for this one's first)
+      if (!asked) document.dispatchEvent(new CustomEvent("spots:at", { detail: id }));
+      return;
+    }
     const behavior = reducedMotion.matches ? "auto" : "smooth";
     const box = target.closest<HTMLElement>(".explore-scroll");
     const boxed = box !== null && getComputedStyle(box).overflowY !== "visible";
@@ -347,50 +359,115 @@ if (container) {
     }
   });
 
-  // Markers are plain elements over the map, so they can go on before the
+  // Marks are plain elements over the map, so they can go on before the
   // first frame renders (a tab opened in the background renders nothing yet).
   let first = true;
-  const sync = () => {
-    const pins = readPins();
-    list = readList();
-    const seen = new Set(pins.map((p) => p.id));
+  const needsMark = (id: number) => list.order.has(id) || id === active || id === opened || id === hovered;
+  function addMark(pin: Pin, drop: number | null) {
+    const el = mark(pin.kind, "button");
+    (el as HTMLButtonElement).type = "button";
+    el.setAttribute("aria-label", `${pin.name}, on the map`);
+    el.addEventListener("click", (event) => {
+      event.stopPropagation();
+      fly(pin.id);
+    });
+    el.addEventListener("mouseleave", () => {
+      if (hovered !== pin.id) return;
+      hovered = null;
+      prune();
+    });
+    const listed = list.order.has(pin.id);
+    dress(el, {
+      n: number(pin.id),
+      name: pin.name,
+      placing: { named: !listed, shift: 0, below: false },
+      dot: !listed,
+    });
+    if (drop !== null) {
+      const falling = el.querySelector<HTMLElement>(".map-drop")!;
+      falling.classList.add("is-dropping");
+      falling.style.setProperty("--drop-delay", `${0.15 + Math.min(drop, 24) * 0.035}s`);
+      falling.addEventListener("animationend", () => falling.classList.remove("is-dropping"), { once: true });
+    }
+    const marker = new maplibregl.Marker({ element: el }).setLngLat([pin.lon, pin.lat]).addTo(map);
+    const entry = { marker, pin, el };
+    markers.set(pin.id, entry);
+    return entry;
+  }
+  // (a place that no longer needs its mark is a dot again)
+  function prune() {
     for (const [id, { marker }] of markers) {
-      if (!seen.has(id)) {
-        marker.remove();
-        markers.delete(id);
-      }
+      if (pins.has(id) && needsMark(id)) continue;
+      marker.remove();
+      markers.delete(id);
     }
-    // The first pins drop in once the map is there, our list's first; a
-    // place shared while someone's looking simply appears.
-    const queue = [...pins].sort((a, b) => Number(!list.order.has(a.id)) - Number(!list.order.has(b.id)));
-    for (const pin of pins) {
-      if (markers.has(pin.id)) continue;
-      const el = mark(pin.kind, "button");
-      (el as HTMLButtonElement).type = "button";
-      el.setAttribute("aria-label", `${pin.name}, on the map`);
-      el.addEventListener("click", (event) => {
-        event.stopPropagation();
-        fly(pin.id);
-      });
-      const listed = list.order.has(pin.id);
-      dress(el, {
-        n: number(pin.id),
-        name: pin.name,
-        placing: { named: false, shift: 0, below: false },
-        dot: !listed,
-      });
-      if (first) {
-        const drop = el.querySelector<HTMLElement>(".map-drop")!;
-        drop.classList.add("is-dropping");
-        drop.style.setProperty("--drop-delay", `${0.15 + Math.min(queue.indexOf(pin), 24) * 0.035}s`);
-        drop.addEventListener("animationend", () => drop.classList.remove("is-dropping"), { once: true });
-      }
-      const marker = new maplibregl.Marker({ element: el }).setLngLat([pin.lon, pin.lat]).addTo(map);
-      markers.set(pin.id, { marker, pin, el });
-    }
+  }
+  const ensure = (id: number) => markers.get(id) ?? (pins.has(id) ? addMark(pins.get(id)!, null) : undefined);
+  const sync = () => {
+    list = readList();
+    pins.clear();
+    for (const pin of readPins()) pins.set(pin.id, pin);
+    prune();
+    // The first marks drop in once the map is there, in our list's order;
+    // a place put on the list while someone's looking simply appears.
+    const listed = [...pins.values()].filter((pin) => needsMark(pin.id)).sort((a, b) => (list.order.get(a.id) ?? 99) - (list.order.get(b.id) ?? 99));
+    listed.forEach((pin, i) => {
+      if (!markers.has(pin.id)) addMark(pin, first ? i : null);
+    });
     first = false;
+    drawDots();
     applyFilter();
   };
+
+  // The dots: every place the map shows that isn't on our list, in its
+  // kind's colour with a white ring, as .map-dot draws a mark's dot.
+  const colour = (kind: Kind) => getComputedStyle(document.documentElement).getPropertyValue(`--${kind}`).trim() || "#c93400";
+  const dotData = (): maplibregl.GeoJSONSourceSpecification["data"] => ({
+    type: "FeatureCollection",
+    features: [...pins.values()]
+      .filter((pin) => !list.order.has(pin.id))
+      .map((pin) => ({
+        type: "Feature",
+        id: pin.id,
+        properties: { id: pin.id, kind: pin.kind, colour: colour(pin.kind) },
+        geometry: { type: "Point", coordinates: [pin.lon, pin.lat] },
+      })),
+  });
+  function dotsLayer() {
+    if (map.getSource("spots-dots")) return;
+    map.addSource("spots-dots", { type: "geojson", data: dotData() });
+    map.addLayer({
+      id: "spots-dots",
+      type: "circle",
+      source: "spots-dots",
+      paint: {
+        "circle-color": ["get", "colour"],
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3.5, 14, 5.5],
+        "circle-stroke-color": "#fff",
+        "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 10, 1.2, 14, 2],
+      },
+    });
+    filterDots();
+    // A dot under the pointer becomes a mark, which shows its name and
+    // takes the click; on a touch screen a tap flies straight to it.
+    map.on("mousemove", "spots-dots", (event) => {
+      const id = Number(event.features?.[0]?.properties?.id);
+      if (!Number.isFinite(id) || id === hovered || markers.has(id)) return;
+      hovered = id;
+      prune();
+      ensure(id);
+    });
+    map.on("click", "spots-dots", (event) => {
+      const id = Number(event.features?.[0]?.properties?.id);
+      if (Number.isFinite(id)) fly(id);
+    });
+  }
+  function drawDots() {
+    (map.getSource("spots-dots") as maplibregl.GeoJSONSource | undefined)?.setData(dotData());
+  }
+  function filterDots() {
+    if (map.getLayer("spots-dots")) map.setFilter("spots-dots", filter === "all" ? null : ["==", ["get", "kind"], filter]);
+  }
 
   // What the chips and names keep clear of, besides each other: the map's
   // zoom buttons and its credit's "i".
@@ -419,11 +496,15 @@ if (container) {
     const listed = shown
       .filter(({ pin }) => list.order.has(pin.id))
       .sort((a, b) => list.order.get(a.pin.id)! - list.order.get(b.pin.id)!);
+    const dots = [...pins.values()]
+      .filter((pin) => !markers.has(pin.id) && (filter === "all" || pin.kind === filter))
+      .map((pin) => map.project([pin.lon, pin.lat]))
+      .filter((at) => at.x > -10 && at.x < width + 10 && at.y > -10 && at.y < height + 10);
     const placed = chips(
       listed.map(({ pin, at }) => ({ x: at.x, y: at.y, wide: measure(pin.name, font) })),
       width,
       height,
-      [...shown.map(({ at }) => around(at.x, at.y, 6)), ...controls()],
+      [...shown.map(({ at }) => around(at.x, at.y, 6)), ...dots.map((at) => around(at.x, at.y, 6)), ...controls()],
     );
     // (a picked place's chip, filled with its colour above its card, always says its name)
     listed.forEach(({ pin, el }, i) => {
@@ -518,7 +599,7 @@ if (container) {
     });
   }
   function fly(id: number) {
-    const entry = markers.get(id);
+    const entry = ensure(id);
     if (!entry) return;
     const { pin, el } = entry;
     close();
@@ -530,6 +611,7 @@ if (container) {
     markActive(id);
     el.classList.add("is-active");
     active = id;
+    prune();
 
     // On a phone the map sits above the list: bring it into view first.
     const rect = container!.getBoundingClientRect();
@@ -587,6 +669,7 @@ if (container) {
     for (const { el, pin } of markers.values()) {
       el.style.display = filter === "all" || pin.kind === filter ? "" : "none";
     }
+    filterDots();
     // (a card whose place the filter hides goes with it)
     if (opened !== null && markers.get(opened)?.el.style.display === "none") close();
     place();
@@ -594,7 +677,7 @@ if (container) {
   // (tapping the chosen kind again, or Show all, shows every place again)
   const filters = document.querySelector<HTMLElement>(".filters");
   const showAll = document.querySelector<HTMLButtonElement>("[data-show-all]");
-  function choose(kind: string) {
+  function choose(kind: string, ask = false) {
     filter = kind;
     if (filters) {
       filters.dataset.sel = kind;
@@ -606,21 +689,24 @@ if (container) {
     }
     if (showAll) showAll.hidden = kind === "all";
     applyFilter();
+    // (Explore's cards come from the server a page at a time, of one kind)
+    if (ask) document.dispatchEvent(new CustomEvent("spots:kind", { detail: kind }));
   }
   if (filters) {
     filters.hidden = false;
     filters.addEventListener("click", (event) => {
       const chip = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-filter]");
-      if (chip) choose(chip.dataset.filter === filter ? "all" : (chip.dataset.filter ?? "all"));
+      if (chip) choose(chip.dataset.filter === filter ? "all" : (chip.dataset.filter ?? "all"), true);
     });
   }
-  showAll?.addEventListener("click", () => choose("all"));
+  showAll?.addEventListener("click", () => choose("all", true));
   // (the page can open on a kind, ?kind, as the plan's "Find food nearby"
   // does, and that link chooses it in place)
   if (filters?.dataset.sel && filters.dataset.sel !== "all") choose(filters.dataset.sel);
   document.addEventListener("spots:filter", (event) => choose(String((event as CustomEvent).detail ?? "all")));
 
   sync();
+  document.addEventListener("spots:reveal", (event) => reveal(Number((event as CustomEvent).detail), true));
   document.addEventListener("spots:refreshed", () => {
     sync();
     // (fresh cards keep to the kind that's chosen)
@@ -638,20 +724,20 @@ if (container) {
   // match flies in like a click on it; clearing the search pulls back out.
   function frameSearch() {
     const searching = Boolean(document.getElementById("explore")?.dataset.q);
-    const pins = [...markers.values()].map(({ pin }) => pin);
+    const found = [...pins.values()];
     const motion = still() ? { duration: 0 } : { duration: 1000 };
-    if (!searching || pins.length === 0) {
+    if (!searching || found.length === 0) {
       active = null;
       close();
       map.easeTo({ center: CANBERRA, zoom: 11.3, pitch: 0, bearing: 0, ...motion });
       return;
     }
-    if (pins.length === 1) {
-      fly(pins[0].id);
+    if (found.length === 1) {
+      fly(found[0].id);
       return;
     }
     const bounds = new maplibregl.LngLatBounds();
-    for (const pin of pins) bounds.extend([pin.lon, pin.lat]);
+    for (const pin of found) bounds.extend([pin.lon, pin.lat]);
     map.fitBounds(bounds, { padding: 64, maxZoom: 15, pitch: 30, bearing: 0, ...motion });
   }
   document.addEventListener("spots:searched", frameSearch);

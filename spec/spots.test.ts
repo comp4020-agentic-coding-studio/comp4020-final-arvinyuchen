@@ -314,6 +314,27 @@ describe("a group", () => {
     expect(doc.querySelector("#map")).toBeTruthy();
   });
 
+  it("shows Explore a page of cards at a time, of the kind asked for, with the map still showing every place", async () => {
+    const { jar, path } = await started("Paging crew");
+    const doc = await page(jar, path);
+    const cards = [...doc.querySelectorAll("#explore .spots--explore > li")];
+    const pins = JSON.parse(doc.querySelector("#pins")?.textContent ?? "[]") as { id: number; kind: string }[];
+    expect(cards).toHaveLength(24);
+    expect(pins.length).toBeGreaterThan(24);
+    // (the first page shows every kind, not a page of one)
+    expect(new Set(cards.map((c) => c.getAttribute("data-kind"))).size).toBe(6);
+    const more = doc.querySelector<HTMLAnchorElement>("#explore [data-more-link]");
+    expect(more?.textContent?.trim()).toBe("Show 24 more");
+    expect((await page(jar, more!.getAttribute("href")!)).querySelectorAll("#explore .spots--explore > li")).toHaveLength(48);
+    // (?kind: only that kind's cards; ?at: a place's card first, for the map's callout)
+    const culture = [...(await page(jar, `${path}?kind=culture`)).querySelectorAll("#explore .spots--explore > li")];
+    expect(culture.length).toBeGreaterThan(0);
+    expect(culture.every((c) => c.getAttribute("data-kind") === "culture")).toBe(true);
+    const far = pins.find((p) => !cards.some((c) => c.getAttribute("data-place") === String(p.id)))!;
+    const at = (await page(jar, `${path}?at=${far.id}`)).querySelector("#explore .spots--explore > li");
+    expect(at?.getAttribute("data-place")).toBe(String(far.id));
+  });
+
   it("streams changes to the group's open pages", async () => {
     const { jar: ana, id, api } = await started("Live crew");
     const stream = await fetch(new URL(`/api/events?group=${id}`, baseUrl), { headers: { cookie: ana.header } });
@@ -484,10 +505,11 @@ describe("search", () => {
   });
 
   it("takes 'near' literally: only places within a few kilometres", async () => {
-    const { cards } = await ask("somewhere near Braddon");
-    expect(cards).toContain("Haig Park");
-    expect(cards).not.toContain("Tidbinbilla Nature Reserve");
-    expect(cards).not.toContain("National Arboretum");
+    // (every answer is on the map; Explore shows them a page at a time)
+    const answers = (await ask("somewhere near Braddon")).pins.map((p) => p.name);
+    expect(answers).toContain("Haig Park");
+    expect(answers).not.toContain("Tidbinbilla Nature Reserve");
+    expect(answers).not.toContain("National Arboretum");
   });
 
   it("answers nothing, rather than anything, when nothing fits", async () => {

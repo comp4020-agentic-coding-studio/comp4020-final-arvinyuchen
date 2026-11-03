@@ -100,7 +100,16 @@ const editing = Astro.url.searchParams.has("edit");
 const removedId = Number(Astro.url.searchParams.get("removed"));
 const removed = removedId ? places.find((p) => p.id === removedId && !onList.has(p.id)) : undefined;
 const found = q ? await search(q, places) : null;
-const shown = found ? found.places : places;
+// Unsearched, Explore leads with what groups have put on lists and what
+// members have shared; then the starter places take turns by kind, so the
+// first page shows every kind, not a page of food.
+const turns = (all: Place[]) => {
+  const lead = all.filter((p) => p.groups > 0 || p.addedBy !== "Spots");
+  const byKind = kinds.map((k) => all.filter((p) => p.kind === k && !lead.includes(p)));
+  const mixed = Array.from({ length: Math.max(0, ...byKind.map((b) => b.length)) }, (_, i) => byKind.map((b) => b[i]).filter(Boolean)).flat();
+  return [...lead, ...mixed];
+};
+const shown = found ? found.places : turns(places);
 
 // What the map draws: every place in Explore that has a location, with its
 // photo for the card the map opens on it (src/scripts/map.ts). Carried as
@@ -186,6 +195,26 @@ const listed = near ? near.map((n) => n.place) : shown;
 const nearById = new Map(near?.map((n) => [n.place.id, nearText(n)]));
 const nearLine = (id: number) => nearById.get(id) ?? null;
 const startKind = ((k) => (k in KIND_LABEL ? (k as Kind) : "all"))(Astro.url.searchParams.get("kind") ?? "");
+// Explore's cards come a page at a time, of the kind chosen (?kind), with
+// "Show more" for the next (?more, how many to show), so a refresh redraws
+// a page of cards, never hundreds. The map still has every place. ?at puts
+// one place's card first when it isn't on the page, for the map's callout
+// to bring it into view.
+const PAGE = 24;
+const ofKind = startKind === "all" ? listed : listed.filter((p) => p.kind === startKind);
+const pageOf = ofKind.slice(0, Math.ceil((Number(Astro.url.searchParams.get("more")) || PAGE) / PAGE) * PAGE);
+const at = ofKind.find((p) => p.id === Number(Astro.url.searchParams.get("at")) && !pageOf.includes(p));
+const paged = at ? [at, ...pageOf] : pageOf;
+const left = ofKind.length - paged.length;
+const moreHref = (() => {
+  const keep = new URLSearchParams();
+  if (q) keep.set("q", q);
+  if (nearOn) keep.set("near", "");
+  if (startKind !== "all") keep.set("kind", startKind);
+  if (at) keep.set("at", String(at.id));
+  keep.set("more", String(pageOf.length + PAGE));
+  return `/g/${group.link}?${keep.toString().replace(/near=(&|$)/, "near$1")}#explore`;
+})();
 const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 8.5h14M7 2.8v3M13 2.8v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>`;
 ---
 
@@ -771,8 +800,8 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           </p>
         )}
         <ul class="spots spots--explore">
-          {listed.map((p) => (
-            <li class={`spot spot--${p.kind}`} data-kind={p.kind} data-place={p.lat !== null ? p.id : undefined} hidden={startKind !== "all" && p.kind !== startKind}>
+          {paged.map((p) => (
+            <li class={`spot spot--${p.kind}`} data-kind={p.kind} data-place={p.lat !== null ? p.id : undefined}>
               <SpotPhoto photo={p.photo} name={p.name} kind={p.kind} />
               <div class="spot__meta">
                 <span class="tag"><KindIcon kind={p.kind} />{KIND_LABEL[p.kind]}</span>
@@ -806,6 +835,11 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
             </li>
           ))}
         </ul>
+        {left > 0 && (
+          <a class="explore-more" href={moreHref} data-more-link>
+            Show {Math.min(left, PAGE)} more
+          </a>
+        )}
       </div>
     </div>
     <div class="map-wrap">
@@ -1061,14 +1095,22 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     // swaps in the changed parts, keeping the scroll position, the map and
     // anything typed in the forms.
     const regions = [".group-head h1", ".next-up-slot", ".joined-slot", ".group-head .who__count", ".group-head .who__grid", ".group-head .who__fold", ".share__row", ".tabs__n", ".tabs__flag", "#plans", "#list", "#past-plans", "#explore", "#settings .people", "#plan-sheets"];
-    // The page as it is now, its search and "Near your plan" included,
-    // without one-off notices; or with one of those changed.
+    // The page as it is now, its search, "Near your plan", kind and how
+    // many of Explore's cards included, without one-off notices; or with
+    // one of those changed (a new search or kind starts from one page).
     function exploreUrl(change = {}) {
       const now = new URLSearchParams(location.search);
       const keep = new URLSearchParams();
       const q = "q" in change ? change.q : now.get("q");
       if (q) keep.set("q", q);
       if ("near" in change ? change.near : now.has("near")) keep.set("near", "");
+      const kind = "kind" in change ? change.kind : now.get("kind");
+      if (kind && kind !== "all") keep.set("kind", kind);
+      const fresh = "q" in change || "kind" in change;
+      const more = "more" in change ? change.more : fresh ? null : now.get("more");
+      if (more) keep.set("more", more);
+      const at = "at" in change ? change.at : fresh ? null : now.get("at");
+      if (at) keep.set("at", at);
       const query = keep.toString().replace(/near=(&|$)/, "near$1");
       return location.pathname + (query ? `?${query}` : "");
     }
@@ -1368,7 +1410,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     // with that kind chosen (src/scripts/map.ts takes spots:filter), and
     // Explore's tab open.
     async function showNear(on, kind) {
-      const url = exploreUrl({ near: on }) + "#explore-section";
+      const url = exploreUrl(kind ? { near: on, kind } : { near: on }) + "#explore-section";
       history.pushState(null, "", url);
       if (kind) go("explore", "#explore-section");
       await showExplore(url, false);
@@ -1391,6 +1433,29 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       event.preventDefault();
       askInput.value = "";
       showSearch("", true);
+    });
+    // A kind chip (src/scripts/map.ts says which) and "Show more" ask for
+    // Explore's cards again, in place; the map's own kind follows the chip.
+    document.addEventListener("spots:kind", (event) => {
+      const url = exploreUrl({ kind: event.detail });
+      history.replaceState(history.state, "", url + location.hash);
+      showExplore(url, false);
+    });
+    document.addEventListener("click", (event) => {
+      const more = event.target.closest("[data-more-link]");
+      if (!more || event.metaKey || event.ctrlKey || event.shiftKey) return;
+      event.preventDefault();
+      const url = exploreUrl({ more: new URL(more.href).searchParams.get("more") });
+      history.replaceState(history.state, "", url + location.hash);
+      showExplore(url, false);
+    });
+    // The map's callout on a place whose card isn't showing: its card
+    // first, then the map brings it into view.
+    document.addEventListener("spots:at", async (event) => {
+      const url = exploreUrl({ at: String(event.detail) });
+      history.replaceState(history.state, "", url + location.hash);
+      await showExplore(url, false);
+      document.dispatchEvent(new CustomEvent("spots:reveal", { detail: event.detail }));
     });
     window.addEventListener("popstate", () => {
       // (only when the search itself, or "Near your plan", changed, not on

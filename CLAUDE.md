@@ -30,9 +30,16 @@ follow from it; every change has to hold to them.
   later starter places have an illustration made for Spots
   (`public/places/`, licence `ILLUSTRATED` in `src/lib/catalogue.ts`): a
   dish, or what you do there, never the venue, and its card says
-  "Illustration", never "Photo". Never
+  "Illustration", never "Photo". Most share theirs with places of the same
+  kind of thing (`public/places/dish/`, Toque's DishArt for the dish the
+  reason names; `public/places/do/` for an activity). Never
   take a venue's own photos or a photographer's from their sites. Never
-  import places in bulk from a directory or an API to pad the pool.
+  import places in bulk from a directory or an API to pad the pool: each
+  starter place is one an editorial source recommends (a local guide or
+  paper, VisitCanberra, ACT Government), with its reason in our words
+  from that source, however many there are (`src/data/starter-places.json`,
+  `scripts/build-starter-places.py`); a directory's or a shopping centre's
+  listing is not a reason, and chains stay out.
 - **Look places up politely.** Find (`src/pages/api/lookup.ts`) searches
   Overture Maps' Canberra places on the server first
   (`src/data/places-index.json`, built by `scripts/build-places-index.ts`),
@@ -74,6 +81,17 @@ follow from it; every change has to hold to them.
   unified URLs on an Apple device (told from the browser), Google Maps'
   elsewhere, in a new tab with `rel="noopener"` (`directionsUrl`). Never
   send a member, a group or a plan in one.
+- **Explore comes a page at a time; the map shows everything.** With
+  hundreds of places, Explore shows 24 cards and "Show 24 more" (`?more`),
+  of the kind its chip asks for (`?kind`, asked of the server, so a live
+  refresh redraws a page, never hundreds). Unsearched, places on a group's
+  list and places members shared lead, then the starter places take turns
+  by kind, so the first page shows every kind. The map has every place
+  Explore could show: those on our list as chips, the rest as dots drawn by
+  the map itself (a circle layer), one becoming a mark under the pointer
+  or when flown to. Its callout on a place whose card isn't showing puts
+  that card first (`?at`). A search's answers are all on the map, its
+  cards a page at a time.
 - **"Near your plan" only reorders Explore.** While the group has a plan
   on with a stop on the map, Explore has one "Near your plan" chip
   (`src/components/NearPlan.astro`, `?near`, a link, so it works without
