@@ -505,10 +505,11 @@ describe("search", () => {
   });
 
   it("takes 'near' literally: only places within a few kilometres", async () => {
-    const { cards } = await ask("somewhere near Braddon");
-    expect(cards).toContain("Haig Park");
-    expect(cards).not.toContain("Tidbinbilla Nature Reserve");
-    expect(cards).not.toContain("National Arboretum");
+    // (every answer is on the map; Explore shows them a page at a time)
+    const answers = (await ask("somewhere near Braddon")).pins.map((p) => p.name);
+    expect(answers).toContain("Haig Park");
+    expect(answers).not.toContain("Tidbinbilla Nature Reserve");
+    expect(answers).not.toContain("National Arboretum");
   });
 
   it("answers nothing, rather than anything, when nothing fits", async () => {

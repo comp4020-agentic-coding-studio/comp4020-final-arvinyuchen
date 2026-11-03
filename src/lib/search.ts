@@ -40,7 +40,7 @@ let indexing: Promise<boolean> | null = null;
 
 /**
  * Makes sure every place has a vector for its current card text. Only new or
- * changed cards go to Voyage, in one request. True when every card has one.
+ * changed cards go to Voyage, in batches. True when every card has one.
  */
 export function indexPlaces(places: Place[] = listPlaces()): Promise<boolean> {
   if (!canEmbed()) return Promise.resolve(false);
@@ -49,13 +49,18 @@ export function indexPlaces(places: Place[] = listPlaces()): Promise<boolean> {
     vectors ??= listVectors(EMBEDDING_MODEL);
     const stale = places.filter((p) => vectors!.get(p.id)?.text !== cardText(p));
     if (stale.length === 0) return true;
-    const texts = stale.map(cardText);
-    const made = await embed(texts, "document");
-    if (!made) return false;
-    stale.forEach((p, i) => {
-      saveVector(p.id, EMBEDDING_MODEL, texts[i], made[i]);
-      vectors!.set(p.id, { text: texts[i], vec: made[i] });
-    });
+    // (a hundred or so at a time, each request well inside Voyage's limits
+    // and its timeout; what's done is kept if a later one fails)
+    for (let at = 0; at < stale.length; at += 128) {
+      const batch = stale.slice(at, at + 128);
+      const texts = batch.map(cardText);
+      const made = await embed(texts, "document");
+      if (!made) return false;
+      batch.forEach((p, i) => {
+        saveVector(p.id, EMBEDDING_MODEL, texts[i], made[i]);
+        vectors!.set(p.id, { text: texts[i], vec: made[i] });
+      });
+    }
     return true;
   });
   indexing = run.catch(() => false);

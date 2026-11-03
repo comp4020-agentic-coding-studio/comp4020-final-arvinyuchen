@@ -23,6 +23,7 @@
 //
 // These are only the seed: on boot they're upserted into the shared `places`
 // table (src/lib/db.ts), where every place any group adds joins them.
+import guides from "../data/starter-places.json";
 import type { Kind } from "./kinds";
 
 export { KIND_LABEL, type Kind } from "./kinds";
@@ -50,8 +51,11 @@ export interface CatalogueSpot {
 /** A photo's licence when it's an illustration made for Spots: its card says "Illustration", with no link. */
 export const ILLUSTRATED = "Illustration";
 const ILLUSTRATION = (key: string): Photo => ({ src: `/places/${key}.webp`, page: "", credit: "Spots", license: ILLUSTRATED });
+/** An illustration shared by places of one kind of thing: `dish/ramen`, `do/bowling`. */
+const ART = (art: string): Photo => ({ src: `/places/${art}.webp`, page: "", credit: "Spots", license: ILLUSTRATED });
+type GuideSpot = Omit<CatalogueSpot, "photo"> & { art: string };
 
-export const CATALOGUE: CatalogueSpot[] = [
+const CHOSEN: CatalogueSpot[] = [
   {
     key: "bus-depot-markets",
     lat: -35.312704,
@@ -922,3 +926,13 @@ export const CATALOGUE: CatalogueSpot[] = [
     photo: ILLUSTRATION("lake-tuggeranong"),
   },
 ];
+
+// The rest come from editorial guides, a few hundred of them, so they're
+// data rather than code (src/data/starter-places.json, built by
+// scripts/build-starter-places.py from the sources each one cites). They
+// hold to the same rules as the places above, each picture shared by the
+// places it suits: a dish (Toque's DishArt, drawn for Spots' sister app),
+// or what you do there.
+const FROM_GUIDES = (guides as GuideSpot[]).map(({ art, ...spot }) => ({ ...spot, photo: ART(art) }));
+
+export const CATALOGUE: CatalogueSpot[] = [...CHOSEN, ...FROM_GUIDES];
