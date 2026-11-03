@@ -51,7 +51,7 @@ const cards = groups.map((g) => {
       : {
           at: 2,
           part: replied / members.length,
-          label: view.mine === null ? "Add your times" : `Times ${replied}/${members.length}`,
+          label: view.mine === null ? "Add your times" : "",
           yours: view.mine === null,
           said: `${replied} of ${members.length} have said when they're free`,
         };

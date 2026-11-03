@@ -5,8 +5,9 @@
 // when they're free) and a tick (the time is set). Steps done are blue
 // with a white icon, on a blue line; the one it's at is a blue ring round
 // a blue icon (for Times, the ring fills as people answer); the rest are
-// grey. Beside them, only the step it's at, in a word or two: blue when
-// it's yours to do. Each step's name shows on hover.
+// grey. Beside them, the step it's at in a word or two, when there's
+// something to say (not while others answer: the ring says that): blue
+// when it's yours to do. Each step's name shows on hover.
 interface Props {
   /** the step it's at, 0 to 3, or 4 when they're all done */
   at: number;
@@ -53,5 +54,5 @@ const STEPS = [
       </>
     ))}
   </span>
-  <span class:list={["steps__label", { "is-yours": yours }]}>{label}</span>
+  {label && <span class:list={["steps__label", { "is-yours": yours }]}>{label}</span>}
 </span>
