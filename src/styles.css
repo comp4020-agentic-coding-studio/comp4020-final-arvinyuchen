@@ -9271,6 +9271,20 @@ dialog.sheet--talk.is-typing {
   font-size: 0.88rem;
 }
 
+/* Explore's next page of cards, as Talk's "Earlier messages" asks for more. */
+.explore-more {
+  display: block;
+  width: max-content;
+  margin: 1rem auto 0.5rem;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--accent-ink);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .talk__earlier {
   display: block;
   width: max-content;
