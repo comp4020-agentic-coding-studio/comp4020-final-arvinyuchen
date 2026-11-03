@@ -2820,34 +2820,92 @@ html:not(.in-app) .no-passkey__app {
   font-weight: 700;
 }
 
-/* A plan's replies at a row's end: a ring that fills as people say when
-   they're free, the count before it (so the rings line up); a tick once
-   the time is set. */
-.ring {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: var(--accent);
+/* Where a group is on the way through (src/components/GroupSteps.astro):
+   four nodes on a line, the step it's at named under them. */
+.steps {
+  display: grid;
+  justify-items: end;
+  gap: 0.2rem;
 }
 
-.ring__track {
+.steps svg {
+  display: block;
+  overflow: visible;
+}
+
+.steps__line {
   stroke: var(--line);
+  stroke-width: 2;
+  stroke-linecap: round;
 }
 
-.ring__fill {
+.steps__line.is-done {
   stroke: var(--accent);
 }
 
-/* (nobody yet: no dot of a stroke) */
-.ring__fill[stroke-dasharray^="0.00"] {
-  display: none;
+.steps__done {
+  fill: var(--accent);
 }
 
-.ring__count {
+.steps__now {
+  fill: var(--card);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.steps__track {
+  fill: var(--card);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+
+.steps__next {
+  fill: var(--line-strong);
+}
+
+.steps__label {
   color: var(--muted);
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
   font-weight: 600;
+  white-space: nowrap;
+}
+
+.steps__label.is-yours {
+  color: var(--accent-ink);
+}
+
+/* (on a phone, under the group's line, its name beside the nodes, so the
+   group's name keeps the row's width) */
+@media (max-width: 34rem) {
+  .my-group {
+    display: grid;
+    grid-template-areas:
+      "lead body end"
+      "lead steps end";
+    grid-template-columns: auto 1fr auto;
+    column-gap: 0.85rem;
+    row-gap: 0.4rem;
+  }
+
+  .my-group > .row__faces {
+    grid-area: lead;
+    align-self: center;
+  }
+
+  .my-group > .row__body {
+    grid-area: body;
+  }
+
+  .my-group > .steps {
+    display: flex;
+    grid-area: steps;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .my-group > .row__end {
+    grid-area: end;
+  }
 }
 
 .row--action .row__title {

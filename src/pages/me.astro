@@ -1,11 +1,12 @@
 ---
+import GroupSteps from "../components/GroupSteps.astro";
 import Base from "../layouts/Base.astro";
 import { listPasskeys } from "../lib/accounts";
-import { getGroup, groupsOfAccount, listMembers, memberOfAccount } from "../lib/db";
+import { getGroup, groupsOfAccount, listMembers, listPicks, memberOfAccount } from "../lib/db";
 import { signedIn } from "../lib/me";
 import { currentPlan, planView, stopNames } from "../lib/plans";
 import { unreadByGroup } from "../lib/talk";
-import { formatDay, formatMinute } from "../lib/when";
+import { dayParts, formatDay, formatMinute } from "../lib/when";
 
 // Your account: every group you're in, on any device, each with who's in
 // it and where its plan stands for you; then your one name, the passkeys
@@ -21,35 +22,47 @@ const unread = unreadByGroup(account.id);
 const day = (sqlite: string) =>
   new Date(`${sqlite.replace(" ", "T")}Z`).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
-// Each group's faces, and one short line under its name: its plan, where
-// (the first stop, "+ 2 more" for the rest) and when, and what's yours to
-// do, in blue ("waiting on you", "pick the time"); with no plan, how many
-// are in it. How many have said when they're free is a ring at the row's
-// end, filling as they do, a tick once the time is set.
+// Each group's faces, one short line under its name (its plan's first
+// stop, "+ 2 more" for the rest, and day; with no plan, how many are in
+// it), and at its end where it is on the way through (GroupSteps): the
+// step it's at, said in a word or two, blue when it's yours to do.
 const cards = groups.map((g) => {
   const group = getGroup(g.id)!;
   const members = listMembers(g.id);
   const you = memberOfAccount(g.id, account.id)!;
   const plan = currentPlan(g.id);
-  let status: { when: string; state: string; yours: boolean; replied: number; of: number; set: boolean } | null = null;
-  if (plan) {
+  const sub = plan ? `${stopNames(plan.stops, 1)}, ${formatDay(plan.day)}` : `${g.people} ${g.people === 1 ? "person" : "people"}`;
+  let step: { at: number; part?: number; label: string; yours?: boolean; said: string };
+  if (!plan) {
+    step = listPicks(g.id).length
+      ? { at: 1, label: g.owner ? "Start a plan" : "No plan yet", yours: g.owner, said: "Places on the list, no plan yet" }
+      : { at: 0, label: "Add places", said: "Nothing on the list yet" };
+  } else if (plan.set) {
+    step = {
+      at: 4,
+      label: `${dayParts(plan.day).weekday} ${formatMinute(plan.set.start)}`,
+      said: `Time set: ${formatDay(plan.day)}, ${formatMinute(plan.set.start)}`,
+    };
+  } else {
     const view = planView(plan, members, you, group.ownerId);
-    const where = `${stopNames(plan.stops, 1)}, ${formatDay(plan.day)}`;
-    const counts = { replied: view.answered.length, of: members.length, set: plan.set !== null };
-    if (plan.set) status = { when: `${where}, ${formatMinute(plan.set.start)}`, state: "", yours: false, ...counts };
-    else if (view.mine === null) status = { when: where, state: "waiting on you", yours: true, ...counts };
-    else if (view.everyoneIn) status = { when: where, state: g.owner ? "pick the time" : "everyone's in", yours: g.owner, ...counts };
-    else status = { when: where, state: "", yours: false, ...counts };
+    const replied = view.answered.length;
+    step = view.everyoneIn
+      ? { at: 3, label: g.owner ? "Pick the time" : "Time next", yours: g.owner, said: "Everyone's said when they're free" }
+      : {
+          at: 2,
+          part: replied / members.length,
+          label: view.mine === null ? "Add your times" : `Times ${replied}/${members.length}`,
+          yours: view.mine === null,
+          said: `${replied} of ${members.length} have said when they're free`,
+        };
   }
-  return { ...g, members, status };
+  return { ...g, members, sub, step };
 });
 // "Mac · Chrome", as a passkey's device is kept, said as "Chrome on Mac"
 const device = (madeOn: string) => {
   const [on, browser] = madeOn.split(" · ");
   return browser ? `${browser} on ${on}` : on;
 };
-// (the ring: r 8 around a 20px box)
-const RING = 2 * Math.PI * 8;
 const error = Astro.url.searchParams.get("error");
 const done = Astro.url.searchParams.get("done");
 ---
@@ -81,46 +94,10 @@ const done = Astro.url.searchParams.get("done");
               </span>
               <span class="row__body">
                 <strong class="row__title">{g.name}</strong>
-                {g.status ? (
-                  <span class="row__sub">
-                    {g.status.when}
-                    {g.status.state && <>: <span class:list={{ "is-yours": g.status.yours }}>{g.status.state}</span></>}
-                  </span>
-                ) : (
-                  <span class="row__sub">{g.people} {g.people === 1 ? "person" : "people"}</span>
-                )}
+                <span class="row__sub">{g.sub}</span>
               </span>
+              <GroupSteps {...g.step} />
               <span class="row__end">
-                {g.status && (
-                  g.status.set ? (
-                    <span class="ring is-set" role="img" aria-label="Time set" title="Time set">
-                      <svg viewBox="0 0 20 20" width="22" height="22"><circle cx="10" cy="10" r="9" fill="currentColor" /><path d="m6 10.2 2.6 2.6L14 7.5" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                    </span>
-                  ) : (
-                    <span
-                      class:list={["ring", { "is-full": g.status.replied === g.status.of }]}
-                      role="img"
-                      aria-label={`${g.status.replied} of ${g.status.of} have said when they're free`}
-                      title={`${g.status.replied} of ${g.status.of} have said when they're free`}
-                    >
-                      <span class="ring__count">{g.status.replied}/{g.status.of}</span>
-                      <svg viewBox="0 0 20 20" width="22" height="22">
-                        <circle class="ring__track" cx="10" cy="10" r="8" fill="none" stroke-width="3" />
-                        <circle
-                          class="ring__fill"
-                          cx="10"
-                          cy="10"
-                          r="8"
-                          fill="none"
-                          stroke-width="3"
-                          stroke-linecap="round"
-                          stroke-dasharray={`${((RING * g.status.replied) / g.status.of).toFixed(2)} ${RING.toFixed(2)}`}
-                          transform="rotate(-90 10 10)"
-                        />
-                      </svg>
-                    </span>
-                  )
-                )}
                 {unread.get(g.id) && <span class="badge my-group__new">{unread.get(g.id)} new</span>}
                 <svg class="row__chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m6 3.5 4.5 4.5L6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
               </span>

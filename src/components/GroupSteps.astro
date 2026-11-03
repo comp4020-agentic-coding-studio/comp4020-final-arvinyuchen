@@ -1,0 +1,54 @@
+---
+// Where a group is on Spots' one way through, as four nodes on a line:
+// List (places on Our list), Plan (the owner started one), Times (everyone
+// said when they're free) and Set (the owner set the time). Steps done are
+// blue dots on a blue line; the one it's at is a blue ring (for Times,
+// filling as people answer); the rest are grey. Under it, only the step
+// it's at, in a word or two: blue when it's yours to do.
+interface Props {
+  /** the step it's at, 0 to 3, or 4 when they're all done */
+  at: number;
+  /** how far through that step, 0 to 1 (Times: who's answered) */
+  part?: number;
+  label: string;
+  yours?: boolean;
+  /** the whole of it, for a screen reader and on hover */
+  said: string;
+}
+const { at, part = 0, label, yours = false, said } = Astro.props;
+const x = [7, 24.3, 41.7, 59];
+const R = 4.6;
+const ARC = 2 * Math.PI * R;
+---
+
+<span class="steps" role="img" aria-label={said} title={said}>
+  <svg viewBox="0 0 66 14" width="66" height="14" aria-hidden="true">
+    {x.slice(0, -1).map((cx, i) => (
+      <line class:list={["steps__line", { "is-done": i < at }]} x1={cx + R + 1.5} x2={x[i + 1] - R - 1.5} y1="7" y2="7" />
+    ))}
+    {x.map((cx, i) =>
+      i < at ? (
+        <circle class="steps__done" cx={cx} cy="7" r={R} />
+      ) : i === at ? (
+        part > 0 && part < 1 ? (
+          <>
+            <circle class="steps__track" cx={cx} cy="7" r={R} />
+            <circle
+              class="steps__now"
+              cx={cx}
+              cy="7"
+              r={R}
+              stroke-dasharray={`${(ARC * part).toFixed(2)} ${ARC.toFixed(2)}`}
+              transform={`rotate(-90 ${cx} 7)`}
+            />
+          </>
+        ) : (
+          <circle class="steps__now" cx={cx} cy="7" r={R} />
+        )
+      ) : (
+        <circle class="steps__next" cx={cx} cy="7" r="3" />
+      ),
+    )}
+  </svg>
+  <span class:list={["steps__label", { "is-yours": yours }]}>{label}</span>
+</span>
