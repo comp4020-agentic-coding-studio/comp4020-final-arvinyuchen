@@ -10,7 +10,18 @@
 //
 // Never against the live database: it refuses in production.
 import { createAccount, getAccount } from "../src/lib/accounts";
-import { addPick, claimMember, createGroup, db, getGroup, joinGroup, listMembers, placeIdForSeed, type Member } from "../src/lib/db";
+import {
+  addPick,
+  claimMember,
+  createGroup,
+  db,
+  getGroup,
+  joinGroup,
+  listMembers,
+  placeIdForSeed,
+  setStops,
+  type Member,
+} from "../src/lib/db";
 import type { Interval } from "../src/lib/free";
 import { answerPlan, currentPlan, setPlanTime, startPlan } from "../src/lib/plans";
 import { addDays, today } from "../src/lib/when";
@@ -41,6 +52,8 @@ interface Scenario {
   me?: Interval[];
   others: (Interval[] | undefined)[];
   set?: boolean;
+  /** how many places the outing takes in, in order (one unless it says) */
+  stops?: number;
 }
 const SCENARIOS: Scenario[] = [
   { name: "Test · just me, not answered", others: [] },
@@ -48,9 +61,10 @@ const SCENARIOS: Scenario[] = [
   { name: "Test · four, half answered", others: [busy([9, 11]), busy([13, 16]), undefined] },
   { name: "Test · five, a time works", me: busy([9, 12]), others: [busy([8, 10], [19, 23]), busy([10, 13]), [], busy([20, 23])] },
   { name: "Test · five, no time works", me: busy([8, 12]), others: [busy([11, 15]), busy([14, 18]), busy([17, 21]), busy([20, 23])] },
-  { name: "Test · four, time set", me: busy([8, 10]), others: [busy([12, 13]), [], busy([19, 23])], set: true },
+  { name: "Test · four, time set", me: busy([8, 10]), others: [busy([12, 13]), [], busy([19, 23])], set: true, stops: 2 },
   {
     name: "Test · a crowd of fourteen",
+    stops: 3,
     me: busy([10, 12]),
     others: NAMES.slice(0, 13).map((_, i) => (i % 5 === 4 ? undefined : someBusy())),
   },
@@ -92,6 +106,7 @@ for (const s of SCENARIOS) {
     if (typeof id !== "number") throw new Error(`${s.name}: couldn't start a plan (${id})`);
     plan = currentPlan(group.id)!;
   }
+  setStops(plan.id, stops.slice(0, s.stops ?? 1));
   // (the answers as written here, and no time set unless it says so)
   db.prepare("DELETE FROM plan_busy WHERE plan_id = ?").run(plan.id);
   db.prepare("DELETE FROM plan_answers WHERE plan_id = ?").run(plan.id);
