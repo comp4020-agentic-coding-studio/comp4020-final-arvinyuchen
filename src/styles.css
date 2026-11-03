@@ -1630,6 +1630,41 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   scale: 1.35;
 }
 
+/* The map's two ways to look, Our list and Explore, as the page's tabs are
+   drawn: a frosted track, the one showing a white pill. */
+.map-mode {
+  display: flex;
+  gap: 0.1rem;
+  padding: 0.18rem;
+  border-radius: 11px;
+  background: color-mix(in srgb, #e4e4ea 88%, transparent);
+  backdrop-filter: blur(16px) saturate(1.6);
+  box-shadow: 0 1px 3px rgb(13 43 54 / 18%);
+}
+
+.map-mode button {
+  padding: 0.32rem 0.8rem;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.map-mode button[aria-pressed="true"] {
+  background: #fff;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%), 0 1px 1px rgb(0 0 0 / 4%);
+}
+
+.map-mode button:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 1px;
+}
+
 /* Places gathered across the city: a frosted chip with the kinds it
    holds, most first, and how many, quieter than our list's numbered chips
    and under them. */

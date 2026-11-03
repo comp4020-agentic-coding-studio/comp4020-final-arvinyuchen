@@ -162,6 +162,17 @@ if (container) {
   let list = readList();
   const number = (id: number) => (list.order.has(id) ? list.order.get(id)! + 1 : null);
 
+  // Two ways to look, switched on the map (its top left): Our list, the
+  // group's places as numbered chips with their names and nothing else;
+  // Explore, every place as a dot, gathered across the city. Apart, they
+  // don't cover each other. A list row, an Explore card, a search or a
+  // kind chip turns the map to its own; it opens on Explore when the
+  // address asks for one (a search, a kind, "Near your plan") or the list
+  // is empty, on Our list otherwise.
+  type Mode = "list" | "explore";
+  const asking = /[?&](q|kind|near)\b/.test(location.search);
+  let mode: Mode = asking || list.order.size === 0 ? "explore" : "list";
+
   // The place the map has flown to gets a card: its chip grown into one.
   // Where the map is big, a callout on its dot, in the chip's place; on a
   // phone's short map the chip stays on the dot, filled with its kind's
@@ -362,7 +373,7 @@ if (container) {
   // Marks are plain elements over the map, so they can go on before the
   // first frame renders (a tab opened in the background renders nothing yet).
   let first = true;
-  const needsMark = (id: number) => list.order.has(id) || id === active || id === opened || id === hovered;
+  const needsMark = (id: number) => (mode === "list" && list.order.has(id)) || id === active || id === opened || id === hovered;
   function addMark(pin: Pin, drop: number | null) {
     const el = mark(pin.kind, "button");
     (el as HTMLButtonElement).type = "button";
@@ -419,8 +430,8 @@ if (container) {
     applyFilter();
   };
 
-  // The dots: every place the map shows that isn't on our list (of the
-  // kind chosen), in its kind's colour with a white ring, as .map-dot draws
+  // The dots, in Explore: every place the map shows (of the kind chosen),
+  // our list's too, in its kind's colour with a white ring, as .map-dot draws
   // a mark's dot. Across the city they gather into counts (the map's own
   // clustering, "spots-dots"), until the camera is down among the suburbs.
   const colour = (kind: Kind) => getComputedStyle(document.documentElement).getPropertyValue(`--${kind}`).trim() || "#c93400";
@@ -428,7 +439,7 @@ if (container) {
   const dotData = (): maplibregl.GeoJSONSourceSpecification["data"] => ({
     type: "FeatureCollection",
     features: [...pins.values()]
-      .filter((pin) => !list.order.has(pin.id) && (filter === "all" || pin.kind === filter))
+      .filter((pin) => mode === "explore" && (filter === "all" || pin.kind === filter))
       .map((pin) => ({
         type: "Feature",
         id: pin.id,
@@ -560,11 +571,11 @@ if (container) {
   }
 
   // What the chips and names keep clear of, besides each other: the map's
-  // zoom buttons and its credit's "i".
+  // zoom buttons, its two modes' switch and its credit's "i".
   const controls = (): Box[] => {
     const frame = container.getBoundingClientRect();
     return [
-      ...container.querySelectorAll(".maplibregl-ctrl-group"),
+      ...container.querySelectorAll(".maplibregl-ctrl-group, .map-mode"),
       ...(container.parentElement?.querySelectorAll(".fold-credit__info") ?? []),
     ].map((el) => {
       const r = el.getBoundingClientRect();
@@ -689,6 +700,8 @@ if (container) {
     });
   }
   function fly(id: number) {
+    // (a place off the list is only on Explore's map)
+    if (mode === "list" && !list.order.has(id)) turn("explore");
     const entry = ensure(id);
     if (!entry) return;
     const { pin, el } = entry;
@@ -794,6 +807,65 @@ if (container) {
   // does, and that link chooses it in place)
   if (filters?.dataset.sel && filters.dataset.sel !== "all") choose(filters.dataset.sel);
   document.addEventListener("spots:filter", (event) => choose(String((event as CustomEvent).detail ?? "all")));
+
+  // ---- the two modes ---------------------------------------------------------
+  const switcher = document.createElement("div");
+  switcher.className = "maplibregl-ctrl map-mode";
+  switcher.setAttribute("role", "group");
+  switcher.setAttribute("aria-label", "Show on the map");
+  const modeButtons = (["list", "explore"] as Mode[]).map((m) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = m === "list" ? "Our list" : "Explore";
+    button.addEventListener("click", () => turn(m, true));
+    switcher.append(button);
+    return [m, button] as const;
+  });
+  const showMode = () => modeButtons.forEach(([m, b]) => b.setAttribute("aria-pressed", String(m === mode)));
+  showMode();
+  map.addControl({ onAdd: () => switcher, onRemove: () => switcher.remove() }, "top-left");
+
+  function turn(next: Mode, frame = false) {
+    if (next === mode) return;
+    mode = next;
+    showMode();
+    if (opened !== null && !needsMark(opened)) close();
+    prune();
+    for (const pin of pins.values()) if (needsMark(pin.id) && !markers.has(pin.id)) addMark(pin, null);
+    drawDots();
+    applyFilter();
+    if (frame) frameMode();
+  }
+  // (the switch pressed: Our list framed to fit its places, Explore the city)
+  function frameMode() {
+    const motion = still() ? { duration: 0 } : { duration: 800 };
+    const ours = [...pins.values()].filter((pin) => list.order.has(pin.id));
+    if (mode === "list" && ours.length > 1) {
+      const bounds = new maplibregl.LngLatBounds();
+      for (const pin of ours) bounds.extend([pin.lon, pin.lat]);
+      map.fitBounds(bounds, { padding: 64, maxZoom: 15, pitch: 0, bearing: 0, ...motion });
+    } else if (mode === "list" && ours.length === 1) {
+      map.easeTo({ center: [ours[0].lon, ours[0].lat], zoom: 14, pitch: 0, bearing: 0, ...motion });
+    } else {
+      map.easeTo({ center: CANBERRA, zoom: 11.3, pitch: 0, bearing: 0, ...motion });
+    }
+  }
+  // A row of our list (or a place's Talk) is Our list's; an Explore card,
+  // a search or a kind chip is Explore's.
+  document.addEventListener(
+    "click",
+    (event) => {
+      const target = event.target as HTMLElement;
+      if (target.closest("button, a, form, input, select, label")) return;
+      const card = target.closest<HTMLElement>("[data-place]");
+      if (card) turn(card.closest("#list") ? "list" : "explore");
+    },
+    true,
+  );
+  document.addEventListener("spots:fly", () => turn("list"), true);
+  document.addEventListener("spots:searched", () => turn("explore"), true);
+  document.addEventListener("spots:kind", () => turn("explore"));
+  document.addEventListener("spots:filter", () => turn("explore"), true);
 
   sync();
   document.addEventListener("spots:reveal", (event) => reveal(Number((event as CustomEvent).detail), true));
