@@ -273,7 +273,10 @@ follow from it; every change has to hold to them.
   Tuggeranong, Weston Creek). Bad weather ("a rainy day") is read as
   wanting somewhere indoors, the weather words swapped out before the
   vectors see them (`forMeaning` in `src/lib/query.ts`). When nothing
-  is close enough, say so; don't pad with the least-bad matches.
+  is close enough, say so; don't pad with the least-bad matches: a
+  prompt with a word no card uses whose best match stands out only
+  weakly ("Ethiopian food", `UNHEARD_LIFT`) is asking for something no
+  place has, and gets nothing.
 - **The embeddings key stays on the server.** `VOYAGE_API_KEY` is a Fly secret
   (and lives in `mise.local.toml` locally); it never goes to the browser or
   into git. Without it, or with Voyage down, search falls back to matching
