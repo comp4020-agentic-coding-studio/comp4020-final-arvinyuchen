@@ -13,8 +13,10 @@ const said = (field: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)
   return field.validationMessage;
 };
 
-// (under the field: inside its label when it has one, or under the row it sits in)
-const anchor = (field: HTMLElement) => field.closest<HTMLElement>("label, .welcome__field, .finder__row") ?? field;
+// (under the field: under its list's card when it's a row of one, inside
+// its label when it has one, or under the row it sits in)
+const anchor = (field: HTMLElement) =>
+  field.closest<HTMLElement>(".list") ?? field.closest<HTMLElement>("label, .welcome__field, .finder__row") ?? field;
 
 const clear = (field: HTMLElement) => {
   field.classList.remove("is-invalid");

@@ -241,7 +241,7 @@ describe("the owner's tools", () => {
     const { owner, ben, id, people, act } = await crew();
     const asks = async () => [...(await page(owner, `/g/${id}`)).querySelectorAll("#settings .same li")].map((li) => li.textContent?.replace(/\s+/g, " ") ?? "");
     // Ben joined twice under one name: a pair to check, flagged above the list too.
-    expect(await asks()).toEqual([expect.stringContaining("has the same name as Ben")]);
+    expect(await asks()).toEqual([expect.stringContaining("Two people called Ben")]);
     expect((await page(owner, `/g/${id}`)).querySelector(".joined-slot a.joined")?.textContent).toContain("Two Bens here");
 
     // Cat loses every device, makes an account as Kit, and says who she was.
@@ -256,8 +256,8 @@ describe("the owner's tools", () => {
     expect(choices.map((c) => c.value)).toContain(catMember.id);
     await request(kit, `/api/groups/${id}/join`, { form: { link: id, was: catMember.id! } });
     expect((await page(kit, `/g/${id}`)).querySelector(".joined-slot p.joined")?.textContent).toContain("You said you're Cat from before");
-    expect((await asks()).at(-1)).toContain("Kit, joined");
-    expect((await asks()).at(-1)).toContain("says they're Cat");
+    expect((await asks()).at(-1)).toContain("Kit says they're Cat");
+    expect((await asks()).at(-1)).toContain("Kit joined");
 
     // Only the owner answers; Not them leaves both and stops asking.
     const [, benOld, benNew, , kitMember] = await people();

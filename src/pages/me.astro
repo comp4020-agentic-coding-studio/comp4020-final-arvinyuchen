@@ -79,7 +79,7 @@ const done = Astro.url.searchParams.get("done");
       )}
     </section>
 
-    <h2 class="list-head" id="groups-title">Groups</h2>
+    <h2 class="lists__head" id="groups-title">Groups</h2>
     {groups.length === 0 ? (
       <p class="card empty">You're not in any groups right now. <a href="/#start">Start one</a>, or open a friend's invite link.</p>
     ) : (
@@ -108,7 +108,7 @@ const done = Astro.url.searchParams.get("done");
     )}
 
     {/* Your one name: typed straight into its row, saved by Save or Enter. */}
-    <h2 class="list-head" id="you">Account</h2>
+    <h2 class="lists__head" id="you">Account</h2>
     {done === "renamed" && <p class="notice notice--ok" role="status">Saved. It's your name in every group now.</p>}
     {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
     <form method="post" action="/api/account" class="card list">
@@ -119,9 +119,9 @@ const done = Astro.url.searchParams.get("done");
       </label>
     </form>
     {/* (said only while you're changing it) */}
-    <p class="list-foot account__name-note">The same in all your groups: changing it here changes it everywhere.</p>
+    <p class="lists__foot account__name-note">The same in all your groups: changing it here changes it everywhere.</p>
 
-    <h2 class="list-head" id="keys-title">Passkeys</h2>
+    <h2 class="lists__head" id="keys-title">Passkeys</h2>
     {done === "removed" && <p class="notice notice--ok" role="status">Removed. That passkey can't sign in any more.</p>}
     {error === "last" && <p class="notice" role="alert">That's your only passkey, so it stays: it's your way in.</p>}
     <div class="card list" id="keys" aria-labelledby="keys-title">

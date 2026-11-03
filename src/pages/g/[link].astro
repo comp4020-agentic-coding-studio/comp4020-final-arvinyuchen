@@ -823,11 +823,13 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
 
   <div class="group-tools">
   {member && (
-    <section id="add" class="card add" aria-labelledby="add-title" data-panel="add">
+    <section id="add" class="add" aria-labelledby="add-title" data-panel="add">
       {/* Find, then fill (src/scripts/map.ts): first only the search, its
           matches numbered in the list and on the map; a match picked, or
           "Fill it in by hand" when nothing matches, brings the form, with
-          the button at the card's foot. Without the script it's the whole form at once. */}
+          the button at the foot. Without the script it's the whole form at
+          once. Both in My groups' lists (src/styles.css, "Lists"): a small
+          heading over each white card. */}
       <h2 id="add-title">Add a place not in Spots</h2>
       {error === "place" && <p class="notice" role="alert">A place needs a name, a kind and a reason it's good.</p>}
       {error === "photo" && <p class="notice" role="alert">That file isn't a photo we can use. Choose a JPEG, PNG or WebP under 15 MB, or share it without one.</p>}
@@ -840,18 +842,28 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         <ul class="finder__results" aria-live="polite"></ul>
         {/* (what sharing does, in three steps, under the search; gone once
             there are matches) */}
-        <ol class="add__how">
-          <li>
-            <span class="add__how-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18"><path d="M8.75 15a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Zm4.5-1.75 4.25 4.25" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg></span>
-            <span><strong>Find it</strong> by its name, or what it is and where.</span>
+        <h3 class="lists__head add__how-head">How it works</h3>
+        <ol class="card list add__how">
+          <li class="row">
+            <span class="row__lead" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18"><path d="M8.75 15a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Zm4.5-1.75 4.25 4.25" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg></span>
+            <span class="row__body">
+              <strong class="row__title">Find it</strong>
+              <span class="row__sub">By its name, or what it is and where</span>
+            </span>
           </li>
-          <li>
-            <span class="add__how-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18"><path d="M10 3.5c-3.9 0-7 2.5-7 5.6 0 1.8 1 3.4 2.7 4.4-.1.9-.6 1.7-1.2 2.3 1.4.1 2.7-.4 3.6-1.2.6.1 1.2.2 1.9.2 3.9 0 7-2.5 7-5.7s-3.1-5.6-7-5.6Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg></span>
-            <span><strong>Say why it's good</strong>, in a line: what to order, when to go.</span>
+          <li class="row">
+            <span class="row__lead" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18"><path d="M10 3.5c-3.9 0-7 2.5-7 5.6 0 1.8 1 3.4 2.7 4.4-.1.9-.6 1.7-1.2 2.3 1.4.1 2.7-.4 3.6-1.2.6.1 1.2.2 1.9.2 3.9 0 7-2.5 7-5.7s-3.1-5.6-7-5.6Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg></span>
+            <span class="row__body">
+              <strong class="row__title">Say why it's good</strong>
+              <span class="row__sub">In a line: what to order, when to go</span>
+            </span>
           </li>
-          <li>
-            <span class="add__how-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18"><path d="M4 10.5 8 14.5 16 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
-            <span><strong>It's on Our list</strong> for {group.name}, and in Explore for every group.</span>
+          <li class="row">
+            <span class="row__lead" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18"><path d="M4 10.5 8 14.5 16 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+            <span class="row__body">
+              <strong class="row__title">It's on Our list</strong>
+              <span class="row__sub">{`For ${group.name}, and in Explore for every group`}</span>
+            </span>
           </li>
         </ol>
       </div>
@@ -859,27 +871,31 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         <input type="hidden" name="ref" />
         <input type="hidden" name="lat" />
         <input type="hidden" name="lon" />
-        <div class="add__picked" hidden>
-          <span class="add__picked-icon" aria-hidden="true"></span>
-          <span class="add__picked-words">
-            <strong></strong>
-            <span></span>
-          </span>
-          <button type="button" class="btn btn--small" data-change>Change</button>
+        <h3 class="lists__head">Place</h3>
+        <div class="card list add__place">
+          <div class="add__picked" hidden>
+            <span class="add__picked-icon" aria-hidden="true"></span>
+            <span class="add__picked-words">
+              <strong></strong>
+              <span></span>
+            </span>
+            <button type="button" class="row__quiet" data-change>Change</button>
+          </div>
+          <div class="add__where">
+            <label class="row row--field">
+              <span class="row__label">Name</span>
+              <input class="row__input" name="name" required maxlength="80" placeholder="That dumpling place" data-hint="What's it called?" />
+            </label>
+            <label class="row row--field">
+              <span class="row__label">Suburb</span>
+              <input class="row__input" name="area" maxlength="40" placeholder="Dickson" />
+            </label>
+          </div>
         </div>
         <button type="button" class="add__back" data-change hidden>← Search the map instead</button>
-        <div class="add__where">
-          <label>
-            <span>Name</span>
-            <input name="name" required maxlength="80" placeholder="That dumpling place" data-hint="What's it called?" />
-          </label>
-          <label>
-            <span>Suburb</span>
-            <input name="area" maxlength="40" placeholder="Dickson" />
-          </label>
-        </div>
-        <fieldset class="add__kinds">
-          <legend>Kind</legend>
+        <h3 class="lists__head">Kind</h3>
+        <fieldset class="card add__kinds">
+          <legend class="sr-only">Kind</legend>
           <div class="add__kind-row">
             {kinds.map((k, i) => (
               <label class:list={["add__kind", `spot--${k}`]}>
@@ -890,22 +906,25 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
             ))}
           </div>
         </fieldset>
-        <label class="add__why">
-          <span>Why it's good</span>
-          <textarea name="why" required maxlength="160" rows="3" placeholder="Best chilli oil in Canberra, and open late" data-hint="Say why it's good, in a line."></textarea>
-        </label>
+        <h3 class="lists__head"><label for="add-why">Why it's good</label></h3>
+        <div class="card add__why">
+          <textarea id="add-why" name="why" required maxlength="160" rows="3" placeholder="Best chilli oil in Canberra, and open late" data-hint="Say why it's good, in a line."></textarea>
+        </div>
         {/* A photo of the sharer's own, if they have one; without, its card
             shows its kind's picture. (A place picked that's already shared
             shows its photo instead: src/scripts/map.ts.) */}
-        <div class="photo-pick">
+        <h3 class="lists__head">Photo</h3>
+        <div class="card list photo-pick">
           <figure class="photo-pick__found" hidden>
             <img alt="" />
             <figcaption></figcaption>
           </figure>
-          <label class="photo-pick__own">
+          <label class="row row--action photo-pick__own">
             <input class="sr-only" type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/*" />
-            <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h2l1.2-1.6h4.6L13.5 5h2A1.5 1.5 0 0 1 17 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /><circle cx="10" cy="10.3" r="2.8" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>
-            <span class="photo-pick__label">Add a photo <span class="photo-pick__opt">(optional)</span></span>
+            <span class="row__lead" aria-hidden="true">
+              <svg viewBox="0 0 20 20" width="18" height="18"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h2l1.2-1.6h4.6L13.5 5h2A1.5 1.5 0 0 1 17 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /><circle cx="10" cy="10.3" r="2.8" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>
+            </span>
+            <span class="row__title photo-pick__label">Add a photo <span class="photo-pick__opt">(optional)</span></span>
           </label>
         </div>
         <div class="add__foot">
@@ -916,82 +935,102 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
   )}
 
   {isOwner && (
-    <section id="settings" class="card settings" aria-labelledby="settings-title" data-panel="settings">
+    <section id="settings" class="settings" aria-labelledby="settings-title" data-panel="settings">
+      {/* The owner's tools, as My groups' lists (src/styles.css, "Lists"):
+          the group's name typed into its row; anyone who may be one person
+          twice; the people, each with Remove; and a new invite link. */}
       <h2 id="settings-title">Group settings</h2>
       <p class="fine">Only you see this: you started {group.name}.</p>
       {done && DONE[done] && <p class="notice notice--ok" role="status">{DONE[done]}</p>}
 
-      <form method="post" action={`/api/groups/${group.id}/owner`} class="settings__row">
+      <h3 class="lists__head">Group</h3>
+      <form method="post" action={`/api/groups/${group.id}/owner`} class="card list">
         <input type="hidden" name="action" value="rename" />
-        <label class="grow">
-          <span>Group name</span>
-          <input name="name" required maxlength="60" value={group.name} data-hint="Give the group a name." />
+        <label class="row row--field">
+          <span class="row__label">Name</span>
+          <input class="row__input" name="name" required maxlength="60" value={group.name} data-hint="Give the group a name." />
+          <button class="btn btn--small row__save">Save</button>
         </label>
-        <button class="btn">Rename</button>
       </form>
 
-      <h3>People</h3>
-      <ul class="people">
+      {/* The same person twice: whoever joined again saying who they were,
+          or the same name twice. Same person folds the earlier into the
+          newer; Not them leaves both, and stops asking. */}
+      {asks.length > 0 && (
+        <>
+          <h3 class="lists__head">Same person?</h3>
+          <ul class="card list same">
+            {asks.map((a) => (
+              <li class="row">
+                <span class="row__faces" aria-hidden="true">
+                  <span class="face" style={`--hue: ${hue(a.from.name)}`}>{[...a.from.name][0]?.toUpperCase()}</span>
+                  <span class="face" style={`--hue: ${hue(a.into.name)}`}>{[...a.into.name][0]?.toUpperCase()}</span>
+                </span>
+                <span class="row__body">
+                  <strong class="row__title">
+                    {a.claimed ? `${a.into.name} says they're ${a.from.name}` : `Two people called ${a.from.name}`}
+                  </strong>
+                  <span class="row__sub">
+                    {a.claimed ? `${a.into.name} joined ${joinedOn(a.into.joinedAt)}, ${a.from.name} ${joinedOn(a.from.joinedAt)}` : `One joined ${joinedOn(a.from.joinedAt)}, one ${joinedOn(a.into.joinedAt)}`}
+                  </span>
+                </span>
+                <span class="row__end same__acts">
+                  <form method="post" action={`/api/groups/${group.id}/owner`}>
+                    <input type="hidden" name="action" value="keep" />
+                    <input type="hidden" name="member" value={a.from.id} />
+                    <input type="hidden" name="into" value={a.into.id} />
+                    <button class="row__quiet">Not them</button>
+                  </form>
+                  <form method="post" action={`/api/groups/${group.id}/owner`} data-confirm={`Make them one? ${a.from.name}'s keens and places go to ${a.into.name}.`}>
+                    <input type="hidden" name="action" value="merge" />
+                    <input type="hidden" name="member" value={a.from.id} />
+                    <input type="hidden" name="into" value={a.into.id} />
+                    <button class="btn btn--small">Same person</button>
+                  </form>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      <h3 class="lists__head">People</h3>
+      <ul class="card list people">
         {members.map((m) => (
-          <li>
-            <span class="people__name">
-              {m.name}
-              {m.id === group.ownerId && <span class="owner-tag">owner</span>}
+          <li class="row">
+            <span class="row__faces" aria-hidden="true"><span class="face" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span></span>
+            <span class="row__body">
+              <strong class="row__title people__name">{m.name}</strong>
+              {m.id === group.ownerId && <span class="row__sub">Started the group</span>}
             </span>
             {m.id !== group.ownerId && (
-              <form method="post" action={`/api/groups/${group.id}/owner`} data-confirm={`Remove ${m.name}? Their keens go too.`}>
+              <form class="row__end" method="post" action={`/api/groups/${group.id}/owner`} data-confirm={`Remove ${m.name}? Their keens go too.`}>
                 <input type="hidden" name="action" value="remove" />
                 <input type="hidden" name="member" value={m.id} />
-                <button class="btn btn--small btn--ghost">Remove</button>
+                <button class="row__remove">Remove</button>
               </form>
             )}
           </li>
         ))}
       </ul>
 
-      {/* The same person twice: whoever joined again saying who they were,
-          or the same name twice. Merge folds the earlier into the newer;
-          Not them leaves both, and stops asking. */}
-      {asks.length > 0 && (
-        <ul class="same" aria-label="Same person?">
-          {asks.map((a) => (
-            <li>
-              <p>
-                <strong>{a.into.name}</strong>, joined {joinedOn(a.into.joinedAt)},{" "}
-                {a.claimed ? <>says they're <strong>{a.from.name}</strong> from {joinedOn(a.from.joinedAt)}.</> : <>has the same name as <strong>{a.from.name}</strong>, here since {joinedOn(a.from.joinedAt)}.</>}{" "}
-                <span class="fine">Merging gives them {a.from.name}'s keens and places.</span>
-              </p>
-              <div class="same__acts">
-                <form method="post" action={`/api/groups/${group.id}/owner`}>
-                  <input type="hidden" name="action" value="merge" />
-                  <input type="hidden" name="member" value={a.from.id} />
-                  <input type="hidden" name="into" value={a.into.id} />
-                  <button class="btn btn--small">Same person</button>
-                </form>
-                <form method="post" action={`/api/groups/${group.id}/owner`}>
-                  <input type="hidden" name="action" value="keep" />
-                  <input type="hidden" name="member" value={a.from.id} />
-                  <input type="hidden" name="into" value={a.into.id} />
-                  <button class="btn btn--small btn--ghost">Not them</button>
-                </form>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <h3>Invite link</h3>
+      <h3 class="lists__head">Invite link</h3>
       <form
         method="post"
         action={`/api/groups/${group.id}/owner`}
-        class="settings__row"
+        class="card list"
         data-confirm="Make a new invite link? The old one will stop letting anyone new join."
       >
         <input type="hidden" name="action" value="reset" />
-        <p class="fine grow">
-          If the link got passed around further than you meant, make a new one. Everyone already in stays in.
-        </p>
-        <button class="btn">Reset invite link</button>
+        <button class="row row--action">
+          <span class="row__lead" aria-hidden="true">
+            <svg viewBox="0 0 20 20" width="18" height="18"><path d="M15.5 8.5A5.8 5.8 0 0 0 5 6.2M4.5 11.5A5.8 5.8 0 0 0 15 13.8M5 2.8v3.6h3.6M15 17.2v-3.6h-3.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </span>
+          <span class="row__body">
+            <span class="row__title">Make a new invite link</span>
+            <span class="row__sub">If it went further than you meant. Everyone already in stays in.</span>
+          </span>
+        </button>
       </form>
     </section>
   )}
