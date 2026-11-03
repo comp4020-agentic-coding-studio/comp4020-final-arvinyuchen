@@ -2,10 +2,11 @@ import type { APIRoute } from "astro";
 import { getGroup } from "../../../../lib/db";
 import { talked } from "../../../../lib/events";
 import { me } from "../../../../lib/me";
-import { deleteMessage, sendMessage, undoDelete } from "../../../../lib/talk";
+import { deleteMessage, react, sendMessage, undoDelete } from "../../../../lib/talk";
 
 // Talk on a place on the list: say something (send), take back something
-// you said (delete), or bring it back within the day (undo). Only a member
+// you said (delete), bring it back within the day (undo), or react to a
+// message (react: one each, the same again takes it back). Only a member
 // of the group, as themselves (me()), and only on a place on its list;
 // only a message's author can delete it, not even the owner. The page's
 // script posts in the background (a 204, or a 409 saying why in
@@ -42,6 +43,10 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   const placeId = Number(form.get("place"));
   if (action === "delete") {
     const at = deleteMessage(group, member, id);
+    return at === undefined ? refused("not-yours", placeId) : done(at, `#msg-${id}`);
+  }
+  if (action === "react") {
+    const at = react(group, member, id, String(form.get("emoji") ?? ""));
     return at === undefined ? refused("not-yours", placeId) : done(at, `#msg-${id}`);
   }
   if (action === "undo") {

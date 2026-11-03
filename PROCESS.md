@@ -33,6 +33,13 @@ ever run on one machine; that's what `fly.toml` fixes anyway. A page re-fetches
 itself on each change rather than receiving a diff, which is simple but heavier
 with a big group.
 
+**Later.** For a while that became a rule: signed in, everything works
+without JavaScript. Once every member was a passkey account, nobody could
+sign in without it, so the rule only made each new piece of UI carry a
+version nobody would see. It was dropped (#116): the page's script is
+assumed, and what stays is the reason the forms were chosen, every action a
+plain HTTP route the spec can drive.
+
 ## Search by meaning
 
 **Context.** I wanted people to find places the way they'd ask a friend
@@ -153,10 +160,14 @@ tap arrives last wins, but it can no longer undo a vote by accident.
 
 On a wide screen the group's page first made each column a screen tall,
 scrolling on its own, like an app's panes. With a long list that put Our
-list in a small box under the plan; now the list is as long as it is and
-the page scrolls it, the header and Explore with the map staying put
-beside it, so a re-rank still glides in the page's own flow and the map
-is always there for a tapped place.
+list in a small box under the plan. Next the list was as long as it is
+and the page scrolled it, the header and Explore with the map staying put
+beside it; but a scroll outside the columns moved only the left one, and
+their tops came apart. Now the page is the window and never scrolls, and
+each column scrolls on its own, the left one whole (the group's panel, the
+plan and every row together), so the list is never a small box under a
+panel that stays, the tops stay level, and the map is always there for a
+tapped place.
 
 The rows themselves were tidied after. The keen button said "3 I'm keen",
 then "1 Keen!" once tapped, changing width under the finger and squeezing

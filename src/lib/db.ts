@@ -119,6 +119,11 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     expires_at TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS device_codes (
+    code_hash TEXT PRIMARY KEY,
+    account_id INTEGER NOT NULL REFERENCES accounts(id),
+    expires_at TEXT NOT NULL
+  );
   CREATE TABLE IF NOT EXISTS group_links (
     slug TEXT PRIMARY KEY,
     group_id TEXT NOT NULL REFERENCES groups(id),
@@ -137,6 +142,23 @@ addColumn("members", "account_id", "INTEGER REFERENCES accounts(id)");
 // they were merged into.
 addColumn("members", "removed_at", "TEXT");
 addColumn("members", "merged_into", "INTEGER REFERENCES members(id)");
+// Who joined since a member last looked: the newest member they've closed
+// the note about ("Mia joined"), by id, so it's exact (#120).
+addColumn("members", "joins_seen_id", "INTEGER");
+// The same person twice, for the owner to merge: someone who joined again
+// on a new account saying who they were (claimed), or a pair that only
+// share a name, which the owner said aren't one person (dismissed).
+db.exec(`
+  CREATE TABLE IF NOT EXISTS member_claims (
+    group_id TEXT NOT NULL REFERENCES groups(id),
+    from_id INTEGER NOT NULL REFERENCES members(id),
+    into_id INTEGER NOT NULL REFERENCES members(id),
+    claimed INTEGER NOT NULL DEFAULT 1,
+    dismissed_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (from_id, into_id)
+  );
+`);
 // Site admin (src/pages/admin.astro): an archived group is closed to
 // everyone but can be restored; a hidden place leaves Explore and the map.
 addColumn("accounts", "is_admin", "INTEGER NOT NULL DEFAULT 0");
@@ -271,6 +293,14 @@ db.exec(`
     last_read_id INTEGER NOT NULL,
     PRIMARY KEY (member_id, place_id)
   );
+  -- (a quick reaction on a message: one each, from TALK_REACTIONS)
+  CREATE TABLE IF NOT EXISTS comment_reactions (
+    comment_id INTEGER NOT NULL REFERENCES comments(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    emoji TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    PRIMARY KEY (comment_id, member_id)
+  );
 `);
 
 // The checked starter places, upserted by key so a corrected coordinate,
@@ -329,6 +359,7 @@ db.transaction(() => {
   }
   // (and its Talk in every group, with who'd read how far)
   db.prepare(`DELETE FROM comment_reads WHERE place_id IN (${bare})`).run();
+  db.prepare(`DELETE FROM comment_reactions WHERE comment_id IN (SELECT id FROM comments WHERE place_id IN (${bare}))`).run();
   db.prepare(`DELETE FROM comments WHERE place_id IN (${bare})`).run();
   db.prepare(`DELETE FROM places WHERE id IN (${bare})`).run();
 })();
@@ -429,6 +460,26 @@ export function listMembers(groupId: string): Member[] {
     .all(groupId) as Member[];
 }
 
+/** Who joined the group after this member, and since they last closed the
+ *  note saying so, oldest first: never themselves, nor anyone since removed. */
+export function newcomers(groupId: string, memberId: number): { id: number; name: string }[] {
+  return db
+    .prepare(
+      `SELECT m.id, m.name FROM members m, members me
+        WHERE me.id = ? AND me.group_id = ? AND m.group_id = me.group_id AND m.removed_at IS NULL
+          AND m.id > MAX(me.id, COALESCE(me.joins_seen_id, 0))
+        ORDER BY m.id`,
+    )
+    .all(memberId, groupId) as { id: number; name: string }[];
+}
+
+/** Closes the "Mia joined" note for this member: everyone in now is seen. */
+export function seeJoins(groupId: string, memberId: number): void {
+  db.prepare(
+    "UPDATE members SET joins_seen_id = (SELECT MAX(id) FROM members WHERE group_id = ?) WHERE id = ? AND group_id = ?",
+  ).run(groupId, memberId, groupId);
+}
+
 /** The account's member in a group, if it has one there. */
 export function memberOfAccount(groupId: string, accountId: number): Member | undefined {
   return db
@@ -495,9 +546,10 @@ export function removeMember(group: Group, memberId: number): boolean {
 /**
  * Folds a duplicate into the member they really are: their keens and the
  * places they added move over, and the duplicate's account leaves the group.
- * It's also the way back for someone who lost every passkey: they make a new
- * account, join again by the link, and the owner merges their old member
- * into the new one. There's no other recovery.
+ * It's also the way back for someone who lost every device: they make a new
+ * account, join again by the link saying who they were (claimMember), and
+ * the owner merges their old member into the new one. There's no other
+ * recovery.
  */
 export function mergeMembers(group: Group, fromId: number, intoId: number): boolean {
   if (fromId === intoId) return false;
@@ -521,6 +573,9 @@ export function mergeMembers(group: Group, fromId: number, intoId: number): bool
     // read each thread as far as either of them had. (A nonce only stops a
     // double tap, so it needn't come along.)
     db.prepare("UPDATE comments SET member_id = ?, nonce = NULL WHERE member_id = ?").run(intoId, fromId);
+    // (their reactions too, where the one they really are hasn't reacted)
+    db.prepare("UPDATE OR IGNORE comment_reactions SET member_id = ? WHERE member_id = ?").run(intoId, fromId);
+    db.prepare("DELETE FROM comment_reactions WHERE member_id = ?").run(fromId);
     db.prepare(
       `INSERT INTO comment_reads (member_id, group_id, place_id, last_read_id)
          SELECT ?, group_id, place_id, last_read_id FROM comment_reads WHERE member_id = ?
@@ -537,6 +592,83 @@ export function mergeMembers(group: Group, fromId: number, intoId: number): bool
     if (group.ownerId === fromId) db.prepare("UPDATE groups SET owner_member_id = ? WHERE id = ?").run(intoId, group.id);
   })();
   return true;
+}
+
+/** Who someone who joined again can say they were: anyone in the group
+ *  before them but the owner (who'd have nobody to confirm it). */
+export function claimable(group: Group, before = Number.MAX_SAFE_INTEGER): Member[] {
+  return listMembers(group.id).filter((m) => m.id !== group.ownerId && m.id < before);
+}
+
+/** A newcomer says they're someone already in the group, from before they
+ *  lost every passkey. Nothing moves until the owner merges them. */
+export function claimMember(group: Group, newcomer: Member, wasId: number): boolean {
+  if (!claimable(group, newcomer.id).some((m) => m.id === wasId)) return false;
+  db.prepare("INSERT OR IGNORE INTO member_claims (group_id, from_id, into_id) VALUES (?, ?, ?)").run(group.id, wasId, newcomer.id);
+  return true;
+}
+
+export interface MergeAsk {
+  /** who they were, here longer */
+  from: Member & { joinedAt: string };
+  /** who they are now */
+  into: Member & { joinedAt: string };
+  /** said so themselves, or only the same name */
+  claimed: boolean;
+}
+
+/** The same person twice, for the owner: each claim, and each pair with
+ *  the same name, newest second, until merged or said not to be. */
+export function mergeAsks(group: Group): MergeAsk[] {
+  const rows = db
+    .prepare(
+      `SELECT a.id AS fromId, a.name AS fromName, a.account_id AS fromAccount, a.joined_at AS fromJoined,
+              b.id AS intoId, b.name AS intoName, b.account_id AS intoAccount, b.joined_at AS intoJoined,
+              COALESCE(c.claimed, 0) AS claimed
+         FROM members a JOIN members b ON b.group_id = a.group_id AND b.id > a.id
+         LEFT JOIN member_claims c ON c.from_id = a.id AND c.into_id = b.id
+        WHERE a.group_id = ? AND a.removed_at IS NULL AND b.removed_at IS NULL
+          AND a.id IS NOT ? AND b.id IS NOT ?
+          AND c.dismissed_at IS NULL
+          AND (c.claimed = 1 OR lower(a.name) = lower(b.name))
+        ORDER BY b.id, a.id`,
+    )
+    .all(group.id, group.ownerId, group.ownerId) as {
+    fromId: number;
+    fromName: string;
+    fromAccount: number | null;
+    fromJoined: string;
+    intoId: number;
+    intoName: string;
+    intoAccount: number | null;
+    intoJoined: string;
+    claimed: number;
+  }[];
+  return rows.map((r) => ({
+    from: { id: r.fromId, name: r.fromName, accountId: r.fromAccount, joinedAt: r.fromJoined },
+    into: { id: r.intoId, name: r.intoName, accountId: r.intoAccount, joinedAt: r.intoJoined },
+    claimed: r.claimed === 1,
+  }));
+}
+
+/** The owner says two aren't one person: the ask goes, for good. */
+export function keepApart(group: Group, fromId: number, intoId: number): boolean {
+  if (!mergeAsks(group).some((a) => a.from.id === fromId && a.into.id === intoId)) return false;
+  db.prepare(
+    `INSERT INTO member_claims (group_id, from_id, into_id, claimed, dismissed_at) VALUES (?, ?, ?, 0, datetime('now'))
+     ON CONFLICT (from_id, into_id) DO UPDATE SET dismissed_at = datetime('now')`,
+  ).run(group.id, fromId, intoId);
+  return true;
+}
+
+/** Whom this member said they were, while the owner hasn't answered. */
+export function pendingClaim(group: Group, member: Member): Member | undefined {
+  return db
+    .prepare(
+      `SELECT m.id, m.name, m.account_id AS accountId FROM member_claims c JOIN members m ON m.id = c.from_id
+        WHERE c.group_id = ? AND c.into_id = ? AND c.claimed = 1 AND c.dismissed_at IS NULL AND m.removed_at IS NULL`,
+    )
+    .get(group.id, member.id) as Member | undefined;
 }
 
 /** A new invite link; the old one stops letting anyone new in. */

@@ -12,7 +12,20 @@ import SpotPhoto from "../../components/SpotPhoto.astro";
 import TalkSheet from "../../components/TalkSheet.astro";
 import Base from "../../layouts/Base.astro";
 import { KIND_LABEL, type Kind } from "../../lib/catalogue";
-import { canRemovePick, groupByLink, listMembers, listPicks, listPlaces, NOTE_MAX, type Place } from "../../lib/db";
+import {
+  canRemovePick,
+  claimable,
+  groupByLink,
+  listMembers,
+  listPicks,
+  listPlaces,
+  mergeAsks,
+  newcomers,
+  NOTE_MAX,
+  pendingClaim,
+  type Place,
+} from "../../lib/db";
+import { renderSVG } from "uqr";
 import { nearPlan, nearText } from "../../lib/outing";
 import { PIN_ICON } from "../../lib/outing-icons";
 import { clean, me, signedIn } from "../../lib/me";
@@ -33,6 +46,15 @@ if (!byLink.current) return member ? Astro.redirect(`/g/${group.link}`, 303) : A
 const account = signedIn(Astro.cookies);
 const isOwner = member !== undefined && member.id === group.ownerId;
 const members = listMembers(group.id);
+const ownerName = members.find((m) => m.id === group.ownerId)?.name ?? "the owner";
+// The same person twice (src/lib/db.ts): for the owner, who's asked to be
+// merged; for someone who said who they were, that it's waiting on the
+// owner; and for someone joining, who they could say they were.
+const asks = isOwner ? mergeAsks(group) : [];
+const claimed = member && !isOwner ? pendingClaim(group, member) : undefined;
+const before = member ? [] : claimable(group);
+const joinedOn = (sqlite: string) =>
+  new Date(`${sqlite.replace(" ", "T")}Z`).toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 const picks = listPicks(group.id);
 const places = listPlaces();
 const onList = new Set(picks.map((p) => p.place.id));
@@ -40,44 +62,22 @@ const kinds = Object.keys(KIND_LABEL) as Kind[];
 const shareUrl = new URL(`/g/${group.link}`, Astro.url).href;
 const isNew = Astro.url.searchParams.has("new");
 // The invite goes person to person, never to a public feed: whoever holds the
-// link can join, so there's no Facebook post or X button (see CLAUDE.md). On a
-// phone the Share button opens the system sheet (Messages, WhatsApp, Messenger,
-// Instagram, WeChat...); these links work everywhere, script or not.
+// link can join, so there's no Facebook post or X button (see CLAUDE.md). The
+// link to copy works everywhere; where there's a share sheet (a phone, Safari)
+// Share… opens it, with Messages, WhatsApp, Instagram, WeChat and the rest.
 const invite = `Join ${group.name} on Spots: we're picking places to go together.`;
-const enc = encodeURIComponent;
-// Each as its app's icon: WhatsApp's and Telegram's own marks (their paths
-// from Simple Icons 16.30.0, CC0) in their brand colours, as both allow on a
-// share button; Messages and Email drawn here, a bubble and an envelope in
-// the spirit of the phone's own apps, not Apple's artwork.
-const sendBy = [
-  {
-    key: "sms",
-    label: "Messages",
-    href: `sms:?&body=${enc(`${invite} ${shareUrl}`)}`,
-    art: `<path d="M12 5c-4.7 0-8.5 3.06-8.5 6.83 0 2.2 1.3 4.16 3.32 5.4-.17 1.06-.7 2.03-1.5 2.77 1.66.08 3.24-.5 4.43-1.5.73.17 1.48.26 2.25.26 4.7 0 8.5-3.06 8.5-6.83S16.7 5 12 5Z" fill="#fff"/>`,
-  },
-  {
-    key: "whatsapp",
-    label: "WhatsApp",
-    href: `https://wa.me/?text=${enc(`${invite} ${shareUrl}`)}`,
-    art: `<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" fill="#fff"/>`,
-  },
-  {
-    key: "telegram",
-    label: "Telegram",
-    href: `https://t.me/share/url?url=${enc(shareUrl)}&text=${enc(invite)}`,
-    // (the mark's plane alone: the button is its blue circle)
-    art: `<path d="M16.906 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" fill="#fff"/>`,
-  },
-  {
-    key: "email",
-    label: "Email",
-    href: `mailto:?subject=${enc(`Join ${group.name} on Spots`)}&body=${enc(`${invite}\n\n${shareUrl}`)}`,
-    art: `<rect x="3.5" y="6.5" width="17" height="11.5" rx="2.2" fill="#fff"/><path d="m4.9 8 7.1 5.3L19.1 8" fill="none" stroke="#8ab8f2" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>`,
-  },
-];
-// The link as people say it, without the "https://".
-const shortUrl = shareUrl.replace(/^https?:\/\//, "");
+// The link as a QR code for phones round the table, drawn here, nothing
+// fetched (#119); shown only on a computer, by the stylesheet.
+const qr = renderSVG(shareUrl, { border: 1 });
+// Who joined since you last looked (#120), until you dismiss it: "Mia joined
+// Saturday crew", "Mia and Leo joined…", "Mia, Leo and 3 others joined…".
+const joined = member ? newcomers(group.id, member.id) : [];
+const joinedNames = joined.map((j) => j.name);
+const joinedText = `${
+  joinedNames.length > 3
+    ? `${joinedNames.slice(0, 2).join(", ")} and ${joinedNames.length - 2} others`
+    : `${joinedNames.length > 1 ? `${joinedNames.slice(0, -1).join(", ")} and ` : ""}${joinedNames.at(-1)}`
+} joined ${group.name}`;
 const error = Astro.url.searchParams.get("error");
 const done = Astro.url.searchParams.get("done");
 const DONE: Record<string, string> = {
@@ -85,6 +85,7 @@ const DONE: Record<string, string> = {
   noted: "Note saved. It's what people see above the join form.",
   removed: "Removed from the group.",
   merged: "Merged: their keens and places are now one person's.",
+  kept: "Kept apart: they're two people.",
   reset: "New invite link made. The old one no longer lets anyone join; send this one instead.",
 };
 
@@ -271,9 +272,27 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
               <div class="welcome__field">
                 {/* The face you'll have in the group, filled in as you type (src/scripts/welcome.ts). */}
                 <span class="face welcome__you" aria-hidden="true"></span>
-                <input id="join-name" name="name" required maxlength="40" autocomplete="nickname" placeholder="Your first name" />
+                <input id="join-name" name="name" required maxlength="40" autocomplete="nickname" placeholder="Your first name" data-hint="Type your name, so the group knows it's you." />
               </div>
             </>
+          )}
+          {before.length > 0 && (
+            <details class="welcome__again">
+              <summary>Been in this group before, on a device you lost?</summary>
+              <fieldset>
+                <legend>Who were you?</legend>
+                <div class="welcome__was">
+                  {before.map((m) => (
+                    <label class="welcome__was-one">
+                      <input type="radio" name="was" value={m.id} />
+                      <span class="face" aria-hidden="true" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span>
+                      <span>{m.name}</span>
+                    </label>
+                  ))}
+                </div>
+                <p class="fine">{ownerName} confirms it's you, and your keens and places come back.</p>
+              </fieldset>
+            </details>
           )}
           <button class="btn btn--primary welcome__join">
             <span>Join {group.name}</span>
@@ -285,7 +304,8 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           {!account && (
             <p class="fine passkey-alt">
               You'll save a passkey for Spots: your face, fingerprint or phone PIN. Have one?{" "}
-              <button type="button" class="linkish" data-passkey="signin" data-then="#join">Sign in</button>
+              <button type="button" class="linkish" data-passkey="signin" data-then="#join">Sign in</button>, or on a new
+              device, <a href={`/add-device?next=${encodeURIComponent(`/g/${group.link}`)}`}>add it with a code</a>.
             </p>
           )}
         </form>
@@ -332,6 +352,38 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
   {/* The group's own column: who and inviting, the tabs, and Our list. On a
       wide screen it stands on the left beside Explore and the map. */}
   <div class="group-side">
+  {/* Who joined since you last looked, until you dismiss it: a slim notice
+      at the top of the group's column, since there's no push it waits
+      here, across visits, and arrives live (#120). */}
+  <div class="joined-slot">
+    {joined.length > 0 && (
+      <form class="joined" method="post" action={`/api/groups/${group.id}/seen`} data-seen role="status">
+        <span class="joined__dot" aria-hidden="true"></span>
+        <span class="joined__text">{joinedText}</span>
+        <button class="joined__close" aria-label="Dismiss">
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+        </button>
+      </form>
+    )}
+    {asks.length > 0 && (
+      <a class="joined" href="#settings" data-tab="settings">
+        <span class="joined__dot joined__dot--ask" aria-hidden="true"></span>
+        <span class="joined__text">
+          {asks.length > 1
+            ? `${asks.length} people may have joined twice. Same person?`
+            : asks[0].claimed
+              ? `${asks[0].into.name} says they're ${asks[0].from.name} from before. Same person?`
+              : `Two ${asks[0].into.name}s here. Same person?`}
+        </span>
+      </a>
+    )}
+    {claimed && (
+      <p class="joined" role="status">
+        <span class="joined__dot joined__dot--ask" aria-hidden="true"></span>
+        <span class="joined__text">You said you're {claimed.name} from before: once {ownerName} confirms, their keens and places are yours.</span>
+      </p>
+    )}
+  </div>
   <section class="group-head group-head--split">
     <div class="group-head__title">
       <h1>{group.name}</h1>
@@ -347,11 +399,6 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           </a>
         )}
       </p>
-      {group.note && (
-        <p class="group-note">
-          “{group.note}” <span class="fine">{owner ? `${owner.name}, to the group` : ""}</span>
-        </p>
-      )}
       {/* Who's in, as faces with names: the owner's has a crown, yours a
           ring. Past six, the last face is "+N more", the summary of a
           <details>, so it unfolds everyone without a script, and folds
@@ -416,48 +463,58 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         </svg>
         Invite friends
       </summary>
-      {/* The invite as one panel: the link as one button that copies it,
-          Share… where there's a share sheet, and the private channels as
-          their apps' icons. Never a public feed (CLAUDE.md). */}
+      {/* The invite as one panel and one button: on a touch screen with a
+          share sheet it opens the sheet (which has Copy too), elsewhere it
+          copies the link. Never a public feed
+          (CLAUDE.md). */}
       <div class={`share card${isNew ? " share--new" : ""}`}>
         <h2 class="share__title">{isNew ? "Your group is ready" : `Invite friends to ${group.name}`}</h2>
         <div class="share__row">
-          {/* The link in a field to select, without a script or a clipboard;
-              with them, a button the width of the card that copies it. */}
-          <div class="share__link">
+          <button type="button" class="share__copy" id="share-link" data-invite={shareUrl} data-title={`Join ${group.name} on Spots`} data-text={invite}>
             <span class="share__glyph" aria-hidden="true">
               <svg class="share__chain" viewBox="0 0 24 24" width="20" height="20"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              <svg class="share__tick" viewBox="0 0 24 24" width="20" height="20"><path d="m5.5 12.5 4.2 4.2L18.5 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </span>
-            <label for="share-link" class="sr-only">Invite link</label>
-            <input id="share-link" value={shareUrl} readonly />
-            <button type="button" class="share__copy" data-copy="#share-link">
-              <span class="share__glyph" aria-hidden="true">
-                <svg class="share__chain" viewBox="0 0 24 24" width="20" height="20"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                <svg class="share__tick" viewBox="0 0 24 24" width="20" height="20"><path d="m5.5 12.5 4.2 4.2L18.5 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <span class="share__words">
+              <span class="share__do" aria-live="polite">
+                <span class="share__say share__say--copy">Copy invite link</span>
+                <span class="share__say share__say--sheet">Share invite</span>
+                <span class="share__say share__say--done">Copied</span>
               </span>
-              <span class="share__words">
-                <span class="share__do" aria-live="polite">Copy link</span>
-                <span class="share__url">{shortUrl}</span>
-              </span>
-              <svg class="share__dup" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
-            </button>
-          </div>
-          <button type="button" class="btn btn--primary share__native" data-share data-title={`Join ${group.name} on Spots`} data-text={invite}>
-            Share…
+            </span>
+            <svg class="share__dup" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+            <svg class="share__out" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3.5v11M8 7.5l4-4 4 4M7 11H6a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 18 11h-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
           </button>
-          <ul class="share__by" aria-label="Or send it by">
-            {sendBy.map(({ key, label, href, art }) => (
-              <li>
-                <a class={`share__app share__app--${key}`} href={href} {...(href.startsWith("https:") ? { target: "_blank", rel: "noopener" } : {})}>
-                  <span class="share__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" set:html={art} />
-                  </span>
-                  {label}
-                </a>
-              </li>
-            ))}
-          </ul>
         </div>
+        {/* Two quieter things under it, each a small link that opens its
+            panel: the link as a QR code for phones round the table (a
+            computer only; #119), and for the owner, the note to the people
+            they invite (#118). Outside what a refresh redraws, so an open
+            panel or a half-typed note stays. */}
+        <div class="share__more">
+          <button type="button" class="share__more-btn share__more-btn--qr" aria-expanded="false" aria-controls="invite-qr">
+            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3.5 3.5h5v5h-5zM11.5 3.5h5v5h-5zM3.5 11.5h5v5h-5zM11.5 11.5h2v2h-2zM14.5 14.5h2v2h-2zM11.5 15.5h1M15.5 11.5h1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg>
+            <span data-shut="Show QR code" data-open="Hide QR code">Show QR code</span>
+          </button>
+          {isOwner && (
+            <button type="button" class="share__more-btn" aria-expanded="false" aria-controls="invite-note">
+              <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M10 3.5c-3.9 0-7 2.5-7 5.6 0 1.8 1 3.4 2.7 4.4-.1.9-.6 1.7-1.2 2.3 1.4.1 2.7-.4 3.6-1.2.6.1 1.2.2 1.9.2 3.9 0 7-2.5 7-5.7s-3.1-5.6-7-5.6Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg>
+              <span class="share__note-act">{group.note ? "Edit note" : "Add a note"}</span>
+            </button>
+          )}
+        </div>
+        <figure class="share__qr" id="invite-qr" hidden>
+          <span class="share__code" role="img" aria-label="QR code of the invite link" set:html={qr} />
+          <figcaption>Scan with a phone's camera to join</figcaption>
+        </figure>
+        {isOwner && (
+          <form class="share__note-form ask" id="invite-note" hidden method="post" action={`/api/groups/${group.id}/owner`} data-note>
+            <input type="hidden" name="action" value="note" />
+            <label for="invite-note-text" class="sr-only">A note for the people you invite, the first thing they see</label>
+            <input id="invite-note-text" name="note" maxlength={NOTE_MAX} value={group.note ?? ""} placeholder="Where are we going Friday?" enterkeyhint="done" autocomplete="off" />
+            <button class="btn">Save</button>
+          </form>
+        )}
       </div>
     </details>
   </section>
@@ -687,7 +744,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
             autocomplete="off"
             placeholder="Describe it: “cheap dumplings near Dickson”, “a walk with a view”"
           />
-          <button class="btn btn--primary">Find</button>
+          <button class="btn">Find</button>
         </form>
         {/* (the kinds need the script that filters by them, so it shows them) */}
         <div class="filters" role="group" aria-label="Show only" data-sel={startKind} hidden>
@@ -766,148 +823,214 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
 
   <div class="group-tools">
   {member && (
-    <section id="add" class="card add" aria-labelledby="add-title" data-panel="add">
-      <h2 id="add-title">Share a good place</h2>
-      <p class="fine">
-        It goes into Explore for every group, so only add somewhere you'd actually send a friend, and say why.
-      </p>
+    <section id="add" class="add" aria-labelledby="add-title" data-panel="add">
+      {/* Find, then fill (src/scripts/map.ts): first only the search, its
+          matches numbered in the list and on the map; a match picked, or
+          "Fill it in by hand" when nothing matches, brings the form, with
+          the button at the foot. Without the script it's the whole form at
+          once. Both in My groups' lists (src/styles.css, "Lists"): a small
+          heading over each white card. */}
+      <h2 id="add-title">Add a place not in Spots</h2>
       {error === "place" && <p class="notice" role="alert">A place needs a name, a kind and a reason it's good.</p>}
       {error === "photo" && <p class="notice" role="alert">That file isn't a photo we can use. Choose a JPEG, PNG or WebP under 15 MB, or share it without one.</p>}
       <div class="finder" hidden>
-        <label for="find-q"><span>Find it on the map</span></label>
+        <label for="find-q" class="sr-only">Find it on the map</label>
         <div class="finder__row">
-          <input id="find-q" placeholder="e.g. Morning Glory Dickson" autocomplete="off" />
+          <input id="find-q" type="search" enterkeyhint="search" placeholder="Find it: “Lonsdale Street Roasters”" autocomplete="off" />
           <button type="button" class="btn" id="find-go">Find</button>
         </div>
         <ul class="finder__results" aria-live="polite"></ul>
+        {/* (what sharing does, in three steps, under the search; gone once
+            there are matches) */}
+        <h3 class="lists__head add__how-head">How it works</h3>
+        <ol class="card list add__how">
+          <li class="row">
+            <span class="row__lead" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18"><path d="M8.75 15a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Zm4.5-1.75 4.25 4.25" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg></span>
+            <span class="row__body">
+              <strong class="row__title">Find it</strong>
+              <span class="row__sub">By its name, or what it is and where</span>
+            </span>
+          </li>
+          <li class="row">
+            <span class="row__lead" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18"><path d="M10 3.5c-3.9 0-7 2.5-7 5.6 0 1.8 1 3.4 2.7 4.4-.1.9-.6 1.7-1.2 2.3 1.4.1 2.7-.4 3.6-1.2.6.1 1.2.2 1.9.2 3.9 0 7-2.5 7-5.7s-3.1-5.6-7-5.6Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg></span>
+            <span class="row__body">
+              <strong class="row__title">Say why it's good</strong>
+              <span class="row__sub">In a line: what to order, when to go</span>
+            </span>
+          </li>
+          <li class="row">
+            <span class="row__lead" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18"><path d="M4 10.5 8 14.5 16 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+            <span class="row__body">
+              <strong class="row__title">It's on Our list</strong>
+              <span class="row__sub">{`For ${group.name}, and in Explore for every group`}</span>
+            </span>
+          </li>
+        </ol>
       </div>
-      <form method="post" action={`/api/groups/${group.id}/places`} class="grid-form" id="add-form" enctype="multipart/form-data">
+      <form method="post" action={`/api/groups/${group.id}/places`} class="add__form" id="add-form" enctype="multipart/form-data">
         <input type="hidden" name="ref" />
         <input type="hidden" name="lat" />
         <input type="hidden" name="lon" />
-        <label>
-          <span>Name</span>
-          <input name="name" required maxlength="80" placeholder="That dumpling place" />
-        </label>
-        <label>
-          <span>Kind</span>
-          <select name="kind" required>
-            {kinds.map((k) => <option value={k}>{KIND_LABEL[k]}</option>)}
-          </select>
-        </label>
-        <label>
-          <span>Suburb</span>
-          <input name="area" maxlength="40" placeholder="Dickson" />
-        </label>
-        <label class="wide">
-          <span>Why it's good (required)</span>
-          <input name="why" required maxlength="160" placeholder="Best chilli oil in Canberra, and open late" />
-        </label>
+        <h3 class="lists__head">Place</h3>
+        <div class="card list add__place">
+          <div class="add__picked" hidden>
+            <span class="add__picked-icon" aria-hidden="true"></span>
+            <span class="add__picked-words">
+              <strong></strong>
+              <span></span>
+            </span>
+            <button type="button" class="row__quiet" data-change>Change</button>
+          </div>
+          <div class="add__where">
+            <label class="row row--field">
+              <span class="row__label">Name</span>
+              <input class="row__input" name="name" required maxlength="80" placeholder="That dumpling place" data-hint="What's it called?" />
+            </label>
+            <label class="row row--field">
+              <span class="row__label">Suburb</span>
+              <input class="row__input" name="area" maxlength="40" placeholder="Dickson" />
+            </label>
+          </div>
+        </div>
+        <button type="button" class="add__back" data-change hidden>← Search the map instead</button>
+        <h3 class="lists__head">Kind</h3>
+        <fieldset class="card add__kinds">
+          <legend class="sr-only">Kind</legend>
+          <div class="add__kind-row">
+            {kinds.map((k, i) => (
+              <label class:list={["add__kind", `spot--${k}`]}>
+                <input type="radio" name="kind" value={k} required={i === 0} checked={i === 0} />
+                <span class="add__kind-dot"><KindIcon kind={k} /></span>
+                <span class="add__kind-name">{KIND_LABEL[k]}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <h3 class="lists__head"><label for="add-why">Why it's good</label></h3>
+        <div class="card add__why">
+          <textarea id="add-why" name="why" required maxlength="160" rows="3" placeholder="Best chilli oil in Canberra, and open late" data-hint="Say why it's good, in a line."></textarea>
+        </div>
         {/* A photo of the sharer's own, if they have one; without, its card
             shows its kind's picture. (A place picked that's already shared
             shows its photo instead: src/scripts/map.ts.) */}
-        <div class="photo-pick wide">
+        <h3 class="lists__head">Photo</h3>
+        <div class="card list photo-pick">
           <figure class="photo-pick__found" hidden>
             <img alt="" />
             <figcaption></figcaption>
           </figure>
-          <label class="photo-pick__own">
-            <span class="photo-pick__label">Photo (optional)</span>
-            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/*" />
+          <label class="row row--action photo-pick__own">
+            <input class="sr-only" type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/*" />
+            <span class="row__lead" aria-hidden="true">
+              <svg viewBox="0 0 20 20" width="18" height="18"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h2l1.2-1.6h4.6L13.5 5h2A1.5 1.5 0 0 1 17 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /><circle cx="10" cy="10.3" r="2.8" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>
+            </span>
+            <span class="row__title photo-pick__label">Add a photo <span class="photo-pick__opt">(optional)</span></span>
           </label>
         </div>
-        <p class="located wide" hidden></p>
-        <button class="btn btn--primary wide">Share it and add to our list</button>
+        <div class="add__foot">
+          <button class="btn btn--primary">Share it and add to our list</button>
+        </div>
       </form>
     </section>
   )}
 
   {isOwner && (
-    <section id="settings" class="card settings" aria-labelledby="settings-title" data-panel="settings">
+    <section id="settings" class="settings" aria-labelledby="settings-title" data-panel="settings">
+      {/* The owner's tools, as My groups' lists (src/styles.css, "Lists"):
+          the group's name typed into its row; anyone who may be one person
+          twice; the people, each with Remove; and a new invite link. */}
       <h2 id="settings-title">Group settings</h2>
       <p class="fine">Only you see this: you started {group.name}.</p>
       {done && DONE[done] && <p class="notice notice--ok" role="status">{DONE[done]}</p>}
 
-      <form method="post" action={`/api/groups/${group.id}/owner`} class="settings__row">
+      <h3 class="lists__head">Group</h3>
+      <form method="post" action={`/api/groups/${group.id}/owner`} class="card list">
         <input type="hidden" name="action" value="rename" />
-        <label class="grow">
-          <span>Group name</span>
-          <input name="name" required maxlength="60" value={group.name} />
+        <label class="row row--field">
+          <span class="row__label">Name</span>
+          <input class="row__input" name="name" required maxlength="60" value={group.name} data-hint="Give the group a name." />
+          <button class="btn btn--small row__save">Save</button>
         </label>
-        <button class="btn">Rename</button>
       </form>
 
-      <form method="post" action={`/api/groups/${group.id}/owner`} class="settings__row">
-        <input type="hidden" name="action" value="note" />
-        <label class="grow">
-          <span>A note for people you invite</span>
-          <input
-            name="note"
-            maxlength={NOTE_MAX}
-            value={group.note ?? ""}
-            placeholder="Where are we going Friday? Add yours by Wednesday."
-          />
-        </label>
-        <button class="btn">Save</button>
-      </form>
-      <p class="fine">It's the first thing someone sees when they open your invite link. Leave it empty to take it down.</p>
+      {/* The same person twice: whoever joined again saying who they were,
+          or the same name twice. Same person folds the earlier into the
+          newer; Not them leaves both, and stops asking. */}
+      {asks.length > 0 && (
+        <>
+          <h3 class="lists__head">Same person?</h3>
+          <ul class="card list same">
+            {asks.map((a) => (
+              <li class="row">
+                <span class="row__faces" aria-hidden="true">
+                  <span class="face" style={`--hue: ${hue(a.from.name)}`}>{[...a.from.name][0]?.toUpperCase()}</span>
+                  <span class="face" style={`--hue: ${hue(a.into.name)}`}>{[...a.into.name][0]?.toUpperCase()}</span>
+                </span>
+                <span class="row__body">
+                  <strong class="row__title">
+                    {a.claimed ? `${a.into.name} says they're ${a.from.name}` : `Two people called ${a.from.name}`}
+                  </strong>
+                  <span class="row__sub">
+                    {a.claimed ? `${a.into.name} joined ${joinedOn(a.into.joinedAt)}, ${a.from.name} ${joinedOn(a.from.joinedAt)}` : `One joined ${joinedOn(a.from.joinedAt)}, one ${joinedOn(a.into.joinedAt)}`}
+                  </span>
+                </span>
+                <span class="row__end same__acts">
+                  <form method="post" action={`/api/groups/${group.id}/owner`}>
+                    <input type="hidden" name="action" value="keep" />
+                    <input type="hidden" name="member" value={a.from.id} />
+                    <input type="hidden" name="into" value={a.into.id} />
+                    <button class="row__quiet">Not them</button>
+                  </form>
+                  <form method="post" action={`/api/groups/${group.id}/owner`} data-confirm={`Make them one? ${a.from.name}'s keens and places go to ${a.into.name}.`}>
+                    <input type="hidden" name="action" value="merge" />
+                    <input type="hidden" name="member" value={a.from.id} />
+                    <input type="hidden" name="into" value={a.into.id} />
+                    <button class="btn btn--small">Same person</button>
+                  </form>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
-      <h3>People</h3>
-      <ul class="people">
+      <h3 class="lists__head">People</h3>
+      <ul class="card list people">
         {members.map((m) => (
-          <li>
-            <span class="people__name">
-              {m.name}
-              {m.id === group.ownerId && <span class="owner-tag">owner</span>}
+          <li class="row">
+            <span class="row__faces" aria-hidden="true"><span class="face" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span></span>
+            <span class="row__body">
+              <strong class="row__title people__name">{m.name}</strong>
+              {m.id === group.ownerId && <span class="row__sub">Started the group</span>}
             </span>
             {m.id !== group.ownerId && (
-              <form method="post" action={`/api/groups/${group.id}/owner`} data-confirm={`Remove ${m.name}? Their keens go too.`}>
+              <form class="row__end" method="post" action={`/api/groups/${group.id}/owner`} data-confirm={`Remove ${m.name}? Their keens go too.`}>
                 <input type="hidden" name="action" value="remove" />
                 <input type="hidden" name="member" value={m.id} />
-                <button class="btn btn--small btn--ghost">Remove</button>
+                <button class="row__remove">Remove</button>
               </form>
             )}
           </li>
         ))}
       </ul>
 
-      {members.length > 1 && (
-        <form method="post" action={`/api/groups/${group.id}/owner`} class="settings__row merge">
-          <input type="hidden" name="action" value="merge" />
-          <label>
-            <span>Same person twice? Merge</span>
-            <select name="member" required>
-              {members.map((m) => <option value={m.id}>{m.name} (#{m.id})</option>)}
-            </select>
-          </label>
-          <label>
-            <span>into</span>
-            <select name="into" required>
-              {members.map((m, i) => <option value={m.id} selected={i === 0}>{m.name} (#{m.id})</option>)}
-            </select>
-          </label>
-          <button class="btn">Merge</button>
-        </form>
-      )}
-      {members.length > 1 && (
-        <p class="fine">
-          Someone who lost every passkey makes a new account and joins again by the link: merge their old name into
-          the new one, and their keens and places come with them.
-        </p>
-      )}
-
-      <h3>Invite link</h3>
+      <h3 class="lists__head">Invite link</h3>
       <form
         method="post"
         action={`/api/groups/${group.id}/owner`}
-        class="settings__row"
+        class="card list"
         data-confirm="Make a new invite link? The old one will stop letting anyone new join."
       >
         <input type="hidden" name="action" value="reset" />
-        <p class="fine grow">
-          If the link got passed around further than you meant, make a new one. Everyone already in stays in.
-        </p>
-        <button class="btn">Reset invite link</button>
+        <button class="row row--action">
+          <span class="row__lead" aria-hidden="true">
+            <svg viewBox="0 0 20 20" width="18" height="18"><path d="M15.5 8.5A5.8 5.8 0 0 0 5 6.2M4.5 11.5A5.8 5.8 0 0 0 15 13.8M5 2.8v3.6h3.6M15 17.2v-3.6h-3.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </span>
+          <span class="row__body">
+            <span class="row__title">Make a new invite link</span>
+            <span class="row__sub">If it went further than you meant. Everyone already in stays in.</span>
+          </span>
+        </button>
       </form>
     </section>
   )}
@@ -937,7 +1060,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     // reload by the viewer. The page asks the server for itself again and
     // swaps in the changed parts, keeping the scroll position, the map and
     // anything typed in the forms.
-    const regions = [".group-head h1", ".next-up-slot", ".group-head .who__count", ".group-head .who__grid", ".group-head .who__fold", ".share__row", ".tabs__n", ".tabs__flag", "#plans", "#list", "#past-plans", "#explore", "#settings .people", "#plan-sheets"];
+    const regions = [".group-head h1", ".next-up-slot", ".joined-slot", ".group-head .who__count", ".group-head .who__grid", ".group-head .who__fold", ".share__row", ".tabs__n", ".tabs__flag", "#plans", "#list", "#past-plans", "#explore", "#settings .people", "#plan-sheets"];
     // The page as it is now, its search and "Near your plan" included,
     // without one-off notices; or with one of those changed.
     function exploreUrl(change = {}) {
@@ -1002,7 +1125,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           const field = radio.closest(".starts").querySelector("input[data-start-field]");
           if (field && typed) {
             field.value = clockOf(minuteOf(typed));
-            radio.closest(".starts").classList.toggle("is-typed", minuteOf(typed) !== Number(field.dataset.min));
+            radio.closest(".starts").classList.toggle("is-typed", minuteOf(typed) !== Number(field.dataset.start ?? field.dataset.min));
           }
         }
         const toggle = fresh.querySelector(".wins__more-toggle");
@@ -1083,7 +1206,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     // A keen, a Remove, or anything for the plan posts in the background, so
     // the page (and its order) stays put. If that fails, the form posts the
     // plain way.
-    const inPage = "[data-keen], [data-remove], [data-plan], [data-busy], [data-plan-start]";
+    const inPage = "[data-keen], [data-remove], [data-plan], [data-busy], [data-plan-start], [data-note], [data-seen]";
     // (moving the plan to another day starts its answers afresh: asked
     // first, but only when the day really changes)
     const asks = (form) => {
@@ -1140,6 +1263,12 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         }
         if (!res.ok) throw new Error(String(res.status));
         await refresh();
+        if (form.matches("[data-note]")) {
+          const note = form.elements.note.value.trim().replace(/\s+/g, " ");
+          document.querySelector(".share__note-act").textContent = note ? "Edit note" : "Add a note";
+          openMore(null);
+          say(note ? "Note saved. It's the first thing people see when they open the link." : "Note taken down.");
+        }
       } catch {
         if (by?.name) form.insertAdjacentHTML("beforeend", `<input type="hidden" name="${by.name}" value="${by.value}">`);
         form.submit();
@@ -1280,7 +1409,8 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     // place, Settings), the open one in the URL's #, so a reload, the back
     // button or a form that lands on #settings opens the right one. On a
     // wide screen Our list is always there in the left column, so the tabs
-    // choose what's beside it: Explore (with the map), Share or Settings.
+    // choose what's beside it: Explore, Share or Settings, the map staying
+    // on the right whichever it is (Share's finder shows what it finds on it).
     const page = document.querySelector(".group-page");
     const tabLinks = [...document.querySelectorAll(".tabs a[data-tab]")];
     const panels = [...document.querySelectorAll("[data-panel]")];
@@ -1298,7 +1428,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       const beside = wide.matches && tab === "list" ? "explore" : tab;
       for (const panel of panels) {
         const kind = panel.dataset.panel;
-        panel.hidden = !(kind === beside || (wide.matches && kind === "list"));
+        panel.hidden = !(kind === beside || (wide.matches && (kind === "list" || kind === "explore")));
       }
       for (const a of tabLinks) {
         if (a.dataset.tab === beside) a.setAttribute("aria-current", "page");
@@ -1307,17 +1437,11 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       // (a map shown again takes its size)
       window.dispatchEvent(new Event("resize"));
       // The tab opens at its top, under the tabs, never scrolled half way.
-      // (On a wide screen what's beside the list stays in view as the page
-      // scrolls, so the page stays where it is.)
+      // (On a wide screen the page doesn't scroll, each column does on its
+      // own, so the page stays where it is.)
       const top = document.querySelector(".group-head").getBoundingClientRect().bottom + scrollY;
       if (scroll && !wide.matches && scrollY > top) scrollTo({ top, behavior: "instant" });
     }
-    // (on a wide screen the header stays at the top, and what's beside the
-    // list stays under it: the stylesheet needs its height)
-    const bar = document.querySelector("body > .top");
-    const barHeight = () => document.documentElement.style.setProperty("--top-h", `${bar?.offsetHeight ?? 0}px`);
-    barHeight();
-    if (bar) new ResizeObserver(barHeight).observe(bar);
     page.classList.add("is-tabbed");
     show(tab, false);
     // (a link to one card, like a vote without the script, still lands on
@@ -1451,7 +1575,9 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         const starts = event.target.closest(".starts");
         const radio = starts.querySelector("input[name=at]");
         radio.checked = true;
-        starts.classList.toggle("is-typed", minuteOf(event.target.value) !== Number(radio.value.split("-")[0]));
+        // (typed: other than the start its chip offers)
+        const offered = starts.querySelector("[data-start-field]")?.dataset.start ?? radio.value.split("-")[0];
+        starts.classList.toggle("is-typed", minuteOf(event.target.value) !== Number(offered));
       }
       planLabel();
     });
@@ -1544,44 +1670,51 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       all[(to + all.length) % all.length].focus();
     });
 
-    // The link copies with one tap where there's a clipboard; elsewhere it
-    // stays a field to select it in. Delegated, since a reset invite link
-    // swaps the share row in live.
-    if (navigator.clipboard?.writeText) document.documentElement.classList.add("can-copy");
+    // The invite is one button. On a touch screen with a share sheet it
+    // opens the sheet, which reaches every app on the device (Instagram and
+    // WeChat included) and has Copy in it too; elsewhere, a computer, it
+    // copies the link. Which, the page decides once and the stylesheet shows
+    // (.can-sheet), so a live refresh that redraws the row keeps it.
+    // Delegated, since a reset invite link swaps the row in live.
+    const sheet = Boolean(navigator.share) && matchMedia("(pointer: coarse)").matches;
+    document.documentElement.classList.toggle("can-sheet", sheet);
     document.addEventListener("click", async (event) => {
-      const button = event.target.closest("[data-copy]");
+      const button = event.target.closest("[data-invite]");
       if (!button) return;
-      const input = document.querySelector(button.dataset.copy);
-      const say = button.querySelector(".share__do");
+      const url = button.dataset.invite;
+      if (sheet) {
+        try {
+          await navigator.share({ title: button.dataset.title, text: button.dataset.text, url });
+        } catch {
+          // Closing the sheet without picking an app is not an error worth showing.
+        }
+        return;
+      }
       try {
-        await navigator.clipboard.writeText(input.value);
+        await navigator.clipboard.writeText(url);
         button.classList.add("is-copied");
-        say.textContent = "Copied";
-        setTimeout(() => {
-          button.classList.remove("is-copied");
-          say.textContent = "Copy link";
-        }, 2000);
+        setTimeout(() => button.classList.remove("is-copied"), 2000);
       } catch {
-        // No clipboard after all: back to the field, with the link selected.
-        document.documentElement.classList.remove("can-copy");
-        input.focus();
-        input.select();
+        // No clipboard: the link in a box of its own, to copy by hand.
+        window.prompt("Copy the invite link", url);
       }
     });
-
-    // The system share sheet, where there is one (phones, Safari, Edge): it
-    // reaches every app on the device, Instagram and WeChat included, which
-    // no web link can. Elsewhere the button stays hidden and the links do.
-    if (navigator.share) document.documentElement.classList.add("can-share");
-    document.addEventListener("click", async (event) => {
-      const button = event.target.closest("[data-share]");
-      if (!button) return;
-      const url = document.querySelector("#share-link").value;
-      try {
-        await navigator.share({ title: button.dataset.title, text: button.dataset.text, url });
-      } catch {
-        // Closing the sheet without picking an app is not an error worth showing.
+    // Under the invite's button, Show QR code and Add a note each open their
+    // panel, one at a time; pressed again, it closes.
+    function openMore(id) {
+      for (const button of document.querySelectorAll(".share__more-btn")) {
+        const on = button.getAttribute("aria-controls") === id;
+        button.setAttribute("aria-expanded", String(on));
+        document.getElementById(button.getAttribute("aria-controls")).hidden = !on;
+        const words = button.querySelector("[data-open]");
+        if (words) words.textContent = on ? words.dataset.open : words.dataset.shut;
       }
+      if (id === "invite-note") document.querySelector("#invite-note-text")?.focus();
+    }
+    document.addEventListener("click", (event) => {
+      const button = event.target.closest(".share__more-btn");
+      if (!button) return;
+      openMore(button.getAttribute("aria-expanded") === "true" ? null : button.getAttribute("aria-controls"));
     });
   </script>
   </>

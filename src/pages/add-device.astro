@@ -1,0 +1,95 @@
+---
+import { renderSVG } from "uqr";
+import NoPasskey from "../components/NoPasskey.astro";
+import Base from "../layouts/Base.astro";
+import { accountForDeviceCode, DEVICE_CODE_MINUTES, newDeviceCode } from "../lib/accounts";
+import { nextPath, signedIn } from "../lib/me";
+
+// Adding a device that doesn't have your passkey (src/lib/accounts.ts),
+// both ends of it. Signed in, this page shows a new code and its QR code.
+// Signed out, it takes the code (scanned, so in the link, or typed) and
+// makes a passkey here for that account, then goes on to ?next=.
+const account = signedIn(Astro.cookies);
+const typed = Astro.url.searchParams.get("code")?.trim() ?? "";
+const next = nextPath(Astro.url.searchParams.get("next"));
+// (a device that's already you, scanning the code, keeps it working)
+const code = account && !typed ? newDeviceCode(account.id) : "";
+const qr = code ? renderSVG(`${Astro.url.origin}/add-device?code=${code}`, { border: 1 }) : "";
+const linking = !account && typed ? accountForDeviceCode(typed) : undefined;
+---
+
+<Base title="Add a device · Spots">
+  <section class="card notice-page add-device">
+    <p class="eyebrow">Add a device</p>
+    {account && typed ? (
+      <>
+        <h1>This device is already you</h1>
+        <p>It's signed in as <strong>{account.name}</strong>. Scan the code with the device you're adding.</p>
+        <p class="card__actions"><a class="btn" href="/me">My groups</a></p>
+      </>
+    ) : account ? (
+      <>
+        <h1>Scan this on your other device</h1>
+        <p>
+          Its camera opens the link, and it makes its own passkey for your account. No camera? Go to{" "}
+          <strong>{Astro.url.host}/add-device</strong> there and type the code.
+        </p>
+        <figure class="add-device__qr">
+          <span class="share__code" role="img" aria-label="QR code that adds a device to your account" set:html={qr} />
+          <figcaption>
+            <span class="add-device__code">{code}</span>
+            Works once, for {DEVICE_CODE_MINUTES} minutes.
+          </figcaption>
+        </figure>
+        <p class="fine">
+          Only for your own devices: whoever has this code can add theirs to your account. Spots never asks you for it.
+        </p>
+        <p class="card__actions"><a class="btn" href="/me#keys">Done</a></p>
+      </>
+    ) : linking ? (
+      <>
+        <h1>Add this device to {linking.name}'s Spots</h1>
+        <p>It makes a passkey here, your face, fingerprint or PIN, so this device signs in as you from now on.</p>
+        <div class="card__actions stack" data-passkey-only>
+          <button type="button" class="btn btn--primary" data-passkey="register" data-code={typed} data-then={next}>
+            Make a passkey here
+          </button>
+          <span class="passkey-msg" aria-live="polite"></span>
+        </div>
+        <NoPasskey to="add this device" />
+      </>
+    ) : (
+      <>
+        <h1>Add this device</h1>
+        <p>
+          On a device you're signed in on, open <strong>My groups</strong>, then <strong>Add another device</strong>: it
+          shows a code. Scan it, or type it here.
+        </p>
+        {typed && <p class="notice" role="alert">That code didn't work. It may have run out: make a new one.</p>}
+        <form method="get" class="add-device__form">
+          <label for="device-code" class="sr-only">The code</label>
+          <input
+            id="device-code"
+            name="code"
+            required
+            maxlength="12"
+            autocomplete="one-time-code"
+            autocapitalize="characters"
+            spellcheck="false"
+            placeholder="XXXX-XXXX"
+            data-hint="Type the code your other device shows."
+          />
+          {next !== "/me" && <input type="hidden" name="next" value={next} />}
+          <button class="btn">Next</button>
+        </form>
+        <p class="fine card__actions">
+          Lost every device? Make a new account and join your group again: say who you were, and its owner gives you
+          your old self back.
+        </p>
+      </>
+    )}
+  </section>
+  <script>
+    import "../scripts/passkeys";
+  </script>
+</Base>

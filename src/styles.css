@@ -298,6 +298,52 @@ textarea:focus-visible {
   box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
+/* A field left empty says so under itself (src/scripts/hints.ts), not in
+   the browser's bubble: its ring red, a line of the page's type under it. */
+:is(input, select, textarea).is-invalid,
+:is(input, select, textarea).is-invalid:focus-visible {
+  border-color: var(--busy);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--busy) 14%, transparent);
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.4rem 0 0;
+  color: var(--busy-ink);
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.hint::before {
+  content: "!";
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--busy);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hint {
+    animation: hint-in 0.18s ease-out;
+  }
+}
+
+@keyframes hint-in {
+  from {
+    opacity: 0;
+    translate: 0 -3px;
+  }
+}
+
 input[type="checkbox"],
 input[type="radio"] {
   width: auto;
@@ -482,9 +528,8 @@ input[type="radio"] {
   height: 1.2em;
 }
 
-/* The invite panel (src/pages/g/[link].astro): a heading, the link as one
-   button that copies it, Share… where there's a share sheet, the private
-   channels as their apps' icons. */
+/* The invite panel (src/pages/g/[link].astro): a heading and one button,
+   the share sheet on a touch screen, a copy of the link elsewhere. */
 .share {
   display: grid;
   gap: 0.9rem;
@@ -506,67 +551,24 @@ input[type="radio"] {
   gap: 0.9rem;
 }
 
-/* The link: a field to select it in, without a script; with one, the
-   field gives way to the copy button. */
-.share__link {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  min-width: 0;
-  padding: 0.55rem 0.95rem 0.55rem 0.55rem;
-  border: 1.5px solid transparent;
-  border-radius: 16px;
-  background: var(--fill);
-}
-
-.share__link:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
-}
-
-.share__link input {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--ink);
-  font-size: 0.92rem;
-  text-overflow: ellipsis;
-  box-shadow: none;
-  outline: none;
-}
-
+/* The invite's one button, the width of the card: a button like every
+   other (grey, its words blue), with the link's chain before them (on a
+   touch screen, the share sheet's arrow). */
 .share__copy {
-  display: none;
-}
-
-.can-copy .share__link {
-  padding: 0;
-  border: 0;
-  background: none;
-  box-shadow: none;
-}
-
-.can-copy .share__link > :not(.share__copy) {
-  display: none;
-}
-
-/* The whole row is the button: what it does on top, the link under it. */
-.can-copy .share__copy {
   display: flex;
-  flex: 1;
   align-items: center;
-  gap: 0.7rem;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
   min-width: 0;
-  padding: 0.55rem 0.95rem 0.55rem 0.55rem;
-  border: 1.5px solid transparent;
-  border-radius: 16px;
+  min-height: 3rem;
+  padding: 0.6rem 1.1rem;
+  border: 0;
+  border-radius: 999px;
   background: var(--fill);
-  color: var(--ink);
+  color: var(--accent-ink);
   font: inherit;
-  text-align: left;
+  font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, transform 0.12s;
 }
@@ -576,55 +578,61 @@ input[type="radio"] {
 }
 
 .share__copy:active {
-  transform: scale(0.985);
+  transform: scale(0.97);
 }
 
 .share__copy:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--accent-soft), inset 0 0 0 1.5px var(--accent);
+  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
 }
 
 .share__glyph {
   flex: none;
   display: grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  background: var(--card);
-  color: var(--accent-ink);
-  box-shadow: var(--shadow-sm);
-  transition: background 0.2s, color 0.2s;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.share__glyph svg,
+.share__out {
+  width: 1.2rem;
+  height: 1.2rem;
 }
 
 .share__glyph svg {
   grid-area: 1 / 1;
 }
 
-.share__words {
-  flex: 1;
-  display: grid;
-  min-width: 0;
-  line-height: 1.25;
-}
-
-.share__do {
-  font-weight: 600;
-  color: var(--accent-ink);
-}
-
-.share__url {
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 0.82rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.share__dup {
+.share__out {
   flex: none;
-  color: var(--accent-ink);
-  transition: opacity 0.2s;
+  order: -1;
+}
+
+.share__dup,
+.can-sheet .share__glyph {
+  display: none;
+}
+
+/* Copy where there's no share sheet (a computer), Share on a touch screen
+   that has one (.can-sheet, set by the page's script), Copied for a moment
+   after a copy. */
+.share__say--sheet,
+.share__say--done,
+.share__out,
+.can-sheet .share__say--copy,
+.can-sheet .share__dup,
+.is-copied .share__say--copy {
+  display: none;
+}
+
+.can-sheet .share__say--sheet,
+.is-copied .share__say--done {
+  display: inline;
+}
+
+.can-sheet .share__out {
+  display: block;
 }
 
 .share__tick {
@@ -637,14 +645,10 @@ input[type="radio"] {
   transition: opacity 0.2s, transform 0.2s;
 }
 
-/* Copied: a green tick where the link was, for a moment. */
+/* Copied: a green tick where the chain was, for a moment. */
 .share__copy.is-copied {
   background: color-mix(in srgb, #34c759 14%, white);
-}
-
-.is-copied .share__glyph {
-  background: #34c759;
-  color: #fff;
+  color: #1f8a3b;
 }
 
 .is-copied .share__chain {
@@ -657,123 +661,98 @@ input[type="radio"] {
   transform: none;
 }
 
-.is-copied .share__do {
-  color: #1f8a3b;
-}
-
-.is-copied .share__dup {
-  opacity: 0;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .share__copy,
-  .share__glyph,
   .share__chain,
-  .share__tick,
-  .share__dup {
+  .share__tick {
     transition: none;
   }
 }
 
-/* Only where the browser has a system share sheet (set by the page script). */
-.share__native {
-  display: none;
-  width: 100%;
+/* Under the invite's button, two quieter things as small links, each
+   opening its panel (#119, #118): the QR code (a computer only; a phone
+   has the share sheet) and, for the owner, the note to invitees. */
+.share__more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.1rem;
+  margin-top: -0.3rem;
+  padding: 0 0.55rem;
 }
 
-.can-share .share__native {
+.share__more-btn {
   display: inline-flex;
-  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.share__by {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.share__more-btn:hover {
+  text-decoration: underline;
 }
 
-.share__app {
+.share__more-btn[aria-expanded="true"] {
+  color: var(--ink);
+}
+
+@media (pointer: coarse) {
+  .share__more-btn--qr,
+  .share__qr {
+    display: none;
+  }
+
+  .share__more:not(:has(.share__more-btn:not(.share__more-btn--qr))) {
+    display: none;
+  }
+}
+
+/* The QR code, opened: big enough to scan from across the table. */
+.share__qr {
   display: grid;
   justify-items: center;
-  gap: 0.35rem;
-  padding: 0.55rem 0.2rem 0.5rem;
-  border-radius: 14px;
-  color: var(--ink);
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-decoration: none;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.9rem;
+  border-radius: 16px;
+  background: var(--fill);
 }
 
-.share__app:hover {
-  background: var(--tint);
+.share__qr[hidden],
+.share__note-form[hidden] {
+  display: none;
 }
 
-/* Four of a kind: the same circle, each in its app's colour, its mark in
-   white. */
-.share__icon {
-  display: grid;
-  place-items: center;
-  width: 3.25rem;
-  height: 3.25rem;
-  border-radius: 50%;
-  background: var(--app);
-  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 8%), 0 1px 3px rgb(0 0 0 / 10%);
-  transition: transform 0.15s;
+.share__code {
+  width: 11rem;
+  height: 11rem;
+  padding: 0.4rem;
+  border-radius: 12px;
+  background: #fff;
 }
 
-.share__icon svg {
-  width: var(--art, 62%);
-  height: var(--art, 62%);
+.share__code svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-.share__app:hover .share__icon {
-  transform: translateY(-2px);
+.share__qr figcaption {
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
-/* (Messages and Mail: lit from above, as the phone's own apps are) */
-.share__app--sms {
-  --app: linear-gradient(#65f57f, #0cbd2a);
-  --art: 70%;
-}
-
-.share__app--whatsapp {
-  --app: #25d366;
-  --art: 56%;
-}
-
-/* (the plane sits in the circle where Telegram's mark puts it) */
-.share__app--telegram {
-  --app: #26a5e4;
-  --art: 100%;
-}
-
-.share__app--email {
-  --app: linear-gradient(#1cd0fb, #1b6ef0);
-}
-
-/* (on the narrowest phones, a little smaller, so the names keep apart) */
-@media (max-width: 22rem) {
-  .share__by {
-    gap: 0.2rem;
-  }
-
-  .share__app {
-    font-size: 0.7rem;
-  }
-
-  .share__icon {
-    width: 2.9rem;
-    height: 2.9rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .share__icon {
-    transition: none;
-  }
+/* The owner's note to invitees, opened: one field with Save beside it, as
+   Explore's search has Find. */
+.ask.share__note-form input {
+  padding-left: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .join {
@@ -838,52 +817,72 @@ input[type="radio"] {
   color: #fff;
 }
 
-.grid-form {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: 0.75rem;
-  align-items: end;
-}
-
-.grid-form .wide {
-  grid-column: 1 / -1;
-}
-
 /* A place's photo in the Share form: the one found for it, or the one you
-   chose, beside the button to choose one. */
-.photo-pick {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 0.75rem;
-}
-
+   chose, over the row to choose one (the file field itself out of sight
+   in it). */
 .photo-pick__found {
-  display: grid;
-  gap: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
   margin: 0;
+  padding: 0.75rem 1.25rem;
 }
 
 .photo-pick__found img {
   display: block;
-  width: 8rem;
+  width: 5.5rem;
   aspect-ratio: 3 / 2;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
 .photo-pick__found figcaption {
-  max-width: 8rem;
+  min-width: 0;
   overflow: hidden;
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: 0.86rem;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
+.photo-pick__found:not([hidden]) + .photo-pick__own::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 4.5rem;
+  border-top: 1px solid var(--line);
+}
+
 .photo-pick__own {
-  flex: 1 1 14rem;
+  position: relative;
+  cursor: pointer;
+}
+
+.photo-pick__own:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* (the page's label span is a field's caption above it; not here) */
+.photo-pick__own span,
+.add__kind span {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.photo-pick__own .photo-pick__label {
+  display: inline;
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.photo-pick__own .photo-pick__opt {
+  display: inline;
+  color: var(--muted);
+  font-weight: 400;
 }
 
 input[type="file"] {
@@ -1291,10 +1290,13 @@ input[type="file"]::file-selector-button {
   font-size: 0.9rem;
 }
 
-/* Search by describing it: a grey field with the glass in it and Find at
-   its end, answered with cards. (16px type, so a phone doesn't zoom in) */
+/* Search by describing it: a grey field with the glass in it and Find
+   beside it, as every field with its own button has (the finder's, Rename),
+   answered with cards. (16px type, so a phone doesn't zoom in) */
 .ask {
   position: relative;
+  display: flex;
+  gap: 0.5rem;
   margin: 0;
 }
 
@@ -1310,23 +1312,19 @@ input[type="file"]::file-selector-button {
 }
 
 .ask input {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   min-height: 2.75rem;
-  padding: 0.45rem 4.7rem 0.45rem 2.4rem;
+  padding: 0.45rem 0.9rem 0.45rem 2.4rem;
   border-radius: 12px;
   font-size: 1rem;
   text-overflow: ellipsis;
 }
 
 .ask .btn {
-  position: absolute;
-  top: 0.35rem;
-  right: 0.35rem;
-  bottom: 0.35rem;
-  min-height: 0;
-  padding: 0 0.95rem;
-  border-radius: 9px;
-  font-size: 0.9rem;
+  flex: none;
+  min-height: 2.75rem;
+  padding: 0 1.1rem;
 }
 
 .ask-meta {
@@ -1336,14 +1334,15 @@ input[type="file"]::file-selector-button {
 }
 
 /* "Near your plan" (src/components/NearPlan.astro): one quiet pill over
-   Explore's cards while there's a plan, dark when it's on, and what it's
-   doing beside it in grey. Each card then says how far, under its suburb. */
+   Explore's cards while there's a plan, in the blue of a choice made when
+   it's on (with an x, as a filter you can take off), and what it's doing
+   beside it in grey. Each card then says how far, under its suburb. */
 .near-plan {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem 0.6rem;
-  margin: 0 0 0.8rem;
+  margin: 0.75rem 0 0.8rem;
   color: var(--muted);
   font-size: 0.82rem;
 }
@@ -1351,6 +1350,19 @@ input[type="file"]::file-selector-button {
 .near-plan__chip {
   padding: 0.3rem 0.8rem 0.3rem 0.65rem;
   text-decoration: none;
+}
+
+.near-plan__chip.chip--on,
+.near-plan__chip.chip--on:hover {
+  padding-right: 0.6rem;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.near-plan__off {
+  margin-left: 0.15rem;
+  opacity: 0.7;
 }
 
 .spot__near {
@@ -1652,7 +1664,8 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 10%)) drop-shadow(0 10px 18px rgb(13 43 54 / 18%));
 }
 
-.maplibregl-popup-content {
+/* (MapLibre's own sheet loads after this one, so these outrank it) */
+.maplibregl-map .maplibregl-popup .maplibregl-popup-content {
   padding: 0;
   border-radius: var(--radius);
   background: #fff;
@@ -1911,12 +1924,246 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
 
 /* ---- sharing a place --------------------------------------------------------- */
 
+/* Find, then fill: the search alone first; a match picked (or "by hand"
+   when nothing matches),
+   the form, its button at the card's foot. (data-step is the script's:
+   without it the whole form shows.) */
 .add {
+  display: flex;
+  flex-direction: column;
   margin: 0;
+}
+
+.add[data-step="find"] .add__form,
+.add[data-step="fill"] .finder,
+.add--picked .add__where {
+  display: none;
+}
+
+.add__by-hand,
+.add__back {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add__back {
+  align-self: flex-start;
+  margin: 0.5rem 0 0 1.25rem;
+}
+
+.add--picked .add__back {
+  display: none;
+}
+
+.add__by-hand:hover,
+.add__back:hover {
+  text-decoration: underline;
+}
+
+/* What sharing does, in three steps under the search, until it finds
+   something. */
+.finder:not([hidden]) {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.finder > :is(.finder__row, .finder__results) {
+  align-self: stretch;
+}
+
+.add__how,
+.add__how-head {
+  align-self: stretch;
+}
+
+.finder:has(.finder__hit) :is(.add__how, .add__how-head) {
+  display: none;
+}
+
+.add__form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.add__form > .lists__head:first-of-type {
+  margin-top: 0.25rem;
+}
+
+/* The place picked: a row, its kind's glyph as its lead, its name and
+   where, and Change. */
+.add__picked {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-height: 3.75rem;
+  padding: 0.75rem 1.25rem;
+}
+
+.add__picked-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--kind, var(--food));
+  color: #fff;
+}
+
+.add__picked-icon .kind-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.add__picked-words {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.add__picked-words strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.add__picked-words span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.add__where .row__label {
+  width: 4.25rem;
+}
+
+.add__where > .row + .row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.add__where > .row {
+  position: relative;
+}
+
+/* The kind: Explore's six glyphs, one chosen, its disc filled. */
+.add__kinds {
+  margin: 0;
+  padding: 0.85rem 0.75rem;
+  border: 0;
+  min-width: 0;
+}
+
+.add__kind-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+
+.add__kind {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0;
+  cursor: pointer;
+}
+
+.add__kind input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.add__kind-dot {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--kind, var(--food)) 12%, var(--card));
+  color: var(--kind, var(--food));
+  transition: background 0.15s, color 0.15s, transform 0.12s;
+}
+
+.add__kind-dot .kind-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.add__kind .add__kind-name {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.add__kind:has(input:checked) .add__kind-dot {
+  background: var(--kind, var(--food));
+  color: #fff;
+}
+
+.add__kind:has(input:checked) .add__kind-name {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.add__kind:has(input:focus-visible) .add__kind-dot {
+  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.add__why {
+  padding: 0.35rem 0.5rem;
+}
+
+.add__why textarea {
+  min-height: 0;
+  border: 0;
+  background: none;
+  resize: none;
+  line-height: 1.4;
+}
+
+.add__why textarea:focus-visible {
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/* (the button at the foot, however short the form) */
+.add__foot {
+  margin-top: auto;
+  padding-top: 1.5rem;
+}
+
+.add__foot .btn {
+  width: 100%;
+  min-height: 3rem;
 }
 
 .finder {
   margin-bottom: 1rem;
+}
+
+/* (over the side panels' tighter titles, .group-tools h2, which comes
+   later: the search wants room under its title) */
+.group-tools .add > h2 {
+  margin-bottom: 1.25rem;
 }
 
 .finder__row {
@@ -1924,44 +2171,113 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   gap: 0.5rem;
 }
 
+/* The matches, as a list's rows on a card (and "Nothing found" as a
+   line under the search, no card). */
 .finder__results {
-  display: grid;
-  gap: 0.4rem;
-  margin: 0.6rem 0 0;
+  margin: 0.75rem 0 0;
   padding: 0;
   list-style: none;
 }
 
+.finder__results:has(.finder__hit) {
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+
+.finder__results > li {
+  position: relative;
+}
+
+.finder__results > li + li::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 3.6rem;
+  border-top: 1px solid var(--line);
+}
+
+.finder__results > .fine {
+  padding: 0 0.25rem;
+}
+
+/* Each match, numbered as its chip on the map is, in its kind's colour. */
 .finder__hit {
-  display: grid;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
   width: 100%;
-  gap: 0.1rem;
-  padding: 0.55rem 0.8rem;
+  min-height: 3.5rem;
+  padding: 0.65rem 1.25rem;
+  border: 0;
+  background: none;
   font: inherit;
   text-align: left;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
   cursor: pointer;
 }
 
-.finder__hit:hover,
-.finder__hit:focus-visible {
-  border-color: var(--accent);
+.finder__hit:hover {
+  background: var(--tint);
 }
 
-.finder__hit span {
+.finder__hit:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.finder__hit > span {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.finder__hit > span > span {
   font-size: 0.82rem;
   color: var(--muted);
 }
 
-.located {
-  margin: 0;
-  padding: 0.5rem 0.75rem;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--outdoors) 12%, white);
-  font-size: 0.9rem;
+.finder__n {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--kind, var(--food));
+  color: #fff;
+  font-family: var(--font-rounded);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 700;
 }
+
+/* (the finder's matches, on the map: over the group's own places) */
+#map .map-mark--hit {
+  z-index: 3;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+/* The map's animation switch, under its zoom: waves while it flies, flat
+   lines when it only jumps. */
+.map-motion button[aria-pressed="true"] .map-motion__off,
+.map-motion button[aria-pressed="false"] .map-motion__on {
+  display: none;
+}
+
+.map-motion button {
+  display: grid;
+  place-items: center;
+}
+
+.map-motion button[aria-pressed="false"] {
+  color: var(--muted);
+}
+
 
 @media (max-width: 860px) {
   .explore-wrap {
@@ -2186,9 +2502,8 @@ html:not(.in-app) .no-passkey__app {
   margin-top: 0;
 }
 
-.settings h3 {
-  margin: 1.4rem 0 0.5rem;
-  font-size: 1rem;
+.settings > h3.lists__head {
+  margin: 1.5rem 0 0.55rem;
 }
 
 .settings__row {
@@ -2207,27 +2522,9 @@ html:not(.in-app) .no-passkey__app {
   margin-top: 1rem;
 }
 
-.merge {
-  margin-top: 0.8rem;
-}
-
-.merge label {
-  flex: 1 1 10rem;
-}
-
-.people {
-  list-style: none;
+/* The same person twice, for the owner: its two answers at the row's end. */
+.same__acts form {
   margin: 0;
-  padding: 0;
-}
-
-.people li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.45rem 0;
-  border-bottom: 1px solid var(--line);
 }
 
 .notice--ok {
@@ -2236,6 +2533,47 @@ html:not(.in-app) .no-passkey__app {
 
 .notice-page {
   margin: 1.5rem auto;
+}
+
+/* Adding a device: the code to scan, and under it the same code to type. */
+.add-device__qr {
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  margin: 1.25rem 0;
+  padding: 1.25rem;
+  border-radius: 16px;
+  background: var(--fill);
+}
+
+.add-device__qr figcaption {
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.add-device__code {
+  color: var(--ink);
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+.add-device__form {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.add-device__form input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .notice-page h1 {
@@ -2264,68 +2602,396 @@ html:not(.in-app) .no-passkey__app {
   margin: 1rem 0;
 }
 
-.my-groups {
-  list-style: none;
-  padding: 0;
-  display: grid;
-  gap: 0.9rem;
+/* ---- Lists ------------------------------------------------------------------- */
+
+/* A page of settings and things you have (My groups) is lists, as iOS
+   sets them: a bold title over a white card, and in it rows, every
+   row the same: a round lead (faces, or an icon on blue), a title with a
+   grey line or two under it, and at its end a count or a chevron. Rows are
+   parted by a hairline that starts where the words do. One badge (a count,
+   blue), one emphasis (what's yours to do, blue): everything else grey. An
+   action is a row too, its words blue; Sign out is red, alone. */
+.lists__head {
+  margin: 2rem 0 0.6rem;
+  padding-left: 0.15rem;
+  font-size: 1.35rem;
+  font-weight: 700;
 }
 
-.my-group {
-  display: grid;
-  gap: 0.3rem;
-  color: inherit;
-  text-decoration: none;
-  transition: transform 0.15s, box-shadow 0.15s;
+/* (inside a panel that has its own title: a step down from it) */
+h3.lists__head {
+  font-size: 1.1rem;
 }
 
-.my-group:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 2px 4px rgb(13 43 54 / 6%),
-    0 32px 60px -28px rgb(13 43 54 / 60%);
+.lists__foot {
+  margin: 0.45rem 0 0;
+  padding: 0 1.25rem;
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
-.account {
-  margin-top: 2rem;
-}
-
-.account h2 {
-  margin-bottom: 0.75rem;
-}
-
-.account .notice {
-  margin: 0 0 0.75rem;
-}
-
-/* Each passkey: where it lives and when it was used, and its Remove. */
-.keys {
-  display: grid;
-  margin: 0 0 1rem;
+.list,
+.rows {
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.keys li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 1rem;
-  padding: 0.7rem 0;
+.card.list {
+  padding: 0;
+  overflow: hidden;
+}
+
+.list > li,
+.rows > li {
+  position: relative;
+}
+
+.list > li + li::before,
+.rows > li + li::before,
+.rows + .rows > li:first-child::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 4.5rem;
   border-top: 1px solid var(--line);
 }
 
-.keys li:last-child {
-  border-bottom: 1px solid var(--line);
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  min-height: 3.75rem;
+  margin: 0;
+  padding: 0.75rem 1.25rem;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
 }
 
-.keys li > div {
+:is(a, button).row {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+:is(a, button).row:hover {
+  background: var(--tint);
+}
+
+:is(a, button).row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.row__lead {
   display: grid;
-  gap: 0.15rem;
+  flex: none;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
 }
 
-.account > form:last-child {
-  margin-top: 1rem;
+/* (a group's lead: its first two faces, one up and one down as a group
+   chat's picture is, in the same 2.5rem; just you, one face that size) */
+.row__faces {
+  position: relative;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.row__faces .face {
+  position: absolute;
+  width: 1.7rem;
+  height: 1.7rem;
+  margin: 0;
+  border: 2px solid var(--card);
+  font-size: 0.72rem;
+}
+
+.row__faces .face:first-child {
+  top: 0;
+  left: 0;
+}
+
+.row__faces .face + .face {
+  right: 0;
+  bottom: 0;
+}
+
+.row__faces .face:only-child {
+  inset: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 0.95rem;
+}
+
+.row__body {
+  display: grid;
+  flex: 1;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.row__title {
+  font-weight: 600;
+}
+
+.row__sub {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.row__sub .is-yours {
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.row__end {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.row__chevron {
+  flex: none;
+  color: var(--line-strong);
+}
+
+.badge {
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  color: #fff;
+  font-family: var(--font-rounded);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* Where a group is on the way through (src/components/GroupSteps.astro):
+   four round icons on a line, the step it's at named under them. */
+.steps {
+  display: grid;
+  justify-items: end;
+  gap: 0.3rem;
+}
+
+.steps__nodes {
+  display: flex;
+  align-items: center;
+}
+
+.steps__node {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+}
+
+.steps__node svg {
+  display: block;
+}
+
+.steps__node.is-done {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* (the step it's at: a ring, filled as far as it's got) */
+.steps__node.is-now {
+  background:
+    radial-gradient(closest-side, var(--accent-soft) calc(100% - 2.5px), transparent calc(100% - 2px)),
+    conic-gradient(var(--accent) calc(var(--part, 1) * 360deg), var(--line) 0);
+  color: var(--accent-ink);
+}
+
+.steps__node.is-next {
+  background: var(--fill);
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.steps__link {
+  width: 0.55rem;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--line);
+}
+
+.steps__link.is-done {
+  background: var(--accent);
+}
+
+.steps__label {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.steps__label.is-yours {
+  color: var(--accent-ink);
+}
+
+/* (on a phone, under the group's line, its name beside the nodes, so the
+   group's name keeps the row's width) */
+@media (max-width: 34rem) {
+  .my-group {
+    display: grid;
+    grid-template-areas:
+      "lead body end"
+      "lead steps end";
+    grid-template-columns: auto 1fr auto;
+    column-gap: 0.85rem;
+    row-gap: 0.4rem;
+  }
+
+  .my-group > .row__faces {
+    grid-area: lead;
+    align-self: center;
+  }
+
+  .my-group > .row__body {
+    grid-area: body;
+  }
+
+  .my-group > .steps {
+    display: flex;
+    grid-area: steps;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .my-group > .row__end {
+    grid-area: end;
+  }
+
+  /* (the same person twice: its answers under its words, from where
+     they start) */
+  .same .row {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+
+  .same .row__body {
+    flex: 1 1 0;
+  }
+
+  .same__acts {
+    flex-basis: 100%;
+    padding-left: 3.35rem;
+  }
+}
+
+.row--action .row__title {
+  color: var(--accent-ink);
+}
+
+.row--danger {
+  justify-content: center;
+  color: var(--busy-ink);
+  font-weight: 600;
+}
+
+.row__remove {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--busy-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* (the quieter of two answers on a row, beside its button) */
+.row__quiet {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.row__quiet:hover,
+.row__remove:hover {
+  text-decoration: underline;
+}
+
+.row__msg:not(:empty) {
+  padding: 0 1.25rem 0.75rem 4.5rem;
+}
+
+/* A field as a row: its name, then what you type, plain on the card;
+   Save comes up while you're in it. */
+.row--field {
+  cursor: text;
+}
+
+.row--field .row__label {
+  display: block;
+  flex: none;
+  width: 3.25rem;
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.row__input {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.35rem 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.row__input:focus-visible {
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.row__save {
+  display: none;
+}
+
+.row--field:focus-within .row__save {
+  display: inline-flex;
+}
+
+.account__name-note {
+  display: none;
+}
+
+form.list:focus-within + .account__name-note {
+  display: block;
+}
+
+.me .notice {
+  margin: 0 0 0.6rem;
+}
+
+.me__out {
+  margin-top: 1.75rem;
 }
 
 /* The sign-in page's second way in: a new account, under a hairline. */
@@ -2614,7 +3280,7 @@ body:has(.home) .top nav a:hover {
   width: min(100vw - 2rem, 46rem, (100svh - 3rem) * 560 / 493);
   margin: 0;
   translate: -50% -50%;
-  opacity: var(--card, 0);
+  opacity: var(--landed, 0);
 }
 
 .fly.is-live .fly__card:not(.is-on) {
@@ -2637,7 +3303,7 @@ body:has(.home) .top nav a:hover {
   bottom: 0.5rem;
   display: block;
   margin: 0;
-  opacity: calc((1 - var(--photo, 1)) * (1 - var(--card, 0)));
+  opacity: calc((1 - var(--photo, 1)) * (1 - var(--landed, 0)));
   font-size: 0.7rem;
 }
 
@@ -2659,7 +3325,7 @@ body:has(.home) .top nav a:hover {
   position: absolute;
   z-index: 2;
   margin: 0;
-  opacity: var(--card, 0);
+  opacity: var(--landed, 0);
 }
 
 .fly.is-live .fly__stage > .start:not(.is-on) {
@@ -2684,7 +3350,7 @@ body:has(.home) .top nav a:hover {
   top: 50%;
   left: calc(50% - (var(--wide) + var(--gap) + var(--form)) / 2 + var(--wide) + var(--gap));
   width: var(--form);
-  translate: 0 calc(-50% + (1 - var(--card, 0)) * 1rem);
+  translate: 0 calc(-50% + (1 - var(--landed, 0)) * 1rem);
 }
 
 /* on a narrow one, the card over the form, the pair in the room under the
@@ -2707,7 +3373,7 @@ body:has(.home) .top nav a:hover {
   top: calc(var(--from) + var(--tall) + var(--gap));
   left: 50%;
   width: min(100vw - 2rem, 30rem);
-  translate: -50% calc((1 - var(--card, 0)) * 1rem);
+  translate: -50% calc((1 - var(--landed, 0)) * 1rem);
   --pad: 1.1rem;
 }
 
@@ -2725,7 +3391,7 @@ body:has(.home) .top nav a:hover {
   padding-top: 0.5rem;
   padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
   border-top: 0;
-  opacity: var(--card, 0);
+  opacity: var(--landed, 0);
 }
 
 .fly.is-live.is-under .fly__stage > .foot:not(.is-on) {
@@ -3813,57 +4479,99 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     grid-column: 2;
   }
 
-  /* With the script (the tabs work), the left column (the group's panel,
-     the tabs, the plan and Our list) is as long as it is, every row of the
-     list showing, and the page scrolls it. The header stays at the top,
-     and beside the list, Explore and the map (or Share, or Settings) stay
-     put under it, a screen tall: anything in them longer than that (the
-     cards) scrolls inside, held there so it never hands on to the page.
-     --top-h is the header's height, kept by the page's script. */
-  body:has(.group-page.is-tabbed) > .top {
-    position: sticky;
-    top: 0;
-    z-index: 30;
-    background: color-mix(in srgb, var(--bg) 86%, transparent);
-    backdrop-filter: blur(20px) saturate(1.8);
-    /* (the bar runs to the screen's edges, the header's content as ever) */
-    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--bg) 86%, transparent);
-    clip-path: inset(0 -100vmax);
+  /* With the script (the tabs work), the page is the window, exactly, and
+     never scrolls: the header, the three columns under it, all level at
+     the top whatever's scrolled, and the footer. Each column scrolls on
+     its own, held so it never hands on to the page: the left one whole
+     (the group's panel, the tabs, the plan and every row of Our list, so
+     the list is never a box under a panel that stays), Explore's cards
+     inside their column (or Share, or Settings), and the map fills its
+     own. (#115: the page scrolling the left column beside sticky ones
+     left their tops apart, #97 and #41 before it.) */
+  body:has(.group-page.is-tabbed) {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body:has(.group-page.is-tabbed) > :is(.top, .foot) {
+    flex: none;
+    width: 100%;
+  }
+
+  body:has(.group-page.is-tabbed) > main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    padding-top: 0.75rem;
+    padding-bottom: 1rem;
+  }
+
+  /* (the footer a line under the columns; Credits opened scrolls in
+     itself rather than pushing the columns up off the screen) */
+  body:has(.group-page.is-tabbed) > .foot {
+    padding-top: 0.6rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  }
+
+  body:has(.group-page.is-tabbed) .foot__credits[open] p {
+    max-height: 7.5rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .group-page.is-tabbed {
-    --stay: calc(var(--top-h, 4.4rem) + 1.5rem);
+    flex: 1 1 auto;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+    min-height: 0;
     margin-top: 0;
   }
 
   .group-page.is-tabbed .group-side {
     grid-row: 1;
     position: static;
+    height: 100%;
     max-height: none;
-    overflow: visible;
+    /* (a box with the cards' own width and corners, as Explore's cards
+       and the map have: all three columns start and end on the same lines,
+       a card scrolled half out of sight is cut by the box's round corner,
+       never faded, and scrolled to the end the last card's foot is the
+       column's) */
+    margin: 0;
+    padding: 0;
+    border-radius: var(--radius);
+    overscroll-behavior: contain;
   }
 
-  /* (a link to what's beside the list, #explore, #add, #settings, finds it
-     already in view: the page, landing on it, stays at its top) */
-  .group-page.is-tabbed :is(#explore-section, #explore, #add, #settings) {
-    scroll-margin-top: 100vh;
+  /* (each column scrolls under the pointer without a bar of its own: a bar
+     would lie over the cards' edge, which runs to the column's; the fade at
+     a column's foot says there's more) */
+  .group-page.is-tabbed .group-side,
+  .group-page.is-tabbed #explore,
+  .group-page.is-tabbed > .group-tools {
+    scrollbar-width: none;
   }
 
-  /* (a row the page lands on, a vote without the script, clear of the bar) */
-  .group-page.is-tabbed .picks > li {
-    scroll-margin-top: calc(var(--top-h, 4.4rem) + 1rem);
+  .group-page.is-tabbed .group-side::-webkit-scrollbar,
+  .group-page.is-tabbed #explore::-webkit-scrollbar,
+  .group-page.is-tabbed > .group-tools::-webkit-scrollbar {
+    display: none;
   }
 
   .group-page.is-tabbed .explore-wrap,
   .group-page.is-tabbed > .group-tools {
     grid-row: 1;
-    position: sticky;
-    top: var(--stay);
-    height: calc(100vh - var(--stay) - 1rem);
-    height: calc(100dvh - var(--stay) - 1rem);
+    height: 100%;
+    min-height: 0;
   }
 
   .group-page.is-tabbed .explore-wrap {
+    grid-column: 2;
     grid-template-rows: auto minmax(0, 1fr);
   }
 
@@ -3872,14 +4580,14 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   .group-page.is-tabbed #explore {
     min-height: 0;
     height: 100%;
-    padding-bottom: 1rem;
+    padding-bottom: 0;
     border-radius: var(--radius);
-    /* cards fade as they slide under the search, and in at the foot,
-       rather than being cut off square */
-    mask-image: linear-gradient(transparent, #000 0.9rem, #000 calc(100% - 1rem), transparent);
     overflow-y: auto;
     overscroll-behavior: contain;
-    scrollbar-width: thin;
+  }
+
+  .group-page.is-tabbed #explore > :last-child {
+    margin-bottom: 0;
   }
 
   /* (a box that scrolls can take focus, so a link to #explore, as a search
@@ -3900,23 +4608,39 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     margin: 0;
   }
 
+  /* (the map, a card like the others beside it, with their quiet shadow) */
   .group-page.is-tabbed #map {
     height: 100%;
     min-height: 0;
+    box-shadow: var(--shadow-sm);
   }
 
-  /* (Share and Settings take Explore's place; with neither open the tools
-     aren't there at all, so they don't lie over Explore) */
+  /* (Share and Settings take Explore's column, as Talk does, and the map
+     stays beside them; with neither open the tools aren't there at all, so
+     they don't lie over Explore) */
   .group-page.is-tabbed > .group-tools:not(:has(> section:not([hidden]))) {
+    display: none;
+  }
+
+  .group-page.is-tabbed:is([data-tab="add"], [data-tab="settings"]) .explore-wrap > :not(.map-wrap) {
     display: none;
   }
 
   .group-page.is-tabbed > .group-tools {
     grid-column: 2;
+    grid-row: 1;
+    justify-self: start;
+    /* (Explore's column of .explore-wrap: 1.2 of its 2.2 shares, past the gap) */
+    width: calc((100% - 1.25rem) * 1.2 / 2.2);
     border-radius: var(--radius);
     overflow-y: auto;
     overscroll-behavior: contain;
-    scrollbar-width: thin;
+  }
+
+  /* (Share's card, or Settings', at least as tall as the map beside it, so
+     the columns end on one line however short the card is) */
+  .group-page.is-tabbed > .group-tools > section {
+    min-height: 100%;
   }
 
 }
@@ -4265,6 +4989,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 .plan {
+  position: relative;
   overflow: hidden;
   border-radius: var(--radius);
   background: var(--card);
@@ -4272,8 +4997,16 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   scroll-margin-top: 5rem;
 }
 
-.plan--needs {
-  box-shadow: 0 0 0 2px var(--accent), var(--shadow-sm);
+/* (the blue ring drawn inside the card's edge, over what's in it, so a
+   scrolling column that clips at its sides can't cut it) */
+.plan--needs::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 2px solid var(--accent);
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 .plan__nudge {
@@ -4580,8 +5313,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 .plan .faces .face--waiting {
-  border: 1.5px dashed #aeaeb2;
-  background: var(--card);
+  background: #ececf0;
   color: #8e8e93;
 }
 
@@ -4659,19 +5391,9 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 .heat__key {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
+  margin: 0;
   color: var(--muted);
-  font-size: 0.7rem;
-}
-
-/* (the scale itself: the strip's grey to its blue, as it deepens) */
-.heat__scale {
-  width: 3.2rem;
-  height: 0.3rem;
-  border-radius: 999px;
-  background: linear-gradient(to right, var(--line), color-mix(in srgb, var(--accent) 30%, var(--line)) 45%, var(--accent));
+  font-size: 0.75rem;
 }
 
 .wins {
@@ -5181,8 +5903,8 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   font-size: 0.76rem;
 }
 
-/* a stop's way there: a small arrow out at the row's end (with one stop,
-   the word too); the whole route, under the stops */
+/* a stop's way there: a small arrow out at its row's end (with one stop,
+   the word too, at the end of Find food nearby's row) */
 .outing__go {
   display: inline-flex;
   align-items: center;
@@ -5194,11 +5916,23 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   text-decoration: none;
 }
 
+/* Find food nearby, and at the row's end the way there (with several
+   stops, the whole route) */
 .outing__acts {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.3rem 1rem;
-  margin: 0.35rem 0 0;
+  margin: 0;
+}
+
+.outing__stops + .outing__acts {
+  margin-top: 0.35rem;
+}
+
+.outing__acts .outing__go,
+.outing__acts .outing__route {
+  margin-left: auto;
 }
 
 .outing__acts a {
@@ -6828,6 +7562,25 @@ dialog.sheet[open]:not(:modal) {
   margin: 0 0 0.3rem;
 }
 
+/* Settings and Share are a white panel, as Explore's head is, and their
+   lists sit in it as grey groups (the page's own grey, no shadow): the
+   same cards turned inside out, so the panel reads as one thing. */
+.group-tools > :is(.settings, .add) {
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+
+.group-tools > :is(.settings, .add) :is(.card, .finder__results:has(.finder__hit)) {
+  background: var(--bg);
+  box-shadow: none;
+}
+
+.group-tools > :is(.settings, .add) :is(a, button):is(.row, .finder__hit):hover {
+  background: var(--fill);
+}
+
 /* On a phone an Explore card is a row, photo beside the words, so the list
    of places doesn't run to a screen per card. */
 @media (max-width: 600px) {
@@ -8097,10 +8850,141 @@ dialog.sheet[open]:not(:modal) {
   text-align: center;
 }
 
-/* The owner's note on the group's own page, under its name. */
-.group-note {
-  margin: 0.25rem 0 0.6rem;
-  font-size: 1.05rem;
+/* Back after losing every device: closed, one quiet line; open, the
+   people they could have been, one to tap. */
+.welcome__again summary {
+  color: var(--accent-ink);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.welcome__again fieldset {
+  margin: 0.6rem 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.welcome__again legend {
+  margin-bottom: 0.45rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.welcome__was {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.welcome__was-one {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem 0.3rem 0.3rem;
+  border-radius: 999px;
+  background: var(--fill);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.welcome__was-one input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.welcome__was-one .face {
+  width: 1.6rem;
+  height: 1.6rem;
+  font-size: 0.75rem;
+}
+
+.welcome__was-one:has(input:checked) {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  color: var(--accent-ink);
+}
+
+.welcome__was-one:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Who joined since you last looked (#120): a slim notice at the top of the
+   group's column, like the system's own, until it's dismissed. */
+.joined {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.9rem;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.9rem;
+}
+
+.joined__dot {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #34c759;
+}
+
+/* (something for you to answer, or waiting on someone's answer) */
+.joined__dot--ask {
+  background: var(--accent);
+}
+
+a.joined {
+  color: inherit;
+  text-decoration: none;
+}
+
+.joined + .joined {
+  margin-top: -0.35rem;
+}
+
+.joined__text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.joined__close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.joined__close:hover {
+  background: var(--fill);
+  color: var(--ink);
+}
+
+.joined__close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* (on a phone's Explore, where the map and cards need the screen, it waits
+   on Our list) */
+@media (max-width: 860px) {
+  .group-page.is-tabbed[data-tab="explore"] .joined-slot {
+    display: none;
+  }
 }
 
 /* Under the invite card, the list's own card. */
@@ -8265,6 +9149,7 @@ main:has(.welcome) {
    viewport: src/scripts/talk.ts), its box at the foot; with the keyboard
    up it climbs nearer the top, for room. */
 dialog.sheet--talk {
+  background: var(--card);
   inset: auto 0 auto;
   top: calc(var(--talk-top, 0px) + 2.75rem);
   height: calc(var(--talk-h, 100dvh) - 2.75rem);
@@ -8289,20 +9174,40 @@ dialog.sheet--talk.is-typing {
   height: 100%;
 }
 
+/* Its head, as a card's: the place's name on the left, a round close on
+   the right. */
 .talk__bar {
   flex: none;
-  border-bottom: 0.5px solid rgb(0 0 0 / 10%);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem max(1rem, env(safe-area-inset-right)) 0.75rem max(1.1rem, env(safe-area-inset-left));
 }
 
 .talk__bar h2 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
   overflow: hidden;
+  font-size: 1.15rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.talk__done {
-  justify-self: end;
-  font-weight: 600;
+.talk__close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--muted);
+}
+
+.talk__close:hover {
+  background: var(--fill-strong);
+  color: var(--ink);
 }
 
 .talk__body {
@@ -8328,12 +9233,42 @@ dialog.sheet--talk.is-typing {
   padding: 0.75rem max(1rem, env(safe-area-inset-right)) 0.9rem max(1rem, env(safe-area-inset-left));
 }
 
+/* Nothing said yet: a bubble, two short lines, in the middle. */
+.talk__thread:has(> .talk__empty) {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+}
+
 .talk__empty {
-  margin: auto 0 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  margin: auto 0;
   padding: 2rem 1.5rem;
-  color: var(--muted);
-  font-size: 0.9rem;
   text-align: center;
+}
+
+.talk__empty-icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 0.4rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.talk__empty-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.talk__empty-sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
 }
 
 .talk__earlier {
@@ -8412,8 +9347,7 @@ dialog.sheet--talk.is-typing {
   margin: 0;
   padding: 0.5rem 0.8rem;
   border-radius: 18px;
-  background: var(--card);
-  box-shadow: var(--shadow-sm);
+  background: var(--fill);
   font-size: 0.95rem;
   line-height: 1.35;
   white-space: pre-wrap;
@@ -8423,7 +9357,10 @@ dialog.sheet--talk.is-typing {
 .msg--mine .msg__bubble {
   background: var(--accent-soft);
   box-shadow: none;
-  /* (a long press is the message's menu, not the phone's) */
+}
+
+/* (a long press opens the message's reactions, not the phone's menu) */
+.msg__bubble {
   -webkit-touch-callout: none;
 }
 
@@ -8462,72 +9399,180 @@ dialog.sheet--talk.is-typing {
   cursor: pointer;
 }
 
-/* Your message's ···: quiet beside it, opening a menu of one, Delete, in red. */
-.msg__more {
-  position: relative;
+/* Beside a message, out of sight until the pointer is over it (on a
+   phone, after a long press): a smiley that opens the reactions, and on
+   yours a bin, red on hover, that deletes it (Undo follows). */
+.msg__tools {
+  display: flex;
   flex: none;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.15s;
 }
 
-.msg__more summary {
+.msg--mine .msg__tools {
+  flex-direction: row-reverse;
+}
+
+.msg:hover .msg__tools,
+.msg.is-armed .msg__tools,
+.msg__tools:focus-within {
+  opacity: 1;
+}
+
+.msg__del {
+  margin: 0;
+}
+
+.msg__tool {
   display: grid;
   place-items: center;
   width: 1.75rem;
   height: 1.75rem;
-  border-radius: 50%;
-  color: var(--muted);
-  list-style: none;
-  cursor: pointer;
-}
-
-.msg__more summary::-webkit-details-marker {
-  display: none;
-}
-
-.msg__more summary:hover,
-.msg__more[open] summary {
-  background: var(--fill);
-}
-
-.msg__menu {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 0.3rem);
-  z-index: 2;
-  min-width: 10rem;
-  overflow: hidden;
-  border-radius: 13px;
-  background: color-mix(in srgb, var(--card) 88%, transparent);
-  box-shadow: var(--shadow-float);
-  backdrop-filter: blur(20px) saturate(1.8);
-}
-
-/* (yours sits on the right: its menu opens over it, not off the screen) */
-.msg--mine .msg__menu {
-  right: auto;
-  left: 0;
-}
-
-.msg__delete {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  width: 100%;
-  min-height: 2.75rem;
-  padding: 0 1rem;
+  padding: 0;
   border: 0;
+  border-radius: 50%;
   background: none;
-  color: var(--busy-strong);
-  font: inherit;
-  font-size: 0.95rem;
-  text-align: left;
+  color: var(--muted);
   cursor: pointer;
+  transition: background 0.15s, color 0.15s;
 }
 
-.msg__delete:hover,
-.msg__delete:focus-visible {
+.msg__tool:hover,
+.msg__tool:focus-visible,
+.msg__tool[aria-expanded="true"] {
+  background: var(--fill);
+  color: var(--ink);
+  outline: none;
+}
+
+.msg__tool--delete:hover,
+.msg__tool--delete:focus-visible {
+  background: color-mix(in srgb, var(--busy-strong) 12%, transparent);
+  color: var(--busy-strong);
+}
+
+/* The five reactions: a floating pill over the message, from its side. */
+.msg__row {
+  position: relative;
+}
+
+.msg__picker {
+  position: absolute;
+  bottom: calc(100% + 0.3rem);
+  left: 0;
+  z-index: 2;
+  display: flex;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: var(--shadow-float);
+  animation: pick-in 0.16s ease-out;
+}
+
+.msg--mine .msg__picker {
+  right: 0;
+  left: auto;
+}
+
+@keyframes pick-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.96);
+  }
+}
+
+/* (no room above, at the top of the thread: under it instead) */
+.msg__picker.is-below {
+  top: calc(100% + 0.3rem);
+  bottom: auto;
+}
+
+.msg__pick {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.12s, background 0.12s;
+}
+
+.msg__pick:hover,
+.msg__pick:focus-visible {
   background: var(--fill);
   outline: none;
+  transform: scale(1.15);
+}
+
+.msg__pick.is-mine {
+  background: var(--accent-soft);
+}
+
+/* Under the message: each reaction once, with how many when it's more than
+   one, and who on hover; yours in the blue of you. A tap on one adds yours
+   (or, on yours, takes it back). */
+.msg__reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: -0.1rem 0.4rem 0;
+}
+
+.msg__chip {
+  display: inline-flex;
+  gap: 0.25rem;
+  align-items: center;
+  height: 1.6rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.msg__chip:hover {
+  border-color: var(--line-strong);
+}
+
+.msg__chip.is-mine {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: var(--accent-soft);
+}
+
+.msg__chip-n {
+  color: var(--muted);
+  font-family: var(--font-rounded);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.msg__chip.is-mine .msg__chip-n {
+  color: var(--accent-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg__tools,
+  .msg__tool,
+  .msg__pick {
+    transition: none;
+  }
+
+  .msg__picker {
+    animation: none;
+  }
 }
 
 /* "Message removed. Undo", for a moment, at the top of the thread, clear
@@ -8569,8 +9614,6 @@ dialog.sheet--talk.is-typing {
   display: grid;
   gap: 0.4rem;
   padding: 0.55rem max(0.75rem, env(safe-area-inset-right)) calc(0.6rem + env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
-  border-top: 0.5px solid rgb(0 0 0 / 10%);
-  background: color-mix(in srgb, var(--bg) 90%, white);
 }
 
 .is-typing .talk__compose {
@@ -8581,14 +9624,16 @@ dialog.sheet--talk.is-typing {
   display: flex;
   align-items: flex-end;
   gap: 0.4rem;
-  padding: 0.25rem 0.25rem 0.25rem 0.9rem;
-  border: 1px solid var(--line-strong);
-  border-radius: 20px;
-  background: var(--card);
+  padding: 0.3rem 0.3rem 0.3rem 0.95rem;
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  background: var(--fill);
 }
 
 .talk__field:focus-within {
   border-color: var(--accent);
+  background: var(--card);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .talk__field textarea {
@@ -8648,19 +9693,6 @@ dialog.sheet--talk.is-typing {
   text-align: right;
 }
 
-/* My groups: what's new in a group's Talk, beside its name. */
-.my-group__new {
-  margin-left: 0.5rem;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  background: var(--accent-strong);
-  color: #fff;
-  font-family: var(--font-rounded);
-  font-size: 0.78rem;
-  font-weight: 700;
-  vertical-align: 0.1em;
-}
-
 /* On a wide screen, with the script, Talk takes Explore's column while
    it's open, beside the list, and the map stays, flown to the place. */
 @media (min-width: 1180px) {
@@ -8672,17 +9704,14 @@ dialog.sheet--talk.is-typing {
     height: 100%;
     margin: 0;
     border-radius: var(--radius);
-    background: var(--bg);
-    box-shadow: inset 0 0 0 1px var(--line);
+    background: var(--card);
+    box-shadow: var(--shadow-sm);
   }
 
   .explore-wrap:has(> dialog.sheet--talk.is-column[open]) :is(.explore-head, #explore) {
     display: none;
   }
 
-  .is-column .talk__bar {
-    background: var(--card);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

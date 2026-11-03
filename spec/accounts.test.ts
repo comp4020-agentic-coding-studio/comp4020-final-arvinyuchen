@@ -35,6 +35,43 @@ describe("accounts by passkey", () => {
     expect((await page(laptop, "/me")).body.textContent).toContain("Passkey crew");
   });
 
+  it("adds a device with a code from a signed-in one: once, for that account, never signing in by itself", async () => {
+    const phone = new Jar();
+    await signUp(phone, "Ana");
+    const id = await startGroup(phone, "Device crew", "Ana");
+    const code = (await page(phone, "/add-device")).querySelector(".add-device__code")?.textContent ?? "";
+    expect(code).toMatch(/^[2-9A-Z]{4}-[2-9A-Z]{4}$/);
+
+    // Only someone signed in gets a code.
+    expect((await page(new Jar(), "/add-device")).querySelector(".add-device__code")).toBeNull();
+
+    // The new device names whose account it joins, and opening it signs nobody in.
+    const laptop = new Jar();
+    const lower = code.toLowerCase().replace("-", "");
+    expect((await page(laptop, `/add-device?code=${lower}`)).querySelector("h1")?.textContent).toBe("Add this device to Ana's Spots");
+    expect(await you(laptop, id)).toBe("");
+
+    const add = async (jar: Jar, key: Authenticator) => {
+      const res = await request(jar, "/api/passkeys/register/options", { json: { code } });
+      if (!res.ok) return res;
+      return request(jar, "/api/passkeys/register/verify", { json: key.create(await res.json(), origin) });
+    };
+    const laptopKey = new Authenticator();
+    expect((await add(laptop, laptopKey)).status).toBe(200);
+    expect(await you(laptop, id)).toBe("Ana");
+    // Its passkey signs in as Ana from now on.
+    expect((await signInWith(new Jar(), laptopKey)).res.status).toBe(200);
+
+    // Used up: a second device can't use it, nor can a made-up one.
+    expect((await add(new Jar(), new Authenticator())).status).toBe(400);
+    expect((await request(new Jar(), "/api/passkeys/register/options", { json: { code: "ABCD-EFGH" } })).status).toBe(400);
+
+    // A newer code replaces the one before.
+    const first = (await page(phone, "/add-device")).querySelector(".add-device__code")?.textContent ?? "";
+    await page(phone, "/add-device");
+    expect((await request(new Jar(), "/api/passkeys/register/options", { json: { code: first } })).status).toBe(400);
+  });
+
   it("refuses a passkey it never stored, a forged signature, and a replayed one", async () => {
     const real = new Authenticator();
     await signUp(new Jar(), "Ana", real);
@@ -169,8 +206,6 @@ describe("the owner's tools", () => {
     let note = await invitee();
     expect(note?.querySelector("blockquote")?.textContent).toBe("Where are we going Friday? Add yours by Wednesday.");
     expect(note?.querySelector("figcaption")?.textContent).toContain("Ana");
-    // Members see the same words under the group's name.
-    expect((await page(ben, `/g/${id}`)).querySelector(".group-note")?.textContent).toContain("Add yours by Wednesday.");
 
     await act(ben, { action: "note", note: "Ben was here" });
     expect((await invitee())?.querySelector("blockquote")?.textContent).not.toContain("Ben was here");
@@ -200,6 +235,44 @@ describe("the owner's tools", () => {
     expect(mine?.getAttribute("aria-label")).toMatch(/^Not keen on .+ any more, 1 keen$/);
     expect(mine?.querySelector(".keen__count")?.textContent).toBe("1");
     expect(await you(ben, id)).toBe("");
+  });
+
+  it("asks the owner about the same person twice: said so on joining again, or the same name", async () => {
+    const { owner, ben, id, people, act } = await crew();
+    const asks = async () => [...(await page(owner, `/g/${id}`)).querySelectorAll("#settings .same li")].map((li) => li.textContent?.replace(/\s+/g, " ") ?? "");
+    // Ben joined twice under one name: a pair to check, flagged above the list too.
+    expect(await asks()).toEqual([expect.stringContaining("Two people called Ben")]);
+    expect((await page(owner, `/g/${id}`)).querySelector(".joined-slot a.joined")?.textContent).toContain("Two Bens here");
+
+    // Cat loses every device, makes an account as Kit, and says who she was.
+    const cat = new Jar();
+    await join(cat, id, id, "Cat");
+    const kit = new Jar();
+    await signUp(kit, "Kit");
+    const choices = [...(await page(kit, `/g/${id}`)).querySelectorAll<HTMLInputElement>('#join input[name="was"]')];
+    const [, , , catMember] = await people();
+    // (anyone but the owner, who'd have nobody to confirm it)
+    expect(choices.map((c) => c.closest("label")?.textContent?.trim().slice(1))).toEqual(["Ben", "Ben", "Cat"]);
+    expect(choices.map((c) => c.value)).toContain(catMember.id);
+    await request(kit, `/api/groups/${id}/join`, { form: { link: id, was: catMember.id! } });
+    expect((await page(kit, `/g/${id}`)).querySelector(".joined-slot p.joined")?.textContent).toContain("You said you're Cat from before");
+    expect((await asks()).at(-1)).toContain("Kit says they're Cat");
+    expect((await asks()).at(-1)).toContain("Kit joined");
+
+    // Only the owner answers; Not them leaves both and stops asking.
+    const [, benOld, benNew, , kitMember] = await people();
+    await act(ben, { action: "keep", member: benOld.id!, into: benNew.id! });
+    expect(await asks()).toHaveLength(2);
+    await act(owner, { action: "keep", member: benOld.id!, into: benNew.id! });
+    expect(await asks()).toHaveLength(1);
+    expect((await people()).map((p) => p.name)).toEqual(["Ana", "Ben", "Ben", "Cat", "Kit"]);
+
+    // Same person: Cat's member folds into Kit's account, and the ask is answered.
+    await act(owner, { action: "merge", member: catMember.id!, into: kitMember.id! });
+    expect(await asks()).toEqual([]);
+    expect((await people()).map((p) => p.name)).toEqual(["Ana", "Ben", "Ben", "Kit"]);
+    expect(await you(cat, id)).toBe("");
+    expect((await page(kit, `/g/${id}`)).querySelector(".joined-slot p.joined")).toBeNull();
   });
 
   it("removes someone: they can't act any more, and their keens go", async () => {

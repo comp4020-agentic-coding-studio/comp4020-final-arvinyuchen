@@ -74,7 +74,7 @@ describe("Talk", () => {
     const c = await crew("Delete crew");
     await say(c, c.ben, "Ben's secret plan");
     const id = await idOf(c, c.ben, "Ben's secret plan");
-    // only Ben's own has a ··· to delete it
+    // only Ben's own has a bin to delete it
     expect((await threadOf(c, c.ana)).doc.querySelector(`#msg-${id} [data-talk-delete]`)).toBeNull();
     expect((await threadOf(c, c.ben)).doc.querySelector(`#msg-${id} [data-talk-delete]`)).toBeTruthy();
     expect((await inPage(c.ana, `${c.api}/talk`, { action: "delete", message: id, place: c.place })).status).toBe(409);
@@ -91,6 +91,25 @@ describe("Talk", () => {
     expect((await inPage(c.ana, `${c.api}/talk`, { action: "undo", message: id, place: c.place })).status).toBe(409);
     expect((await inPage(c.ben, `${c.api}/talk`, { action: "undo", message: id, place: c.place })).status).toBe(204);
     expect(await words(c, c.ana)).toEqual(["Ben's secret plan"]);
+  });
+
+  it("lets anyone in the group react to a message, one each, shown under it with who", async () => {
+    const c = await crew("React crew");
+    await say(c, c.ben, "Saturday 10am?");
+    const id = await idOf(c, c.ben, "Saturday 10am?");
+    // every message has the five, yours and theirs
+    expect((await threadOf(c, c.ana)).doc.querySelectorAll(`#msg-${id} .msg__picker button[name=emoji]`)).toHaveLength(5);
+    const react = (who: typeof c.ana, emoji: string) => inPage(who, `${c.api}/talk`, { action: "react", message: id, place: c.place, emoji });
+    expect((await react(c.ana, "🎉")).status).toBe(204);
+    expect((await react(c.ben, "🎉")).status).toBe(204);
+    const chip = (await threadOf(c, c.ana)).doc.querySelector(`#msg-${id} .msg__chip`);
+    expect(chip?.getAttribute("title")).toBe("You, Ben");
+    expect(chip?.getAttribute("aria-pressed")).toBe("true");
+    expect(chip?.textContent?.replace(/\s+/g, "")).toBe("🎉2");
+    // the same again takes yours back
+    expect((await react(c.ana, "🎉")).status).toBe(204);
+    expect((await threadOf(c, c.ana)).doc.querySelector(`#msg-${id} .msg__chip`)?.getAttribute("title")).toBe("Ben");
+    expect((await react(c.ana, "nope")).status).toBe(409);
   });
 
   it("takes plain text up to 500 characters, sends a double tap once, and holds back a flood", async () => {

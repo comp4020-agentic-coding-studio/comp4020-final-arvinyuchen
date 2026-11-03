@@ -1,0 +1,58 @@
+---
+// Where a group is on Spots' one way through, as four steps on a line,
+// each a small round icon that says what it is: a pin (places on Our
+// list), a calendar (the owner started a plan), a clock (everyone said
+// when they're free) and a tick (the time is set). Steps done are blue
+// with a white icon, on a blue line; the one it's at is a blue ring round
+// a blue icon (for Times, the ring fills as people answer); the rest are
+// grey. Beside them, the step it's at in a word or two, when there's
+// something to say (not while others answer: the ring says that): blue
+// when it's yours to do. Each step's name shows on hover.
+interface Props {
+  /** the step it's at, 0 to 3, or 4 when they're all done */
+  at: number;
+  /** how far through that step, 0 to 1 (Times: who's answered) */
+  part?: number;
+  label: string;
+  yours?: boolean;
+  /** the whole of it, for a screen reader and on hover */
+  said: string;
+}
+const { at, part = 0, label, yours = false, said } = Astro.props;
+const STEPS = [
+  {
+    name: "Places on the list",
+    icon: `<path d="M8 14.2s4.6-4.1 4.6-7.6a4.6 4.6 0 0 0-9.2 0c0 3.5 4.6 7.6 4.6 7.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="8" cy="6.6" r="1.6" fill="currentColor"/>`,
+  },
+  {
+    name: "A plan",
+    icon: `<rect x="2.3" y="3.3" width="11.4" height="10.4" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2.3 6.8h11.4M5.5 1.8v2.6M10.5 1.8v2.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>`,
+  },
+  {
+    name: "Everyone's free times",
+    icon: `<circle cx="8" cy="8" r="5.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 4.8V8l2.2 1.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  {
+    name: "The time set",
+    icon: `<path d="m3.8 8.4 2.7 2.7 5.7-6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+];
+---
+
+<span class="steps" role="img" aria-label={said} title={said}>
+  <span class="steps__nodes" aria-hidden="true">
+    {STEPS.map((s, i) => (
+      <>
+        {i > 0 && <i class:list={["steps__link", { "is-done": i <= at }]} />}
+        <span
+          class:list={["steps__node", i < at ? "is-done" : i === at ? "is-now" : "is-next"]}
+          style={i === at && part > 0 && part < 1 ? `--part: ${part.toFixed(3)}` : undefined}
+          title={s.name}
+        >
+          <svg viewBox="0 0 16 16" width="13" height="13" set:html={s.icon} />
+        </span>
+      </>
+    ))}
+  </span>
+  {label && <span class:list={["steps__label", { "is-yours": yours }]}>{label}</span>}
+</span>

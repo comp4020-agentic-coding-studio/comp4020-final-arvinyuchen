@@ -38,9 +38,11 @@ follow from it; every change has to hold to them.
   is only a finder's: none of it is in Explore until someone shares it.
   Overture, Photon, map tiles and data are credited.
 - **The outing on the day asks politely, and only about places.** The
-  plan's card says, quietly at its foot, when a stop won't be open for its
-  part of the plan ("Questacon closes 5pm", "Closed Mondays"; a window's
-  row says it too) and, for a stop outside, the day's forecast
+  plan's card says, quietly, when a stop won't be open for its part of
+  the plan, once: on each window's row until the time is set ("Questacon
+  opens 9am", that window's start then offered from 9am, `fitStart`), at
+  the card's foot after ("Closes 5pm"), and a stop shut all day at the
+  foot either way ("Closed Mondays"); and, for a stop outside, the day's forecast
   ("24° · 10% rain") once it's within Open-Meteo's 16 days
   (`src/lib/outing.ts`, `src/components/PlanOuting.astro`). Hours are
   OpenStreetMap's `opening_hours` tag (Overture's places carry none),
@@ -90,15 +92,32 @@ follow from it; every change has to hold to them.
 - **Everyone is a passkey account.** Starting or joining a group needs one,
   made in the same step from a name and a passkey (the home page's form, the
   invite, `/signin`); signed in, joining is one button. One account has one
-  name, the same in every group, and one or more passkeys, never none. There's
-  no recovery but the owner's merge: someone who lost every passkey makes a
-  new account, joins again by the link, and the owner merges their old
-  member into it. Never add a way in that isn't a passkey.
+  name, the same in every group, and one or more passkeys, never none. A
+  device without your passkey is added from one signed in: `/add-device`
+  there shows a code (and its QR code, ten minutes, once, the newest only),
+  and with it the new device makes its own passkey for that account; the code
+  never signs anyone in by itself (`newDeviceCode` in `src/lib/accounts.ts`). There's
+  no recovery but the owner's merge: someone who lost every device makes a
+  new account and joins again by the link, saying who they were (the join
+  form's "Been in this group before?", anyone but the owner); the owner is
+  asked "Same person?" in Settings, as for two members with one name, and
+  Same person merges the old member into the new one, Not them stops asking
+  (`mergeAsks` in `src/lib/db.ts`). Never add a way in that isn't a passkey.
 - **The invite goes person to person.** Whoever holds the link can join, so
-  it's shared through private channels only: the system share sheet, Messages,
-  WhatsApp, Telegram, email. Never add a button that posts it to a
+  it's shared through private channels only, by one button: the system
+  share sheet on a touch screen that has one, a copy of the link elsewhere
+  (no app icons of our own: the sheet already has every chat app). Under
+  it, two small links each open a panel, one at a time: Show QR code (a
+  computer only; drawn on the server with `uqr`, nothing fetched, #119)
+  and, for the owner, Add a note / Edit note, the note to invitees (#118). Never add a button that posts it to a
   public feed (a Facebook post, X, a story). A link preview may name the group
   (Open Graph, `src/layouts/Base.astro`), never its members or votes.
+- **Who joined is said in the app, until you dismiss it.** At the top of
+  the group's column, each member sees a slim notice of who joined after
+  them and since they last dismissed it ("Zoe joined Saturday crew",
+  `newcomers` in `src/lib/db.ts`, by member id in `joins_seen_id`). It
+  arrives live and waits across visits, since nothing is pushed, and
+  dismissing it (`/api/groups/[id]/seen`) is theirs alone (#120).
 - **Accounts are passkeys only.** No passwords, no email, no "sign in with"
   providers. An account is made from a name and a passkey
   (`src/pages/api/passkeys/`), its sessions store only a hash of their token,
@@ -183,7 +202,10 @@ follow from it; every change has to hold to them.
   more. Only its author can delete a message, never the owner; deleted, it's
   a "Message removed" stub its author can undo for a day, and then its
   words are cleared (`clearDeleted`: as the module loads, hourly, and before
-  every read or write, since there's no cron). Its words never reach a link
+  every read or write, since there's no cron). Any member can react to a
+  message that isn't deleted, one reaction each from five
+  (`REACTIONS`, `comment_reactions`); another replaces it, the same again
+  takes it back. Its words never reach a link
   preview, the invite's preview, another group, Explore, search or Voyage,
   the live stream, or `/admin` (which counts messages, never shows them);
   `spec/talk.test.ts` holds each of those. People find out in the app, never
@@ -210,12 +232,16 @@ follow from it; every change has to hold to them.
   its Talk with it (as a deleted starter place takes its threads).
   An admin can hide a shared place. An admin is a passkey account that once entered
   `ADMIN_CODE` (a Fly secret); never add another way to become one.
-- **Signed in, it works without JavaScript**, as plain forms posting and
-  redirecting. The live layer, the map and the place finder are additions on
-  top, not the only way to act. Making an account and signing in need a
-  passkey, so they need JavaScript and a browser that has passkeys; where
-  there's none (another app's built-in browser, an old one), the page says
-  to open it in Safari or Chrome (`src/components/NoPasskey.astro`).
+- **The page's script is assumed; every action is still a plain route.**
+  Making an account and signing in need a passkey, so they need JavaScript
+  and a browser that has passkeys; where there's none (another app's
+  built-in browser, an old one), the page says to open it in Safari or
+  Chrome (`src/components/NoPasskey.astro`). So everyone signed in has the
+  script, and new UI may rely on it, with no version for a page without it
+  (#116). Every action stays a plain HTTP route, a form post that
+  redirects or answers 204 in the page, because that's what `spec/`
+  drives. The no-script fallbacks already there can stay; take one out
+  when it's in the way of a change.
 - **Search answers with cards, never prose.** A prompt comes back as the
   matching places, best first, and their pins: no generated text, nothing
   said about a place that its card doesn't say. Ranking is cosine similarity
@@ -259,15 +285,16 @@ follow from it; every change has to hold to them.
   `src/styles.css`); the drawn maps share `src/components/MapDrawing.astro`.
   Don't give a map its own pin or label style.
 - **Phones first.** Every page works at 375px wide with no sideways scroll.
-- **On a wide screen, Our list is as long as it is.** The group's page is
-  three columns (from 1180px, with the script): the left one (the group's
-  panel, the tabs, the plan, Our list) shows every row and the page scrolls
-  it; the header and, beside the list, Explore with the map (or Share, or
-  Settings) are sticky, a screen tall under the header (`--top-h`, kept by
-  the page's script), and only Explore's cards scroll inside, held so they
-  don't hand on to the page. This replaced each column a screen tall
-  scrolling on its own (#41), which put a long list in a box. Phones and
-  tablets are one column, unchanged.
+- **On a wide screen, the page is the window.** The group's page is three
+  columns (from 1180px, with the script): the header, the three columns
+  level under it and the footer fill the window exactly, and the page never
+  scrolls. Each column scrolls on its own, held so it doesn't hand on to the
+  page: the left one whole (the group's panel, the tabs, the plan and every
+  row of Our list together, never Our list alone in a box under a panel
+  that stays, as #41 had), Explore's cards inside their column (or Share,
+  or Settings), and the map fills its own. This replaced the page scrolling
+  the left column beside sticky ones (#97), whose tops came apart (#115).
+  Phones and tablets are one column, unchanged.
 
 ## The work
 

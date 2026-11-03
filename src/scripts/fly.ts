@@ -284,7 +284,7 @@ if (fly && motion && gl) {
       `inset(${box.top * n}px ${box.right * n}px ${box.bottom * n}px ${box.left * n}px round ${22 * n}px)`,
     );
     const cardIn = part(p, CARD_IN);
-    s.setProperty("--card", String(cardIn));
+    s.setProperty("--landed", String(cardIn));
     cardBox.classList.toggle("is-on", cardIn > 0.5);
     cardBox.classList.toggle("is-out", cardIn === 0);
     form?.classList.toggle("is-on", cardIn > 0.5);

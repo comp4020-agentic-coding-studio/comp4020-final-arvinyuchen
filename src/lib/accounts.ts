@@ -205,4 +205,46 @@ export function endSession(token: string | undefined): void {
   if (token) db.prepare("DELETE FROM sessions WHERE token_hash = ?").run(hash(token));
 }
 
-export { SESSION_DAYS };
+/**
+ * Adding a device that doesn't have your passkey (another ecosystem, a
+ * browser that doesn't share): one you're signed in on shows a short code,
+ * and its QR code; on the new one, the code lets you make a passkey there
+ * for your account, and is gone. It never signs anyone in by itself: only
+ * the passkey it makes does. Ten minutes, once, the newest only.
+ */
+const DEVICE_CODE_MINUTES = 10;
+// (no 0, O, 1 or I: read off one screen, typed into another)
+const CODE_LETTERS = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+const plainCode = (code: string) => code.toUpperCase().replace(/[^0-9A-Z]/g, "");
+
+/** A new code for the account, as XXXX-XXXX; any earlier one stops working. */
+export function newDeviceCode(accountId: number): string {
+  const code = [...randomBytes(8)].map((b) => CODE_LETTERS[b % CODE_LETTERS.length]).join("");
+  db.transaction(() => {
+    db.prepare("DELETE FROM device_codes WHERE account_id = ? OR expires_at <= datetime('now')").run(accountId);
+    db.prepare(
+      `INSERT INTO device_codes (code_hash, account_id, expires_at) VALUES (?, ?, datetime('now', '+${DEVICE_CODE_MINUTES} minutes'))`,
+    ).run(hash(code), accountId);
+  })();
+  return `${code.slice(0, 4)}-${code.slice(4)}`;
+}
+
+/** Whose account a code adds a device to, while it works. */
+export function accountForDeviceCode(code: string): Account | undefined {
+  const id = db
+    .prepare("SELECT account_id FROM device_codes WHERE code_hash = ? AND expires_at > datetime('now')")
+    .pluck()
+    .get(hash(plainCode(code))) as number | undefined;
+  return id === undefined ? undefined : getAccount(id);
+}
+
+/** Uses the code up, once the new device's passkey is saved; false if it had already gone. */
+export function useDeviceCode(code: string, accountId: number): boolean {
+  return (
+    db
+      .prepare("DELETE FROM device_codes WHERE code_hash = ? AND account_id = ? AND expires_at > datetime('now')")
+      .run(hash(plainCode(code)), accountId).changes > 0
+  );
+}
+
+export { DEVICE_CODE_MINUTES, SESSION_DAYS };

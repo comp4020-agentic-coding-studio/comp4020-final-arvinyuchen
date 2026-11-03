@@ -1,12 +1,18 @@
 ---
+import GroupSteps from "../components/GroupSteps.astro";
 import Base from "../layouts/Base.astro";
 import { listPasskeys } from "../lib/accounts";
-import { groupsOfAccount } from "../lib/db";
+import { getGroup, groupsOfAccount, listMembers, listPicks, memberOfAccount } from "../lib/db";
 import { signedIn } from "../lib/me";
+import { currentPlan, planView, stopNames } from "../lib/plans";
 import { unreadByGroup } from "../lib/talk";
+import { dayParts, formatDay, formatMinute } from "../lib/when";
 
-// Your account: every group you're in, on any device, your one name, and
-// the passkeys that can sign in as you.
+// Your account: every group you're in, on any device, each with who's in
+// it and where its plan stands for you; then your one name, the passkeys
+// that can sign in as you, and Sign out. Each is a list under a small
+// heading, every row the same: a round lead, a title and a grey line under
+// it, and at its end a count or a way in (the .list styles).
 const account = signedIn(Astro.cookies);
 if (!account) return Astro.redirect("/signin", 303);
 const groups = groupsOfAccount(account.id);
@@ -15,6 +21,48 @@ const passkeys = listPasskeys(account.id);
 const unread = unreadByGroup(account.id);
 const day = (sqlite: string) =>
   new Date(`${sqlite.replace(" ", "T")}Z`).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) % 360, 17);
+// Each group's faces, one short line under its name (its plan's first
+// stop, "+ 2 more" for the rest, and day; with no plan, how many are in
+// it), and at its end where it is on the way through (GroupSteps): the
+// step it's at, said in a word or two, blue when it's yours to do.
+const cards = groups.map((g) => {
+  const group = getGroup(g.id)!;
+  const members = listMembers(g.id);
+  const you = memberOfAccount(g.id, account.id)!;
+  const plan = currentPlan(g.id);
+  const sub = plan ? `${stopNames(plan.stops, 1)}, ${formatDay(plan.day)}` : `${g.people} ${g.people === 1 ? "person" : "people"}`;
+  let step: { at: number; part?: number; label: string; yours?: boolean; said: string };
+  if (!plan) {
+    step = listPicks(g.id).length
+      ? { at: 1, label: g.owner ? "Start a plan" : "No plan yet", yours: g.owner, said: "Places on the list, no plan yet" }
+      : { at: 0, label: "Add places", said: "Nothing on the list yet" };
+  } else if (plan.set) {
+    step = {
+      at: 4,
+      label: `${dayParts(plan.day).weekday} ${formatMinute(plan.set.start)}`,
+      said: `Time set: ${formatDay(plan.day)}, ${formatMinute(plan.set.start)}`,
+    };
+  } else {
+    const view = planView(plan, members, you, group.ownerId);
+    const replied = view.answered.length;
+    step = view.everyoneIn
+      ? { at: 3, label: g.owner ? "Pick the time" : "Time next", yours: g.owner, said: "Everyone's said when they're free" }
+      : {
+          at: 2,
+          part: replied / members.length,
+          label: view.mine === null ? "Add your times" : "",
+          yours: view.mine === null,
+          said: `${replied} of ${members.length} have said when they're free`,
+        };
+  }
+  return { ...g, members, sub, step };
+});
+// "Mac · Chrome", as a passkey's device is kept, said as "Chrome on Mac"
+const device = (madeOn: string) => {
+  const [on, browser] = madeOn.split(" · ");
+  return browser ? `${browser} on ${on}` : on;
+};
 const error = Astro.url.searchParams.get("error");
 const done = Astro.url.searchParams.get("done");
 ---
@@ -31,20 +79,27 @@ const done = Astro.url.searchParams.get("done");
       )}
     </section>
 
+    <h2 class="lists__head" id="groups-title">Groups</h2>
     {groups.length === 0 ? (
-      <p class="empty">You're not in any groups right now. <a href="/#start">Start one</a>, or open a friend's invite link.</p>
+      <p class="card empty">You're not in any groups right now. <a href="/#start">Start one</a>, or open a friend's invite link.</p>
     ) : (
-      <ul class="my-groups">
-        {groups.map((g) => (
+      <ul class="card list my-groups" aria-labelledby="groups-title">
+        {cards.map((g) => (
           <li>
-            <a class="card my-group" href={`/g/${g.link}`}>
-              <strong>
-                {g.name}
-                {unread.get(g.id) && <span class="my-group__new">{unread.get(g.id)} new</span>}
-              </strong>
-              <span class="fine">
-                {g.people} {g.people === 1 ? "person" : "people"}
-                {g.owner && " · you're the owner"}
+            <a class="row my-group" href={`/g/${g.link}`}>
+              <span class="row__faces" aria-hidden="true">
+                {g.members.slice(0, 2).map((m) => (
+                  <span class="face" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span>
+                ))}
+              </span>
+              <span class="row__body">
+                <strong class="row__title">{g.name}</strong>
+                <span class="row__sub">{g.sub}</span>
+              </span>
+              <GroupSteps {...g.step} />
+              <span class="row__end">
+                {unread.get(g.id) && <span class="badge my-group__new">{unread.get(g.id)} new</span>}
+                <svg class="row__chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m6 3.5 4.5 4.5L6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
               </span>
             </a>
           </li>
@@ -52,57 +107,82 @@ const done = Astro.url.searchParams.get("done");
       </ul>
     )}
 
-    <section class="card account" id="you" aria-labelledby="you-title">
-      <h2 id="you-title">Your name</h2>
-      {done === "renamed" && <p class="notice notice--ok" role="status">Saved. It's your name in every group now.</p>}
-      {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
-      <form method="post" action="/api/account" class="settings__row">
-        <label class="grow">
-          <span class="sr-only">Your name</span>
-          <input name="name" required maxlength="40" value={account.name} autocomplete="nickname" />
-        </label>
-        <button class="btn">Save</button>
-      </form>
-      <p class="fine">One name for you everywhere: changing it here changes it in all your groups.</p>
-    </section>
+    {/* Your one name: typed straight into its row, saved by Save or Enter. */}
+    <h2 class="lists__head" id="you">Account</h2>
+    {done === "renamed" && <p class="notice notice--ok" role="status">Saved. It's your name in every group now.</p>}
+    {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
+    <form method="post" action="/api/account" class="card list">
+      <label class="row row--field">
+        <span class="row__label">Name</span>
+        <input class="row__input" name="name" required maxlength="40" value={account.name} autocomplete="nickname" data-hint="Type a name, so your friends know it's you." />
+        <button class="btn btn--small row__save">Save</button>
+      </label>
+    </form>
+    {/* (said only while you're changing it) */}
+    <p class="lists__foot account__name-note">The same in all your groups: changing it here changes it everywhere.</p>
 
-    <section class="card account" id="keys" aria-labelledby="keys-title">
-      <h2 id="keys-title">Your passkeys</h2>
-      {done === "removed" && <p class="notice notice--ok" role="status">Removed. That passkey can't sign in any more.</p>}
-      {error === "last" && <p class="notice" role="alert">That's your only passkey, so it stays: it's your way in.</p>}
-      <ul class="keys">
+    <h2 class="lists__head" id="keys-title">Passkeys</h2>
+    {done === "removed" && <p class="notice notice--ok" role="status">Removed. That passkey can't sign in any more.</p>}
+    {error === "last" && <p class="notice" role="alert">That's your only passkey, so it stays: it's your way in.</p>}
+    <div class="card list" id="keys" aria-labelledby="keys-title">
+      <ul class="rows keys">
         {passkeys.map((p) => (
-          <li>
-            <div>
-              <strong>{p.keeper ?? p.madeOn ?? "A passkey"}</strong>
-              <span class="fine">
-                {p.keeper && p.madeOn && `Made on ${p.madeOn} · `}
-                {p.synced ? "syncs to your other devices" : "on this one device only"}
-                {` · added ${day(p.createdAt)}`}
-                {p.lastUsedAt && ` · last used ${day(p.lastUsedAt)}`}
+          <li class="row">
+            <span class="row__lead" aria-hidden="true">
+              <svg viewBox="0 0 20 20" width="18" height="18"><circle cx="7" cy="10" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M10.6 10H17.5M15 10v2.6M17.5 10v1.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+            </span>
+            <span class="row__body">
+              <strong class="row__title">{p.keeper ?? (p.madeOn ? device(p.madeOn) : "A passkey")}</strong>
+              <span class="row__sub">
+                {p.synced ? "Syncs to your other devices" : "On this one device only"}, added {day(p.createdAt)}
+                {p.keeper && p.madeOn && ` on ${device(p.madeOn)}`}
               </span>
-            </div>
+              {p.lastUsedAt && <span class="row__sub">Last used {day(p.lastUsedAt)}</span>}
+            </span>
             {passkeys.length > 1 && (
               <form
+                class="row__end"
                 method="post"
                 action="/api/passkeys/remove"
                 data-confirm="Remove this passkey? It won't sign in to Spots any more. Remove it from your password manager too."
               >
                 <input type="hidden" name="id" value={p.id} />
-                <button class="btn btn--small btn--ghost">Remove</button>
+                <button class="row__remove">Remove</button>
               </form>
             )}
           </li>
         ))}
       </ul>
-      <div data-passkey-only class="stack-row">
-        <button type="button" class="btn" data-passkey="register">Add a passkey on this device</button>
-        <span class="passkey-msg" aria-live="polite"></span>
-      </div>
-      <form method="post" action="/api/signout">
-        <button class="btn btn--ghost">Sign out</button>
-      </form>
-    </section>
+      <ul class="rows" data-passkey-only>
+        <li>
+          <a class="row row--action" href="/add-device">
+            <span class="row__lead" aria-hidden="true">
+              <svg viewBox="0 0 20 20" width="18" height="18"><path d="M10 4.5v11M4.5 10h11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" /></svg>
+            </span>
+            <span class="row__body">
+              <span class="row__title">Add another device</span>
+              <span class="row__sub">A phone or computer without your passkey: it shows a code to scan there</span>
+            </span>
+            <svg class="row__chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m6 3.5 4.5 4.5L6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </a>
+        </li>
+        <li>
+          <button type="button" class="row row--action" data-passkey="register">
+            <span class="row__lead" aria-hidden="true">
+              <svg viewBox="0 0 20 20" width="18" height="18"><rect x="5.5" y="2.5" width="9" height="15" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M9 14.8h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+            </span>
+            <span class="row__body">
+              <span class="row__title">Save a passkey on this device</span>
+            </span>
+          </button>
+          <span class="passkey-msg row__msg" aria-live="polite"></span>
+        </li>
+      </ul>
+    </div>
+
+    <form method="post" action="/api/signout" class="card list me__out">
+      <button class="row row--danger">Sign out</button>
+    </form>
   </div>
   <script>
     import "../scripts/passkeys";

@@ -137,4 +137,36 @@ describe("Talk's data", () => {
     expect(db.db.prepare("SELECT COUNT(*) FROM comments WHERE group_id = ?").pluck().get(c.group.id)).toBe(0);
     expect(db.db.prepare("SELECT COUNT(*) FROM comment_reads WHERE group_id = ?").pluck().get(c.group.id)).toBe(0);
   });
+
+  it("gives each member one quick reaction on a message: another replaces it, the same again takes it back", () => {
+    const c = crew();
+    talk.sendMessage(c.group, c.ana, c.place, "Saturday 10am?", "r1");
+    const id = lastId();
+    const on = (who = c.ana) => talk.thread(c.group, who, c.place)!.messages.at(-1)!.reactions;
+    expect(talk.react(c.group, c.ben, id, "👍")).toBe(c.place);
+    expect(talk.react(c.group, c.ana, id, "👍")).toBe(c.place);
+    expect(on()).toEqual([{ emoji: "👍", names: ["Ben", "You"], mine: true }]);
+    expect(talk.react(c.group, c.ben, id, "🎉")).toBe(c.place);
+    expect(on(c.ben)).toEqual([
+      { emoji: "👍", names: ["Ana"], mine: false },
+      { emoji: "🎉", names: ["You"], mine: true },
+    ]);
+    talk.react(c.group, c.ben, id, "🎉");
+    expect(on(c.ben)).toEqual([{ emoji: "👍", names: ["Ana"], mine: false }]);
+    // only the five, and not on a message that's gone
+    expect(talk.react(c.group, c.ben, id, "💩")).toBeUndefined();
+    talk.deleteMessage(c.group, c.ana, id);
+    expect(talk.react(c.group, c.ben, id, "👍")).toBeUndefined();
+    expect(on()).toEqual([]);
+    // nor from another group
+    const other = crew();
+    talk.sendMessage(other.group, other.ana, other.place, "ours", "r2");
+    const ours = lastId();
+    expect(talk.react(c.group, c.ben, ours, "👍")).toBeUndefined();
+    // and they go with a deleted group
+    expect(talk.react(other.group, other.ben, ours, "👍")).toBe(other.place);
+    admin.archiveGroups([other.group.id]);
+    admin.purgeGroups([other.group.id]);
+    expect(db.db.prepare("SELECT COUNT(*) FROM comment_reactions WHERE comment_id = ?").pluck().get(ours)).toBe(0);
+  });
 });

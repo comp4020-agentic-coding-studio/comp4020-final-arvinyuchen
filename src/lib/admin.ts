@@ -114,8 +114,10 @@ export function purgeGroups(ids: string[]): number {
     db.prepare(`UPDATE plans SET replaced_by = NULL WHERE group_id IN (${inGroups})`).run(...archived);
     db.prepare(`DELETE FROM plans WHERE group_id IN (${inGroups})`).run(...archived);
     db.prepare(`DELETE FROM comment_reads WHERE group_id IN (${inGroups})`).run(...archived);
+    db.prepare(`DELETE FROM comment_reactions WHERE comment_id IN (SELECT id FROM comments WHERE group_id IN (${inGroups}))`).run(...archived);
     db.prepare(`DELETE FROM comments WHERE group_id IN (${inGroups})`).run(...archived);
     db.prepare(`DELETE FROM picks WHERE group_id IN (${inGroups})`).run(...archived);
+    db.prepare(`DELETE FROM member_claims WHERE group_id IN (${inGroups})`).run(...archived);
     db.prepare(`DELETE FROM members WHERE group_id IN (${inGroups})`).run(...archived);
     db.prepare(`DELETE FROM group_links WHERE group_id IN (${inGroups})`).run(...archived);
     db.prepare(`DELETE FROM groups WHERE id IN (${inGroups})`).run(...archived);

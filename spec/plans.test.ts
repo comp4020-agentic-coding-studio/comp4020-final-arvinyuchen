@@ -315,8 +315,8 @@ describe("the plan on the group's page", () => {
     // one answer singles nothing out: the strip has no ring
     expect(doc.querySelector(`#plan-${plan} .heat`)).toBeTruthy();
     expect(doc.querySelector(`#plan-${plan} .heat__mark`)).toBeNull();
-    // and its key is a scale from busy to free, no squares
-    expect([...doc.querySelectorAll(`#plan-${plan} .heat__key span`)].map((k) => k.textContent)).toEqual(["busy", "free"]);
+    // and its key is a line, busy to free
+    expect(doc.querySelector(`#plan-${plan} .heat__key`)?.textContent).toBe("Blue where free, grey where busy.");
   });
 
   it("says when everyone's free for less than it takes, and lets the owner make it that long", async () => {
@@ -437,7 +437,7 @@ describe("the plan on the group's page", () => {
     expect(stops[0][0]).toBe(0);
     expect(stops.at(-1)?.[1]).toBe(100);
     stops.slice(1).forEach(([from], i) => expect(from).toBe(stops[i][1]));
-    expect([...(card?.querySelectorAll(".heat__key span") ?? [])].map((k) => k.textContent)).toEqual(["nobody", "all 2"]);
+    expect(card?.querySelector(".heat__key")?.textContent).toBe("Deeper blue where more of the 2 are free, grey where nobody is.");
     await request(c.ana, `${c.api}/plans`, { form: { action: "set", plan, at: first ?? "" } });
 
     doc = await page(c.ben, c.path);

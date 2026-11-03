@@ -54,9 +54,9 @@ other's taste.
   people wrote, so the better the reasons, the better the search.
 - **Joining costs almost nothing.** A link, your name and your face or
   fingerprint: no app to install, no password, no email. The link goes wherever the
-  group already talks: one Share button opens the phone's own share sheet
-  (Messages, WhatsApp, Instagram, WeChat), and there are direct links for
-  everywhere else. It never goes to a public feed, since anyone who
+  group already talks: one button, which on a phone opens its own share
+  sheet (Messages, WhatsApp, Instagram, WeChat) and on a computer copies the
+  link. It never goes to a public feed, since anyone who
   has it can join. Opening the link shows one invite card: the group, who
   started it, who's in, a line from whoever started it if they wrote one,
   and one button to join. Under it, the first few places on a small street
@@ -67,12 +67,14 @@ other's taste.
   button. Nobody can vote as someone else by typing their name, a friend on a
   second device is still the same person, and all your groups are in one
   place. One account has one name, and can have several passkeys (an iPhone's
-  and a Windows laptop's), never none. Lose every passkey and there's no
-  reset: make a new account, join again, and the group's owner merges your
-  old name into it. Inside Instagram's or Facebook's own browser, where
+  and a Windows laptop's), never none. A device without yours is added from
+  one you're signed in on: it shows a code to scan, and the new device makes
+  its own passkey with it. Lose every device and there's no
+  reset: make a new account, join again saying who you were, and the group's
+  owner confirms it's you, so your old keens and places come back. Inside Instagram's or Facebook's own browser, where
   passkeys don't work, the invite says to open it in Safari or Chrome.
 - **Whoever starts a group can look after it.** Rename it, write a line to
-  the people they invite, take someone out, merge someone who joined twice,
+  the people they invite, take someone out, confirm someone who joined twice is one person,
   and reset the invite link if it spread too far, without losing anything
   the group made.
 - **It remembers.** What the group added and voted for stays, across visits,
@@ -155,8 +157,9 @@ other's taste.
   made them optional, and found the cost both times: a friend on a second
   device became a second person, and a name typed into a form proved nothing.
   So every member is an account now, and a passkey keeps that to one tap.
-  There's no email, so there's no account recovery either; the owner's merge
-  is the way back. Passkeys belong to the site that made them, so there's no
+  There's no email, so there's no account recovery either: a new device is
+  added from one you're signed in on, and if you lose them all, the group
+  vouches for you (you say who you were, its owner confirms). Passkeys belong to the site that made them, so there's no
   "sign in with WhatsApp or Instagram" to offer, and I wouldn't want one.
 - **Public reviews and star ratings.** Spots is about what this group thinks.
 - **A directory of every place in Canberra.** A short checked starter list,
@@ -190,9 +193,14 @@ every open page, and the list re-ranks itself, each card gliding to its new
 place. Our list's Edit takes a place off again: yours until someone else is
 keen on it or while it's in the plan on now (a grey lock where the red minus would be), any for the owner, with Undo; put back, it starts from no keens.
 The group's page is in tabs (Our list, Explore, Share a place, and
-Settings for whoever started it), and the invite folds behind one button. On a
-wide screen they're side by side: Our list, every row of it, scrolls with the
-page, while Explore and the map stay in view beside it. Search Explore by describing what you're after: the answer is
+Settings for whoever started it), and the invite folds behind one button:
+inside, one button shares the link (the phone's share sheet) or copies it (a
+computer), and under it Show QR code (for the phones round the table) and,
+for the owner, the note for the people they invite. Whoever joined since
+you last looked is named at the top of the group's column ("Zoe joined
+Saturday crew") until you dismiss it, since nothing is pushed. On a wide screen the
+page is the window, the three side by side: Our list with the group's panel,
+Explore's cards and the map each scroll on their own, their tops level. Search Explore by describing what you're after: the answer is
 the matching cards, best first, and the map frames their pins. Everyone signs
 in with a passkey, is themselves on any device, and sees all their groups in
 one place; your account page renames you everywhere and adds or removes
@@ -229,8 +237,9 @@ Every place on the list has its Talk: a speech
 bubble on its row, with how many have been said (blue and bold when some
 are new to you), opens the place's thread, a sheet over the list on a
 phone, and on a wide screen Explore's column, with the map flown to the
-place. Only the group sees it. Messages arrive live; your own has a ··· (or
-a long press) to delete it, with Undo, and leaves "Message removed"; a
-day later its words are gone for good. Without a script it's a link and
+place. Only the group sees it. Messages arrive live, and any one takes a
+quick reaction (👍 ❤️ 😂 😮 🎉, one each) shown under it. Your own has a
+small bin (on hover, or after a long press) to delete it, with Undo; it
+leaves "Message removed", and a day later its words are gone for good. Without a script it's a link and
 plain forms. Next: saying who's coming once the time is set, and Talk on
 the plan itself.
