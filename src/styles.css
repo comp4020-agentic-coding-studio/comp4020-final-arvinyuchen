@@ -1630,6 +1630,43 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   scale: 1.35;
 }
 
+/* Places gathered across the city: a frosted chip with how many, quieter
+   than our list's numbered chips and under them, in the chosen kind's
+   colour (grey for every kind). */
+.map-gather {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 7px;
+  border: 1.5px solid rgb(255 255 255 / 90%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 82%);
+  box-shadow: 0 1px 3px rgb(13 43 54 / 22%);
+  backdrop-filter: blur(4px);
+  color: var(--kind, var(--muted));
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+#map .map-gather {
+  z-index: 1;
+}
+
+.map-gather:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+/* (while the zoom changes they fade, and come back gathered afresh) */
+#map.is-zooming .map-gather {
+  opacity: 0;
+}
+
 /* While its callout is open, the callout is the place's chip. */
 .map-mark.is-open .map-chip {
   visibility: hidden;

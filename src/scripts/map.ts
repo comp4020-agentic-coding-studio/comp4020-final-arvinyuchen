@@ -419,13 +419,16 @@ if (container) {
     applyFilter();
   };
 
-  // The dots: every place the map shows that isn't on our list, in its
-  // kind's colour with a white ring, as .map-dot draws a mark's dot.
+  // The dots: every place the map shows that isn't on our list (of the
+  // kind chosen), in its kind's colour with a white ring, as .map-dot draws
+  // a mark's dot. Across the city they gather into counts (the map's own
+  // clustering, "spots-dots"), until the camera is down among the suburbs.
   const colour = (kind: Kind) => getComputedStyle(document.documentElement).getPropertyValue(`--${kind}`).trim() || "#c93400";
+  const GATHER_UNTIL = 13;
   const dotData = (): maplibregl.GeoJSONSourceSpecification["data"] => ({
     type: "FeatureCollection",
     features: [...pins.values()]
-      .filter((pin) => !list.order.has(pin.id))
+      .filter((pin) => !list.order.has(pin.id) && (filter === "all" || pin.kind === filter))
       .map((pin) => ({
         type: "Feature",
         id: pin.id,
@@ -435,11 +438,12 @@ if (container) {
   });
   function dotsLayer() {
     if (map.getSource("spots-dots")) return;
-    map.addSource("spots-dots", { type: "geojson", data: dotData() });
+    map.addSource("spots-dots", { type: "geojson", data: dotData(), cluster: true, clusterRadius: 56, clusterMinPoints: 3, clusterMaxZoom: GATHER_UNTIL });
     map.addLayer({
       id: "spots-dots",
       type: "circle",
       source: "spots-dots",
+      filter: ["!", ["has", "point_count"]],
       paint: {
         "circle-color": ["get", "colour"],
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3.5, 14, 5.5],
@@ -447,7 +451,15 @@ if (container) {
         "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 10, 1.2, 14, 2],
       },
     });
-    filterDots();
+    // (the gatherings drawn at this zoom, unseen, for gather() to read)
+    map.addLayer({
+      id: "spots-gathered",
+      type: "circle",
+      source: "spots-dots",
+      filter: ["has", "point_count"],
+      paint: { "circle-radius": 14, "circle-opacity": 0 },
+    });
+    map.on("idle", gather);
     // A dot under the pointer becomes a mark, which shows its name and
     // takes the click; on a touch screen a tap flies straight to it.
     map.on("mousemove", "spots-dots", (event) => {
@@ -465,8 +477,54 @@ if (container) {
   function drawDots() {
     (map.getSource("spots-dots") as maplibregl.GeoJSONSource | undefined)?.setData(dotData());
   }
+
+  // A gathering (three or more) is a mark like a chip, in the page's font:
+  // how many places are there, quieter than our list's numbered chips, in
+  // the chosen kind's colour. A tap zooms in to where it comes apart.
+  const gatherings = new Map<number, { marker: maplibregl.Marker; el: HTMLButtonElement }>();
+  function gather() {
+    const source = map.getSource("spots-dots") as maplibregl.GeoJSONSource | undefined;
+    if (!source) return;
+    const seen = new Set<number>();
+    for (const f of map.queryRenderedFeatures({ layers: ["spots-gathered"] })) {
+      const id = Number(f.properties?.cluster_id);
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const count = Number(f.properties?.point_count);
+      const at = (f.geometry as unknown as { coordinates: [number, number] }).coordinates;
+      const had = gatherings.get(id);
+      if (had) {
+        had.marker.setLngLat(at);
+        had.el.textContent = String(count);
+        continue;
+      }
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = "map-gather";
+      if (filter !== "all") el.style.setProperty("--kind", `var(--${filter})`);
+      el.textContent = String(count);
+      el.setAttribute("aria-label", `${count} places here: zoom in`);
+      el.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        const zoom = await source.getClusterExpansionZoom(id);
+        map.easeTo({ center: at, zoom: Math.max(zoom, map.getZoom() + 1), ...move() });
+      });
+      gatherings.set(id, { marker: new maplibregl.Marker({ element: el }).setLngLat(at).addTo(map), el });
+    }
+    for (const [id, { marker }] of gatherings) {
+      if (seen.has(id)) continue;
+      marker.remove();
+      gatherings.delete(id);
+    }
+  }
+  let dotsFor = "all";
   function filterDots() {
-    if (map.getLayer("spots-dots")) map.setFilter("spots-dots", filter === "all" ? null : ["==", ["get", "kind"], filter]);
+    // (a kind gathers only its own places, so it's the data that changes)
+    if (filter === dotsFor) return;
+    dotsFor = filter;
+    for (const { marker } of gatherings.values()) marker.remove();
+    gatherings.clear();
+    drawDots();
   }
 
   // What the chips and names keep clear of, besides each other: the map's
@@ -496,15 +554,15 @@ if (container) {
     const listed = shown
       .filter(({ pin }) => list.order.has(pin.id))
       .sort((a, b) => list.order.get(a.pin.id)! - list.order.get(b.pin.id)!);
-    const dots = [...pins.values()]
-      .filter((pin) => !markers.has(pin.id) && (filter === "all" || pin.kind === filter))
-      .map((pin) => map.project([pin.lon, pin.lat]))
-      .filter((at) => at.x > -10 && at.x < width + 10 && at.y > -10 && at.y < height + 10);
+    const dots = (map.getLayer("spots-dots") ? map.queryRenderedFeatures({ layers: ["spots-dots"] }) : []).map((f) =>
+      map.project((f.geometry as unknown as { coordinates: [number, number] }).coordinates),
+    );
+    const gathered = [...gatherings.values()].map(({ marker }) => map.project(marker.getLngLat()));
     const placed = chips(
       listed.map(({ pin, at }) => ({ x: at.x, y: at.y, wide: measure(pin.name, font) })),
       width,
       height,
-      [...shown.map(({ at }) => around(at.x, at.y, 6)), ...dots.map((at) => around(at.x, at.y, 6)), ...controls()],
+      [...shown.map(({ at }) => around(at.x, at.y, 6)), ...dots.map((at) => around(at.x, at.y, 6)), ...gathered.map((at) => around(at.x, at.y, 16)), ...controls()],
     );
     // (a picked place's chip, filled with its colour above its card, always says its name)
     listed.forEach(({ pin, el }, i) => {

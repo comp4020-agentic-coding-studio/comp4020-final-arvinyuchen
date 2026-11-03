@@ -89,7 +89,10 @@ follow from it; every change has to hold to them.
   by kind, so the first page shows every kind. The map has every place
   Explore could show: those on our list as chips, the rest as dots drawn by
   the map itself (a circle layer), one becoming a mark under the pointer
-  or when flown to. Its callout on a place whose card isn't showing puts
+  or when flown to. Across the city three or more dots close together
+  gather into a frosted chip saying how many (in the page's font, the
+  chosen kind's colour, under our list's chips), until the camera is down
+  among the suburbs (zoom 13); a tap zooms in to where it comes apart. Its callout on a place whose card isn't showing puts
   that card first (`?at`). A search's answers are all on the map, its
   cards a page at a time.
 - **"Near your plan" only reorders Explore.** While the group has a plan
