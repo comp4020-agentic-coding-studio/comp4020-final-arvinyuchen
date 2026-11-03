@@ -2820,6 +2820,36 @@ html:not(.in-app) .no-passkey__app {
   font-weight: 700;
 }
 
+/* A plan's replies at a row's end: a ring that fills as people say when
+   they're free, the count before it (so the rings line up); a tick once
+   the time is set. */
+.ring {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--accent);
+}
+
+.ring__track {
+  stroke: var(--line);
+}
+
+.ring__fill {
+  stroke: var(--accent);
+}
+
+/* (nobody yet: no dot of a stroke) */
+.ring__fill[stroke-dasharray^="0.00"] {
+  display: none;
+}
+
+.ring__count {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
 .row--action .row__title {
   color: var(--accent-ink);
 }
