@@ -7562,6 +7562,25 @@ dialog.sheet[open]:not(:modal) {
   margin: 0 0 0.3rem;
 }
 
+/* Settings and Share are a white panel, as Explore's head is, and their
+   lists sit in it as grey groups (the page's own grey, no shadow): the
+   same cards turned inside out, so the panel reads as one thing. */
+.group-tools > :is(.settings, .add) {
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+
+.group-tools > :is(.settings, .add) :is(.card, .finder__results:has(.finder__hit)) {
+  background: var(--bg);
+  box-shadow: none;
+}
+
+.group-tools > :is(.settings, .add) :is(a, button):is(.row, .finder__hit):hover {
+  background: var(--fill);
+}
+
 /* On a phone an Explore card is a row, photo beside the words, so the list
    of places doesn't run to a screen per card. */
 @media (max-width: 600px) {
