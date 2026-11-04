@@ -1080,9 +1080,13 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
   </div>
   </div>
 
-  <div id="toast" class="toast" role="status" hidden>
-    <span class="toast__text"></span>
-    <button type="button" class="toast__undo" hidden>Undo</button>
+  {/* (the live region stays on the page, so a screen reader hears each note
+      the toast shows; the toast itself comes and goes inside it) */}
+  <div role="status" aria-live="polite">
+    <div id="toast" class="toast" hidden>
+      <span class="toast__text"></span>
+      <button type="button" class="toast__undo" hidden>Undo</button>
+    </div>
   </div>
 
   {/* The plan's sheets: the owner's (start it, or change its day; an exact
@@ -1233,12 +1237,13 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     let toastTimer;
     function say(text, action, label = "Undo") {
       clearTimeout(toastTimer);
+      // (shown, then its words, so they're heard as they arrive)
+      toast.hidden = false;
       toast.querySelector(".toast__text").textContent = text;
       const button = toast.querySelector(".toast__undo");
       button.textContent = label;
       button.hidden = !action;
       button.onclick = action ? () => { toast.hidden = true; action(); } : null;
-      toast.hidden = false;
       toastTimer = setTimeout(() => (toast.hidden = true), 6000);
     }
     const post = (action, body) => fetch(action, { method: "POST", body, headers: { "x-spots": "in-page" } });
@@ -1255,8 +1260,10 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         .finished.catch(() => {});
     }
     // A keen, a Remove, or anything for the plan posts in the background, so
-    // the page (and its order) stays put. If that fails, the form posts the
-    // plain way.
+    // the page (and its order) stays put. If Spots can't be reached (no
+    // signal, the server down a moment), the page says so and stays as it
+    // is, with Try again; refused (signed out, say), the form posts the
+    // plain way, so the server's answer explains.
     const inPage = "[data-keen], [data-remove], [data-plan], [data-busy], [data-plan-start], [data-note], [data-seen]";
     // (moving the plan to another day starts its answers afresh: asked
     // first, but only when the day really changes)
@@ -1320,7 +1327,12 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           openMore(null);
           say(note ? "Note saved. It's the first thing people see when they open the link." : "Note taken down.");
         }
-      } catch {
+      } catch (error) {
+        const status = Number(error?.message);
+        if (!status || status >= 500) {
+          say("Couldn't reach Spots. Check your connection and try again.", () => form.requestSubmit(by ?? undefined), "Try again");
+          return;
+        }
         if (by?.name) form.insertAdjacentHTML("beforeend", `<input type="hidden" name="${by.name}" value="${by.value}">`);
         form.submit();
       } finally {
