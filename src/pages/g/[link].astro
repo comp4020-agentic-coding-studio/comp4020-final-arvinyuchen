@@ -585,13 +585,21 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     {view ? (
       <PlanCard view={view} group={group} member={member} isOwner={isOwner} needs={needs} />
     ) : (
-      isOwner && picks.length > 0 && (
+      picks.length > 0 &&
+      (isOwner ? (
         <div class="plan plan--empty">
           <span class="plan__icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20" set:html={calendar} /></span>
           <p><strong>Plan a day out</strong> Pick a place and a day; everyone marks when they're busy, and you set the time.</p>
           <a class="btn btn--small" href={`/g/${group.link}?plan=new#plan-start`} data-open-start>Plan a day</a>
         </div>
-      )
+      ) : (
+        // (a member can't start one, but sees where it will be: the
+        // owner's to start, and theirs to answer)
+        <div class="plan plan--empty plan--waiting">
+          <span class="plan__icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20" set:html={calendar} /></span>
+          <p><strong>No plan yet</strong> {owner ? owner.name : "The owner"} picks a day out; you'll mark when you're busy here.</p>
+        </div>
+      ))
     )}
   </section>
 
