@@ -37,7 +37,8 @@ import { dayParts, formatDay, formatMinute } from "../../lib/when";
 // The link is the invite. After the owner resets it, the old one still
 // brings members back (to the new link), but lets nobody new in.
 const byLink = groupByLink(Astro.params.link ?? "");
-if (!byLink) return Astro.redirect("/", 303);
+// (a link that was never a group says so, rather than landing on the home page)
+if (!byLink) return Astro.rewrite("/404");
 if (byLink === "closed") return Astro.rewrite("/group-closed");
 const { group } = byLink;
 const member = me(Astro.cookies, group.id);
