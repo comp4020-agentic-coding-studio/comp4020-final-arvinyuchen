@@ -46,7 +46,7 @@ const account = signedIn(Astro.cookies);
     {account ? (
       <p class="fine">You'll start it as <strong>{account.name}</strong>, and get its link to send your friends.</p>
     ) : (
-      <p class="fine">You'll get its link to send your friends. Everyone signs in with a passkey: no password, no email.</p>
+      <p class="fine">You'll get its link to send your friends. Everyone signs in with a passkey: no password.</p>
     )}
     <form
       method="post"
@@ -56,7 +56,7 @@ const account = signedIn(Astro.cookies);
       data-passkey-only={account ? undefined : ""}
     >
       {error === "missing" && <p class="notice" role="alert">Give the group a name.</p>}
-      {error === "account" && <p class="notice" role="alert">Starting a group needs an account: your name and a passkey.</p>}
+      {error === "account" && <p class="notice" role="alert">Starting a group needs an account: your name, email and a passkey.</p>}
       <label>
         <span>Group name</span>
         <input name="group" required maxlength="60" placeholder="Saturday crew" autocomplete="off" data-hint="Give the group a name." />
@@ -65,6 +65,12 @@ const account = signedIn(Astro.cookies);
         <label>
           <span>Your name</span>
           <input name="name" required maxlength="40" placeholder="What your friends call you" autocomplete="nickname" data-hint="Type your name, so your friends know it's you." />
+        </label>
+      )}
+      {!account && (
+        <label>
+          <span>Your email</span>
+          <input name="email" type="email" required maxlength="254" placeholder="Gets you back in if you lose your passkey" autocomplete="email" data-hint="Type your email: it gets you back in if you lose your passkey." />
         </label>
       )}
       <button class="btn btn--primary start__go">

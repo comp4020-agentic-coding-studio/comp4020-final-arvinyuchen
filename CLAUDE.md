@@ -125,19 +125,32 @@ follow from it; every change has to hold to them.
   Never let a vote be cast for someone else: identity is the signed-in
   account (`me()` in `src/lib/me.ts`), never a name typed into a form.
 - **Everyone is a passkey account.** Starting or joining a group needs one,
-  made in the same step from a name and a passkey (the home page's form, the
-  invite, `/signin`); signed in, joining is one button. One account has one
-  name, the same in every group, and one or more passkeys, never none. A
+  made in the same step from a name, an email and a passkey (the home page's
+  form, the invite, `/signin`); signed in, joining is one button. One account
+  has one name, the same in every group, one email (changed on My account;
+  accounts from before #195 are asked to add one), and one or more passkeys,
+  never none. A
   device without your passkey is added from one signed in: `/add-device`
   there shows a code (and its QR code, ten minutes, once, the newest only),
   and with it the new device makes its own passkey for that account; the code
-  never signs anyone in by itself (`newDeviceCode` in `src/lib/accounts.ts`). There's
-  no recovery but the owner's merge: someone who lost every device makes a
-  new account and joins again by the link, saying who they were (the join
-  form's "Been in this group before?", anyone but the owner); the owner is
-  asked "Same person?" in Settings, as for two members with one name, and
-  Same person merges the old member into the new one, Not them stops asking
-  (`mergeAsks` in `src/lib/db.ts`). Never add a way in that isn't a passkey.
+  never signs anyone in by itself (`newDeviceCode` in `src/lib/accounts.ts`).
+  Someone who lost every device gets the same thing by email (#195):
+  `/signin` → Lost your passkey → `/recover`, the account's email gets a
+  link to `/add-device` with a long code (30 minutes, once, `newEmailCode`),
+  and that device makes a new passkey for the account. The answer is the
+  same whether or not the email has an account, asking is rate-limited, and
+  the link's origin is `APP_ORIGIN` (fly.toml), never the request's host.
+  Mail goes through Resend (`src/lib/mail.ts`, `RESEND_API_KEY` and
+  `MAIL_FROM` as Fly secrets); without a key, or with `OUTING_STUB`, it's
+  kept and logged, and the spec reads it from `/api/mail-log`. The fallback
+  stays the owner's merge: someone with no email left makes a new account
+  and joins again by the link, saying who they were (the join form's "Been
+  in this group before?", anyone but the owner); the owner is asked "Same
+  person?" in Settings, as for two members with one name, and Same person
+  merges the old member into the new one, Not them stops asking
+  (`mergeAsks` in `src/lib/db.ts`). Never add a way in that isn't a
+  passkey: the email only ever brings a link that lets a device make one,
+  and is never shown to anyone, admin included.
 - **The invite goes person to person.** Whoever holds the link can join, so
   it's shared through private channels only, by one button: the system
   share sheet on a touch screen that has one, a copy of the link elsewhere
@@ -153,8 +166,9 @@ follow from it; every change has to hold to them.
   `newcomers` in `src/lib/db.ts`, by member id in `joins_seen_id`). It
   arrives live and waits across visits, since nothing is pushed, and
   dismissing it (`/api/groups/[id]/seen`) is theirs alone (#120).
-- **Accounts are passkeys only.** No passwords, no email, no "sign in with"
-  providers. An account is made from a name and a passkey
+- **Accounts are passkeys only.** No passwords, no "sign in with" providers,
+  and the email never signs in (it only gets the lost-passkey link). An
+  account is made from a name, an email and a passkey
   (`src/pages/api/passkeys/`), its sessions store only a hash of their token,
   and `me()` in `src/lib/me.ts` is the one place that decides who someone is
   in a group: the signed-in account's member there, and nothing else.

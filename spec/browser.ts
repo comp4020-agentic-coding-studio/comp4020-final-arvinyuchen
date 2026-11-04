@@ -50,12 +50,16 @@ export const page = async (jar: Jar, path: string) =>
 const passkeys = new WeakMap<Jar, Authenticator>();
 export const passkeyOf = (jar: Jar) => passkeys.get(jar)!;
 
-/** Makes an account from this browser: a name and a passkey. */
-export async function signUp(jar: Jar, name: string, passkey = new Authenticator()) {
-  const options = await (await request(jar, "/api/passkeys/register/options", { json: { name } })).json();
+/** Makes an account from this browser: a name, an email (made up from the name unless given) and a passkey. */
+export async function signUp(jar: Jar, name: string, passkey = new Authenticator(), email = emailFor(name)) {
+  const options = await (await request(jar, "/api/passkeys/register/options", { json: { name, email } })).json();
   passkeys.set(jar, passkey);
   return request(jar, "/api/passkeys/register/verify", { json: passkey.create(options, origin) });
 }
+let emails = 0;
+/** A new address each time, so no two accounts in the spec share one by chance. */
+export const emailFor = (name: string) =>
+  `${name.toLowerCase().replace(/[^a-z0-9]/g, "") || "someone"}.${Date.now().toString(36)}${emails++}@example.com`;
 const ensureAccount = async (jar: Jar, name: string) => {
   if (!jar.has("spots_session")) await signUp(jar, name);
 };

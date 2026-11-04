@@ -1,8 +1,8 @@
 import { verifyRegistrationResponse } from "@simplewebauthn/server";
 import type { APIRoute } from "astro";
-import { createAccount, deviceOf, savePasskey, useDeviceCode } from "../../../../lib/accounts";
+import { createAccount, deviceOf, isEmailCode, savePasskey, useDeviceCode } from "../../../../lib/accounts";
 import { signIn, signedIn } from "../../../../lib/me";
-import { CODE_GONE, finish, relyingParty } from "../../../../lib/passkeys";
+import { CODE_GONE, finish, LINK_GONE, relyingParty } from "../../../../lib/passkeys";
 
 // Step two: check what the device signed, store its public key, and sign
 // this browser in, making the account first if it's new.
@@ -27,12 +27,13 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
   // Adding to an account: by its code, used up now (once only), or the
   // browser still has to be signed in as it.
   if (ceremony.code) {
-    if (!useDeviceCode(ceremony.code, ceremony.accountId!)) return Response.json({ error: CODE_GONE }, { status: 400 });
+    if (!useDeviceCode(ceremony.code, ceremony.accountId!))
+      return Response.json({ error: isEmailCode(ceremony.code) ? LINK_GONE : CODE_GONE }, { status: 400 });
   } else if (ceremony.accountId !== null && signedIn(cookies)?.id !== ceremony.accountId) {
     return Response.json({ error: "Signed out in the meantime. Sign in and try again." }, { status: 401 });
   }
 
-  const accountId = ceremony.accountId ?? createAccount(ceremony.handle, ceremony.name).id;
+  const accountId = ceremony.accountId ?? createAccount(ceremony.handle, ceremony.name, ceremony.email ?? null).id;
   const { credential, credentialBackedUp, aaguid } = verification.registrationInfo;
   savePasskey(accountId, credential, {
     synced: credentialBackedUp,
