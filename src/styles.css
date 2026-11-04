@@ -1311,12 +1311,14 @@ input[type="file"]::file-selector-button {
   translate: 0 -50%;
 }
 
+/* (a field beside its button takes the button's round ends, so the two
+   read as one control) */
 .ask input {
   flex: 1;
   min-width: 0;
   min-height: 2.75rem;
   padding: 0.45rem 0.9rem 0.45rem 2.4rem;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 1rem;
   text-overflow: ellipsis;
 }
@@ -2313,6 +2315,11 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
 .finder__row {
   display: flex;
   gap: 0.5rem;
+}
+
+.finder__row input {
+  padding-left: 1.1rem;
+  border-radius: 999px;
 }
 
 /* The matches, as a list's rows on a card (and "Nothing found" as a
