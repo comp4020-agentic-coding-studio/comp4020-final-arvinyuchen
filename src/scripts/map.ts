@@ -328,6 +328,14 @@ if (container) {
     frame.style.setProperty("--map-clear", `${under}px`);
     frame.style.setProperty("--map-card", `${dock.offsetHeight}px`);
   }
+  /** On a phone, how far above the map's middle the middle of its clear band is. */
+  function clearMiddle() {
+    const box = container!.getBoundingClientRect();
+    const top = (frame.querySelector(".map-mode")?.getBoundingClientRect().bottom ?? box.top) - box.top;
+    const card = (dock?.offsetHeight ?? 76) + 16;
+    const bottom = box.height - card - parseFloat(frame.style.getPropertyValue("--map-clear") || "0");
+    return Math.min(0, (top + bottom) / 2 - box.height / 2);
+  }
   let clearing = 0;
   window.addEventListener("scroll", () => {
     if (!dock || clearing) return;
@@ -747,8 +755,9 @@ if (container) {
       container!.scrollIntoView({ behavior: reducedMotion.matches ? "auto" : "smooth", block: "center" });
     }
 
-    // (on a phone the place lands above the middle, clear of its card at the map's foot)
-    const offset: [number, number] = [0, narrow.matches ? -46 : 0];
+    // (on a phone the place lands in the middle of what's left in view:
+    // under the switch at the top, above the card that will sit at the foot)
+    const offset: [number, number] = [0, narrow.matches ? clearMiddle() : 0];
     const target = { center: [pin.lon, pin.lat] as [number, number], zoom: 16.4, pitch: 58, bearing: -20, offset };
     if (still()) {
       map.easeTo({ ...target, duration: 0 });

@@ -2462,9 +2462,19 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
     box-shadow: 0 10px 12px -12px rgb(13 43 54 / 35%);
   }
 
+  /* (tall enough for its controls, a place and that place's card at its
+     foot together) */
   #map {
-    height: 30vh;
-    min-height: 13rem;
+    height: 34vh;
+    min-height: 15rem;
+  }
+
+  /* A finger pinches or double-taps to zoom, so on a phone or tablet the
+     map keeps only its compass and its motion switch: the + and − would
+     crowd a short map's corner. */
+  #map .maplibregl-ctrl-zoom-in,
+  #map .maplibregl-ctrl-zoom-out {
+    display: none;
   }
 }
 
