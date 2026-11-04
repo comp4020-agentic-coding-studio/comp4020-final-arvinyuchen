@@ -331,7 +331,9 @@ follow from it; every change has to hold to them.
 - **Phones first.** Every page works at 375px wide with no sideways scroll.
   On a phone the group's tabs are a small frosted pill floating over the
   screen's foot, the open tab named, tucked away while you scroll down and
-  back when you scroll up.
+  back when you scroll up. The group's map can fold away there (a chevron
+  on it, "Show map" in its place, remembered on the device), and a place
+  tapped unfolds it before the map flies.
 - **On a wide screen, the page is the window.** The group's page is three
   columns (from 1180px, with the script): the header, the three columns
   level under it and the footer fill the window exactly, and the page never
