@@ -284,7 +284,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         >
           <input type="hidden" name="link" value={group.link} />
           {error === "account" && (
-            <p class="notice" role="alert">Joining needs an account: your name and a passkey.</p>
+            <p class="notice" role="alert">Joining needs an account: your name, email and a passkey.</p>
           )}
           {account ? (
             <>
@@ -303,6 +303,10 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
                 {/* The face you'll have in the group, filled in as you type (src/scripts/welcome.ts). */}
                 <span class="face welcome__you" aria-hidden="true"></span>
                 <input id="join-name" name="name" required maxlength="40" autocomplete="nickname" placeholder="Your first name" data-hint="Type your name, so the group knows it's you." />
+              </div>
+              <label for="join-email" class="sr-only">Your email, to get back in if you lose your passkey</label>
+              <div class="welcome__field welcome__field--email">
+                <input id="join-email" name="email" type="email" required maxlength="254" autocomplete="email" placeholder="Your email" data-hint="Type your email: it gets you back in if you lose your passkey." />
               </div>
             </>
           )}
@@ -333,7 +337,8 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           <span class="passkey-msg" aria-live="polite"></span>
           {!account && (
             <p class="fine passkey-alt">
-              You'll save a passkey for Spots: your face, fingerprint or phone PIN. Have one?{" "}
+              You'll save a passkey for Spots: your face, fingerprint or phone PIN. Your email gets you back in if
+              you lose it. Have one?{" "}
               <button type="button" class="linkish" data-passkey="signin" data-then="#join">Sign in</button>, or on a new
               device, <a href={`/add-device?next=${encodeURIComponent(`/g/${group.link}`)}`}>add it with a code</a>.
             </p>

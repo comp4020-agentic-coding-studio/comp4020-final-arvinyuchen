@@ -1,10 +1,10 @@
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 
-// Everyone in Spots is an account: a name and a passkey. This drives the
+// Everyone in Spots is an account: a name, an email and a passkey. This drives the
 // passkey steps, all through /api/passkeys/*:
 //
 // - <form data-account="new">: sending it first makes the account, from the
-//   form's name field and a new passkey, then sends the form for real (start
+//   form's name and email fields and a new passkey, then sends the form for real (start
 //   a group, join one); with data-then, it goes there instead.
 // - [data-passkey="signin"]: signs in with a passkey this device has (or a
 //   phone's, by QR code), then goes to data-then: a page, "reload", or a
@@ -52,8 +52,8 @@ function then(where: string | undefined) {
   } else location.assign(url);
 }
 
-const register = async (name?: string, code?: string) => {
-  const optionsJSON = await post("/api/passkeys/register/options", { name, code });
+const register = async (account: { name?: string; email?: string; code?: string }) => {
+  const optionsJSON = await post("/api/passkeys/register/options", account);
   await post("/api/passkeys/register/verify", await startRegistration({ optionsJSON }));
 };
 
@@ -81,7 +81,7 @@ document.addEventListener("click", (event) => {
   if (!button) return;
   busy(button, button, async () => {
     if (button.dataset.passkey === "register") {
-      await register(undefined, button.dataset.code);
+      await register({ code: button.dataset.code });
       then(button.dataset.then ?? "reload");
     } else {
       await signIn();
@@ -94,9 +94,9 @@ document.addEventListener("submit", (event) => {
   const form = event.target as HTMLFormElement;
   if (form.dataset.account !== "new") return;
   event.preventDefault();
-  const name = form.querySelector<HTMLInputElement>("input[name=name]")?.value.trim();
+  const field = (name: string) => form.querySelector<HTMLInputElement>(`input[name=${name}]`)?.value.trim();
   busy(form, form.querySelector("button:not([type=button])"), async () => {
-    await register(name);
+    await register({ name: field("name"), email: field("email") });
     // (the form's own fields, like the group's name, go as they are)
     if (form.dataset.then) then(form.dataset.then);
     else form.submit();

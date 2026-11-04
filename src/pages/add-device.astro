@@ -2,12 +2,13 @@
 import { renderSVG } from "uqr";
 import NoPasskey from "../components/NoPasskey.astro";
 import Base from "../layouts/Base.astro";
-import { accountForDeviceCode, DEVICE_CODE_MINUTES, newDeviceCode } from "../lib/accounts";
+import { accountForDeviceCode, DEVICE_CODE_MINUTES, isEmailCode, newDeviceCode } from "../lib/accounts";
 import { nextPath, signedIn } from "../lib/me";
 
 // Adding a device that doesn't have your passkey (src/lib/accounts.ts),
 // both ends of it. Signed in, this page shows a new code and its QR code.
-// Signed out, it takes the code (scanned, so in the link, or typed) and
+// Signed out, it takes the code (scanned, so in the link, or typed, or in
+// the link a lost-passkey email brought: src/pages/recover.astro) and
 // makes a passkey here for that account, then goes on to ?next=.
 const account = signedIn(Astro.cookies);
 const typed = Astro.url.searchParams.get("code")?.trim() ?? "";
@@ -65,7 +66,14 @@ const linking = !account && typed ? accountForDeviceCode(typed) : undefined;
           On a device you're signed in on, open <strong>My groups</strong>, then <strong>Add another device</strong>: it
           shows a code. Scan it, or type it here.
         </p>
-        {typed && <p class="notice" role="alert">That code didn't work. It may have run out: make a new one.</p>}
+        {typed &&
+          (isEmailCode(typed) ? (
+            <p class="notice" role="alert">
+              That link has run out, or was used already. <a href="/recover">Get a new one</a>.
+            </p>
+          ) : (
+            <p class="notice" role="alert">That code didn't work. It may have run out: make a new one.</p>
+          ))}
         <form method="get" class="add-device__form">
           <label for="device-code" class="sr-only">The code</label>
           <input
@@ -83,8 +91,7 @@ const linking = !account && typed ? accountForDeviceCode(typed) : undefined;
           <button class="btn">Next</button>
         </form>
         <p class="fine card__actions">
-          Lost every device? Make a new account and join your group again: say who you were, and its owner gives you
-          your old self back.
+          Lost every device? <a href="/recover">Get a link by email</a>.
         </p>
       </>
     )}

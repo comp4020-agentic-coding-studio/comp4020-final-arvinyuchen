@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Authenticator, Jar } from "./authenticator";
 import {
   baseUrl,
+  emailFor,
   join,
   origin,
   page,
@@ -96,6 +97,87 @@ describe("accounts by passkey", () => {
   it("won't make an account without a name", async () => {
     const res = await request(new Jar(), "/api/passkeys/register/options", { json: { name: "   " } });
     expect(res.status).toBe(400);
+  });
+
+  it("won't make an account without an email", async () => {
+    for (const email of [undefined, "", "not an email", "ana@nowhere"]) {
+      const res = await request(new Jar(), "/api/passkeys/register/options", { json: { name: "Ana", email } });
+      expect(res.status).toBe(400);
+    }
+  });
+
+  it("gets someone with no passkey left back in by an emailed link: for that account, once, signing nobody in by itself", async () => {
+    const email = emailFor("Ana");
+    const phone = new Jar();
+    await signUp(phone, "Ana", new Authenticator(), email);
+    const id = await startGroup(phone, "Lost crew", "Ana");
+    const mailTo = async (to: string) =>
+      ((await (await fetch(new URL("/api/mail-log", baseUrl))).json()) as { to: string; text: string }[]).filter((m) => m.to === to);
+
+    // Asking says the same whether or not the email has an account; only one that has gets a link.
+    const laptop = new Jar();
+    const asked = await request(laptop, "/api/recover", { form: { email: ` ${email.toUpperCase()} ` } });
+    expect(asked.status).toBe(303);
+    expect(asked.headers.get("location")).toBe("/recover?sent=1");
+    const nobody = emailFor("Nobody");
+    expect((await request(laptop, "/api/recover", { form: { email: nobody } })).headers.get("location")).toBe("/recover?sent=1");
+    expect(await mailTo(nobody)).toEqual([]);
+    expect((await request(laptop, "/api/recover", { form: { email: "nope" } })).headers.get("location")).toBe("/recover?error=email");
+
+    const [mail] = await mailTo(email);
+    const link = /(\S+)\/add-device\?code=([2-9A-Z]{24})/.exec(mail.text);
+    expect(link?.[1]).toBe(origin);
+    const code = link![2];
+
+    // Opening the link names the account and signs nobody in; the passkey made with it does.
+    expect((await page(laptop, `/add-device?code=${code}`)).querySelector("h1")?.textContent).toBe("Add this device to Ana's Spots");
+    expect(await you(laptop, id)).toBe("");
+    const add = async (jar: Jar) => {
+      const res = await request(jar, "/api/passkeys/register/options", { json: { code } });
+      if (!res.ok) return res;
+      return request(jar, "/api/passkeys/register/verify", { json: new Authenticator().create(await res.json(), origin) });
+    };
+    expect((await add(laptop)).status).toBe(200);
+    expect(await you(laptop, id)).toBe("Ana");
+
+    // Once only, and then it says so.
+    const again = await add(new Jar());
+    expect(again.status).toBe(400);
+    expect((await again.json()).error).toContain("link");
+    expect((await page(new Jar(), `/add-device?code=${code}`)).querySelector(".notice")?.textContent).toContain("Get a new one");
+  });
+
+  it("never sends a link to a made-up forwarded host, and stops sending after a few asks", async () => {
+    const sentTo = async (email: string) =>
+      ((await (await fetch(new URL("/api/mail-log", baseUrl))).json()) as { to: string }[]).filter((m) => m.to === email).length;
+    const email = emailFor("Kai");
+    await signUp(new Jar(), "Kai", new Authenticator(), email);
+
+    await fetch(new URL("/api/recover", baseUrl), {
+      method: "POST",
+      headers: { origin: "https://evil.fly.dev", "x-forwarded-host": "evil.fly.dev", "x-forwarded-proto": "https" },
+      body: new URLSearchParams({ email }),
+      redirect: "manual",
+    });
+    expect(await sentTo(email)).toBe(0);
+
+    const other = emailFor("Lou");
+    await signUp(new Jar(), "Lou", new Authenticator(), other);
+    for (let i = 0; i < 5; i++) await request(new Jar(), "/api/recover", { form: { email: other } });
+    expect(await sentTo(other)).toBe(3);
+  });
+
+  it("keeps an email on the account, changed on My account and never shown in a group", async () => {
+    const ana = new Jar();
+    const id = await startGroup(ana, "Email crew", "Ana");
+    const fresh = emailFor("Annie");
+    expect((await request(ana, "/api/account", { form: { email: fresh } })).headers.get("location")).toBe("/me?done=email#you");
+    expect((await page(ana, "/me")).querySelector<HTMLInputElement>('input[name="email"]')?.value).toBe(fresh);
+    expect((await request(ana, "/api/account", { form: { email: "nope" } })).headers.get("location")).toBe("/me?error=email#you");
+    expect((await page(ana, "/me")).querySelector<HTMLInputElement>('input[name="email"]')?.value).toBe(fresh);
+    const ben = new Jar();
+    await join(ben, id, id, "Ben");
+    expect((await request(ben, `/g/${id}`).then((r) => r.text())).includes(fresh)).toBe(false);
   });
 
   it("joins a signed-in person to a group as themselves, with one tap", async () => {

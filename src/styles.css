@@ -2885,6 +2885,18 @@ html:not(.in-app) .no-passkey__app {
   text-transform: uppercase;
 }
 
+/* (the email field types as it is, not upper case like a code) */
+.recover__form input {
+  font-size: 1rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.recover__form .btn {
+  flex: none;
+  white-space: nowrap;
+}
+
 .notice-page h1 {
   font-size: clamp(1.9rem, 7vw, 2.4rem);
   letter-spacing: -0.02em;
@@ -3287,11 +3299,27 @@ h3.lists__head {
   display: inline-flex;
 }
 
-.account__name-note {
+/* (the name and email rows, parted by a hairline from where the words start) */
+.account > form + form {
+  position: relative;
+}
+
+.account > form + form::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.account__name-note,
+.account__email-note {
   display: none;
 }
 
-form.list:focus-within + .account__name-note {
+.account:has(form:first-child:focus-within) + .account__name-note,
+.account:has(form:last-child:focus-within) ~ .account__email-note {
   display: block;
 }
 
@@ -9129,7 +9157,8 @@ dialog.sheet[open]:not(:modal) {
   display: none;
 }
 
-.welcome__field:has(.welcome__you:empty) input {
+.welcome__field:has(.welcome__you:empty) input,
+.welcome__field--email input {
   padding-left: 1rem;
 }
 

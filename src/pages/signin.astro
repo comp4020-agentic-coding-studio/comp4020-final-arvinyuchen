@@ -3,8 +3,10 @@ import NoPasskey from "../components/NoPasskey.astro";
 import Base from "../layouts/Base.astro";
 import { nextPath, signedIn } from "../lib/me";
 
-// The way in: a passkey you have, or a new account (your name and a new
-// passkey). Either way you go on to ?next=, or your groups.
+// The way in: a passkey you have, or a new account (your name, your email
+// and a new passkey). Either way you go on to ?next=, or your groups. A
+// passkey on another device adds this one with a code; with none left,
+// the email gets a link (src/pages/recover.astro).
 const next = nextPath(Astro.url.searchParams.get("next"));
 if (signedIn(Astro.cookies)) return Astro.redirect(next, 303);
 ---
@@ -20,6 +22,8 @@ if (signedIn(Astro.cookies)) return Astro.redirect(next, 303);
       <p class="fine">
         Passkey on another device?{" "}
         <a href={`/add-device${next !== "/me" ? `?next=${encodeURIComponent(next)}` : ""}`}>Add this one with a code</a>
+        <br />
+        Lost your passkey? <a href="/recover">Get a link by email</a>
       </p>
 
       <form class="stack signin__new" data-account="new" data-then={next}>
@@ -28,9 +32,13 @@ if (signedIn(Astro.cookies)) return Astro.redirect(next, 303);
           <span>Your name</span>
           <input name="name" required maxlength="40" placeholder="What your friends call you" autocomplete="nickname" data-hint="Type your name, so your friends know it's you." />
         </label>
+        <label>
+          <span>Your email</span>
+          <input name="email" type="email" required maxlength="254" placeholder="you@example.com" autocomplete="email" data-hint="Type your email: it gets you back in if you lose your passkey." />
+        </label>
         <button class="btn">Make an account</button>
         <span class="passkey-msg" aria-live="polite"></span>
-        <p class="fine">Just your name and a passkey.</p>
+        <p class="fine">The email only gets you back in if you lose your passkey.</p>
       </form>
     </div>
     <NoPasskey to="sign in" />

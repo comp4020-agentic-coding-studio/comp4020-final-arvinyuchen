@@ -2,15 +2,18 @@ import { createHash, randomBytes } from "node:crypto";
 import { db } from "./db";
 
 // Accounts, passkeys and sessions (tables in src/lib/db.ts). An account is
-// a name and the passkeys that can sign in as it: no password, no email.
+// a name, an email and the passkeys that can sign in as it: no password.
 // It can have several passkeys (a phone's, a laptop's that doesn't share
-// with it), never none.
+// with it), never none. The email never signs in: it only gets the link
+// that lets a device make a passkey, once they're all lost.
 
 export interface Account {
   id: number;
   /** The WebAuthn user handle: random, never shown. */
   handle: string;
   name: string;
+  /** Where a lost-passkey link goes; accounts from before it was asked for have none. */
+  email: string | null;
   /** May use /admin (see src/lib/admin.ts). */
   isAdmin: boolean;
 }
@@ -32,16 +35,37 @@ export interface StoredPasskey {
 
 export const newHandle = () => randomBytes(16).toString("base64url");
 
-export function createAccount(handle: string, name: string): Account {
-  const { lastInsertRowid } = db.prepare("INSERT INTO accounts (handle, name) VALUES (?, ?)").run(handle, name);
-  return { id: Number(lastInsertRowid), handle, name, isAdmin: false };
+export function createAccount(handle: string, name: string, email: string | null): Account {
+  const { lastInsertRowid } = db
+    .prepare("INSERT INTO accounts (handle, name, email) VALUES (?, ?, ?)")
+    .run(handle, name, email);
+  return { id: Number(lastInsertRowid), handle, name, email, isAdmin: false };
 }
 
 type AccountRow = Omit<Account, "isAdmin"> & { isAdmin: number };
 const toAccount = (row: AccountRow | undefined): Account | undefined => row && { ...row, isAdmin: row.isAdmin === 1 };
+const COLUMNS = "id, handle, name, email, is_admin AS isAdmin";
 
 export const getAccount = (id: number): Account | undefined =>
-  toAccount(db.prepare("SELECT id, handle, name, is_admin AS isAdmin FROM accounts WHERE id = ?").get(id) as AccountRow);
+  toAccount(db.prepare(`SELECT ${COLUMNS} FROM accounts WHERE id = ?`).get(id) as AccountRow);
+
+/** An email as it's kept (trimmed, lower case), or null if it doesn't look like one. */
+export function cleanEmail(value: unknown): string | null {
+  const email = String(value ?? "").trim().toLowerCase();
+  return email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+}
+
+export function setEmail(accountId: number, email: string): void {
+  db.prepare("UPDATE accounts SET email = ? WHERE id = ?").run(email, accountId);
+}
+
+/** The accounts with this email (one person may have made more than one), newest first. */
+export const accountsByEmail = (email: string): Account[] =>
+  (
+    db
+      .prepare(`SELECT ${COLUMNS} FROM accounts WHERE email = ? ORDER BY id DESC LIMIT 3`)
+      .all(email) as AccountRow[]
+  ).map((row) => toAccount(row)!);
 
 /**
  * One account, one name: renaming it renames its member in every group,
@@ -194,7 +218,7 @@ export function accountForSession(token: string | undefined): Account | undefine
   return toAccount(
     db
       .prepare(
-        `SELECT a.id, a.handle, a.name, a.is_admin AS isAdmin FROM sessions s JOIN accounts a ON a.id = s.account_id
+        `SELECT a.id, a.handle, a.name, a.email, a.is_admin AS isAdmin FROM sessions s JOIN accounts a ON a.id = s.account_id
           WHERE s.token_hash = ? AND s.expires_at > datetime('now')`,
       )
       .get(hash(token)) as AccountRow,
@@ -211,23 +235,37 @@ export function endSession(token: string | undefined): void {
  * and its QR code; on the new one, the code lets you make a passkey there
  * for your account, and is gone. It never signs anyone in by itself: only
  * the passkey it makes does. Ten minutes, once, the newest only.
+ *
+ * With every device lost, the same thing comes by email instead
+ * (src/pages/recover.astro): a long code, in a link, for 30 minutes.
  */
 const DEVICE_CODE_MINUTES = 10;
+const EMAIL_CODE_MINUTES = 30;
 // (no 0, O, 1 or I: read off one screen, typed into another)
 const CODE_LETTERS = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 const plainCode = (code: string) => code.toUpperCase().replace(/[^0-9A-Z]/g, "");
+/** An emailed code, not one read off a screen: it's longer. */
+export const isEmailCode = (code: string) => plainCode(code).length > 8;
 
-/** A new code for the account, as XXXX-XXXX; any earlier one stops working. */
-export function newDeviceCode(accountId: number): string {
-  const code = [...randomBytes(8)].map((b) => CODE_LETTERS[b % CODE_LETTERS.length]).join("");
+function newCode(accountId: number, length: number, minutes: number): string {
+  const code = [...randomBytes(length)].map((b) => CODE_LETTERS[b % CODE_LETTERS.length]).join("");
   db.transaction(() => {
     db.prepare("DELETE FROM device_codes WHERE account_id = ? OR expires_at <= datetime('now')").run(accountId);
     db.prepare(
-      `INSERT INTO device_codes (code_hash, account_id, expires_at) VALUES (?, ?, datetime('now', '+${DEVICE_CODE_MINUTES} minutes'))`,
+      `INSERT INTO device_codes (code_hash, account_id, expires_at) VALUES (?, ?, datetime('now', '+${minutes} minutes'))`,
     ).run(hash(code), accountId);
   })();
+  return code;
+}
+
+/** A new code for the account, as XXXX-XXXX; any earlier one stops working. */
+export function newDeviceCode(accountId: number): string {
+  const code = newCode(accountId, 8, DEVICE_CODE_MINUTES);
   return `${code.slice(0, 4)}-${code.slice(4)}`;
 }
+
+/** A new code for an emailed link (24 letters, too many to guess); any earlier one stops working. */
+export const newEmailCode = (accountId: number): string => newCode(accountId, 24, EMAIL_CODE_MINUTES);
 
 /** Whose account a code adds a device to, while it works. */
 export function accountForDeviceCode(code: string): Account | undefined {
@@ -247,4 +285,4 @@ export function useDeviceCode(code: string, accountId: number): boolean {
   );
 }
 
-export { DEVICE_CODE_MINUTES, SESSION_DAYS };
+export { DEVICE_CODE_MINUTES, EMAIL_CODE_MINUTES, SESSION_DAYS };

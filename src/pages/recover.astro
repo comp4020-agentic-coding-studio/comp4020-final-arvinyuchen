@@ -1,0 +1,51 @@
+---
+import Base from "../layouts/Base.astro";
+import { EMAIL_CODE_MINUTES } from "../lib/accounts";
+import { signedIn } from "../lib/me";
+
+// Lost every passkey: type the account's email and get a link
+// (src/pages/api/recover.ts). It says the same thing whether or not that
+// email has an account.
+if (signedIn(Astro.cookies)) return Astro.redirect("/me", 303);
+const sent = Astro.url.searchParams.has("sent");
+const error = Astro.url.searchParams.get("error");
+---
+
+<Base title="Lost your passkey · Spots">
+  <section class="card notice-page recover">
+    <p class="eyebrow">Lost your passkey</p>
+    {sent ? (
+      <>
+        <h1>Check your email</h1>
+        <p>
+          If that's the email on a Spots account, a link is on its way. Open it on the device you want to use: it makes a
+          new passkey there. It works once, for {EMAIL_CODE_MINUTES} minutes.
+        </p>
+        <p class="fine">Nothing after a few minutes? Look in spam, or <a href="/recover">try again</a>.</p>
+      </>
+    ) : (
+      <>
+        <h1>Get back in by email</h1>
+        <p>Type the email on your account. We'll send a link that makes a new passkey on this device.</p>
+        {error === "email" && <p class="notice" role="alert">That doesn't look like an email. Check it and try again.</p>}
+        <form method="post" action="/api/recover" class="add-device__form recover__form">
+          <label for="recover-email" class="sr-only">Your email</label>
+          <input
+            id="recover-email"
+            name="email"
+            type="email"
+            required
+            maxlength="254"
+            autocomplete="email"
+            placeholder="you@example.com"
+            data-hint="Type the email on your account."
+          />
+          <button class="btn">Send link</button>
+        </form>
+        <p class="fine card__actions">
+          Still have a device that's signed in? <a href="/add-device">Add this one with a code</a> instead.
+        </p>
+      </>
+    )}
+  </section>
+</Base>
