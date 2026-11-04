@@ -10,8 +10,8 @@ follow from it; every change has to hold to them.
   Explore. A group's members, list and votes never leave that group: another
   group may see that a place is "on 3 lists", never whose lists or who's keen.
 - **Before joining, the link shows a preview, not the group.** Someone who
-  isn't a member sees only the group's name, who started it, its members'
-  names, the owner's note to invitees, and its first three places, oldest
+  isn't a member sees only the group's name, who started it, its members
+  (two more by name, the rest a count: "with Mia, Leo +1"), the owner's note to invitees, and its first three places, oldest
   first, so the order gives away no votes, pinned on a small map of just
   those three (`src/components/MiniMap.astro`). The server doesn't render the
   list, keens, Explore, the group's map or the invite card for them
