@@ -2603,8 +2603,8 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   }
 
   /* The box runs to the screen's edges, so a card's shadow isn't cut at
-     its sides, and fades what scrolls out at its top edge rather than
-     slicing it square (its first 0.6rem is that fade, empty at rest). */
+     its sides; what scrolls out at its top fades (below), its first 0.6rem
+     empty at rest for that. */
   .group-page.is-tabbed[data-tab="explore"] .explore-scroll {
     display: block;
     flex: 1 1 auto;
@@ -2614,7 +2614,23 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
     padding: 0.6rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left));
     overflow-y: auto;
     overscroll-behavior: contain;
-    mask-image: linear-gradient(transparent, #000 0.6rem);
+  }
+
+  /* What scrolls out at the box's top fades into the page rather than being
+     sliced square: a band of the page's grey over the cards, 0.6rem deep at
+     rest and, while the search is pinned, down to the search's foot, so the
+     cards fade out behind it (the page's script sets where). A band, not a
+     mask on the box, so the pinned search itself never fades. */
+  .group-page.is-tabbed[data-tab="explore"] .explore-wrap::after {
+    position: absolute;
+    z-index: 2;
+    top: var(--fade-top, 100%);
+    right: calc(-1 * max(1rem, env(safe-area-inset-right)));
+    left: calc(-1 * max(1rem, env(safe-area-inset-left)));
+    height: var(--fade-height, 0.6rem);
+    background: linear-gradient(var(--bg) var(--fade-solid, 0%), transparent);
+    pointer-events: none;
+    content: "";
   }
 
   .group-page.is-tabbed[data-tab="explore"] .explore-head {
@@ -2632,8 +2648,8 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
 
   /* Once the search has scrolled up out of the box, it's pinned over the
      box's top (the page's script sets where), floating in a frosted pill
-     like the tabs' at the screen's foot, so it's never a scroll away. Its
-     field and Find stay where they were; its slot keeps its room. */
+     like the tabs' at the screen's foot, as wide as the cards and the map,
+     so it's never a scroll away. Its slot keeps its room. */
   .group-page.is-tabbed[data-tab="explore"] .explore-wrap {
     position: relative;
   }
@@ -2646,8 +2662,8 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
     position: absolute;
     z-index: 3;
     top: calc(var(--pin-top) - 0.3rem);
-    left: calc(var(--pin-left) - 0.3rem);
-    width: calc(var(--pin-width) + 0.6rem);
+    left: var(--pin-left);
+    width: var(--pin-width);
     padding: 0.3rem;
     border: 0.5px solid rgb(0 0 0 / 8%);
     border-radius: 999px;

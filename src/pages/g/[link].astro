@@ -1490,18 +1490,28 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     // out of it, it's pinned over the box's top, where it was when it went.
     const askSlot = document.querySelector(".ask-slot");
     const exploreBox = document.querySelector(".explore-scroll");
-    const PIN_BELOW = 16;
+    const PIN_BELOW = 2;
     function pinAsk() {
       if (!askSlot || !exploreBox) return;
       const box = exploreBox.getBoundingClientRect();
       const slot = askSlot.getBoundingClientRect();
-      const pinned = getComputedStyle(exploreBox).overflowY === "auto" && box.height > 0 && slot.top < box.top + PIN_BELOW;
+      const boxed = getComputedStyle(exploreBox).overflowY === "auto" && box.height > 0;
+      const pinned = boxed && slot.top < box.top + PIN_BELOW;
       askSlot.classList.toggle("is-pinned", pinned);
+      if (!boxed) return;
+      // (and the fade over the box's top: to the pinned search's foot, its
+      // frosted rim 0.3rem round it, or at rest just the box's first 0.6rem)
+      const wrapEl = exploreBox.parentElement;
+      const wrap = wrapEl.getBoundingClientRect();
+      wrapEl.style.setProperty("--fade-top", `${box.top - wrap.top + (pinned ? PIN_BELOW - 5 : 0)}px`);
+      wrapEl.style.setProperty("--fade-height", pinned ? `${slot.height + 10}px` : "0.6rem");
+      wrapEl.style.setProperty("--fade-solid", pinned ? "45%" : "0%");
       if (!pinned) return;
-      const wrap = exploreBox.parentElement.getBoundingClientRect();
       askSlot.style.setProperty("--pin-top", `${box.top - wrap.top + PIN_BELOW}px`);
-      askSlot.style.setProperty("--pin-left", `${slot.left - wrap.left}px`);
-      askSlot.style.setProperty("--pin-width", `${slot.width}px`);
+      // (as wide as the cards under it, and the map over it)
+      const cards = document.querySelector("#explore").getBoundingClientRect();
+      askSlot.style.setProperty("--pin-left", `${cards.left - wrap.left}px`);
+      askSlot.style.setProperty("--pin-width", `${cards.width}px`);
     }
     // New answers (a search, a kind) start just under the pinned search,
     // not somewhere above it where the old cards had been scrolled to.
@@ -1512,6 +1522,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     }
     exploreBox?.addEventListener("scroll", pinAsk, { passive: true });
     window.addEventListener("resize", pinAsk);
+    pinAsk();
     // A kind chip (src/scripts/map.ts says which) and "Show more" ask for
     // Explore's cards again, in place; the map's own kind follows the chip.
     document.addEventListener("spots:kind", (event) => {
