@@ -1091,13 +1091,13 @@ input[type="file"]::file-selector-button {
   height: 0.7rem;
 }
 
-/* (on a picture, the name and credit sit on a shade to be read) */
+/* (on its illustration, the kind's name sits on the paper in the kind's
+   colour, "Illustration" quietly beside it) */
 .photo--art figcaption {
-  background: linear-gradient(transparent, rgb(0 0 0 / 45%));
+  color: var(--muted);
 }
 
 .photo--art .photo__kind {
-  color: #fff;
   opacity: 1;
 }
 
@@ -4153,14 +4153,65 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   min-width: 0;
 }
 
-/* (the photo across the group's panel: wide screens only, below) */
-.group-head__photo {
-  display: none;
-}
-
 .group-head h1 {
   margin-bottom: 0.4rem;
   overflow-wrap: anywhere;
+}
+
+/* The group's panel, a card on every screen: its name, who's in, you, and
+   the invite */
+.group-head.group-head--split {
+  display: grid;
+  justify-content: stretch;
+  align-items: start;
+  gap: 0.9rem;
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+
+/* the home page's Canberra, a strip across the top of the panel */
+.group-head.group-head--split {
+  overflow: hidden;
+}
+
+.group-head .who {
+  --ring-gap: var(--card);
+}
+
+.group-head__photo {
+  display: block;
+  order: -1;
+  height: 6.5rem;
+  margin: -1.25rem -1.25rem 0.1rem;
+}
+
+.group-head__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 58%;
+}
+
+.group-head .invite {
+  position: relative;
+  justify-items: stretch;
+}
+
+.group-head .invite__open {
+  justify-self: stretch;
+  justify-content: center;
+}
+
+/* opened, the invite unfolds inside the panel (on a wide screen the column
+   scrolls, so a card floating out of it would be cut off) */
+.group-head .invite .share {
+  position: static;
+  width: auto;
+  box-shadow: none;
+  padding: 0.25rem 0 0;
 }
 
 /* The invite, folded into its button (a <details>) beside the group's name;
@@ -4502,63 +4553,9 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
     scrollbar-width: thin;
   }
 
-  /* the group's panel: its name, who's in, you, and the invite */
-  .group-head.group-head--split {
-    display: grid;
-    justify-content: stretch;
-    align-items: start;
-    gap: 0.9rem;
-    padding: 1.25rem;
-    border-radius: var(--radius);
-    background: var(--card);
-    box-shadow: var(--shadow-sm);
-  }
-
   .group-head h1 {
     margin: 0 0 0.5rem;
     font-size: 1.85rem;
-  }
-
-  /* the home page's Canberra, a strip across the top of the panel */
-  .group-head.group-head--split {
-    overflow: hidden;
-  }
-
-  .group-head .who {
-    --ring-gap: var(--card);
-  }
-
-  .group-head__photo {
-    display: block;
-    order: -1;
-    height: 6.5rem;
-    margin: -1.25rem -1.25rem 0.1rem;
-  }
-
-  .group-head__img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: 50% 58%;
-  }
-
-  .invite {
-    position: relative;
-    justify-items: stretch;
-  }
-
-  .invite__open {
-    justify-content: center;
-  }
-
-  /* opened, the invite unfolds inside the panel (the column scrolls, so a
-     card floating out of it would be cut off) */
-  .invite .share {
-    position: static;
-    width: auto;
-    box-shadow: none;
-    padding: 0.25rem 0 0;
   }
 
   /* the tabs, under the panel: Our list is always here, so no tab for it */

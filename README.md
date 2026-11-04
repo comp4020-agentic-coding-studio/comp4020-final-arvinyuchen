@@ -132,8 +132,8 @@ other's taste.
   proved hopeless (Commons has few, and a venue's own are its own), so a
   place a person shares has the photo they upload, if any, kept with its
   location and every other bit of metadata stripped, and credited to them.
-  One without isn't turned away: its card shows its kind's picture, one
-  from Unsplash for each kind, named with the kind, so it's never taken
+  One without isn't turned away: its card shows its kind's picture, an
+  illustration drawn for each kind in the starter places' style, named with the kind, so it's never taken
   for a photo of that place. Both street maps, the group's and the invite's small one, are
   OpenFreeMap's tiles recoloured to look like Apple Maps, with city parks
   in green, hairline side streets, hills shaded from Mapzen's open terrain

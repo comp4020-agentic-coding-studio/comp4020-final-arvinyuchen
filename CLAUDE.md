@@ -23,7 +23,8 @@ follow from it; every change has to hold to them.
   uploads (`src/lib/photos.ts`) is re-encoded with all its metadata (GPS
   among it) stripped and credited to them; a place shared without one
   still gets in, and its card shows its kind's picture
-  (`src/lib/kind-art.ts`, from Unsplash), named with the kind so it isn't
+  (`src/lib/kind-art.ts`, an illustration drawn for the kind in the
+  starter places' style, `public/kinds/`), named with the kind so it isn't
   taken for that place. Nothing is fetched to give a place a photo, and it
   never takes a photo's address from the browser. The first starter places,
   and places shared before, keep the credited Commons photos they have; the
@@ -332,7 +333,8 @@ follow from it; every change has to hold to them.
   that stays, as #41 had), Explore's cards inside their column (or Share,
   or Settings), and the map fills its own. This replaced the page scrolling
   the left column beside sticky ones (#97), whose tops came apart (#115).
-  Phones and tablets are one column, unchanged.
+  Phones and tablets are one column, opening on the same panel: a card
+  with Canberra across its top, the group's name, who's in and Invite.
 
 ## The work
 
