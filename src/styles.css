@@ -9202,9 +9202,13 @@ dialog.sheet[open]:not(:modal) {
   pointer-events: none;
 }
 
+/* (a face of its own, inside the chip: not the overlapping, ringed faces
+   of a row of them) */
 .welcome__was-one .face {
   width: 1.6rem;
   height: 1.6rem;
+  margin-left: 0;
+  border: 0;
   font-size: 0.75rem;
 }
 
