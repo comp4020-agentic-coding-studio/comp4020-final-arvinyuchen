@@ -1480,6 +1480,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     const tabLinks = [...document.querySelectorAll(".tabs a[data-tab]")];
     const panels = [...document.querySelectorAll("[data-panel]")];
     const wide = matchMedia("(min-width: 1180px)");
+    const pill = document.querySelector(".section-nav.tabs");
     const tabOf = (hash) => {
       if (/^#(explore|explore-section)$/.test(hash)) return "explore";
       if (hash === "#add") return "add";
@@ -1499,6 +1500,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
         if (a.dataset.tab === beside) a.setAttribute("aria-current", "page");
         else a.removeAttribute("aria-current");
       }
+      pill.classList.remove("is-tucked");
       // (a map shown again takes its size)
       window.dispatchEvent(new Event("resize"));
       // The tab opens at its top, under the tabs, never scrolled half way.
@@ -1509,6 +1511,25 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     }
     page.classList.add("is-tabbed");
     show(tab, false);
+    // On a phone the tabs float as a pill over the foot of the screen
+    // (styles.css): it tucks away while you scroll down to read, and is
+    // back when you scroll up, near the top or the end, or change tab.
+    // Explore scrolls in a box of its own there, so a scroll anywhere counts.
+    const phone = matchMedia("(max-width: 600px)");
+    const lastTop = new WeakMap();
+    document.addEventListener(
+      "scroll",
+      (event) => {
+        const box = event.target === document ? document.scrollingElement : event.target;
+        if (!phone.matches || !(box instanceof Element) || box.scrollHeight <= box.clientHeight) return;
+        const top = box.scrollTop;
+        const moved = top - (lastTop.get(box) ?? top);
+        lastTop.set(box, top);
+        if (top < 40 || top + box.clientHeight >= box.scrollHeight - 8 || moved < -6) pill.classList.remove("is-tucked");
+        else if (moved > 6) pill.classList.add("is-tucked");
+      },
+      { capture: true, passive: true },
+    );
     // (a link to one card, like a vote without the script, still lands on
     // it; on a wide screen one to what's beside the list is already in
     // view, and the page stays at its top)
