@@ -767,23 +767,32 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           <h2 id="explore-title">Explore</h2>
           <button type="button" class="show-all" data-show-all hidden>Show all</button>
         </div>
-        <form class="ask" method="get" action={`/g/${group.link}#explore`} role="search" data-search>
-          <label for="ask-q" class="sr-only">Describe what you're after</label>
-          <svg class="ask__glass" viewBox="0 0 20 20" aria-hidden="true">
-            <path d="M8.75 15a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Zm4.5-1.75 4.25 4.25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
-          </svg>
-          <input
-            id="ask-q"
-            name="q"
-            type="search"
-            enterkeyhint="search"
-            value={q}
-            maxlength="200"
-            autocomplete="off"
-            placeholder="Describe it: “cheap dumplings near Dickson”, “a walk with a view”"
-          />
-          <button class="btn">Find</button>
-        </form>
+        {/* (its slot keeps its room while, on a phone's Explore, the search
+            itself is pinned over the top of the scrolled cards) */}
+        <div class="ask-slot">
+          <form class="ask" method="get" action={`/g/${group.link}#explore`} role="search" data-search>
+            <label for="ask-q" class="sr-only">Describe what you're after</label>
+            <svg class="ask__glass" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M8.75 15a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Zm4.5-1.75 4.25 4.25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
+            </svg>
+            <span class="ask__field">
+              <input
+                id="ask-q"
+                name="q"
+                type="search"
+                enterkeyhint="search"
+                value={q}
+                maxlength="200"
+                autocomplete="off"
+                placeholder="Describe it: “cheap dumplings near Dickson”, “a walk with a view”"
+              />
+              <button type="button" class="ask__clear" aria-label="Clear the search" data-clear-search hidden={!q}>
+                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+              </button>
+            </span>
+            <button class="btn">Find</button>
+          </form>
+        </div>
         {/* (while a search is out, a quiet line says so, heard as well as seen) */}
         <p class="ask-status" aria-live="polite" data-ask-status></p>
         {/* (the kinds need the script that filters by them, so it shows them) */}
@@ -1431,6 +1440,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       const url = exploreUrl({ q }) + "#explore";
       if (push) history.pushState(null, "", url);
       await showExplore(url, true);
+      toAnswers();
     }
     // "Near your plan" on or off; from the plan's "Find food nearby", on,
     // with that kind chosen (src/scripts/map.ts takes spots:filter), and
@@ -1454,18 +1464,62 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       event.preventDefault();
       showSearch(askInput.value.trim(), true);
     });
+    // The field's × (shown while there's something to clear), or "Show
+    // every place": back to every place in one tap. Emptying the field by
+    // hand does the same, so a search never needs Find to undo it.
+    const askClear = ask?.querySelector(".ask__clear");
+    const searchedFor = () => document.querySelector("#explore")?.dataset.q;
+    const showClear = () => {
+      if (askClear) askClear.hidden = !askInput.value && searchedFor() === undefined;
+    };
     document.addEventListener("click", (event) => {
       if (!event.target.closest("[data-clear-search]")) return;
       event.preventDefault();
       askInput.value = "";
-      showSearch("", true);
+      showClear();
+      if (searchedFor() !== undefined) showSearch("", true);
+      else askInput.focus();
     });
+    askInput?.addEventListener("input", () => {
+      showClear();
+      if (!askInput.value && searchedFor() !== undefined) showSearch("", true);
+    });
+    document.addEventListener("spots:refreshed", showClear);
+    // On a phone's Explore the cards scroll in a box of their own
+    // (styles.css, "Explore on a phone"): once the search has scrolled up
+    // out of it, it's pinned over the box's top, where it was when it went.
+    const askSlot = document.querySelector(".ask-slot");
+    const exploreBox = document.querySelector(".explore-scroll");
+    const PIN_BELOW = 12;
+    function pinAsk() {
+      if (!askSlot || !exploreBox) return;
+      const box = exploreBox.getBoundingClientRect();
+      const slot = askSlot.getBoundingClientRect();
+      const pinned = getComputedStyle(exploreBox).overflowY === "auto" && box.height > 0 && slot.top < box.top + PIN_BELOW;
+      askSlot.classList.toggle("is-pinned", pinned);
+      if (!pinned) return;
+      const wrap = exploreBox.parentElement.getBoundingClientRect();
+      askSlot.style.setProperty("--pin-top", `${box.top - wrap.top + PIN_BELOW}px`);
+      askSlot.style.setProperty("--pin-left", `${slot.left - wrap.left}px`);
+      askSlot.style.setProperty("--pin-width", `${slot.width}px`);
+      askSlot.style.setProperty("--pin-above", `${PIN_BELOW}px`);
+      askSlot.style.setProperty("--pin-gutter", `${slot.left - box.left}px`);
+    }
+    // New answers (a search, a kind) start just under the pinned search,
+    // not somewhere above it where the old cards had been scrolled to.
+    function toAnswers() {
+      if (!askSlot?.classList.contains("is-pinned")) return;
+      const at = document.querySelector("#explore").getBoundingClientRect().top - exploreBox.getBoundingClientRect().top;
+      exploreBox.scrollTop += at - (PIN_BELOW + askSlot.offsetHeight + 16);
+    }
+    exploreBox?.addEventListener("scroll", pinAsk, { passive: true });
+    window.addEventListener("resize", pinAsk);
     // A kind chip (src/scripts/map.ts says which) and "Show more" ask for
     // Explore's cards again, in place; the map's own kind follows the chip.
     document.addEventListener("spots:kind", (event) => {
       const url = exploreUrl({ kind: event.detail });
       history.replaceState(history.state, "", url + location.hash);
-      showExplore(url, false);
+      showExplore(url, false).then(toAnswers);
     });
     document.addEventListener("click", (event) => {
       const more = event.target.closest("[data-more-link]");
@@ -1492,6 +1546,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       const nearWas = explore?.dataset.near !== undefined;
       if (q === (explore?.dataset.q ?? "") && params.has("near") === nearWas) return;
       askInput.value = q;
+      showClear();
       if (q !== (explore?.dataset.q ?? "")) showSearch(q, false);
       else showExplore(location.href, false);
     });

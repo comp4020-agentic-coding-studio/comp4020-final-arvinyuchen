@@ -289,7 +289,9 @@ follow from it; every change has to hold to them.
   is close enough, say so; don't pad with the least-bad matches: a
   prompt with a word no card uses whose best match stands out only
   weakly ("Ethiopian food", `UNHEARD_LIFT`) is asking for something no
-  place has, and gets nothing.
+  place has, and gets nothing. The field's × (or emptying it) is every
+  place again in one tap; on a phone's Explore the search stays pinned
+  over the cards once they've scrolled it away.
 - **The embeddings key stays on the server.** `VOYAGE_API_KEY` is a Fly secret
   (and lives in `mise.local.toml` locally); it never goes to the browser or
   into git. Without it, or with Voyage down, search falls back to matching

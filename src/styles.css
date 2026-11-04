@@ -1329,6 +1329,49 @@ input[type="file"]::file-selector-button {
   padding: 0 1.1rem;
 }
 
+/* The field and its ×, which empties it and, after a search, shows every
+   place again (the browser's own × is hidden, so there's one). */
+.ask__field {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.ask input::-webkit-search-cancel-button {
+  display: none;
+  -webkit-appearance: none;
+}
+
+.ask__field:has(.ask__clear:not([hidden])) input {
+  padding-right: 2.6rem;
+}
+
+.ask__clear {
+  position: absolute;
+  top: 50%;
+  right: 0.4rem;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  translate: 0 -50%;
+}
+
+.ask__clear:hover {
+  color: var(--ink);
+}
+
+.ask__clear[hidden] {
+  display: none;
+}
+
 .ask-meta {
   margin: 0 0 0.8rem;
   font-size: 0.9rem;
@@ -2585,6 +2628,34 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   /* (a card brought into view lands just under the fade) */
   .group-page.is-tabbed[data-tab="explore"] .explore-scroll .spot {
     scroll-margin-top: 0.6rem;
+  }
+
+  /* Once the search has scrolled up out of the box, it's pinned over the
+     box's top (the page's script sets where), on a white band across the
+     box, so it's never a scroll away. Its slot keeps its room meanwhile. */
+  .group-page.is-tabbed[data-tab="explore"] .explore-wrap {
+    position: relative;
+  }
+
+  .ask-slot {
+    min-height: 2.75rem;
+  }
+
+  .ask-slot.is-pinned .ask {
+    position: absolute;
+    z-index: 3;
+    top: var(--pin-top);
+    left: var(--pin-left);
+    width: var(--pin-width);
+  }
+
+  .ask-slot.is-pinned .ask::before {
+    position: absolute;
+    z-index: -1;
+    inset: calc(-1 * var(--pin-above)) calc(-1 * var(--pin-gutter)) -0.6rem;
+    background: var(--card);
+    box-shadow: 0 0.3rem 0.9rem rgb(0 0 0 / 0.08);
+    content: "";
   }
 }
 
