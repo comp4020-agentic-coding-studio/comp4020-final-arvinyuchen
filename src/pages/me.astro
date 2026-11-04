@@ -79,6 +79,13 @@ const done = Astro.url.searchParams.get("done");
         </p>
       )}
     </section>
+    {/* (no email yet: asked first, above the groups; the label takes you to its row) */}
+    {!account.email && (
+      <p class="notice" role="status">
+        Add your email: if you lose your passkey, it gets you back in.{" "}
+        <label for="me-email" class="linkish">Add email</label>
+      </p>
+    )}
 
     <h2 class="lists__head" id="groups-title">Groups</h2>
     {groups.length === 0 ? (
@@ -114,9 +121,6 @@ const done = Astro.url.searchParams.get("done");
     {done === "email" && <p class="notice notice--ok" role="status">Saved. A lost-passkey link goes there now.</p>}
     {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
     {error === "email" && <p class="notice" role="alert">That doesn't look like an email. Check it and try again.</p>}
-    {!account.email && !error && (
-      <p class="notice" role="status">Add your email: if you lose your passkey, it gets you back in.</p>
-    )}
     <div class="card list account">
       <form method="post" action="/api/account">
         <label class="row row--field">
@@ -128,7 +132,7 @@ const done = Astro.url.searchParams.get("done");
       <form method="post" action="/api/account">
         <label class="row row--field">
           <span class="row__label">Email</span>
-          <input class="row__input" name="email" type="email" required maxlength="254" value={account.email ?? ""} placeholder="you@example.com" autocomplete="email" data-hint="Type your email: it gets you back in if you lose your passkey." />
+          <input id="me-email" class="row__input" name="email" type="email" required maxlength="254" value={account.email ?? ""} placeholder="you@example.com" autocomplete="email" data-hint="Type your email: it gets you back in if you lose your passkey." />
           <button class="btn btn--small row__save">Save</button>
         </label>
       </form>

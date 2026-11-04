@@ -128,7 +128,7 @@ follow from it; every change has to hold to them.
   made in the same step from a name, an email and a passkey (the home page's
   form, the invite, `/signin`); signed in, joining is one button. One account
   has one name, the same in every group, one email (changed on My account;
-  accounts from before #195 are asked to add one), and one or more passkeys,
+  accounts from before #195 are asked at the top of My groups, #197), and one or more passkeys,
   never none. A
   device without your passkey is added from one signed in: `/add-device`
   there shows a code (and its QR code, ten minutes, once, the newest only),
