@@ -25,7 +25,12 @@ const linking = !account && typed ? accountForDeviceCode(typed) : undefined;
     {account && typed ? (
       <>
         <h1>This device is already you</h1>
-        <p>It's signed in as <strong>{account.name}</strong>. Scan the code with the device you're adding.</p>
+        <p>
+          It's signed in as <strong>{account.name}</strong>.{" "}
+          {isEmailCode(typed)
+            ? "Open the link from the email on the device you're adding, in a window that isn't signed in."
+            : "Scan the code with the device you're adding."}
+        </p>
         <p class="card__actions"><a class="btn" href="/me">My groups</a></p>
       </>
     ) : account ? (
