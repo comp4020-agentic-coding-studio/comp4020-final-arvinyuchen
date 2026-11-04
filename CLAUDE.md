@@ -45,7 +45,8 @@ follow from it; every change has to hold to them.
   Overture Maps' Canberra places on the server first
   (`src/data/places-index.json`, built by `scripts/build-places-index.ts`),
   then OpenStreetMap through Photon. It asks only when someone presses
-  Find, with the app's User-Agent, and caches answers. Keep it that way: no
+  Find, with the app's User-Agent, and caches answers; only someone signed
+  in can ask, 60 new searches an hour each. Keep it that way: no
   search-as-you-type, no autocomplete against Photon. The index
   is only a finder's: none of it is in Explore until someone shares it.
   Overture, Photon, map tiles and data are credited.

@@ -1065,7 +1065,9 @@ if (container) {
       list.replaceChildren(Object.assign(document.createElement("li"), { textContent: "Searching…", className: "fine" }));
       try {
         const res = await fetch(`/api/lookup?q=${encodeURIComponent(text)}`);
-        const results: Found[] = res.ok ? await res.json() : [];
+        // (a search that couldn't be made says so, never "nothing found")
+        if (!res.ok) throw new Error(`lookup ${res.status}`);
+        const results: Found[] = await res.json();
         list.replaceChildren();
         if (!Array.isArray(results) || results.length === 0) {
           list.append(note("Nothing found in Canberra. Check the spelling, or"));
