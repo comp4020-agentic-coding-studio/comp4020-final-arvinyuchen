@@ -23,8 +23,9 @@ RUN pnpm prune --prod
 FROM base
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/dist /app/dist
+COPY --from=build /app/server.mjs /app/server.mjs
 ENV HOST=0.0.0.0
 ENV PORT=8080
 ENV DATABASE_PATH=/data/spots.db
 EXPOSE 8080
-CMD ["node", "./dist/server/entry.mjs"]
+CMD ["node", "./server.mjs"]
