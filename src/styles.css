@@ -1388,6 +1388,16 @@ input[type="file"]::file-selector-button {
   opacity: 0.45;
 }
 
+.ask-status {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.ask-status:empty {
+  display: none;
+}
+
 #explore[data-q] .spots--explore > li {
   animation: answer-in 0.45s both;
 }

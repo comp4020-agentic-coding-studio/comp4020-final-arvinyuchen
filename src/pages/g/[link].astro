@@ -784,6 +784,8 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           />
           <button class="btn">Find</button>
         </form>
+        {/* (while a search is out, a quiet line says so, heard as well as seen) */}
+        <p class="ask-status" aria-live="polite" data-ask-status></p>
         {/* (the kinds need the script that filters by them, so it shows them) */}
         <div class="filters" role="group" aria-label="Show only" data-sel={startKind} hidden>
           {kinds.map((k) => (
@@ -1401,8 +1403,10 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     async function showExplore(url, searched) {
       const button = ask.querySelector("button");
       const explore = document.querySelector("#explore");
+      const status = document.querySelector("[data-ask-status]");
       button.disabled = true;
       explore.classList.add("is-asking");
+      if (searched && status) status.textContent = "Searching…";
       try {
         const html = await (await fetch(current(), { cache: "no-store" })).text();
         const next = new DOMParser().parseFromString(html, "text/html").querySelector("#explore");
@@ -1420,6 +1424,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       } finally {
         button.disabled = false;
         explore.classList.remove("is-asking");
+        if (status) status.textContent = "";
       }
     }
     async function showSearch(q, push) {
