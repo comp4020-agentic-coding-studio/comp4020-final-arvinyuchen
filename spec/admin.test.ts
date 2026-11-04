@@ -60,7 +60,9 @@ describe("site admin", () => {
 
     await groupsAct(boss, "archive", [id]);
     await groupsAct(boss, "purge", [id]);
-    expect((await request(owner, `/g/${id}`)).headers.get("location")).toBe("/");
+    // (gone for good: its link is no group's any more, and says so)
+    expect((await request(owner, `/g/${id}`)).status).toBe(404);
+    expect((await page(owner, `/g/${id}`)).querySelector("h1")?.textContent).toBe("This link isn't a group");
     expect((await page(boss, "/admin")).body.textContent).not.toContain("Test crew 1");
   });
 
