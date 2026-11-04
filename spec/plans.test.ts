@@ -39,11 +39,11 @@ describe("a plan", () => {
   it("is the owner's to start, for a place on the list, one at a time", async () => {
     const c = await crew("Plan crew");
     // before there's one, the owner is offered it; a member sees, quietly,
-    // where it will be and whose it is to start, with nothing to press
+    // that there's none yet and who can make one, with nothing to press
     const owners = (await page(c.ana, c.path)).querySelector("#plans");
     expect(owners?.querySelector("[data-open-start]")).toBeTruthy();
     const members = (await page(c.ben, c.path)).querySelector("#plans");
-    expect(members?.querySelector(".plan--waiting")?.textContent).toContain("Ana picks a day out");
+    expect(members?.querySelector(".plan--waiting")?.textContent).toContain("Ask the group owner to create one");
     expect(members?.querySelector("a, button")).toBeNull();
     // the owner's sheet asks how long; the hours (8am to 11pm) are folded away under it
     const sheet = (await page(c.ana, c.path)).querySelector("#plan-start");
