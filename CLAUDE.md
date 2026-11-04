@@ -27,7 +27,9 @@ follow from it; every change has to hold to them.
   starter places' style, `public/kinds/`), named with the kind so it isn't
   taken for that place. Nothing is fetched to give a place a photo, and it
   never takes a photo's address from the browser. The first starter places,
-  and places shared before, keep the credited Commons photos they have; the
+  and places shared before, keep the credited Commons photos they have
+  (copies of ours at the card's size, `public/places/commons/`, so a page
+  never waits on Wikimedia); the
   later starter places have an illustration made for Spots
   (`public/places/`, licence `ILLUSTRATED` in `src/lib/catalogue.ts`): a
   dish, or what you do there, never the venue, and its card says
