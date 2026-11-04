@@ -48,6 +48,31 @@ try {
 const still = () => motionOff || reducedMotion.matches;
 const move = () => (still() ? { duration: 0 } : {});
 
+/**
+ * How long flyTo would take to reach `center` at `zoom`, at `speed`
+ * screenfuls a second along its curve: its own sums (van Wijk and Nuij's
+ * path, as MapLibre's camera works it out).
+ */
+function flightMs(map: maplibregl.Map, center: [number, number], zoom: number, rho: number, speed: number) {
+  const { width, height } = map.getCanvas().getBoundingClientRect();
+  const w0 = Math.max(width, height);
+  const w1 = w0 / 2 ** (zoom - map.getZoom());
+  const from = map.project(map.getCenter());
+  const u1 = from.dist(map.project(center));
+  const rho2 = rho * rho;
+  let S: number;
+  if (u1 < 1e-6) S = Math.abs(Math.log(w1 / w0)) / rho;
+  else {
+    const r = (i: 0 | 1) => {
+      const w = i ? w1 : w0;
+      const b = (w1 * w1 - w0 * w0 + (i ? -1 : 1) * rho2 * rho2 * u1 * u1) / (2 * w * rho2 * u1);
+      return Math.log(Math.sqrt(b * b + 1) - b);
+    };
+    S = (r(1) - r(0)) / rho;
+  }
+  return (1000 * S) / speed;
+}
+
 interface Found {
   ref: string;
   name: string;
@@ -732,8 +757,11 @@ if (container) {
     }
     // Out a little, across, and down into the street: flyTo's curve does the
     // zoom-out-and-in; the pitch and bearing swing the camera as it lands.
-    // (Brisk, and never more than two seconds: a long flight makes some dizzy.)
-    map.flyTo({ ...target, speed: 1.4, curve: 1.5, maxDuration: 2000, essential: true });
+    // (Brisk, and never more than two seconds: a long flight makes some
+    // dizzy. Not with flyTo's maxDuration, which turns a longer flight into
+    // a jump, as every one from the whole city was: the flight is sped up.)
+    const duration = Math.min(2000, flightMs(map, target.center, target.zoom, 1.5, 1.4));
+    map.flyTo({ ...target, curve: 1.5, duration, essential: true });
     map.once("moveend", () => {
       if (active === id) open(id);
     });
