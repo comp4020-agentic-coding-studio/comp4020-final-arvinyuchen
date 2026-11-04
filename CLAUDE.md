@@ -340,7 +340,8 @@ follow from it; every change has to hold to them.
   or Settings), and the map fills its own. This replaced the page scrolling
   the left column beside sticky ones (#97), whose tops came apart (#115).
   Phones and tablets are one column, opening on the same panel: a card
-  with Canberra across its top, the group's name, who's in and Invite.
+  with Canberra across its top, the group's name, who's in and Invite,
+  Our list's header only, so another tab opens on its own content.
 
 ## The work
 

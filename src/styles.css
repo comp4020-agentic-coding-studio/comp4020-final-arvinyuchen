@@ -2478,6 +2478,16 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   }
 }
 
+/* One column (a phone or a tablet, with the script): the group's panel (its
+   photo, name, people and invite) is Our list's header only. On Explore,
+   Share or Settings it would sit first, the same on every tab, so a tap on a
+   tab would look like it hadn't worked. */
+@media (max-width: 1179.98px) {
+  .group-page.is-tabbed:not([data-tab="list"]) .group-head {
+    display: none;
+  }
+}
+
 /* ---- Explore on a phone ------------------------------------------------------ */
 
 /* With the script (the tabs work), Explore's tab on a phone or a narrow
