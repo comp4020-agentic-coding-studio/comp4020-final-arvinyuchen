@@ -25,6 +25,9 @@ dockerfile = "Dockerfile"
 
 [env]
 PORT = "8080"
+# where a lost-passkey email's link goes (src/pages/api/recover.ts): fixed,
+# never taken from a request's forwarded host
+APP_ORIGIN = "https://comp4020-final-arvinyuchen.fly.dev"
 
 [http_service]
 internal_port = 8080

@@ -2466,6 +2466,54 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   cursor: pointer;
 }
 
+/* The map's fold, a phone's only (src/scripts/map.ts): a chevron at the top
+   of its buttons hides it, and a bar in its place shows it again. Folded,
+   the map keeps its size behind a frame of no height. */
+.map-fold,
+.map-unfold {
+  display: none;
+}
+
+.map-fold button {
+  display: grid;
+  place-items: center;
+}
+
+@media (max-width: 860px) {
+  #map .map-fold {
+    display: block;
+  }
+
+  .map-wrap.is-folded .map-frame {
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+  }
+
+  .map-wrap.is-folded .map-unfold {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--card);
+    box-shadow: var(--shadow-sm);
+    color: var(--accent-ink);
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .map-unfold__chev {
+    color: var(--muted);
+  }
+}
+
 /* The map's animation switch, under its zoom: waves while it flies, flat
    lines when it only jumps. */
 .map-motion button[aria-pressed="true"] .map-motion__off,
@@ -2835,6 +2883,18 @@ html:not(.in-app) .no-passkey__app {
   font-size: 1.15rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+/* (the email field types as it is, not upper case like a code) */
+.recover__form input {
+  font-size: 1rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.recover__form .btn {
+  flex: none;
+  white-space: nowrap;
 }
 
 .notice-page h1 {
@@ -3239,11 +3299,27 @@ h3.lists__head {
   display: inline-flex;
 }
 
-.account__name-note {
+/* (the name and email rows, parted by a hairline from where the words start) */
+.account > form + form {
+  position: relative;
+}
+
+.account > form + form::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.account__name-note,
+.account__email-note {
   display: none;
 }
 
-form.list:focus-within + .account__name-note {
+.account:has(form:first-child:focus-within) + .account__name-note,
+.account:has(form:last-child:focus-within) ~ .account__email-note {
   display: block;
 }
 
@@ -9090,7 +9166,8 @@ dialog.sheet[open]:not(:modal) {
   display: none;
 }
 
-.welcome__field:has(.welcome__you:empty) input {
+.welcome__field:has(.welcome__you:empty) input,
+.welcome__field--email input {
   padding-left: 1rem;
 }
 

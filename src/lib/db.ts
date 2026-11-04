@@ -93,8 +93,8 @@ db.exec(`
 `);
 
 // Everyone is an account: a name and the passkeys that sign in as it, with
-// one member per group it's in. No passwords, no email: a passkey is the
-// only way in. Sessions keep a hash of their token, so the database alone
+// one member per group it's in. No passwords: a passkey is the only way in
+// (its email only gets a link that lets a device make one). Sessions keep a hash of their token, so the database alone
 // can't be used to sign in.
 db.exec(`
   CREATE TABLE IF NOT EXISTS accounts (
@@ -162,6 +162,9 @@ db.exec(`
 // Site admin (src/pages/admin.astro): an archived group is closed to
 // everyone but can be restored; a hidden place leaves Explore and the map.
 addColumn("accounts", "is_admin", "INTEGER NOT NULL DEFAULT 0");
+// Where a link goes when its passkeys are lost (src/pages/recover.astro):
+// never shown to anyone else, never used for anything but that link.
+addColumn("accounts", "email", "TEXT");
 // The owner's one line to the people they invite, shown above the join form.
 addColumn("groups", "note", "TEXT");
 addColumn("groups", "archived_at", "TEXT");

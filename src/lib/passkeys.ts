@@ -16,7 +16,9 @@ export type Ceremony =
       accountId: number | null;
       handle: string;
       name: string;
-      /** The code from a signed-in device, adding this one to its account. */
+      /** A new account's email. */
+      email?: string;
+      /** The code from a signed-in device or an emailed link, adding this one to its account. */
       code?: string;
     }
   | { kind: "signin"; challenge: string };
@@ -25,6 +27,8 @@ const TTL_MS = 5 * 60 * 1000;
 
 /** What a new device hears when the code it was given no longer works. */
 export const CODE_GONE = "That code has run out. Make a new one on your other device.";
+/** And when the emailed link it came by no longer works. */
+export const LINK_GONE = "That link has run out. Get a new one from Sign in, Lost your passkey.";
 const COOKIE = "spots_ceremony";
 const pending = new Map<string, { ceremony: Ceremony; expires: number }>();
 

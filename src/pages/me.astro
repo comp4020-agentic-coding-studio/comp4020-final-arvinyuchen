@@ -9,8 +9,9 @@ import { unreadByGroup } from "../lib/talk";
 import { dayParts, formatDay, formatMinute } from "../lib/when";
 
 // Your account: every group you're in, on any device, each with who's in
-// it and where its plan stands for you; then your one name, the passkeys
-// that can sign in as you, and Sign out. Each is a list under a small
+// it and where its plan stands for you; then your one name, your email
+// (only ever for a lost-passkey link), the passkeys that can sign in as
+// you, and Sign out. Each is a list under a small
 // heading, every row the same: a round lead, a title and a grey line under
 // it, and at its end a count or a way in (the .list styles).
 const account = signedIn(Astro.cookies);
@@ -78,6 +79,13 @@ const done = Astro.url.searchParams.get("done");
         </p>
       )}
     </section>
+    {/* (no email yet: asked first, above the groups; the label takes you to its row) */}
+    {!account.email && (
+      <p class="notice" role="status">
+        Add your email: if you lose your passkey, it gets you back in.{" "}
+        <label for="me-email" class="linkish">Add email</label>
+      </p>
+    )}
 
     <h2 class="lists__head" id="groups-title">Groups</h2>
     {groups.length === 0 ? (
@@ -107,19 +115,31 @@ const done = Astro.url.searchParams.get("done");
       </ul>
     )}
 
-    {/* Your one name: typed straight into its row, saved by Save or Enter. */}
+    {/* Your one name and your email: each typed straight into its row, saved by Save or Enter. */}
     <h2 class="lists__head" id="you">Account</h2>
     {done === "renamed" && <p class="notice notice--ok" role="status">Saved. It's your name in every group now.</p>}
+    {done === "email" && <p class="notice notice--ok" role="status">Saved. A lost-passkey link goes there now.</p>}
     {error === "name" && <p class="notice" role="alert">Type a name so your friends know it's you.</p>}
-    <form method="post" action="/api/account" class="card list">
-      <label class="row row--field">
-        <span class="row__label">Name</span>
-        <input class="row__input" name="name" required maxlength="40" value={account.name} autocomplete="nickname" data-hint="Type a name, so your friends know it's you." />
-        <button class="btn btn--small row__save">Save</button>
-      </label>
-    </form>
+    {error === "email" && <p class="notice" role="alert">That doesn't look like an email. Check it and try again.</p>}
+    <div class="card list account">
+      <form method="post" action="/api/account">
+        <label class="row row--field">
+          <span class="row__label">Name</span>
+          <input class="row__input" name="name" required maxlength="40" value={account.name} autocomplete="nickname" data-hint="Type a name, so your friends know it's you." />
+          <button class="btn btn--small row__save">Save</button>
+        </label>
+      </form>
+      <form method="post" action="/api/account">
+        <label class="row row--field">
+          <span class="row__label">Email</span>
+          <input id="me-email" class="row__input" name="email" type="email" required maxlength="254" value={account.email ?? ""} placeholder="you@example.com" autocomplete="email" data-hint="Type your email: it gets you back in if you lose your passkey." />
+          <button class="btn btn--small row__save">Save</button>
+        </label>
+      </form>
+    </div>
     {/* (said only while you're changing it) */}
     <p class="lists__foot account__name-note">The same in all your groups: changing it here changes it everywhere.</p>
+    <p class="lists__foot account__email-note">Only for a link back in if you lose your passkey. Nobody else sees it.</p>
 
     <h2 class="lists__head" id="keys-title">Passkeys</h2>
     {done === "removed" && <p class="notice notice--ok" role="status">Removed. That passkey can't sign in any more.</p>}

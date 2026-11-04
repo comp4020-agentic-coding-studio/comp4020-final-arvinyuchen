@@ -41,6 +41,7 @@ const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 // under the zoom), for anyone they make dizzy; it's remembered on this
 // device. Off, or with reduced motion asked for, the map jumps.
 const MOTION_KEY = "spots:map-motion";
+const FOLD_KEY = "spots:map-folded";
 let motionOff = false;
 try {
   motionOff = localStorage.getItem(MOTION_KEY) === "off";
@@ -141,6 +142,34 @@ if (container) {
     attributionControl: false,
     cooperativeGestures: true,
   });
+  // On a phone the map can fold away, giving the cards its room: its top
+  // button folds it, the bar left in its place ("Show map") or a place
+  // flown to (fly() below) unfolds it. Folded, it keeps its size, only
+  // hidden, so the camera and the marks stay where they were. Remembered
+  // on this device.
+  const wrap = container.closest<HTMLElement>(".map-wrap");
+  const foldBox = document.createElement("div");
+  foldBox.className = "maplibregl-ctrl maplibregl-ctrl-group map-fold";
+  foldBox.innerHTML = `<button type="button" aria-label="Hide the map" title="Hide the map"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="m5 12.5 5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
+  const unfoldBar = document.createElement("button");
+  unfoldBar.type = "button";
+  unfoldBar.className = "map-unfold";
+  unfoldBar.innerHTML = `<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M7.5 3.5 2.75 5.4v11.1l4.75-1.9 5 1.9 4.75-1.9V3.5l-4.75 1.9-5-1.9Zm0 0v11.1m5-9.2v11.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Show map<svg class="map-unfold__chev" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7.5 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  wrap?.append(unfoldBar);
+  function setFolded(on: boolean) {
+    wrap?.classList.toggle("is-folded", on);
+    try {
+      localStorage.setItem(FOLD_KEY, on ? "on" : "off");
+    } catch {}
+    // (Explore's box below takes or gives back the room)
+    window.dispatchEvent(new Event("resize"));
+  }
+  try {
+    if (localStorage.getItem(FOLD_KEY) === "on") wrap?.classList.add("is-folded");
+  } catch {}
+  foldBox.querySelector("button")!.addEventListener("click", () => setFolded(true));
+  unfoldBar.addEventListener("click", () => setFolded(false));
+  map.addControl({ onAdd: () => foldBox, onRemove: () => foldBox.remove() }, "top-right");
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
   map.addControl(new MotionControl(), "top-right");
   // Spots' map look (src/scripts/map-look.ts), with buildings that stand up
@@ -733,6 +762,8 @@ if (container) {
     });
   }
   function fly(id: number) {
+    // (a folded map unfolds first, then flies)
+    if (narrow.matches && wrap?.classList.contains("is-folded")) setFolded(false);
     // (a place off the list is only on Explore's map)
     if (mode === "list" && !list.order.has(id)) turn("explore");
     const entry = ensure(id);

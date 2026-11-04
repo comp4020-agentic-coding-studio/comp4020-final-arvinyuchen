@@ -80,7 +80,7 @@ if (!me) throw new Error("no account: sign in on localhost first, or pass an acc
 const person = (name: string, as = name) => {
   const handle = `preview-${as.toLowerCase()}`;
   const id = db.prepare("SELECT id FROM accounts WHERE handle = ?").pluck().get(handle) as number | undefined;
-  return id ? getAccount(id)! : createAccount(handle, name);
+  return id ? getAccount(id)! : createAccount(handle, name, `${as.toLowerCase()}@example.com`);
 };
 
 const stops = ["questacon", "nga", "mt-ainslie"].map((k) => placeIdForSeed(k)).filter((id): id is number => id !== undefined);
