@@ -13,6 +13,13 @@ declare module "vitest" {
 // up to a minute, since some stacks take a while to boot or migrate.
 export default async function setup(project: TestProject): Promise<void> {
   const baseUrl = process.env.APP_URL ?? "http://localhost:8080";
+  // Never the live site: the spec makes groups, accounts and places as it
+  // goes, and every group's Explore would show them (it did, once: "Spec
+  // Dumplings 1793578824132"). Only an app on this machine, as CI runs it.
+  const { hostname } = new URL(baseUrl);
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(hostname) && !hostname.endsWith(".localhost")) {
+    throw new Error(`the spec only runs against an app on this machine, not ${baseUrl}: it would leave its test groups and places there`);
+  }
 
   for (let attempt = 0; ; attempt++) {
     try {
