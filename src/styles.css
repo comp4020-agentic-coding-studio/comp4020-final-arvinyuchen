@@ -8190,9 +8190,11 @@ dialog.sheet[open]:not(:modal) {
   box-shadow: var(--shadow-md);
 }
 
+/* (at least this tall, and taller when what's on it needs it, so its text
+   never runs off its foot) */
 .welcome__hero {
   position: relative;
-  height: 18rem;
+  min-height: 18rem;
   background: var(--accent);
 }
 
@@ -8225,7 +8227,7 @@ dialog.sheet[open]:not(:modal) {
   z-index: 1;
   display: grid;
   gap: 0.45rem;
-  padding: 1.5rem 1.5rem 0;
+  padding: 1.5rem 1.5rem 1rem;
   color: #fff;
 }
 
@@ -8251,6 +8253,13 @@ dialog.sheet[open]:not(:modal) {
 
 .welcome__head .face {
   border-color: rgb(255 255 255 / 85%);
+}
+
+.welcome__head .face--more {
+  background: rgb(255 255 255 / 85%);
+  color: var(--ink);
+  font-size: 0.75rem;
+  text-shadow: none;
 }
 
 .welcome__content {
@@ -8300,11 +8309,11 @@ dialog.sheet[open]:not(:modal) {
   /* The photo gives way first on a short screen, so the invite card stays
      whole (with the hint under it) on the first screen. */
   .welcome__hero {
-    height: clamp(7.5rem, calc(100svh - 34.5rem), 12.5rem);
+    min-height: clamp(7.5rem, calc(100svh - 34.5rem), 12.5rem);
   }
 
   .welcome__head {
-    padding: 1rem 1.25rem 0;
+    padding: 1rem 1.25rem 0.85rem;
   }
 
   .welcome__photo {
@@ -9270,9 +9279,13 @@ dialog.sheet[open]:not(:modal) {
   pointer-events: none;
 }
 
+/* (a face of its own, inside the chip: not the overlapping, ringed faces
+   of a row of them) */
 .welcome__was-one .face {
   width: 1.6rem;
   height: 1.6rem;
+  margin-left: 0;
+  border: 0;
   font-size: 0.75rem;
 }
 

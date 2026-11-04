@@ -124,6 +124,14 @@ const pinsJson = JSON.stringify(pins).replace(/</g, "\\u003c");
 // started it, and the first few places, oldest first so the order says
 // nothing about votes. The list, the keens and Explore are for members.
 const owner = members.find((m) => m.id === group.ownerId);
+// (on the photo, one short line: who started it and two others by name, the
+// rest a count, "Arvin started it · with Mia, Leo +1"; up to five faces,
+// more and it's four and "+N")
+const others = members.filter((m) => m !== owner);
+const othersNamed = others.slice(0, 2).map((m) => m.name).join(", ");
+const othersMore = others.length - Math.min(others.length, 2);
+const inviteFaces = members.length > 5 ? members.slice(0, 4) : members;
+const inviteFacesMore = members.length - inviteFaces.length;
 const preview = [...picks].sort((a, b) => a.id - b.id).slice(0, 3);
 // The note's words, each its own span so they can arrive one after another.
 const noteWords = group.note?.split(" ") ?? [];
@@ -237,13 +245,14 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
           <h1 id="welcome-title">{group.name}</h1>
           <p class="members">
             <span class="faces" aria-hidden="true">
-              {members.slice(0, 6).map((m) => (
+              {inviteFaces.map((m) => (
                 <span class="face" style={`--hue: ${hue(m.name)}`}>{[...m.name][0]?.toUpperCase()}</span>
               ))}
+              {inviteFacesMore > 0 && <span class="face face--more">+{inviteFacesMore}</span>}
             </span>
             <span>
-              {owner && <>{owner.name} started it · </>}
-              {members.length} {members.length === 1 ? "person" : "people"}: {members.map((m) => m.name).join(", ")}
+              {owner && <>{owner.name} started it</>}
+              {others.length > 0 && <>{owner ? " · with " : ""}{othersNamed}{othersMore > 0 && ` +${othersMore}`}</>}
             </span>
           </p>
         </header>
