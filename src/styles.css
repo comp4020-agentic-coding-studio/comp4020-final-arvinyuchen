@@ -1311,12 +1311,14 @@ input[type="file"]::file-selector-button {
   translate: 0 -50%;
 }
 
+/* (a field beside its button takes the button's round ends, so the two
+   read as one control) */
 .ask input {
   flex: 1;
   min-width: 0;
   min-height: 2.75rem;
   padding: 0.45rem 0.9rem 0.45rem 2.4rem;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 1rem;
   text-overflow: ellipsis;
 }
@@ -2315,6 +2317,11 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   gap: 0.5rem;
 }
 
+.finder__row input {
+  padding-left: 1.1rem;
+  border-radius: 999px;
+}
+
 /* The matches, as a list's rows on a card (and "Nothing found" as a
    line under the search, no card). */
 .finder__results {
@@ -2551,20 +2558,15 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   }
 }
 
-/* On a phone the tab bar is the screen's foot here, not floating over it,
-   so the box ends exactly on it. */
+/* On a phone Explore's box runs to the screen's foot, under the floating
+   tabs, with room after its last card to scroll it above them. */
 @media (max-width: 600px) and (min-height: 30rem) {
   body:has(.group-page.is-tabbed[data-tab="explore"]) {
     padding-bottom: 0;
   }
 
-  .group-page.is-tabbed[data-tab="explore"] .section-nav.tabs {
-    position: static;
-    order: 1;
-    margin-top: 0;
-    margin-bottom: 0;
-    margin-right: calc(-1 * max(1rem, env(safe-area-inset-right)));
-    margin-left: calc(-1 * max(1rem, env(safe-area-inset-left)));
+  .group-page.is-tabbed[data-tab="explore"] .explore-scroll {
+    padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -5642,11 +5644,14 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   line-height: 1.35;
 }
 
+/* (a ring; picked, a filled circle with a tick, like a keen that's yours) */
 .win__radio {
+  flex: none;
   width: 1.4rem;
   height: 1.4rem;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 2px var(--line-strong);
+  box-shadow: inset 0 0 0 1.5px var(--line-strong);
+  transition: background-color 0.15s;
 }
 
 /* The window picked: its start chips open under it, its circle filled. */
@@ -5656,8 +5661,8 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 }
 
 .win:has(+ .starts :checked) .win__radio {
-  background: var(--accent-strong);
-  box-shadow: inset 0 0 0 5px var(--accent-strong), inset 0 0 0 9px #fff;
+  background: var(--accent-strong) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.6 8.4l2.9 2.9 5.9-6.3' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 0.9rem no-repeat;
+  box-shadow: none;
 }
 
 .starts {
@@ -7814,78 +7819,114 @@ dialog.sheet[open]:not(:modal) {
     font-size: 0.86rem;
   }
 
-  /* On a phone the group's parts are a tab bar at the foot of the screen,
-     as in Slopes or any iOS app: a glyph over each name, frosted. */
+  /* On a phone the group's parts are a small frosted pill floating over the
+     foot of the screen: a glyph for each, the open one named beside its
+     glyph. It tucks away below the edge while you scroll down to read, and
+     is back as soon as you scroll up (the page's script, is-tucked). */
   .section-nav.tabs {
     position: fixed;
     top: auto;
-    right: 0;
-    bottom: 0;
-    left: 0;
+    right: auto;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    left: 50%;
     z-index: 20;
-    display: grid;
-    grid-auto-columns: 1fr;
-    grid-auto-flow: column;
-    gap: 0;
+    display: flex;
+    gap: 0.15rem;
     width: auto;
     margin: 0;
-    padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
-    border-radius: 0;
-    border-top: 0.5px solid rgb(0 0 0 / 14%);
-    background: rgb(249 249 251 / 86%);
+    padding: 0.3rem;
+    border: 0.5px solid rgb(0 0 0 / 8%);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 82%);
     backdrop-filter: blur(20px) saturate(1.8);
+    box-shadow: var(--shadow-float);
+    transform: translateX(-50%);
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .section-nav.tabs.is-tucked {
+    transform: translate(-50%, calc(100% + 1.25rem + env(safe-area-inset-bottom)));
   }
 
   .section-nav.tabs a {
     position: relative;
-    display: grid;
-    justify-items: center;
-    gap: 0.1rem;
-    padding: 0.2rem 0;
-    border-radius: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 2.6rem;
+    padding: 0 0.85rem;
+    border-radius: 999px;
     color: #8e8e93;
-    font-size: 0.66rem;
-    font-weight: 500;
+    font-size: 0.86rem;
+    font-weight: 600;
+    white-space: nowrap;
   }
 
   .section-nav.tabs a svg {
     display: block;
+    width: 1.35rem;
+    height: 1.35rem;
   }
 
-  .section-nav.tabs a:hover,
-  .section-nav.tabs a[aria-current] {
+  .section-nav.tabs a:hover {
     background: none;
     box-shadow: none;
   }
 
   .section-nav.tabs a[aria-current] {
+    background: var(--accent-soft);
+    box-shadow: none;
     color: var(--accent-ink);
-    font-weight: 600;
   }
 
-  /* the plan needs you: a dot on the list's glyph, left of its count */
+  /* (only the open tab says its name; the others keep theirs for a screen
+     reader) */
+  .section-nav.tabs a:not([aria-current]) > span:not([class]) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* the plan needs you: a dot on the list's glyph */
   .section-nav.tabs .tabs__dot {
     position: absolute;
-    top: 0.15rem;
-    left: calc(50% - 1.05rem);
-    width: 0.6rem;
-    height: 0.6rem;
-    box-shadow: 0 0 0 2px rgb(249 249 251);
+    top: 0.3rem;
+    left: 0.55rem;
+    width: 0.55rem;
+    height: 0.55rem;
+    box-shadow: 0 0 0 2px #fff;
   }
 
   /* the list's count, a badge on its glyph */
   .section-nav.tabs .tabs__n {
     position: absolute;
-    top: 0;
-    left: calc(50% + 0.35rem);
+    top: 0.1rem;
+    left: 1.5rem;
     min-width: 1.05rem;
     height: 1.05rem;
     font-size: 0.62rem;
+    box-shadow: 0 0 0 2px #fff;
   }
 
-  /* (room at the foot of the page for the bar) */
+  /* (open, the list names itself, so its count sits after its name) */
+  .section-nav.tabs a[aria-current] .tabs__n {
+    position: static;
+    box-shadow: none;
+  }
+
+  /* (room at the foot of the page to scroll the last thing above the pill) */
   body:has(.section-nav.tabs) {
-    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* (under reduced motion the pill doesn't slide: it's simply there, or not) */
+@media (prefers-reduced-motion: reduce) {
+  .section-nav.tabs {
+    transition: none;
   }
 }
 

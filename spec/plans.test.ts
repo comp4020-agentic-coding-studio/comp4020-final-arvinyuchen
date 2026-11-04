@@ -38,6 +38,13 @@ const inPage = (jar: Jar, path: string, form: Record<string, string> | URLSearch
 describe("a plan", () => {
   it("is the owner's to start, for a place on the list, one at a time", async () => {
     const c = await crew("Plan crew");
+    // before there's one, the owner is offered it; a member sees, quietly,
+    // that there's none yet and who can make one, with nothing to press
+    const owners = (await page(c.ana, c.path)).querySelector("#plans");
+    expect(owners?.querySelector("[data-open-start]")).toBeTruthy();
+    const members = (await page(c.ben, c.path)).querySelector("#plans");
+    expect(members?.querySelector(".plan--waiting")?.textContent).toContain("Ask the group owner to create one");
+    expect(members?.querySelector("a, button")).toBeNull();
     // the owner's sheet asks how long; the hours (8am to 11pm) are folded away under it
     const sheet = (await page(c.ana, c.path)).querySelector("#plan-start");
     expect([...(sheet?.querySelectorAll(".sheet__rows") ?? [])][0]?.querySelector("[data-length]")).toBeTruthy();
@@ -162,7 +169,8 @@ describe("a plan", () => {
     expect(doc.querySelector(`#plan-${plan} .plan__mine`)?.textContent).toContain("busy 9–10am");
     await request(c.ana, `${c.api}/picks`, { form: { remove: await pickOf(secondName) } });
     doc = await page(c.ben, c.path);
-    expect(doc.querySelector(".plan")).toBeNull();
+    // (no plan on: at most the note that there's none yet)
+    expect(doc.querySelector(".plan:not(.plan--empty)")).toBeNull();
     expect(doc.querySelector("#past-plans")?.textContent).toContain("Called off");
     expect(doc.querySelector("#past-plans")?.textContent).toContain(secondName);
   });
@@ -558,7 +566,8 @@ describe("the plan on the group's page", () => {
     const plan = await planned(c);
     await request(c.ana, `${c.api}/plans`, { form: { action: "off", plan } });
     const doc = await page(c.ben, c.path);
-    expect(doc.querySelector(".plan")).toBeNull();
+    // (no plan on: at most the note that there's none yet)
+    expect(doc.querySelector(".plan:not(.plan--empty)")).toBeNull();
     expect(doc.querySelector("#past-plans")?.textContent).toContain("Called off");
     expect(doc.querySelector("#past-plans")?.textContent).toContain("Questacon");
   });
