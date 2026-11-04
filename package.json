@@ -10,7 +10,7 @@
     "test": "vitest run",
     "dev": "node scripts/copy-maplibre-worker.mjs && astro dev",
     "build": "node scripts/copy-maplibre-worker.mjs && astro build",
-    "start": "node ./dist/server/entry.mjs",
+    "start": "node ./server.mjs",
     "seed:preview": "tsx scripts/seed-preview.ts"
   },
   "devDependencies": {
@@ -33,6 +33,7 @@
     "@simplewebauthn/server": "14.0.3",
     "astro": "^7.3.5",
     "better-sqlite3": "^13.0.3",
+    "compression": "1.8.1",
     "maplibre-gl": "^6.12.0",
     "opening_hours": "3.15.0",
     "sharp": "0.35.5",

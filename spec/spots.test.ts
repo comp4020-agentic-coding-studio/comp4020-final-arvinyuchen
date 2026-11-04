@@ -209,6 +209,23 @@ describe("a group", () => {
     expect(list).not.toContain("War Memorial");
   });
 
+  it("says a link that isn't a group isn't one, in the site's own look", async () => {
+    expect((await request(new Jar(), "/g/not-a-group-link")).status).toBe(404);
+    const doc = await page(new Jar(), "/g/not-a-group-link");
+    expect(doc.querySelector("h1")?.textContent).toBe("This link isn't a group");
+    expect(doc.querySelector(".top")).toBeTruthy();
+    expect((await request(new Jar(), "/no-such-page")).status).toBe(404);
+  });
+
+  it("finds places to share only for someone signed in", async () => {
+    // (never a free way into Photon for anyone: signed out, it's refused)
+    expect((await request(new Jar(), "/api/lookup?q=cafe")).status).toBe(401);
+    const { jar } = await started("Finder crew");
+    const res = await request(jar, "/api/lookup?q=c");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual([]);
+  });
+
   it("can't be started or joined without an account", async () => {
     const res = await request(new Jar(), "/api/groups", { form: { group: "Nameless crew", name: "Ana" } });
     expect(res.headers.get("location")).toBe("/?error=account#start");

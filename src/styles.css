@@ -963,7 +963,7 @@ input[type="file"]::file-selector-button {
   bottom: 0;
   max-width: 100%;
   padding: 0.15rem 0.45rem;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   background: rgb(0 0 0 / 50%);
   border-top-left-radius: 6px;
 }
@@ -1386,6 +1386,16 @@ input[type="file"]::file-selector-button {
 
 #explore.is-asking {
   opacity: 0.45;
+}
+
+.ask-status {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.ask-status:empty {
+  display: none;
 }
 
 #explore[data-q] .spots--explore > li {
@@ -5104,7 +5114,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 
 .pick__lead {
   color: var(--accent-strong);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -5181,7 +5191,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 .plan__eyebrow {
   margin: 0 0 0.1rem;
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -5515,7 +5525,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   height: 1.1rem;
   margin-top: 0.1rem;
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -5548,7 +5558,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
 .wins__tier {
   padding: 0.65rem 0.9rem 0.15rem;
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -6275,7 +6285,7 @@ body:has(.fly.is-live) .top.is-paper nav a:hover {
   border-radius: 999px;
   background: var(--fill);
   color: var(--muted);
-  font-size: 0.64rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -6692,7 +6702,7 @@ dialog.sheet[open]:not(:modal) {
 .pcal__week span {
   padding: 0.15rem 0 0.3rem;
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
 }
@@ -7162,7 +7172,7 @@ dialog.sheet[open]:not(:modal) {
   width: 2.55rem;
   transform: translateY(-50%);
   color: var(--muted);
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -7464,7 +7474,7 @@ dialog.sheet[open]:not(:modal) {
   margin-top: -0.1rem;
   color: rgb(255 255 255 / 70%);
   font-family: var(--font);
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   font-weight: 600;
   text-align: center;
 }
@@ -8424,7 +8434,7 @@ dialog.sheet[open]:not(:modal) {
   margin: 0;
   padding: 0.4rem;
   color: var(--muted);
-  font-size: 0.62rem;
+  font-size: 0.7rem;
   line-height: 1.4;
   pointer-events: none;
 }
@@ -9913,5 +9923,48 @@ dialog.sheet--talk.is-typing {
 @media (prefers-reduced-motion: reduce) {
   .talk__toast {
     animation: none;
+  }
+}
+
+/* ---- Touch targets ------------------------------------------------------------- */
+
+/* On a touch screen the group page's small controls keep their look but
+   take a finger: an unseen margin around each makes it about 44px to tap
+   (the keen button, already wide, only grows up and down). */
+@media (pointer: coarse) {
+  .pick__talk,
+  .list-edit,
+  .plan__more,
+  .joined__close,
+  .outing__acts a,
+  .plan__mine a,
+  .keen {
+    position: relative;
+  }
+
+  .pick__talk::after,
+  .list-edit::after,
+  .plan__more::after,
+  .joined__close::after,
+  .plan__mine a::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
+  }
+
+  .outing__acts a::after {
+    content: "";
+    position: absolute;
+    inset: -13px -6px;
+  }
+
+  .keen::after {
+    content: "";
+    position: absolute;
+    inset: -6px 0;
+  }
+
+  .starts__at > input {
+    min-height: 2.6rem;
   }
 }

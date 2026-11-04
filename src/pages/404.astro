@@ -1,0 +1,25 @@
+---
+import Base from "../layouts/Base.astro";
+
+// Any address Spots doesn't have, and a group's link that isn't one (mistyped,
+// cut short when it was pasted): in the site's own look, saying which.
+Astro.response.status = 404;
+const group = Astro.originPathname.startsWith("/g/");
+---
+
+<Base title="Not found · Spots">
+  <section class="card notice-page">
+    <p class="eyebrow">{group ? "Invite link" : "Not found"}</p>
+    <h1>{group ? "This link isn't a group" : "There's nothing here"}</h1>
+    <p>
+      {
+        group
+          ? "No group on Spots has this link. It may have been cut short when it was pasted: ask whoever sent it to send it again."
+          : "Spots has no page at this address."
+      }
+    </p>
+    <div class="card__actions stack">
+      <a class="btn btn--primary" href="/">Go to Spots</a>
+    </div>
+  </section>
+</Base>

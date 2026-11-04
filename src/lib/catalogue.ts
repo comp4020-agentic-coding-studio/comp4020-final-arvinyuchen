@@ -65,7 +65,7 @@ const CHOSEN: CatalogueSpot[] = [
     area: "Kingston",
     blurb: "Every Sunday by the lake: food stalls and handmade goods in the old bus depot.",
     source: "https://en.wikipedia.org/wiki/Kingston,_Australian_Capital_Territory",
-    photo: { src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/48/Old_Bus_Depot_Market_September_2024.jpg/960px-Old_Bus_Depot_Market_September_2024.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail", page: "https://commons.wikimedia.org/wiki/File:Old_Bus_Depot_Market_September_2024.jpg", credit: "Nick-D", license: "CC BY-SA 4.0" },
+    photo: { src: "/places/commons/bus-depot-markets.webp", page: "https://commons.wikimedia.org/wiki/File:Old_Bus_Depot_Market_September_2024.jpg", credit: "Nick-D", license: "CC BY-SA 4.0" },
   },
   {
     key: "questacon",
@@ -76,7 +76,7 @@ const CHOSEN: CatalogueSpot[] = [
     area: "Parkes",
     blurb: "The science centre: hands-on exhibits that are more fun with friends than you'd admit.",
     source: "https://en.wikipedia.org/wiki/Questacon",
-    photo: { src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/36/Questacon_-_National_Science_and_Technology_Centre.jpg/960px-Questacon_-_National_Science_and_Technology_Centre.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail", page: "https://commons.wikimedia.org/wiki/File:Questacon_-_National_Science_and_Technology_Centre.jpg", credit: "Shkuru Afshar", license: "CC BY-SA 4.0" },
+    photo: { src: "/places/commons/questacon.webp", page: "https://commons.wikimedia.org/wiki/File:Questacon_-_National_Science_and_Technology_Centre.jpg", credit: "Shkuru Afshar", license: "CC BY-SA 4.0" },
   },
   {
     key: "nga",
@@ -87,7 +87,7 @@ const CHOSEN: CatalogueSpot[] = [
     area: "Parkes",
     blurb: "The national art collection, plus the sculpture garden outside.",
     source: "https://en.wikipedia.org/wiki/National_Gallery_of_Australia",
-    photo: { src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9a/National_Gallery_from_SW%2C_Canberra_Australia.jpg/960px-National_Gallery_from_SW%2C_Canberra_Australia.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail", page: "https://commons.wikimedia.org/wiki/File:National_Gallery_from_SW,_Canberra_Australia.jpg", credit: "Thennicke", license: "CC BY-SA 4.0" },
+    photo: { src: "/places/commons/nga.webp", page: "https://commons.wikimedia.org/wiki/File:National_Gallery_from_SW,_Canberra_Australia.jpg", credit: "Thennicke", license: "CC BY-SA 4.0" },
   },
   {
     key: "nma",
@@ -98,7 +98,7 @@ const CHOSEN: CatalogueSpot[] = [
     area: "Acton",
     blurb: "On Acton Peninsula right next to ANU, an easy afternoon.",
     source: "https://en.wikipedia.org/wiki/National_Museum_of_Australia",
-    photo: { src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0d/Canberra_%28AU%29%2C_National_Museum_of_Australia_--_2019_--_1709.jpg/960px-Canberra_%28AU%29%2C_National_Museum_of_Australia_--_2019_--_1709.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail", page: "https://commons.wikimedia.org/wiki/File:Canberra_(AU),_National_Museum_of_Australia_--_2019_--_1709.jpg", credit: "Dietmar Rabich", license: "CC BY-SA 4.0" },
+    photo: { src: "/places/commons/nma.webp", page: "https://commons.wikimedia.org/wiki/File:Canberra_(AU),_National_Museum_of_Australia_--_2019_--_1709.jpg", credit: "Dietmar Rabich", license: "CC BY-SA 4.0" },
   },
   {
     key: "awm",
@@ -109,7 +109,7 @@ const CHOSEN: CatalogueSpot[] = [
     area: "Campbell",
     blurb: "The memorial and its galleries, at the end of Anzac Parade.",
     source: "https://en.wikipedia.org/wiki/Australian_War_Memorial",
-    photo: { src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9c/Australian_War_Memorial_front_view.jpg/960px-Australian_War_Memorial_front_view.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail", page: "https://commons.wikimedia.org/wiki/File:Australian_War_Memorial_front_view.jpg", credit: "Shkuru Afshar", license: "CC BY-SA 4.0" },
+    photo: { src: "/places/commons/awm.webp", page: "https://commons.wikimedia.org/wiki/File:Australian_War_Memorial_front_view.jpg", credit: "Shkuru Afshar", license: "CC BY-SA 4.0" },
   },
   {
     key: "glassworks",
@@ -120,7 +120,7 @@ const CHOSEN: CatalogueSpot[] = [
     area: "Kingston",
     blurb: "Glass art studios and a gallery in the old Kingston Powerhouse.",
     source: "https://en.wikipedia.org/wiki/Canberra_Glassworks",
-    photo: { src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/75/Entrance_to_Canberra_Glassworks_August_2022.jpg/960px-Entrance_to_Canberra_Glassworks_August_2022.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail", page: "https://commons.wikimedia.org/wiki/File:Entrance_to_Canberra_Glassworks_August_2022.jpg", credit: "Nick-D", license: "CC BY-SA 4.0" },
+    photo: { src: "/places/commons/glassworks.webp", page: "https://commons.wikimedia.org/wiki/File:Entrance_to_Canberra_Glassworks_August_2022.jpg", credit: "Nick-D", license: "CC BY-SA 4.0" },
   },
   {
     key: "mt-ainslie",
@@ -131,7 +131,7 @@ const CHOSEN: CatalogueSpot[] = [
     area: "Campbell",
     blurb: "Take the paved Kokoda summit trail from behind the War Memorial for the view over the city.",
     source: "https://en.wikipedia.org/wiki/Mount_Ainslie",
-    photo: { src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/ff/Mount_Ainslie.jpg/960px-Mount_Ainslie.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail", page: "https://commons.wikimedia.org/wiki/File:Mount_Ainslie.jpg", credit: "Bidgee", license: "CC BY 3.0" },
+    photo: { src: "/places/commons/mt-ainslie.webp", page: "https://commons.wikimedia.org/wiki/File:Mount_Ainslie.jpg", credit: "Bidgee", license: "CC BY 3.0" },
   },
   {
     key: "lake-loop",
@@ -142,7 +142,7 @@ const CHOSEN: CatalogueSpot[] = [
     area: "Central",
     blurb: "Walk or ride the paths around the lake in the middle of the city.",
     source: "https://en.wikipedia.org/wiki/Lake_Burley_Griffin",
-    photo: { src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/23/Lake_Burley_Griffin_From_Black_Mountain_Tower_%28cropped%29.jpg/960px-Lake_Burley_Griffin_From_Black_Mountain_Tower_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail", page: "https://commons.wikimedia.org/wiki/File:Lake_Burley_Griffin_From_Black_Mountain_Tower_(cropped).jpg", credit: "JJ Harrison", license: "CC BY-SA 3.0" },
+    photo: { src: "/places/commons/lake-loop.webp", page: "https://commons.wikimedia.org/wiki/File:Lake_Burley_Griffin_From_Black_Mountain_Tower_(cropped).jpg", credit: "JJ Harrison", license: "CC BY-SA 3.0" },
   },
   {
     key: "arboretum",
@@ -153,7 +153,7 @@ const CHOSEN: CatalogueSpot[] = [
     area: "Molonglo",
     blurb: "Forests from around the world, big skies and room for a picnic.",
     source: "https://en.wikipedia.org/wiki/National_Arboretum_Canberra",
-    photo: { src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/32/Canberra_National_Arboretum_with_Telstra_Tower_2%2C_Canberra_ACT.jpg/960px-Canberra_National_Arboretum_with_Telstra_Tower_2%2C_Canberra_ACT.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail", page: "https://commons.wikimedia.org/wiki/File:Canberra_National_Arboretum_with_Telstra_Tower_2,_Canberra_ACT.jpg", credit: "Thennicke", license: "CC BY-SA 4.0" },
+    photo: { src: "/places/commons/arboretum.webp", page: "https://commons.wikimedia.org/wiki/File:Canberra_National_Arboretum_with_Telstra_Tower_2,_Canberra_ACT.jpg", credit: "Thennicke", license: "CC BY-SA 4.0" },
   },
   {
     key: "botanic-gardens",
@@ -164,7 +164,7 @@ const CHOSEN: CatalogueSpot[] = [
     area: "Acton",
     blurb: "Native plant gardens on Black Mountain, a walk from campus.",
     source: "https://en.wikipedia.org/wiki/Australian_National_Botanic_Gardens",
-    photo: { src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cb/Australian_National_Botanic_Gardens.jpg/960px-Australian_National_Botanic_Gardens.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail", page: "https://commons.wikimedia.org/wiki/File:Australian_National_Botanic_Gardens.jpg", credit: "Bidgee", license: "CC BY-SA 3.0" },
+    photo: { src: "/places/commons/botanic-gardens.webp", page: "https://commons.wikimedia.org/wiki/File:Australian_National_Botanic_Gardens.jpg", credit: "Bidgee", license: "CC BY-SA 3.0" },
   },
   {
     key: "haig-park",
@@ -175,7 +175,7 @@ const CHOSEN: CatalogueSpot[] = [
     area: "Braddon",
     blurb: "A long, tree-lined park through Braddon and Turner, a few minutes from Lonsdale Street.",
     source: "https://en.wikipedia.org/wiki/Haig_Park",
-    photo: { src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/Centre_of_Haig_Park_November_2020.jpg/960px-Centre_of_Haig_Park_November_2020.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail", page: "https://commons.wikimedia.org/wiki/File:Centre_of_Haig_Park_November_2020.jpg", credit: "Nick-D", license: "CC BY-SA 4.0" },
+    photo: { src: "/places/commons/haig-park.webp", page: "https://commons.wikimedia.org/wiki/File:Centre_of_Haig_Park_November_2020.jpg", credit: "Nick-D", license: "CC BY-SA 4.0" },
   },
   {
     key: "tidbinbilla",
@@ -186,7 +186,7 @@ const CHOSEN: CatalogueSpot[] = [
     area: "Paddys River",
     blurb: "A day trip out of the city: wildlife, wetlands and bush walks.",
     source: "https://en.wikipedia.org/wiki/Tidbinbilla_Nature_Reserve",
-    photo: { src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/dc/Tidbinbilla_from_the_air.jpg/960px-Tidbinbilla_from_the_air.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail", page: "https://commons.wikimedia.org/wiki/File:Tidbinbilla_from_the_air.jpg", credit: "MDRX", license: "CC BY-SA 4.0" },
+    photo: { src: "/places/commons/tidbinbilla.webp", page: "https://commons.wikimedia.org/wiki/File:Tidbinbilla_from_the_air.jpg", credit: "MDRX", license: "CC BY-SA 4.0" },
   },
   {
     key: "l-epi-artisan-bakery",

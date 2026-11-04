@@ -27,7 +27,9 @@ follow from it; every change has to hold to them.
   starter places' style, `public/kinds/`), named with the kind so it isn't
   taken for that place. Nothing is fetched to give a place a photo, and it
   never takes a photo's address from the browser. The first starter places,
-  and places shared before, keep the credited Commons photos they have; the
+  and places shared before, keep the credited Commons photos they have
+  (copies of ours at the card's size, `public/places/commons/`, so a page
+  never waits on Wikimedia); the
   later starter places have an illustration made for Spots
   (`public/places/`, licence `ILLUSTRATED` in `src/lib/catalogue.ts`): a
   dish, or what you do there, never the venue, and its card says
@@ -45,7 +47,8 @@ follow from it; every change has to hold to them.
   Overture Maps' Canberra places on the server first
   (`src/data/places-index.json`, built by `scripts/build-places-index.ts`),
   then OpenStreetMap through Photon. It asks only when someone presses
-  Find, with the app's User-Agent, and caches answers. Keep it that way: no
+  Find, with the app's User-Agent, and caches answers; only someone signed
+  in can ask, 60 new searches an hour each. Keep it that way: no
   search-as-you-type, no autocomplete against Photon. The index
   is only a finder's: none of it is in Explore until someone shares it.
   Overture, Photon, map tiles and data are credited.

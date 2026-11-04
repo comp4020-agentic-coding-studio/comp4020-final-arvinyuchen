@@ -4,6 +4,7 @@ import { photoOfRef } from "../../lib/db";
 import { best, type Candidate, merge, score, words } from "../../lib/finder";
 import type { Kind } from "../../lib/kinds";
 import { LOCAL } from "../../lib/places-index";
+import { signedIn } from "../../lib/me";
 
 // Finding a place to share, in Canberra, from two sources:
 //
@@ -21,8 +22,22 @@ import { LOCAL } from "../../lib/places-index";
 // comes with the photo it was shared with, if it has one.
 //
 // The browser asks only when someone presses Find, never as they type, with
-// the app's User-Agent, and answers are cached for a day.
+// the app's User-Agent, and answers are cached for a day (the last 500
+// asked). Only someone signed in can ask, so this is never a free way into
+// Photon for anyone else, and at most FINDS_PER_HOUR new searches each
+// (an answer from the cache is free).
 const cache = new Map<string, { at: number; results: unknown[] }>();
+const CACHED = 500;
+const FINDS_PER_HOUR = 60;
+const asked = new Map<number, number[]>();
+function overCap(accountId: number): boolean {
+  const now = Date.now();
+  const times = (asked.get(accountId) ?? []).filter((t) => now - t < 3600_000);
+  asked.set(accountId, times);
+  if (times.length >= FINDS_PER_HOUR) return true;
+  times.push(now);
+  return false;
+}
 const BOX = "148.76,-35.92,149.40,-35.12";
 
 // A first guess at the kind from what OpenStreetMap calls the place; the
@@ -94,12 +109,15 @@ async function fromOsm(q: string): Promise<Candidate[]> {
   return own.length && own.length < words(q).length ? photon(own.join(" ")) : [];
 }
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, cookies }) => {
+  const account = signedIn(cookies);
+  if (!account) return Response.json({ error: "sign in to find a place" }, { status: 401 });
   const q = (url.searchParams.get("q") ?? "").trim().slice(0, 80);
   if (q.length < 2) return Response.json([]);
   const key = q.toLowerCase();
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < 24 * 3600_000) return Response.json(hit.results);
+  if (overCap(account.id)) return Response.json({ error: "too many searches" }, { status: 429 });
 
   const local = best(q, LOCAL, 6);
   let osm: Candidate[] = [];
@@ -126,6 +144,10 @@ export const GET: APIRoute = async ({ url }) => {
       // (to show: one already shared goes on the list as it is)
       photo: photoOfRef(f.ref),
   }));
-  if (reached) cache.set(key, { at: Date.now(), results });
+  if (reached) {
+    cache.delete(key);
+    cache.set(key, { at: Date.now(), results });
+    if (cache.size > CACHED) cache.delete(cache.keys().next().value!);
+  }
   return Response.json(results);
 };
