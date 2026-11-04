@@ -1532,7 +1532,10 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       // The tab opens at its top, under the tabs, never scrolled half way.
       // (On a wide screen the page doesn't scroll, each column does on its
       // own, so the page stays where it is.)
-      const top = document.querySelector(".group-head").getBoundingClientRect().bottom + scrollY;
+      // (the group's panel is Our list's alone there, so another tab's top
+      // is the page's)
+      const head = document.querySelector(".group-head");
+      const top = head.offsetParent ? head.getBoundingClientRect().bottom + scrollY : 0;
       if (scroll && !wide.matches && scrollY > top) scrollTo({ top, behavior: "instant" });
     }
     page.classList.add("is-tabbed");
