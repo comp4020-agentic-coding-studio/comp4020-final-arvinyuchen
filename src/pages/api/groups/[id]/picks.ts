@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { addPick, getGroup, placeIdForSeed, removePick } from "../../../../lib/db";
 import { changed, placesChanged } from "../../../../lib/events";
 import { clean, me } from "../../../../lib/me";
+import * as log from "../../../../lib/log";
 
 // Put a shared place on the group's list: by its id from Explore, or by a
 // starter place's key. Or take one off (remove=<its pick id>): the member who added
@@ -22,6 +23,7 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
     const placeId = removePick(group, Number(form.get("remove")), member);
     if (placeId === undefined || placeId === "planned")
       return inPage ? new Response(null, { status: 409 }) : redirect(`/g/${group.link}?edit&error=${placeId === "planned" ? "remove-planned" : "remove"}#list`, 303);
+    log.act("list-remove", { by: log.member(member), group: log.group(group), pick: Number(form.get("remove")), place: placeId });
     changed(group.id);
     placesChanged(); // its "on N lists" count moved
     return inPage ? new Response(null, { status: 204 }) : redirect(`/g/${group.link}?edit&removed=${placeId}#list`, 303);
@@ -30,6 +32,7 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   const key = clean(form.get("key"), 40);
   const placeId = key ? placeIdForSeed(key) : Number(form.get("place"));
   if (placeId && addPick(group.id, placeId, member)) {
+    log.act("list-add", { by: log.member(member), group: log.group(group), place: placeId });
     changed(group.id);
     placesChanged(); // its "on N groups' lists" count moved
   }

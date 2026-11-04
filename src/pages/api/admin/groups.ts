@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { archiveGroups, purgeGroups, restoreGroups } from "../../../lib/admin";
 import { changed, placesChanged } from "../../../lib/events";
 import { clean, signedIn } from "../../../lib/me";
+import * as log from "../../../lib/log";
 
 // Archive, restore, or (archived only) delete groups for good, in bulk.
 export const POST: APIRoute = async ({ cookies, request, redirect }) => {
@@ -11,6 +12,7 @@ export const POST: APIRoute = async ({ cookies, request, redirect }) => {
   const action = clean(form.get("action"), 10);
   const run = { archive: archiveGroups, restore: restoreGroups, purge: purgeGroups }[action];
   const n = run ? run(ids) : 0;
+  if (n) log.act(`admin-${action}`, { by: log.account(signedIn(cookies)!), groups: ids.join(","), n });
   // Open pages of those groups, and every Explore's "on N lists", catch up.
   for (const id of ids) changed(id);
   if (n) placesChanged();

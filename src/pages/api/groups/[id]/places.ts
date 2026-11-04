@@ -6,6 +6,7 @@ import { clean, me } from "../../../../lib/me";
 import { savePhoto } from "../../../../lib/photos";
 import { localPlace } from "../../../../lib/places-index";
 import { indexPlaces } from "../../../../lib/search";
+import * as log from "../../../../lib/log";
 
 // Share a new place with every group, and put it on this group's list. A
 // place only gets in with a reason it's good: that line is what Spots keeps
@@ -63,6 +64,7 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
       member,
     );
   addPick(group.id, placeId, member);
+  log.act(shared ? "list-add" : "place-share", { by: log.member(member), group: log.group(group), place: placeId, photo: photo ? true : undefined });
   changed(group.id);
   placesChanged();
   // Its vector is made now, so the next search can already find it.

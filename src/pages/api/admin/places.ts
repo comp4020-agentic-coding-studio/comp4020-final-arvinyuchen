@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { hidePlaces } from "../../../lib/admin";
 import { placesChanged } from "../../../lib/events";
 import { clean, signedIn } from "../../../lib/me";
+import * as log from "../../../lib/log";
 
 // Hide shared places from Explore and the map, or bring them back.
 export const POST: APIRoute = async ({ cookies, request, redirect }) => {
@@ -10,6 +11,9 @@ export const POST: APIRoute = async ({ cookies, request, redirect }) => {
   const ids = form.getAll("place").map(Number).filter(Number.isInteger);
   const action = clean(form.get("action"), 10);
   const n = action === "hide" || action === "unhide" ? hidePlaces(ids, action === "hide") : 0;
-  if (n) placesChanged();
+  if (n) {
+    log.act(`admin-${action}`, { by: log.account(signedIn(cookies)!), places: ids.join(","), n });
+    placesChanged();
+  }
   return redirect(`/admin?done=${action}&n=${n}#places`, 303);
 };

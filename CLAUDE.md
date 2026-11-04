@@ -281,6 +281,16 @@ follow from it; every change has to hold to them.
   its Talk with it (as a deleted starter place takes its threads).
   An admin can hide a shared place. An admin is a passkey account that once entered
   `ADMIN_CODE` (a Fly secret); never add another way to become one.
+- **Every action says who did it, in the logs, and nothing more.** Each
+  route that changes something writes one line with `log.act`
+  (`src/lib/log.ts`): the act, who (`log.member` or `log.account`), the
+  group (`log.group`) and the ids of what it touched, so `flyctl logs`
+  tells who joined, voted, shared, planned, talked or was taken out (#200).
+  A new kind of action gets its line. Never put in a line what someone
+  wrote (a Talk message, an invite note: a count at most), an email, busy
+  times (how many stretches, never when), a search prompt, a code, a token
+  or a passkey. `spec/log.test.ts` checks both halves through
+  `/api/log-tail`, which exists only while stubbed.
 - **The page's script is assumed; every action is still a plain route.**
   Making an account and signing in need a passkey, so they need JavaScript
   and a browser that has passkeys; where there's none (another app's

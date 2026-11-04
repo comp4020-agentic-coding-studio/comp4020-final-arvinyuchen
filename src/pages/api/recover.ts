@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { accountsByEmail, cleanEmail, EMAIL_CODE_MINUTES, newEmailCode } from "../../lib/accounts";
+import * as log from "../../lib/log";
 import { sendMail } from "../../lib/mail";
 
 // Lost every passkey: the email on the account gets a link
@@ -32,17 +33,27 @@ export const POST: APIRoute = async ({ request, redirect, url, clientAddress }) 
   if (!email) return redirect("/recover?error=email", 303);
   const sent = redirect("/recover?sent=1", 303);
   const from = request.headers.get("fly-client-ip") ?? clientAddress;
-  if (!allowed(`email:${email}`, LIMITS.email)) return sent;
-  if (!local.test(from.replace(/^::ffff:/, "").replace(/^::1$/, "[::1]")) && !allowed(`from:${from}`, LIMITS.from))
+  // (never the address: whose accounts got a link, or that one was refused)
+  if (!allowed(`email:${email}`, LIMITS.email)) {
+    log.act("recover-limited", { per: "email" });
     return sent;
+  }
+  if (!local.test(from.replace(/^::ffff:/, "").replace(/^::1$/, "[::1]")) && !allowed(`from:${from}`, LIMITS.from)) {
+    log.act("recover-limited", { per: "address" });
+    return sent;
+  }
 
   const accounts = accountsByEmail(email);
-  if (accounts.length === 0) return sent;
+  if (accounts.length === 0) {
+    log.act("recover-ask", { accounts: 0 });
+    return sent;
+  }
   const origin = process.env.APP_ORIGIN ?? (local.test(url.hostname) ? url.origin : null);
   if (!origin) {
     console.error("recover: set APP_ORIGIN, so the link knows where Spots is");
     return sent;
   }
+  log.act("recover-ask", { accounts: accounts.map((a) => log.account(a)).join(", ") });
   const links = accounts.map((a) => ({ name: a.name, link: `${origin}/add-device?code=${newEmailCode(a.id)}` }));
   const one = links.length === 1;
   const intro = one

@@ -3,6 +3,7 @@ import type { APIRoute } from "astro";
 import { createAccount, deviceOf, isEmailCode, savePasskey, useDeviceCode } from "../../../../lib/accounts";
 import { signIn, signedIn } from "../../../../lib/me";
 import { CODE_GONE, finish, LINK_GONE, relyingParty } from "../../../../lib/passkeys";
+import * as log from "../../../../lib/log";
 
 // Step two: check what the device signed, store its public key, and sign
 // this browser in, making the account first if it's new.
@@ -39,6 +40,11 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
     synced: credentialBackedUp,
     aaguid,
     madeOn: deviceOf(request.headers.get("user-agent")),
+  });
+  log.act(ceremony.accountId === null ? "sign-up" : "passkey-add", {
+    by: log.account({ id: accountId, name: ceremony.name }),
+    with: ceremony.code ? (isEmailCode(ceremony.code) ? "email-link" : "device-code") : undefined,
+    synced: credentialBackedUp,
   });
   signIn(cookies, accountId);
   return Response.json({ ok: true });
