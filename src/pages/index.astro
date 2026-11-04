@@ -87,8 +87,14 @@ const account = signedIn(Astro.cookies);
   </div>
   <script>
     // (the map and its code only with motion allowed: without, the page is
-    // the photo and the drawn map under it)
-    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) import("../scripts/fly.ts");
+    // the photo and the drawn map under it; and only once the page is up and
+    // the browser is idle, so the photo and the form never wait on the map)
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const idle = window.requestIdleCallback ?? ((then: () => void) => setTimeout(then, 200));
+      const start = () => idle(() => import("../scripts/fly.ts"), { timeout: 1500 });
+      if (document.readyState === "complete") start();
+      else addEventListener("load", start, { once: true });
+    }
   </script>
   <script>
     import "../scripts/passkeys";
