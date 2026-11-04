@@ -23,7 +23,8 @@ follow from it; every change has to hold to them.
   uploads (`src/lib/photos.ts`) is re-encoded with all its metadata (GPS
   among it) stripped and credited to them; a place shared without one
   still gets in, and its card shows its kind's picture
-  (`src/lib/kind-art.ts`, from Unsplash), named with the kind so it isn't
+  (`src/lib/kind-art.ts`, an illustration drawn for the kind in the
+  starter places' style, `public/kinds/`), named with the kind so it isn't
   taken for that place. Nothing is fetched to give a place a photo, and it
   never takes a photo's address from the browser. The first starter places,
   and places shared before, keep the credited Commons photos they have; the

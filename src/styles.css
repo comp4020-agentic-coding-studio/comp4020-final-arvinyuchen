@@ -1091,13 +1091,13 @@ input[type="file"]::file-selector-button {
   height: 0.7rem;
 }
 
-/* (on a picture, the name and credit sit on a shade to be read) */
+/* (on its illustration, the kind's name sits on the paper in the kind's
+   colour, "Illustration" quietly beside it) */
 .photo--art figcaption {
-  background: linear-gradient(transparent, rgb(0 0 0 / 45%));
+  color: var(--muted);
 }
 
 .photo--art .photo__kind {
-  color: #fff;
   opacity: 1;
 }
 

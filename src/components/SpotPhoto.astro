@@ -62,11 +62,7 @@ const label = KIND_LABEL[kind];
       ) : (
         <figcaption>
           <span class="photo__kind">{label}</span>
-          {art && (
-            <a href={art.page ?? "https://unsplash.com"} rel="noopener">
-              {art.credit ? `Photo: ${art.credit}, Unsplash` : "Photo: Unsplash"}
-            </a>
-          )}
+          {art && <span>Illustration</span>}
         </figcaption>
       )}
     </figure>

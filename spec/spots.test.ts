@@ -257,8 +257,10 @@ describe("a group", () => {
     expect(art?.getAttribute("data-kind-art")).toBe("coffee");
     expect(art?.querySelector("figcaption")?.textContent).toContain("Coffee");
     const src = art?.querySelector("img")?.getAttribute("src") ?? "";
-    expect(src).toBe("/kinds/coffee.jpg");
-    expect((await fetch(new URL(src, baseUrl))).headers.get("content-type")).toBe("image/jpeg");
+    expect(src).toBe("/kinds/coffee.webp");
+    expect((await fetch(new URL(src, baseUrl))).headers.get("content-type")).toBe("image/webp");
+    // (drawn for Spots, and said to be one)
+    expect(art?.querySelector("figcaption")?.textContent).toContain("Illustration");
     // (a picture of the kind says nothing about the place: no alt text names it)
     expect(card?.querySelector(`img[alt*="${name}"]`)).toBeNull();
     const pick = [...doc.querySelectorAll("#list .pick")].find((c) => c.textContent?.includes(name));
