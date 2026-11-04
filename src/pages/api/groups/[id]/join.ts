@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { claimMember, getGroup, joinGroup } from "../../../../lib/db";
 import { changed } from "../../../../lib/events";
 import { clean, me, signedIn } from "../../../../lib/me";
+import * as log from "../../../../lib/log";
 
 // Joining needs the group's current invite link (once the owner resets it,
 // the old link lets nobody new in) and an account: you join as yourself,
@@ -18,6 +19,7 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   // (back after losing every device: who they were, for the owner to confirm)
   const was = Number(form.get("was"));
   if (was) claimMember(group, member, was);
+  log.act("join", { by: log.member(member), account: `a${account.id}`, group: log.group(group), was: was || undefined });
   changed(group.id);
   return redirect(`/g/${group.link}`, 303);
 };

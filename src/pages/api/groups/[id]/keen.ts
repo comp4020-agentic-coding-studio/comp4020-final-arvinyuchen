@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { getGroup, setKeen } from "../../../../lib/db";
 import { changed } from "../../../../lib/events";
 import { me } from "../../../../lib/me";
+import * as log from "../../../../lib/log";
 
 // "I'm keen" on a spot, or not any more. One vote per person per spot. The
 // button sends the state it's asking for ("on" or "off"), so repeating it
@@ -16,6 +17,10 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   const form = await request.formData();
   const pickId = Number(form.get("pick"));
   const keen = form.get("keen");
-  if (setKeen(pickId, member, group.id, keen === "on" ? true : keen === "off" ? false : undefined)) changed(group.id);
+  const on = keen === "on" ? true : keen === "off" ? false : undefined;
+  if (setKeen(pickId, member, group.id, on)) {
+    log.act("keen", { by: log.member(member), group: log.group(group), pick: pickId, keen: on === undefined ? "toggle" : on ? "on" : "off" });
+    changed(group.id);
+  }
   return inPage ? new Response(null, { status: 204 }) : redirect(`/g/${group.link}#pick-${pickId}`, 303);
 };

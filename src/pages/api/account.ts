@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { cleanEmail, renameAccount, setEmail } from "../../lib/accounts";
 import { changed } from "../../lib/events";
 import { clean, signedIn } from "../../lib/me";
+import * as log from "../../lib/log";
 
 // Your name or your email, from the account page. One account has one
 // name, so it changes in every group you're in, live on your friends'
@@ -15,10 +16,14 @@ export const POST: APIRoute = async ({ cookies, request, redirect }) => {
     const email = cleanEmail(form.get("email"));
     if (!email) return redirect("/me?error=email#you", 303);
     setEmail(account.id, email);
+    log.act("email-set", { by: log.account(account) });
     return redirect("/me?done=email#you", 303);
   }
   const name = clean(form.get("name"), 40);
   if (!name) return redirect("/me?error=name#you", 303);
-  if (name !== account.name) for (const groupId of renameAccount(account.id, name)) changed(groupId);
+  if (name !== account.name) {
+    log.act("rename", { by: log.account(account), to: name });
+    for (const groupId of renameAccount(account.id, name)) changed(groupId);
+  }
   return redirect("/me?done=renamed#you", 303);
 };

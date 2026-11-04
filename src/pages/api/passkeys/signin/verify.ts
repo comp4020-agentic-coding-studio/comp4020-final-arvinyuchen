@@ -1,7 +1,8 @@
 import { verifyAuthenticationResponse } from "@simplewebauthn/server";
 import type { AuthenticationResponseJSON } from "@simplewebauthn/server";
 import type { APIRoute } from "astro";
-import { passkeyById, passkeyUsed } from "../../../../lib/accounts";
+import { getAccount, passkeyById, passkeyUsed } from "../../../../lib/accounts";
+import * as log from "../../../../lib/log";
 import { signIn } from "../../../../lib/me";
 import { finish, relyingParty } from "../../../../lib/passkeys";
 
@@ -33,5 +34,7 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 
   passkeyUsed(passkey.id, verification.authenticationInfo.newCounter);
   signIn(cookies, passkey.accountId);
+  const account = getAccount(passkey.accountId);
+  if (account) log.act("sign-in", { by: log.account(account), device: passkey.madeOn ?? undefined });
   return Response.json({ ok: true });
 };

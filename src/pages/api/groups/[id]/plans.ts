@@ -17,6 +17,7 @@ import {
   startPlan,
   unsetPlanTime,
 } from "../../../../lib/plans";
+import * as log from "../../../../lib/log";
 
 // The owner's side of a plan: start one (one to five places on the list,
 // its stops in order; a day; the hours to count; how long it takes), set the time (a window's
@@ -33,7 +34,9 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
   if (!member || member.id !== group.ownerId) return inPage ? new Response(null, { status: 403 }) : redirect(`/g/${group.link}`, 303);
   const form = await request.formData();
   const action = clean(form.get("action"), 10);
+  const by = { by: log.member(member), group: log.group(group) };
   const done = (id: number, tell = true) => {
+    log.act(`plan-${action}`, { ...by, plan: id });
     if (tell) changed(group.id);
     // (the stops' hours and forecast are asked for now, in the background,
     // so the card has them by the time anyone looks: src/lib/outing-data.ts)

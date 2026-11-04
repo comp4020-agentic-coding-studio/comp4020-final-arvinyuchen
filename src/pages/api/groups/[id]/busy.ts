@@ -5,6 +5,7 @@ import { isInterval, parseInterval, type Interval } from "../../../../lib/free";
 import { me } from "../../../../lib/me";
 import { answerPlan, currentPlan, planOf } from "../../../../lib/plans";
 import { parseMinute } from "../../../../lib/when";
+import * as log from "../../../../lib/log";
 
 // When you're busy on the plan's day: the whole set at once, what your page
 // showed, so sending it twice changes nothing. The timeline sends each
@@ -41,6 +42,10 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
 
   const result = answerPlan(plan, member, busy as Interval[]);
   if (result === "invalid") return refused("busy");
-  if (result) changed(group.id);
+  if (result) {
+    // (how many stretches, never when: nobody's diary is on show, here either)
+    log.act("busy", { by: log.member(member), group: log.group(group), plan: plan.id, stretches: busy.length });
+    changed(group.id);
+  }
   return inPage ? new Response(null, { status: 204 }) : redirect(`/g/${group.link}#plan-${plan.id}`, 303);
 };
