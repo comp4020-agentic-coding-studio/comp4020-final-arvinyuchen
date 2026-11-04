@@ -2631,8 +2631,9 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   }
 
   /* Once the search has scrolled up out of the box, it's pinned over the
-     box's top (the page's script sets where), on a white band across the
-     box, so it's never a scroll away. Its slot keeps its room meanwhile. */
+     box's top (the page's script sets where), floating in a frosted pill
+     like the tabs' at the screen's foot, so it's never a scroll away. Its
+     field and Find stay where they were; its slot keeps its room. */
   .group-page.is-tabbed[data-tab="explore"] .explore-wrap {
     position: relative;
   }
@@ -2644,18 +2645,15 @@ button.map-mark:focus-visible :is(.map-chip, .map-dot) {
   .ask-slot.is-pinned .ask {
     position: absolute;
     z-index: 3;
-    top: var(--pin-top);
-    left: var(--pin-left);
-    width: var(--pin-width);
-  }
-
-  .ask-slot.is-pinned .ask::before {
-    position: absolute;
-    z-index: -1;
-    inset: calc(-1 * var(--pin-above)) calc(-1 * var(--pin-gutter)) -0.6rem;
-    background: var(--card);
-    box-shadow: 0 0.3rem 0.9rem rgb(0 0 0 / 0.08);
-    content: "";
+    top: calc(var(--pin-top) - 0.3rem);
+    left: calc(var(--pin-left) - 0.3rem);
+    width: calc(var(--pin-width) + 0.6rem);
+    padding: 0.3rem;
+    border: 0.5px solid rgb(0 0 0 / 8%);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 82%);
+    backdrop-filter: blur(20px) saturate(1.8);
+    box-shadow: var(--shadow-float);
   }
 }
 

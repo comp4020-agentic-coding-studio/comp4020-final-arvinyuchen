@@ -1490,7 +1490,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     // out of it, it's pinned over the box's top, where it was when it went.
     const askSlot = document.querySelector(".ask-slot");
     const exploreBox = document.querySelector(".explore-scroll");
-    const PIN_BELOW = 12;
+    const PIN_BELOW = 16;
     function pinAsk() {
       if (!askSlot || !exploreBox) return;
       const box = exploreBox.getBoundingClientRect();
@@ -1502,8 +1502,6 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
       askSlot.style.setProperty("--pin-top", `${box.top - wrap.top + PIN_BELOW}px`);
       askSlot.style.setProperty("--pin-left", `${slot.left - wrap.left}px`);
       askSlot.style.setProperty("--pin-width", `${slot.width}px`);
-      askSlot.style.setProperty("--pin-above", `${PIN_BELOW}px`);
-      askSlot.style.setProperty("--pin-gutter", `${slot.left - box.left}px`);
     }
     // New answers (a search, a kind) start just under the pinned search,
     // not somewhere above it where the old cards had been scrolled to.
