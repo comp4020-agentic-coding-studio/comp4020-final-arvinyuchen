@@ -45,8 +45,9 @@ judge. Each point says which.
 - **Settling when is quick, and nobody's diary is on show.** Everyone marks
   only when they're busy; the others see who can come, never why.
   *Enforced:* `spec/plans.test.ts`, `spec/free.test.ts`.
-- **A plan holds on the day, and never guesses.** The card warns when a stop
-  closes early or rain is likely, and hours nobody recorded say nothing.
+- **A plan holds on the day, and never guesses.** The card says when a stop
+  will be closed and gives an outdoor stop the forecast; hours nobody
+  recorded say nothing.
   *Enforced:* `spec/outing.test.ts`.
 - **Joining costs almost nothing.** A link, a name, an email and a passkey,
   no password and no app; a lost device comes back by a code or an emailed
