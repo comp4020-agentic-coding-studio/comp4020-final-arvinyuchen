@@ -13,13 +13,16 @@ somewhere".
 
 ## Try it
 
-【要写】约 50 词，给只拿到网址的评分人：怎么在两个浏览器里看到它工作。
-
-【素材】
-- New group → your name, an email, and a passkey (face, fingerprint or PIN) → you land on the group with its invite link.
-- Open the link in a second Chrome profile or an incognito window, join as someone else.
-- Add a place from Explore, vote "keen" in one window, and watch the other re-rank within a second.
-- (Checked 2026-11-04: Chrome incognito can make a passkey.)
+1. On the home page, name your group, fill in your name and email, and make
+   a passkey (face, fingerprint or PIN), which is how you sign in from then
+   on. You land on the group's page with its invite link.
+2. Open the link in a second Chrome profile or an incognito window, and join
+   as someone else.
+3. Add a place from Explore and vote "keen" in either window: the other one
+   updates within a second.
+4. As the owner, start a plan for a day. Each of you marks when you're busy,
+   and Spots suggests times long enough for the plan, with the most people
+   free first, then the longest, then the earliest.
 
 ## What good means here
 
