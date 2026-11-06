@@ -4,12 +4,12 @@
 > 你写完一节就把提示删掉。总目标 400–600 词（标题不算），每节后面写了建议字数。
 > 旧版完整内容在 git 历史里；功能清单移到了 `docs/what-it-does.md`，地图和数据来源移到了 `docs/sources-and-data.md`。
 
-【要写】一段，约 60 词：Spots 是什么、给谁用。
-
-【素材】
-- A shared list of places for one group of friends deciding where to go, and when.
-- Someone starts a group and sends the link; everyone joins with a name, an email and a passkey; they explore places, add the ones they like, vote "keen", and the list re-ranks live.
-- For four to twelve people who already trust each other's taste: a share house, a tutorial group, a group chat that keeps saying "we should go somewhere". Not a city guide, not strangers' reviews.
+Canberra is not boring! Spots helps you and your friends find good places
+you might not have heard of, vote on them to see which ones most of you
+want, and then pin down a time to hang out. It's for one group at a time:
+four to twelve people who already trust each other's taste, like a share
+house, a tutorial group, or the group chat that keeps saying "we should go
+somewhere".
 
 ## Try it
 
