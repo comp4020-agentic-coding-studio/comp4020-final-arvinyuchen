@@ -7,8 +7,8 @@
 Canberra is not boring! Spots helps you and your friends find good places
 you might not have heard of, vote on them to see which ones most of you
 want, and then pin down a time to hang out. It's for one group at a time:
-four to twelve people who already trust each other's taste, like a share
-house, a tutorial group, or the group chat that keeps saying "we should go
+friends who already trust each other's taste, like a share house, a
+tutorial group, or the group chat that keeps saying "we should go
 somewhere".
 
 ## Try it
