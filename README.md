@@ -20,36 +20,38 @@ somewhere".
    as someone else.
 3. Add a place from Explore and vote "keen" in either window: the other one
    updates within a second.
-4. As the owner, start a plan for a day. Each of you marks when you're busy,
-   and Spots suggests times long enough for the plan, with the most people
-   free first, then the longest, then the earliest.
+4. In the owner's window, start a plan for a day. In each window, mark when
+   that person is busy, and Spots suggests times long enough for the plan,
+   with the most people free first, then the longest, then the earliest.
 
 ## What good means here
 
-【要写】约 250 词：六条，每条一两句说"好"是什么，再一句说怎么保证：
-"*Enforced:* …（哪个测试）" 或 "*Judged:* …（怎么判断的）"。
-开头可以先一句话说明：有些能测，有些只能靠人判断，下面每条都标出来。
+> ✍️ 压缩草稿（约 200 词）：意思和测试都对过了，请改成你自己的说法，改完删掉这行。
 
-1. **Everyone's voice counts the same.**
-   【素材】One person, one keen per place; the keen records what the button showed, so a double tap can't undo it; nobody can vote as someone else, because who you are is your passkey, never a name typed in a form.
-   *Enforced:* `spec/spots.test.ts` ("counts each person once", "sets a keen to what the button showed"), `spec/accounts.test.ts` (forged and replayed passkeys refused).
-2. **Deciding together is quick, and live.**
-   【素材】Every vote reaches every open page within a second and the list re-ranks, each card gliding to its new place, so a group in one room decides together.
-   *Enforced:* `spec/spots.test.ts` ("streams changes to the group's open pages"). *Judged:* crit 9, several people voting at once in one room (why cards glide, and a tap just after a move is ignored).
-3. **The group is private; the good places are everyone's.**
-   【素材】A place gets in only with a sentence on why it's good, signed by whoever shared it, and every group explores that one pool; each group's list, votes and Talk stay inside the group. The invite link shows a preview, never the list.
-   *Enforced:* `spec/spots.test.ts` ("refuses a place with no reason", "shows someone with the link a preview… never the list"), `spec/talk.test.ts` ("Talk's words stay in the group").
-4. **Settling when is quick, and nobody's diary is on show.**
-   【素材】The owner picks a day; everyone marks only when they're busy; the card shows when everyone's free for as long as the outing takes. Others see counts and who can't make it, never anyone's busy times.
-   *Enforced:* `spec/plans.test.ts` ("never shows anyone else's busy times"), `spec/free.test.ts`. *Judged:* drawing busy times on a real iPhone.
-5. **A set plan holds on the day, and never guesses.**
-   【素材】The card says when a stop closes or is shut that day, the forecast for an outdoor stop, and the time between stops as "about". Hours nobody recorded say nothing.
-   *Enforced:* `spec/outing.test.ts` ("says nothing when the hours are unknown, never a guess").
-6. **Joining costs almost nothing, and you're you on every device.**
-   【素材】A link, a name, an email and a passkey; no password, no app. A second device is added with a code; lose every device and the email gets a one-time link that lets a new one make a passkey.
-   *Enforced:* `spec/accounts.test.ts` (device codes, the emailed link: once, 30 minutes, signs nobody in by itself). *Judged:* crit 10, two classmates got in from the URL alone.
+Some of this the spec checks on every push; some only people using it can
+judge. Each point says which.
 
-（可选第 7 条，字数够再加：It remembers. *Enforced:* `spec/spots.test.ts` "keeps what people add and vote for". *Judged:* coming back the next day after the machine stopped.）
+- **Everyone's voice counts the same.** One keen per person per place, and
+  who you are is your passkey, never a name typed into a form.
+  *Enforced:* `spec/spots.test.ts`, `spec/accounts.test.ts`.
+- **Deciding together is quick and live.** A vote reaches every open page
+  within a second, and the list re-ranks, each card gliding to its new
+  place. *Enforced:* `spec/spots.test.ts`. *Judged:* at crit 9, by several
+  people voting at once in one room.
+- **The group is private; good places are shared.** A place gets in only
+  with a reason, signed by whoever shared it, and every group explores that
+  pool; a group's list, votes and Talk never leave it.
+  *Enforced:* `spec/spots.test.ts`, `spec/talk.test.ts`.
+- **Settling when is quick, and nobody's diary is on show.** Everyone marks
+  only when they're busy; the others see who can come, never why.
+  *Enforced:* `spec/plans.test.ts`, `spec/free.test.ts`.
+- **A plan holds on the day, and never guesses.** The card warns when a stop
+  closes early or rain is likely, and hours nobody recorded say nothing.
+  *Enforced:* `spec/outing.test.ts`.
+- **Joining costs almost nothing.** A link, a name, an email and a passkey,
+  no password and no app; a lost device comes back by a code or an emailed
+  link. *Enforced:* `spec/accounts.test.ts`. *Judged:* at crit 10, two
+  classmates got in from the URL alone.
 
 ## What I read and looked at
 
