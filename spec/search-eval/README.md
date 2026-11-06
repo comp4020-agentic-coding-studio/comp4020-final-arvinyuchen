@@ -22,10 +22,26 @@ What `spec/search-eval.test.ts` measures search against, and how it was made
   Chinese grill for "Korean BBQ", a dumpling house for "yum cha", a café
   never described as quiet for "a quiet cafe to study in"). `labels.json`
   is the result: `great` where both said great, `fits` for the rest kept.
-- **Held out.** The search's thresholds were tuned earlier on other prompts
-  (PROCESS.md); this set is for measuring, not tuning. If search is ever
-  tuned on it, split it first and measure on the half it wasn't tuned on.
+- **Halves.** Each prompt is in one half (`half` in `labels.json`):
+  answerable and no-answer prompts alternately, 21 + 4 in `dev`, 20 + 4 in
+  `test`. Search may be tuned on `dev`; `test` says whether it holds.
 
 First measured: found in the top 5 for 90% of answerable prompts, the first
 card right for 85%, precision in the top 5 75%, and nothing for 7 of the 8
 prompts nothing answers.
+
+**Tuned on dev** (the same day). Two causes, both found on `dev`: function
+words ("when it's raining") counted as words no card uses, so a rainy-day
+prompt was taken for one with no answer, and "skydiving" (a word no card
+uses, lifting 0.30) came back with trampolines. Stop words now cover them,
+and the unknown-word lift moved from 0.26 to 0.32 (anything from 0.30 to
+0.34 did the same on `dev`). `dev` went from 19 of 21 found to 20, 3 of 4
+with nothing to 4. `test` didn't move (18 of 20 found, 4 of 4 with
+nothing): the change fixes nothing there and breaks nothing. Not blind:
+the first run's misses, across both halves, were seen before the split.
+
+What's left is one kind of miss: an everyday word no card uses ("study",
+"birthday", "hard") reads as asking for something no place has, so "a
+quiet cafe to study in" gets nothing. Its lift (0.254) is level with
+"Ethiopian food" (0.247), which rightly gets nothing, so the lift alone
+can't tell them apart.

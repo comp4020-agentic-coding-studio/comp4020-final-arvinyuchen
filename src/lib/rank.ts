@@ -18,9 +18,11 @@ const REACH = 0.6;
  * Below this lift (best over median), a prompt with a word no card uses
  * ("Ethiopian food", "snorkelling") is asking for something no place
  * has: its weak best matches are only near it in meaning, so it's answered
- * with nothing. Prompts the places do answer lift well over it (PROCESS.md).
+ * with nothing. Prompts the places do answer lift well over it (PROCESS.md);
+ * 0.26 became 0.32 on the search evaluation's dev half, for "skydiving"
+ * (0.30, trampolines), with "ice hockey" (0.35, the ice rink) still over it.
  */
-const UNHEARD_LIFT = 0.26;
+const UNHEARD_LIFT = 0.32;
 const KIND_NUDGE = 0.02;
 export const MAX_RESULTS = 8;
 

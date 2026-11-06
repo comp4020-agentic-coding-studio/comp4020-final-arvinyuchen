@@ -7,6 +7,8 @@ import { rankByMeaning } from "../src/lib/rank";
 // How good search is, measured: 49 prompts people might type, each labelled
 // with the starter places that answer it (`great`, or `fits`) or with none,
 // by two labellers working apart and adjudicated (spec/search-eval/README.md).
+// Each is in one half: search may be tuned on `dev`, and `test` says whether
+// that tuning holds on prompts it never looked at.
 // Search ranks them with src/lib/rank.ts on vectors frozen by
 // scripts/build-search-eval.ts, so this needs no key and no network.
 //
@@ -16,7 +18,7 @@ import { rankByMeaning } from "../src/lib/rank";
 // - precision: of its top 5 cards, how many are right;
 // - nothing: a prompt no place answers gets no cards at all.
 
-type Label = { text: string; great: string[]; fits: string[] };
+type Label = { text: string; great: string[]; fits: string[]; half: "dev" | "test" };
 type Frozen = {
   model: string;
   places: { key: string; name: string; kind: Kind; area: string; why: string; lat: number; lon: number; vec: string }[];
@@ -48,6 +50,7 @@ const results = labels.map((l) => {
   const top = got.slice(0, 5);
   return {
     text: l.text,
+    half: l.half,
     answerable: right.size > 0,
     got,
     found: top.some((k) => right.has(k)),
@@ -55,19 +58,25 @@ const results = labels.map((l) => {
     precision: top.length ? top.filter((k) => right.has(k)).length / top.length : 0,
   };
 });
-const answerable = results.filter((r) => r.answerable);
-const none = results.filter((r) => !r.answerable);
 const share = (n: number, of: number) => (of ? n / of : 1);
-const score = {
-  found: share(answerable.filter((r) => r.found).length, answerable.length),
-  first: share(answerable.filter((r) => r.first).length, answerable.length),
-  precision: share(answerable.reduce((sum, r) => sum + r.precision, 0), answerable.length),
-  nothing: share(none.filter((r) => r.got.length === 0).length, none.length),
-};
+function scored(of: typeof results) {
+  const answerable = of.filter((r) => r.answerable);
+  const none = of.filter((r) => !r.answerable);
+  return {
+    answerable: answerable.length,
+    none: none.length,
+    found: share(answerable.filter((r) => r.found).length, answerable.length),
+    first: share(answerable.filter((r) => r.first).length, answerable.length),
+    precision: share(answerable.reduce((sum, r) => sum + r.precision, 0), answerable.length),
+    nothing: share(none.filter((r) => r.got.length === 0).length, none.length),
+  };
+}
+const score = scored(results);
 
 describe("search, measured on labelled prompts", () => {
   it("has a label and a frozen vector for every prompt", () => {
     expect(labels.length).toBeGreaterThanOrEqual(40);
+    for (const l of labels) expect(["dev", "test"], l.text).toContain(l.half);
     for (const l of labels) expect(frozen.prompts[l.text], l.text).toBeTruthy();
     const keys = new Set(places.map((p) => p.key));
     for (const l of labels) for (const k of [...l.great, ...l.fits]) expect(keys.has(k), `${l.text}: ${k}`).toBe(true);
@@ -75,19 +84,24 @@ describe("search, measured on labelled prompts", () => {
 
   it("finds a right place for answerable prompts, and nothing for the rest", () => {
     const pct = (x: number) => `${Math.round(x * 100)}%`;
+    const line = (name: string, s: ReturnType<typeof scored>) =>
+      `${name}: found in top 5 ${pct(s.found)}, first right ${pct(s.first)}, precision@5 ${pct(s.precision)}, nothing when nothing fits ${pct(s.nothing)}`;
     console.log(
       [
-        `search eval (${frozen.model}): ${answerable.length} answerable, ${none.length} with no answer`,
-        `found in top 5 ${pct(score.found)}, first right ${pct(score.first)}, precision@5 ${pct(score.precision)}, nothing when nothing fits ${pct(score.nothing)}`,
+        `search eval (${frozen.model}): ${score.answerable} answerable, ${score.none} with no answer`,
+        line("all", score),
+        line("  dev", scored(results.filter((r) => r.half === "dev"))),
+        line("  test", scored(results.filter((r) => r.half === "test"))),
         ...results.filter((r) => (r.answerable ? !r.found : r.got.length > 0)).map((r) => `  miss: "${r.text}" → ${r.got.slice(0, 5).join(", ") || "(nothing)"}`),
       ].join("\n"),
     );
-    // The line held: what was measured on 2026-11-06 (37 of 41 found, 35
-    // first right, precision 75%, 7 of 8 with nothing). A change to search
-    // may raise these, and then raises the line; it may not lower them.
-    expect(score.found).toBeGreaterThanOrEqual(37 / 41);
-    expect(score.first).toBeGreaterThanOrEqual(35 / 41);
-    expect(score.precision).toBeGreaterThanOrEqual(0.74);
-    expect(score.nothing).toBeGreaterThanOrEqual(7 / 8);
+    // The line held: what was measured on 2026-11-06 after tuning on dev
+    // (38 of 41 found, 36 first right, precision 77%, 8 of 8 with nothing).
+    // A change to search may raise these, and then raises the line; it may
+    // not lower them.
+    expect(score.found).toBeGreaterThanOrEqual(38 / 41);
+    expect(score.first).toBeGreaterThanOrEqual(36 / 41);
+    expect(score.precision).toBeGreaterThanOrEqual(0.76);
+    expect(score.nothing).toBe(1);
   });
 });

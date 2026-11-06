@@ -15,7 +15,8 @@
     "lilong-by-taste-of-shanghai-canberra",
     "nepalese-momo-house",
     "the-hungry-buddha"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "a good bowl of ramen",
@@ -30,7 +31,8 @@
     "mugii",
     "raijin-japanese-cuisine",
     "suchis"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "Vietnamese pho",
@@ -44,7 +46,8 @@
     "29-cafe-and-eatery",
     "o-bach",
     "street-of-asia"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "vegan or vegetarian dinner",
@@ -62,7 +65,8 @@
     "rebel-rebel",
     "sweet-bones",
     "the-aegean-pantry"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "Korean BBQ with friends",
@@ -73,7 +77,8 @@
     "azuma-den",
     "gisa-sikdang-suyu-gisa-sikdang",
     "sikdang"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "laksa",
@@ -85,7 +90,8 @@
     "o-bach",
     "tak-kee-roast-inn",
     "two-sisters-street-food"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "pizza to share with a group",
@@ -114,7 +120,8 @@
     "the-howling-moon",
     "the-lounge-room-at-kingsborough",
     "vanilla-pod-pizza-pasta-bar"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "somewhere fancy for a birthday dinner",
@@ -150,7 +157,8 @@
     "the-lotus-indian",
     "the-q-dining",
     "ureshi-japanese-restaurant"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "late night food after drinks",
@@ -167,7 +175,8 @@
     "ikigai-ramen",
     "sabrina-gelato",
     "shahi-mandi-and-biryani"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "dessert or ice cream",
@@ -203,7 +212,8 @@
     "sweet-business-healthy-living",
     "ujin",
     "wonderburger"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "yum cha on the weekend",
@@ -213,7 +223,8 @@
    ],
    "fits": [
     "ginger-and-spice-asian-cuisine"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "Indian curry",
@@ -237,7 +248,8 @@
     "midnight-mocha",
     "shahi-mandi-and-biryani",
     "ve-desi-food"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "a quiet cafe to study in",
@@ -250,7 +262,8 @@
     "espresso-room",
     "folks-gallery",
     "smith-s-alternative"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "brunch with good eggs",
@@ -289,7 +302,8 @@
     "sunday-in-canberra",
     "the-cupping-room",
     "tinker-tailor-jamison"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "specialty coffee roaster",
@@ -308,7 +322,8 @@
     "ginninderry-espresso",
     "society-coffee-co",
     "the-cupping-room"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "bakery with great pastries",
@@ -343,7 +358,8 @@
     "sweet-business-healthy-living",
     "tinker-tailor-jamison",
     "vietnamese-bakery-and-cafe"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "craft beer brewery",
@@ -360,7 +376,8 @@
     "lager-house-by-capital-brewing-co",
     "old-canberra-inn",
     "wins-creek-meadery"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "cocktail bar for a night out",
@@ -384,7 +401,8 @@
     "the-embassy-cbr",
     "the-howling-moon",
     "wakefields"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "winery for a day trip",
@@ -418,7 +436,8 @@
     "sapling-yard-cellar-door",
     "wine-tasting-and-stargazing-at-mount-majura",
     "wins-creek-meadery"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "a pub with a beer garden",
@@ -436,7 +455,8 @@
     "lighthouse",
     "the-dock",
     "the-howling-moon"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "a walk with a view",
@@ -477,7 +497,8 @@
     "mount-franklin-heritage-walk",
     "regatta-point-lookout",
     "uriarra-loop"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "swimming in a river",
@@ -494,7 +515,8 @@
    "fits": [
     "cotter-campground",
     "uriarra-crossing"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "picnic by the lake",
@@ -522,7 +544,8 @@
     "national-rose-gardens",
     "point-hut-pond",
     "yerrabi-pond-district-park"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "mountain bike trails",
@@ -540,7 +563,8 @@
     "honeysuckle-campground",
     "isaacs-ridge-nature-reserve",
     "mount-clear-campground"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "watching the sunset",
@@ -557,7 +581,8 @@
     "mt-ainslie",
     "red-hill-lookout",
     "regatta-point-lookout"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "a hard hike",
@@ -576,7 +601,8 @@
     "rob-roy-range-nature-reserve",
     "square-rock-walk",
     "tuggeranong-hill-nature-reserve"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "somewhere to take a dog",
@@ -624,7 +650,8 @@
     "tuggeranong-pines",
     "urambi-hills-nature-reserve",
     "yarralumla-bay"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "art gallery",
@@ -648,7 +675,8 @@
     "strathnairn-arts",
     "the-front-cafe-and-gallery",
     "tuggeranong-arts-centre"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "museum for a rainy day",
@@ -672,7 +700,8 @@
     "parliament-house",
     "queanbeyan-museum",
     "royal-australian-mint"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "live music gig",
@@ -710,7 +739,8 @@
     "tilley-devines-cafe",
     "tuggeranong-arts-centre",
     "wesley-music-centre"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "comedy night",
@@ -722,7 +752,8 @@
    "fits": [
     "canberra-theatre-centre",
     "the-q-queanbeyan-performing-arts-centre"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "history of Canberra",
@@ -745,7 +776,8 @@
     "parliament-house",
     "pialligo-redwood-forest",
     "queanbeyan-museum"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "bowling",
@@ -756,7 +788,8 @@
    ],
    "fits": [
     "timezone-woden"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "escape room",
@@ -769,7 +802,8 @@
     "hijinx-hotel",
     "kingpin",
     "vr-canberra"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "indoor rock climbing",
@@ -779,7 +813,8 @@
    "fits": [
     "bounce-belconnen",
     "ninja-parc"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "something fun for a big group",
@@ -825,14 +860,16 @@
     "vr-canberra",
     "wine-hopper-murrumbateman",
     "yarralumla-play-station"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "ice skating",
    "great": [
     "phillip-swimming-and-ice-skating-centre"
    ],
-   "fits": []
+   "fits": [],
+   "half": "dev"
   },
   {
    "text": "mini golf",
@@ -843,7 +880,8 @@
    ],
    "fits": [
     "powerkart-raceway"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "coffee near Braddon",
@@ -880,7 +918,8 @@
     "tilley-devines-cafe",
     "trust-cafe",
     "ujin"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "dinner near Kingston",
@@ -919,7 +958,8 @@
     "tintino",
     "wonderburger",
     "zeus-street-greek"
-   ]
+   ],
+   "half": "test"
   },
   {
    "text": "something indoors when it's raining",
@@ -1004,47 +1044,56 @@
     "warehouse-circus",
     "wesley-music-centre",
     "woden-gardenland"
-   ]
+   ],
+   "half": "dev"
   },
   {
    "text": "Ethiopian food",
    "great": [],
-   "fits": []
+   "fits": [],
+   "half": "dev"
   },
   {
    "text": "beach volleyball",
    "great": [],
-   "fits": []
+   "fits": [],
+   "half": "test"
   },
   {
    "text": "casino",
    "great": [],
-   "fits": []
+   "fits": [],
+   "half": "dev"
   },
   {
    "text": "snorkelling",
    "great": [],
-   "fits": []
+   "fits": [],
+   "half": "test"
   },
   {
    "text": "skydiving",
    "great": [],
-   "fits": []
+   "fits": [],
+   "half": "dev"
   },
   {
    "text": "tax return help",
    "great": [],
-   "fits": []
+   "fits": [],
+   "half": "test"
   },
   {
    "text": "Russian restaurant",
    "great": [],
-   "fits": []
+   "fits": [],
+   "half": "dev"
   },
   {
    "text": "bingo night",
    "great": [],
-   "fits": []
+   "fits": [],
+   "half": "test"
   }
  ]
 }

@@ -68,7 +68,8 @@ Greek places, its best only 0.24 above its median, which is where broad
 prompts that do have answers also sit ("cheap date night" 0.16, "free
 things to do" 0.17). What tells them apart is a word no card uses. Over
 111 real prompts and 13 with no answer, a prompt with a word of four
-letters or more that no card contains, and a lift under 0.26 on meaning
+letters or more that no card contains, and a lift under 0.26 (later 0.32,
+#203) on meaning
 alone, was always one with no answer (Ethiopian, Russian, snorkelling,
 casino, beach volleyball, bingo), and no answerable prompt changed; one
 with an unknown word that lifts well ("ice hockey", 0.35, finds the ice
