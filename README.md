@@ -26,33 +26,45 @@ somewhere".
 
 ## What good means here
 
-> ✍️ 压缩草稿（约 200 词）：意思和测试都对过了，请改成你自己的说法，改完删掉这行。
+> ✍️ 分类草稿（约 250 词，全文才能压在 600 内）：三类，每条一句话加证据。事实和测试都对过了，请改成你自己的说法，改完删掉这行。
 
-Some of this the spec checks on every push; some only people using it can
-judge. Each point says which.
+Each part is easy and holds up, the pages are quick, and it all looks like
+one thing. The spec checks the first two on every push (*Enforced*);
+people judge the third (*Judged*).
 
-- **Everyone's voice counts the same.** One keen per person per place, and
-  who you are is your passkey, never a name typed into a form.
-  *Enforced:* `spec/spots.test.ts`, `spec/accounts.test.ts`.
-- **Deciding together is quick and live.** A vote reaches every open page
-  within a second, and the list re-ranks, each card gliding to its new
-  place. *Enforced:* `spec/spots.test.ts`. *Judged:* at crit 9, by several
-  people voting at once in one room.
-- **The group is private; good places are shared.** A place gets in only
-  with a reason, signed by whoever shared it, and every group explores that
-  pool; a group's list, votes and Talk never leave it.
-  *Enforced:* `spec/spots.test.ts`, `spec/talk.test.ts`.
-- **Settling when is quick, and nobody's diary is on show.** Everyone marks
-  only when they're busy; the others see who can come, never why.
-  *Enforced:* `spec/plans.test.ts`, `spec/free.test.ts`.
-- **A plan holds on the day, and never guesses.** The card says when a stop
-  will be closed and gives an outdoor stop the forecast; hours nobody
-  recorded say nothing.
-  *Enforced:* `spec/outing.test.ts`.
-- **Joining costs almost nothing.** A link, a name, an email and a passkey,
-  no password and no app; a lost device comes back by a code or an emailed
-  link. *Enforced:* `spec/accounts.test.ts`. *Judged:* at crit 10, two
-  classmates got in from the URL alone.
+**Easy, and it holds up**
+
+- **Getting in:** a name, an email and a passkey; a new device joins by a
+  code, a lost passkey by an emailed link. *Enforced:* `accounts.test.ts`. *Judged:* at crit
+  10, two classmates joined from the URL alone.
+- **Sharing:** one button, or a QR code; the link previews the group,
+  never its votes. *Enforced:* `spots.test.ts`.
+- **Finding places:** cards, not prose. Of 49 labelled prompts, 93% get a
+  right place in the top five, and all 8 with no answer get nothing.
+  *Enforced:* `search-eval.test.ts`.
+- **Deciding:** one keen each, live everywhere within a second.
+  *Enforced:* `spots.test.ts`. *Judged:* at crit 9, a room voting at once.
+- **Setting a time:** you mark only when you're busy; others see who can
+  come, never why. *Enforced:* `plans.test.ts`, `free.test.ts`.
+- **On the day:** closing times and forecasts, never a guess.
+  *Enforced:* `outing.test.ts`.
+- **Talk:** a thread per place; its words never leave the group.
+  *Enforced:* `talk.test.ts`.
+- **Nothing lost:** the owner can give someone who lost every passkey their
+  old self back; logs say who did what, never what they wrote. *Enforced:* `accounts.test.ts`,
+  `log.test.ts`.
+
+**Quick**
+
+- Server time under 300 ms a page, under 550 KB before it works; the 3D
+  map waits until the page is idle. *Enforced:* `speed.test.ts`.
+  *Judged:* the live home page's first byte in 77 ms (#204).
+
+**One look**
+
+- One palette, every map the invite's, phones first, motion only to show
+  where things go. *Judged:* against `CLAUDE.md`'s rules, on seeded groups
+  in every plan state (`scripts/seed-preview.ts`), and at crits.
 
 ## What I read and looked at
 
