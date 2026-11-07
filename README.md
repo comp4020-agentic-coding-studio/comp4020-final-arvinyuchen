@@ -32,7 +32,7 @@ Spots is assessed against the characteristics of [ISO/IEC 25010:2023](https://ww
 
 | Quality | What good means | How it's tested |
 | --- | --- | --- |
-| **Functional suitability** | **Getting in:** a name, an email and a passkey| *Enforced:* [`accounts.test.ts`][accounts]. *Judged:* at crit 10, two classmates joined from the URL alone. |
+| **Functional suitability** | **Getting in:** easy sign-up and sign-in. | *Enforced:* [`accounts.test.ts`][accounts]. *Judged:* by me: a passkey to sign in, and an email only as insurance to get the account back, is my own design. |
 | | **Sharing:** one button sends the invite person to person. | *Enforced:* [`spots.test.ts`][spots]. |
 | | **Finding places:** cards, not prose; a right place in the top five, and nothing when nothing fits. | *Enforced:* [`search-eval.test.ts`][search-eval]: 93% of 49 labelled prompts, and all 8 with no answer. |
 | | **Deciding:** one keen each, live on every open page. | *Enforced:* [`spots.test.ts`][spots]. *Judged:* at crit 9, a room voting at once. |
