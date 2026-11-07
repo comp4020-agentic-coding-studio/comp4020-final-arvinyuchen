@@ -34,7 +34,7 @@ Spots is assessed against the characteristics of [ISO/IEC 25010:2023](https://ww
 | --- | --- | --- |
 | **Functional suitability** | **Getting in:** easy sign-up and sign-in. | *Enforced:* [`accounts.test.ts`][accounts]. *Judged by me*: a passkey to sign in, and an email only as insurance to recover the account, is my own design. |
 | | **Sharing:** one button sends the invitation. | *Enforced:* [`spots.test.ts`][spots]. |
-| | **Finding places:** exact search by a place's name, and search by meaning ("somewhere for the kids on a rainy day"), both fast. | *Enforced:* [`spots.test.ts`][spots]: a place's name puts it first. [`search-eval.test.ts`][search-eval]: a right place in the top five for 93% of 49 labelled prompts. [`speed.test.ts`][speed]: under 600 ms; about 240 ms measured ([#206][206]). |
+| | **Finding places:** exact search by a place's name, and search by meaning, both should be fast and accurate. | *Enforced:* [`spots.test.ts`][spots]: searching "Questacon" shows Questacon first. [`search-eval.test.ts`][search-eval]: a right place in the top five for 93% of 49 labelled prompts. [`speed.test.ts`][speed]: under 600 ms is required, about 240 ms measured ([#206][206]). |
 | | **Deciding:** one keen each, live on every open page. | *Enforced:* [`spots.test.ts`][spots]. *Judged:* at crit 9, a room voting at once. |
 | | **Setting a time:** you mark only when you're busy; Spots finds when most can come. | *Enforced:* [`plans.test.ts`][plans], [`free.test.ts`][free]. |
 | | **On the day:** closing times and forecasts, never a guess. | *Enforced:* [`outing.test.ts`][outing]. |
