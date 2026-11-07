@@ -26,24 +26,28 @@ somewhere".
 
 ## What good means here
 
-> ✍️ 表格草稿：左列说什么算好，右列说怎么验证。事实和测试都对过了，请改成你自己的说法，改完删掉这行。
+> ✍️ 表格草稿：按 ISO/IEC 25010:2023 的质量特性分，中列说什么算好，右列说怎么验证。事实和测试都对过了，请改成你自己的说法，改完删掉这行。
 
-Each part is easy and holds up, the pages are quick, and it all looks like
-one thing. The spec checks most of it on every push (*Enforced*); people
-judge the rest (*Judged*).
+The rows follow the product quality model of
+[ISO/IEC 25010:2023](https://www.iso.org/standard/78176.html). The spec
+checks most of them on every push (*Enforced*); people judge the rest
+(*Judged*).
 
-| What good means | How it's tested |
-| --- | --- |
-| **Getting in:** a name, an email and a passkey; a new device joins by a code, a lost passkey by an emailed link. | *Enforced:* `accounts.test.ts`. *Judged:* at crit 10, two classmates joined from the URL alone. |
-| **Sharing:** one button, or a QR code; the link previews the group, never its votes. | *Enforced:* `spots.test.ts`. |
-| **Finding places:** cards, not prose; a right place in the top five, and nothing when nothing fits. | *Enforced:* `search-eval.test.ts`: 93% of 49 labelled prompts, and all 8 with no answer. |
-| **Deciding:** one keen each, live everywhere within a second. | *Enforced:* `spots.test.ts`. *Judged:* at crit 9, a room voting at once. |
-| **Setting a time:** you mark only when you're busy; others see who can come, never why. | *Enforced:* `plans.test.ts`, `free.test.ts`. |
-| **On the day:** closing times and forecasts, never a guess. | *Enforced:* `outing.test.ts`. |
-| **Talk:** a thread per place; its words never leave the group. | *Enforced:* `talk.test.ts`. |
-| **Nothing lost:** the owner can give someone who lost every passkey their old self back; logs say who did what, never what they wrote. | *Enforced:* `accounts.test.ts`, `log.test.ts`. |
-| **Quick:** under 300 ms of server time a page, under 550 KB before it works; the 3D map waits until the page is idle. | *Enforced:* `speed.test.ts`. *Judged:* the live home page's first byte in 77 ms (#204). |
-| **One look:** one palette, every map the invite's, phones first, motion only to show where things go. | *Judged:* against `CLAUDE.md`'s rules, on seeded groups in every plan state (`scripts/seed-preview.ts`), and at crits. |
+| Quality | What good means | How it's tested |
+| --- | --- | --- |
+| **Functional suitability** | **Getting in:** a name, an email and a passkey; a new device joins by a code. | *Enforced:* `accounts.test.ts`. *Judged:* at crit 10, two classmates joined from the URL alone. |
+| | **Sharing:** one button sends the invite person to person. | *Enforced:* `spots.test.ts`. |
+| | **Finding places:** cards, not prose; a right place in the top five, and nothing when nothing fits. | *Enforced:* `search-eval.test.ts`: 93% of 49 labelled prompts, and all 8 with no answer. |
+| | **Deciding:** one keen each, live on every open page. | *Enforced:* `spots.test.ts`. *Judged:* at crit 9, a room voting at once. |
+| | **Setting a time:** you mark only when you're busy; Spots finds when most can come. | *Enforced:* `plans.test.ts`, `free.test.ts`. |
+| | **On the day:** closing times and forecasts, never a guess. | *Enforced:* `outing.test.ts`. |
+| | **Talk:** a thread per place on the list. | *Enforced:* `talk.test.ts`. |
+| **Performance efficiency** | Under 300 ms of server time a page, under 550 KB before it works; the 3D map waits until the page is idle. | *Enforced:* `speed.test.ts`. *Judged:* the live home page's first byte in 77 ms (#204). |
+| **Interaction capability** | One look: one palette, every map the invite's, phones first, motion only to show where things go. | *Judged:* against `CLAUDE.md`'s rules, on seeded groups in every plan state (`scripts/seed-preview.ts`), and at crits. |
+| | Every button's name says what it does ("I'm keen on Questacon"). | *Enforced:* `spots.test.ts`, `plans.test.ts`. No full accessibility audit yet. |
+| **Reliability** | Nothing lost: a lost passkey comes back by email, or the owner merges the old self into the new; a group is archived before it can be deleted. | *Enforced:* `accounts.test.ts`, `admin.test.ts`. |
+| **Security** | Passkeys only; the link previews the group, never its votes; Talk never leaves the group; logs say who did what, never what they wrote. | *Enforced:* `accounts.test.ts`, `spots.test.ts`, `talk.test.ts`, `log.test.ts`. |
+| **Compatibility, maintainability, flexibility, safety** | Not argued here. | Not tested. |
 
 ## What I read and looked at
 
