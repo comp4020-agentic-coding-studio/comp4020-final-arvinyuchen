@@ -68,22 +68,25 @@ people judge the third (*Judged*).
 
 ## What I read and looked at
 
-【要写】约 120 词：每个来源一句话说它让你做了什么决定，不要只列名字。
+> ✍️ 草稿（约 85 词）：请改成你自己的说法，改完删掉这行。
 
-【素材】（都已核实过）
-- Clay Shirky, "Situated Software" (2004), http://www.shirky.com/writings/situated_software.html — software built for one particular group, leaning on the trust it already has. → why Spots is for one group of friends, not a city: the group's trust is the ranking.
-- Robin Sloan, "An app can be a home-cooked meal" (2020), https://www.robinsloan.com/notes/home-cooked-app/ — an app for his family, kept simple, used by nobody else. → small is the point; no growth features.
-- Maggie Appleton, "Home-Cooked Software and Barefoot Developers" (2024), https://maggieappleton.com/home-cooked-software — local software for the long tail of needs industrial software ignores. → （可选）
-- Mark Weiser and John Seely Brown, "Designing Calm Technology" (1995), https://calmtech.com/papers/designing-calm-technology — information at the edge of attention, pulled to the centre when wanted. → no push: what's new waits on the page (a count, a dot, "N new").
-- What I compared: When2meet and Doodle (painting free time shows everyone's diary; a poll of guessed times); map and review apps (strangers' stars, one person's saved places); how my own friends decide now (a long thread, a poll half never answer).
+[Clay Shirky's "Situated Software"](http://www.shirky.com/writings/situated_software.html)
+(2004) is why Spots serves one group, not a city: the group's trust in each
+other does the ranking. [Robin Sloan's "An app can be a home-cooked
+meal"](https://www.robinsloan.com/notes/home-cooked-app/) (2020) is why it
+stays small, with nothing built for growth. [Weiser and Brown's "Designing
+Calm Technology"](https://calmtech.com/papers/designing-calm-technology)
+(1995) is why nothing is pushed: what's new waits on the page as a count or
+a dot. I also compared When2meet, which shows everyone's diary, so Spots
+asks only when you're busy, and review apps, which rank places by
+strangers' stars.
 
 ## What I chose not to build
 
-【要写】约 80 词：五条，每条半句理由。
+> ✍️ 草稿（约 45 词）：请改成你自己的说法，改完删掉这行。
 
-【素材】
-- **Passwords and "sign in with".** An account is a name and a passkey; the email only ever brings a link back in, never signs anyone in.
-- **Public ratings and a directory of everything.** Spots is about what this group thinks; places get in with a reason, nothing imported in bulk.
-- **A chatbot that writes recommendations.** Search answers with people's own cards, never generated prose about places nobody vouched for.
-- **Push notifications and a group chat.** The group already has a chat; Talk is one short thread per place, and you find out on the page.
-- **Booking and routing.** Directions hand the stops to Apple or Google Maps; the time between stops is said as an estimate.
+- **Passwords or "sign in with":** a passkey is the only way in.
+- **Ratings or a directory:** a place gets in with a reason.
+- **A chatbot:** search returns people's cards, never prose.
+- **Push or a group chat:** the group already has one.
+- **Booking or routing:** directions open Apple or Google Maps.
