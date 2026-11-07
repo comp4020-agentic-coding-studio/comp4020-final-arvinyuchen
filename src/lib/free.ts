@@ -68,7 +68,7 @@ export interface Stretch<Id> {
 /**
  * The day cut where anyone's busy time starts or ends, each piece with who's
  * free in it; then every window: for each set of people free together
- * somewhere, the longest runs where they all are, each with exactly who's
+ * through some run of pieces, the longest runs where they all are, each with exactly who's
  * free all through it. Windows need two people free (a plan of one isn't a
  * plan) and to be at least `length` minutes long (how long the plan takes);
  * `shorter` counts the ones that would be windows but for that. Best
@@ -94,8 +94,17 @@ export function freeTimes<Id>(
     free: answered.filter((m) => freeDuring(answers.get(m)!, from, at[i + 1])),
   }));
 
+  // (every set free together through some run of pieces, not only the sets
+  // free in one: C, D and E can share a long stretch while A, then B, is
+  // free beside them for parts of it, #211)
   const groups = new Map<string, Id[]>();
-  for (const s of segments) if (s.free.length) groups.set(s.free.map(String).join(), s.free);
+  for (let i = 0; i < segments.length; i++) {
+    let together = segments[i].free;
+    for (let j = i; j < segments.length && together.length; j++) {
+      together = together.filter((m) => segments[j].free.includes(m));
+      if (together.length) groups.set(together.map(String).join(), together);
+    }
+  }
   const found = new Map<string, Stretch<Id>>();
   for (const together of groups.values()) {
     let i = 0;

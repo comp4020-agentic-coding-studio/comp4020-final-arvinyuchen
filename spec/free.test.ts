@@ -74,10 +74,12 @@ describe("free times", () => {
     const hour = freeTimes(day, people, busyDay, 60);
     expect(spans(hour.windows.slice(0, 3))).toEqual(["730-900", "600-745", "1260-1380"]);
     expect(spans(hour.shorter.filter((w) => w.free.length === 5))).toEqual(["1080-1110", "730-745"]);
-    // three hours: four of you never are, so three, longest first
+    // three hours: four of you never are, so three, longest first (Leo, Zoe
+    // and Sam 10am–3pm among them, missed before #211), then two
     const three = freeTimes(day, people, busyDay, 180);
-    expect(spans(three.windows)).toEqual(["730-1110", "1080-1380", "480-745"]);
-    expect(spans(shownWindows(three.windows, 5).rows)).toEqual(["730-1110", "1080-1380"]);
+    expect(spans(three.windows)).toEqual(["730-1110", "600-900", "1080-1380", "480-745", "480-1140", "1020-1380"]);
+    expect(three.windows.find((w) => w.from === 600)?.free).toEqual(["Leo", "Zoe", "Sam"]);
+    expect(spans(shownWindows(three.windows, 5).rows)).toEqual(["730-1110", "600-900"]);
     // nothing that long at all
     const day15 = freeTimes(day, people, busyDay, 15 * 60);
     expect(day15.windows).toEqual([]);
@@ -138,5 +140,86 @@ describe("busy times as they come in", () => {
     // only starts that leave the plan's length before the window ends
     expect(startsIn({ from: 855, to: 1000 }, 120)).toEqual([855, 870]);
     expect(startsIn({ from: 853, to: 973 }, 120)).toEqual([853]);
+  });
+});
+
+// The same, checked against a count anyone can follow: on thousands of
+// random days, who's free is counted minute by minute, and the windows are
+// every stretch that can't grow a minute either way with the same people
+// all free through it, for every set of two or more of them. Days are drawn
+// from a fixed seed, so a failure is the same every run; busy times land
+// mostly on the quarter hour, so they touch, overlap and tie often, and
+// some spill past the day or come from someone who hasn't answered.
+describe("free times, against a minute-by-minute count", () => {
+  let seed = 4020;
+  const rand = () => {
+    // (mulberry32)
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const int = (lo: number, hi: number) => lo + Math.floor(rand() * (hi - lo + 1));
+  const minute = (lo: number, hi: number) => (rand() < 0.8 ? Math.round(int(lo, hi) / 15) * 15 : int(lo, hi));
+
+  function randomDay() {
+    const start = minute(360, 720);
+    const range = { start, end: Math.min(1440, start + minute(120, 900)) };
+    const members = ["A", "B", "C", "D", "E", "F"].slice(0, int(1, 6));
+    const answers = new Map<string, Interval[]>();
+    for (const m of members) {
+      if (rand() < 0.15) continue;
+      const list: Interval[] = [];
+      for (let k = int(0, 4); k > 0; k--) {
+        const a = Math.max(0, minute(range.start - 60, range.end + 30));
+        const b = Math.min(1440, a + Math.max(1, minute(5, 240)));
+        if (a < b) list.push([a, b]);
+      }
+      answers.set(m, list);
+    }
+    return { range, members, answers, length: [1, 15, 30, 60, 90, 120, 180][int(0, 6)] };
+  }
+
+  function counted({ range, members, answers, length }: ReturnType<typeof randomDay>) {
+    const answered = members.filter((m) => answers.has(m));
+    // who's free in each minute, one bit a person
+    const freeIn: number[] = [];
+    for (let t = range.start; t < range.end; t++)
+      freeIn[t] = answered.reduce((bits, m, i) => (answers.get(m)!.some(([a, b]) => a <= t && t < b) ? bits : bits | (1 << i)), 0);
+    const has = (t: number, set: number) => (freeIn[t] & set) === set;
+    const need = Math.min(2, answered.length);
+    const found = new Map<string, { from: number; to: number; free: string[] }>();
+    for (let set = 1; set < 1 << answered.length; set++) {
+      if (answered.filter((_, i) => set & (1 << i)).length < need) continue;
+      for (let t = range.start; t < range.end; t++) {
+        if (!has(t, set) || (t > range.start && has(t - 1, set))) continue;
+        let to = t;
+        let all = -1;
+        while (to < range.end && has(to, set)) all &= freeIn[to++];
+        found.set(`${t}-${to}`, { from: t, to, free: answered.filter((_, i) => all & (1 << i)) });
+      }
+    }
+    const all = [...found.values()].sort(
+      (x, y) => y.free.length - x.free.length || y.to - y.from - (x.to - x.from) || x.from - y.from,
+    );
+    return {
+      windows: all.filter((w) => w.to - w.from >= length),
+      shorter: all.filter((w) => w.to - w.from < length),
+    };
+  }
+
+  it("finds the same windows, with the same people, in the same order, on 3000 random days", () => {
+    let windows = 0;
+    for (let n = 0; n < 3000; n++) {
+      const d = randomDay();
+      const got = freeTimes(d.range, d.members, d.answers, d.length);
+      const want = counted(d);
+      const show = (ws: { from: number; to: number; free: string[] }[]) => ws.map((w) => `${w.from}-${w.to} ${w.free.join("")}`);
+      const why = `day ${n}: ${JSON.stringify({ ...d, answers: Object.fromEntries(d.answers) })}`;
+      expect(show(got.windows), why).toEqual(show(want.windows));
+      expect(show(got.shorter), why).toEqual(show(want.shorter));
+      windows += want.windows.length;
+    }
+    expect(windows, "the random days have windows to compare").toBeGreaterThan(3000);
   });
 });
