@@ -26,45 +26,24 @@ somewhere".
 
 ## What good means here
 
-> ✍️ 分类草稿（约 250 词，全文才能压在 600 内）：三类，每条一句话加证据。事实和测试都对过了，请改成你自己的说法，改完删掉这行。
+> ✍️ 表格草稿：左列说什么算好，右列说怎么验证。事实和测试都对过了，请改成你自己的说法，改完删掉这行。
 
 Each part is easy and holds up, the pages are quick, and it all looks like
-one thing. The spec checks the first two on every push (*Enforced*);
-people judge the third (*Judged*).
+one thing. The spec checks most of it on every push (*Enforced*); people
+judge the rest (*Judged*).
 
-**Easy, and it holds up**
-
-- **Getting in:** a name, an email and a passkey; a new device joins by a
-  code, a lost passkey by an emailed link. *Enforced:* `accounts.test.ts`. *Judged:* at crit
-  10, two classmates joined from the URL alone.
-- **Sharing:** one button, or a QR code; the link previews the group,
-  never its votes. *Enforced:* `spots.test.ts`.
-- **Finding places:** cards, not prose. Of 49 labelled prompts, 93% get a
-  right place in the top five, and all 8 with no answer get nothing.
-  *Enforced:* `search-eval.test.ts`.
-- **Deciding:** one keen each, live everywhere within a second.
-  *Enforced:* `spots.test.ts`. *Judged:* at crit 9, a room voting at once.
-- **Setting a time:** you mark only when you're busy; others see who can
-  come, never why. *Enforced:* `plans.test.ts`, `free.test.ts`.
-- **On the day:** closing times and forecasts, never a guess.
-  *Enforced:* `outing.test.ts`.
-- **Talk:** a thread per place; its words never leave the group.
-  *Enforced:* `talk.test.ts`.
-- **Nothing lost:** the owner can give someone who lost every passkey their
-  old self back; logs say who did what, never what they wrote. *Enforced:* `accounts.test.ts`,
-  `log.test.ts`.
-
-**Quick**
-
-- Server time under 300 ms a page, under 550 KB before it works; the 3D
-  map waits until the page is idle. *Enforced:* `speed.test.ts`.
-  *Judged:* the live home page's first byte in 77 ms (#204).
-
-**One look**
-
-- One palette, every map the invite's, phones first, motion only to show
-  where things go. *Judged:* against `CLAUDE.md`'s rules, on seeded groups
-  in every plan state (`scripts/seed-preview.ts`), and at crits.
+| What good means | How it's tested |
+| --- | --- |
+| **Getting in:** a name, an email and a passkey; a new device joins by a code, a lost passkey by an emailed link. | *Enforced:* `accounts.test.ts`. *Judged:* at crit 10, two classmates joined from the URL alone. |
+| **Sharing:** one button, or a QR code; the link previews the group, never its votes. | *Enforced:* `spots.test.ts`. |
+| **Finding places:** cards, not prose; a right place in the top five, and nothing when nothing fits. | *Enforced:* `search-eval.test.ts`: 93% of 49 labelled prompts, and all 8 with no answer. |
+| **Deciding:** one keen each, live everywhere within a second. | *Enforced:* `spots.test.ts`. *Judged:* at crit 9, a room voting at once. |
+| **Setting a time:** you mark only when you're busy; others see who can come, never why. | *Enforced:* `plans.test.ts`, `free.test.ts`. |
+| **On the day:** closing times and forecasts, never a guess. | *Enforced:* `outing.test.ts`. |
+| **Talk:** a thread per place; its words never leave the group. | *Enforced:* `talk.test.ts`. |
+| **Nothing lost:** the owner can give someone who lost every passkey their old self back; logs say who did what, never what they wrote. | *Enforced:* `accounts.test.ts`, `log.test.ts`. |
+| **Quick:** under 300 ms of server time a page, under 550 KB before it works; the 3D map waits until the page is idle. | *Enforced:* `speed.test.ts`. *Judged:* the live home page's first byte in 77 ms (#204). |
+| **One look:** one palette, every map the invite's, phones first, motion only to show where things go. | *Judged:* against `CLAUDE.md`'s rules, on seeded groups in every plan state (`scripts/seed-preview.ts`), and at crits. |
 
 ## What I read and looked at
 
