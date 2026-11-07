@@ -45,3 +45,20 @@ What's left is one kind of miss: an everyday word no card uses ("study",
 quiet cafe to study in" gets nothing. Its lift (0.254) is level with
 "Ethiopian food" (0.247), which rightly gets nothing, so the lift alone
 can't tell them apart.
+
+## Searching by name
+
+Typing a place's name is another task (known-item search), measured apart
+(2026-11-07, #207): each of the 697 names of the 702 places in
+`vectors.json` (a few share one), typed as it is, its query vector frozen
+in `names.json` by `scripts/build-name-eval.ts`. Right is that place, or
+one with the same name. No labels: the name says which.
+
+Measured: the place first for 651 (Success@1 93.4%), in the top 5 for 687
+(Success@5 98.6%), mean reciprocal rank 0.958. The misses are of three
+kinds: a sibling with another name first ("L'épi Artisan Bakery" puts its
+Kambah shop first, "Eighty/Twenty" its Coombs one); a name of common words,
+where another card with them comes first ("Mount Ainslie" fourth, after
+Mount Clear Campground; "Lake Burley Griffin" after The Little Burley
+Market); and a short or foreign name ("Au Lac", "La Veera", "Mamé"), which
+gets nothing at all.

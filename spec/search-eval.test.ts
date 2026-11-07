@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { Kind } from "../src/lib/kinds";
-import { anchorsFrom, cosine, distanceKm, NEAR_KM, parseQuery } from "../src/lib/query";
+import { anchorsFrom, cosine, distanceKm, keywords, NEAR_KM, parseQuery } from "../src/lib/query";
 import { rankByMeaning } from "../src/lib/rank";
 
 // How good search is, measured: 49 prompts people might type, each labelled
@@ -35,11 +35,13 @@ const vec = (b64: string) => {
 const places = frozen.places.map((p, i) => ({ ...p, id: i + 1, v: vec(p.vec) }));
 const anchors = anchorsFrom(places);
 
-function answer(text: string) {
+function answer(text: string, asked = vec(frozen.prompts[text])) {
   const parsed = parseQuery(text, anchors);
   const near = parsed.near;
   const pool = near ? places.filter((p) => distanceKm(near, { lat: p.lat, lon: p.lon }) <= NEAR_KM) : places;
-  const asked = vec(frozen.prompts[text]);
+  // (only a where, as search.ts answers it: everything there, nearest first)
+  if (near && keywords(parsed.rest).length === 0)
+    return [...pool].sort((a, b) => distanceKm(near, a) - distanceKm(near, b)).map((p) => p.key);
   const meant = new Map(places.map((p) => [p.id, cosine(asked, p.v)]));
   return rankByMeaning(parsed, places, pool, meant).map((p) => p.key);
 }
@@ -103,5 +105,46 @@ describe("search, measured on labelled prompts", () => {
     expect(score.first).toBeGreaterThanOrEqual(36 / 41);
     expect(score.precision).toBeGreaterThanOrEqual(0.76);
     expect(score.nothing).toBe(1);
+  });
+});
+
+// Searching by a place's name (known-item search): each starter place's
+// name, typed as it is, its query vector frozen by
+// scripts/build-name-eval.ts. Right is that place (or one with the same
+// name: a few have two).
+const named = read<{ model: string; names: Record<string, string> }>("names.json");
+const keysOf = new Map<string, Set<string>>();
+for (const p of places) keysOf.set(p.name, (keysOf.get(p.name) ?? new Set()).add(p.key));
+const lookedUp = Object.entries(named.names).map(([name, v]) => {
+  const got = answer(name, vec(v));
+  return { name, got, at: got.findIndex((k) => keysOf.get(name)!.has(k)) };
+});
+
+describe("search, measured on every place's name", () => {
+  it("has a name vector for every place, from the same model", () => {
+    expect(named.model).toBe(frozen.model);
+    expect(Object.keys(named.names).sort()).toEqual([...keysOf.keys()].sort());
+  });
+
+  it("puts the place named first", () => {
+    const n = lookedUp.length;
+    const at1 = lookedUp.filter((r) => r.at === 0).length;
+    const at5 = lookedUp.filter((r) => r.at >= 0 && r.at < 5).length;
+    const mrr = lookedUp.reduce((sum, r) => sum + (r.at >= 0 ? 1 / (r.at + 1) : 0), 0) / n;
+    const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+    console.log(
+      [
+        `name search (${named.model}): ${n} names, Success@1 ${at1}/${n} (${pct(at1 / n)}), Success@5 ${at5}/${n} (${pct(at5 / n)}), MRR ${mrr.toFixed(3)}`,
+        ...lookedUp
+          .filter((r) => r.at !== 0)
+          .map((r) => `  miss: "${r.name}" → ${r.at < 0 ? "not found" : `#${r.at + 1}`}, first ${r.got[0] ?? "(nothing)"}`),
+      ].join("\n"),
+    );
+    // The line held: what was measured on 2026-11-07 (#207), counting only
+    // the place itself right, so a sibling with another name ("Eighty/Twenty"
+    // for "Eighty Twenty") is a miss: 651 of 697 first, 687 in the top 5.
+    expect(at1).toBeGreaterThanOrEqual(651);
+    expect(at5).toBeGreaterThanOrEqual(687);
+    expect(mrr).toBeGreaterThanOrEqual(0.95);
   });
 });
