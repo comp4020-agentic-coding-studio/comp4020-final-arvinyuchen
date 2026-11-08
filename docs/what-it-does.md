@@ -26,7 +26,7 @@ the matching cards, best first, and the map frames their pins. Everyone signs
 in with a passkey, is themselves on any device, and sees all their groups in
 one place; your account page renames you everywhere and adds or removes
 passkeys. The person who started a
-group can rename it, write a note for the people they invite, remove or merge
+group can rename it, write a note for the people they invite, remove
 members, and reset its invite link. They can also plan a day out: one place
 from the list or a few in order (an outing with stops, "National Gallery →
 Questacon"), a day, and how long it all takes (the hours it counts, 8am to

@@ -145,9 +145,9 @@ addColumn("members", "merged_into", "INTEGER REFERENCES members(id)");
 // Who joined since a member last looked: the newest member they've closed
 // the note about ("Mia joined"), by id, so it's exact (#120).
 addColumn("members", "joins_seen_id", "INTEGER");
-// The same person twice, for the owner to merge: someone who joined again
-// on a new account saying who they were (claimed), or a pair that only
-// share a name, which the owner said aren't one person (dismissed).
+// The same person twice, for the owner to merge (claimed on joining again,
+// or a pair that only shared a name): no longer asked or used since email
+// recovery (#195) made it a second way back (#222), kept as data is.
 db.exec(`
   CREATE TABLE IF NOT EXISTS member_claims (
     group_id TEXT NOT NULL REFERENCES groups(id),
@@ -544,134 +544,6 @@ export function removeMember(group: Group, memberId: number): boolean {
     if (changes) db.prepare("DELETE FROM comment_reads WHERE member_id = ?").run(memberId);
     return changes > 0;
   })();
-}
-
-/**
- * Folds a duplicate into the member they really are: their keens and the
- * places they added move over, and the duplicate's account leaves the group.
- * It's also the way back for someone who lost every device: they make a new
- * account, join again by the link saying who they were (claimMember), and
- * the owner merges their old member into the new one. There's no other
- * recovery.
- */
-export function mergeMembers(group: Group, fromId: number, intoId: number): boolean {
-  if (fromId === intoId) return false;
-  const live = db.prepare("SELECT id, account_id FROM members WHERE id = ? AND group_id = ? AND removed_at IS NULL");
-  const from = live.get(fromId, group.id) as { id: number; account_id: number | null } | undefined;
-  const into = live.get(intoId, group.id) as { id: number; account_id: number | null } | undefined;
-  if (!from || !into) return false;
-  db.transaction(() => {
-    db.prepare("INSERT OR IGNORE INTO votes (pick_id, member_id) SELECT pick_id, ? FROM votes WHERE member_id = ?").run(
-      intoId,
-      fromId,
-    );
-    db.prepare("DELETE FROM votes WHERE member_id = ?").run(fromId);
-    db.prepare("UPDATE picks SET added_by = ? WHERE added_by = ?").run(intoId, fromId);
-    // Their answers to plans move over where the one they really are hasn't answered.
-    const unanswered = "plan_id NOT IN (SELECT plan_id FROM plan_answers WHERE member_id = ?)";
-    db.prepare(`UPDATE plan_busy SET member_id = ? WHERE member_id = ? AND ${unanswered}`).run(intoId, fromId, intoId);
-    db.prepare(`UPDATE plan_answers SET member_id = ? WHERE member_id = ? AND ${unanswered}`).run(intoId, fromId, intoId);
-    db.prepare("UPDATE plans SET created_by = ? WHERE created_by = ?").run(intoId, fromId);
-    // What they said in Talk is theirs (so theirs to delete), and they've
-    // read each thread as far as either of them had. (A nonce only stops a
-    // double tap, so it needn't come along.)
-    db.prepare("UPDATE comments SET member_id = ?, nonce = NULL WHERE member_id = ?").run(intoId, fromId);
-    // (their reactions too, where the one they really are hasn't reacted)
-    db.prepare("UPDATE OR IGNORE comment_reactions SET member_id = ? WHERE member_id = ?").run(intoId, fromId);
-    db.prepare("DELETE FROM comment_reactions WHERE member_id = ?").run(fromId);
-    db.prepare(
-      `INSERT INTO comment_reads (member_id, group_id, place_id, last_read_id)
-         SELECT ?, group_id, place_id, last_read_id FROM comment_reads WHERE member_id = ?
-       ON CONFLICT (member_id, place_id) DO UPDATE SET last_read_id = MAX(last_read_id, excluded.last_read_id)`,
-    ).run(intoId, fromId);
-    db.prepare("DELETE FROM comment_reads WHERE member_id = ?").run(fromId);
-    if (into.account_id === null && from.account_id !== null) {
-      db.prepare("UPDATE members SET account_id = ? WHERE id = ?").run(from.account_id, intoId);
-    }
-    db.prepare("UPDATE members SET removed_at = datetime('now'), merged_into = ?, account_id = NULL WHERE id = ?").run(
-      intoId,
-      fromId,
-    );
-    if (group.ownerId === fromId) db.prepare("UPDATE groups SET owner_member_id = ? WHERE id = ?").run(intoId, group.id);
-  })();
-  return true;
-}
-
-/** Who someone who joined again can say they were: anyone in the group
- *  before them but the owner (who'd have nobody to confirm it). */
-export function claimable(group: Group, before = Number.MAX_SAFE_INTEGER): Member[] {
-  return listMembers(group.id).filter((m) => m.id !== group.ownerId && m.id < before);
-}
-
-/** A newcomer says they're someone already in the group, from before they
- *  lost every passkey. Nothing moves until the owner merges them. */
-export function claimMember(group: Group, newcomer: Member, wasId: number): boolean {
-  if (!claimable(group, newcomer.id).some((m) => m.id === wasId)) return false;
-  db.prepare("INSERT OR IGNORE INTO member_claims (group_id, from_id, into_id) VALUES (?, ?, ?)").run(group.id, wasId, newcomer.id);
-  return true;
-}
-
-export interface MergeAsk {
-  /** who they were, here longer */
-  from: Member & { joinedAt: string };
-  /** who they are now */
-  into: Member & { joinedAt: string };
-  /** said so themselves, or only the same name */
-  claimed: boolean;
-}
-
-/** The same person twice, for the owner: each claim, and each pair with
- *  the same name, newest second, until merged or said not to be. */
-export function mergeAsks(group: Group): MergeAsk[] {
-  const rows = db
-    .prepare(
-      `SELECT a.id AS fromId, a.name AS fromName, a.account_id AS fromAccount, a.joined_at AS fromJoined,
-              b.id AS intoId, b.name AS intoName, b.account_id AS intoAccount, b.joined_at AS intoJoined,
-              COALESCE(c.claimed, 0) AS claimed
-         FROM members a JOIN members b ON b.group_id = a.group_id AND b.id > a.id
-         LEFT JOIN member_claims c ON c.from_id = a.id AND c.into_id = b.id
-        WHERE a.group_id = ? AND a.removed_at IS NULL AND b.removed_at IS NULL
-          AND a.id IS NOT ? AND b.id IS NOT ?
-          AND c.dismissed_at IS NULL
-          AND (c.claimed = 1 OR lower(a.name) = lower(b.name))
-        ORDER BY b.id, a.id`,
-    )
-    .all(group.id, group.ownerId, group.ownerId) as {
-    fromId: number;
-    fromName: string;
-    fromAccount: number | null;
-    fromJoined: string;
-    intoId: number;
-    intoName: string;
-    intoAccount: number | null;
-    intoJoined: string;
-    claimed: number;
-  }[];
-  return rows.map((r) => ({
-    from: { id: r.fromId, name: r.fromName, accountId: r.fromAccount, joinedAt: r.fromJoined },
-    into: { id: r.intoId, name: r.intoName, accountId: r.intoAccount, joinedAt: r.intoJoined },
-    claimed: r.claimed === 1,
-  }));
-}
-
-/** The owner says two aren't one person: the ask goes, for good. */
-export function keepApart(group: Group, fromId: number, intoId: number): boolean {
-  if (!mergeAsks(group).some((a) => a.from.id === fromId && a.into.id === intoId)) return false;
-  db.prepare(
-    `INSERT INTO member_claims (group_id, from_id, into_id, claimed, dismissed_at) VALUES (?, ?, ?, 0, datetime('now'))
-     ON CONFLICT (from_id, into_id) DO UPDATE SET dismissed_at = datetime('now')`,
-  ).run(group.id, fromId, intoId);
-  return true;
-}
-
-/** Whom this member said they were, while the owner hasn't answered. */
-export function pendingClaim(group: Group, member: Member): Member | undefined {
-  return db
-    .prepare(
-      `SELECT m.id, m.name, m.account_id AS accountId FROM member_claims c JOIN members m ON m.id = c.from_id
-        WHERE c.group_id = ? AND c.into_id = ? AND c.claimed = 1 AND c.dismissed_at IS NULL AND m.removed_at IS NULL`,
-    )
-    .get(group.id, member.id) as Member | undefined;
 }
 
 /** A new invite link; the old one stops letting anyone new in. */
