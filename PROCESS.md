@@ -1,437 +1,118 @@
 # Process overview
 
-## The idea
+> ✍️ 草稿（#224）：按提纲起草，事实和链接都核对过。请改成你自己的说法，改完删掉这行。
 
-The brief fixes three things: multi-user, real-time, persistent. I started
-from a trip-itinerary idea, then narrowed it to **Spots**: one group of
-friends exploring places and voting on where to go. What changed my mind was
-asking what a group actually struggles with. It isn't listing places, it's
-deciding together, which is where multi-user and real-time stop being
-requirements and become the point.
+## From the brief to Spots
 
-## Stack decision
+My first idea was a trip itinerary, and it sounded flat: a shared list of
+places and times is what a dozen planning apps already do. Then I asked
+where a group outing actually goes wrong, and the answer was the group
+deciding together (reflections/crit-8.md). After that the brief's three
+rules were the point of the app: multi-user is the group, real-time is
+everyone voting in the same room, and persistence is the list still being
+there next weekend. The first working version, a group, a join link, keen
+votes and a live list, was one commit,
+[`1eddcc8`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/1eddcc8).
 
-**Context.** One Fly machine with 256 MB and one volume at `/data`; the app
-must be live by the crit 8 cutoff, with two hours to build.
+## The stack, and what it costs
 
-**Decision.** Astro (server output, Node adapter) + SQLite (`better-sqlite3`)
-on the volume + server-sent events for the live layer.
+Spots is Astro rendering on the server, SQLite on Fly's volume, and
+server-sent events for the live layer, on the one machine the course gives
+([ADR 0001](docs/adr/0001-stack.md)). Every action is a plain form post,
+which is what `spec/` can drive over HTTP. SQLite is one file, so it
+survives restarts and redeploys with no database server. SSE is one-way,
+which is all Spots needs: a browser acts through forms and only has to hear
+that something changed.
 
-**Why.**
-- Server-rendered pages with plain HTML forms work with no JavaScript, and are
-  easy to test over HTTP, which is how `spec/` checks the running app.
-- SQLite is one file on the volume: it persists across restarts and redeploys
-  with no separate database server, which the course setup doesn't allow.
-- SSE is one-way (server to browser) over plain HTTP, which is all Spots
-  needs: browsers act through forms and only need to hear "something changed".
-  WebSockets would add a second channel for no gain.
-- I used the same shape for my crit 7 prototype, so its failure modes (CSRF
-  behind Fly's proxy, the volume path) were already known.
+The bus lives in one process, so Spots can only ever run on one machine. And
+each change makes every open page read itself again. That's simple, but the
+work grows with the square of the people in the room. I only saw how much
+once the pressure test ran
+([`7a80019`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/7a80019),
+[#214](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/issues/214)):
+30 people voting at once settle in about a third of a second on a laptop, 60
+took 6.3 s, and 100 ran out of connections. A group of friends is far below
+that, so I left it and wrote the numbers into the test.
 
-**Trade-offs.** One process holds the SSE bus in memory, so the app can only
-ever run on one machine; that's what `fly.toml` fixes anyway. A page re-fetches
-itself on each change rather than receiving a diff, which is simple but heavier
-with a big group.
-
-**Later.** For a while that became a rule: signed in, everything works
-without JavaScript. Once every member was a passkey account, nobody could
-sign in without it, so the rule only made each new piece of UI carry a
-version nobody would see. It was dropped (#116): the page's script is
-assumed, and what stays is the reason the forms were chosen, every action a
-plain HTTP route the spec can drive.
-
-## Search by meaning
-
-**Context.** I wanted people to find places the way they'd ask a friend
-("cheap dumplings near Dickson"), with the answer being cards, not a chatbot's
-paragraph. The machine has 256 MB, too little to run an embedding model
-beside the app.
-
-**Decision.** Each card (name, kind, suburb, the reason it was shared) is
-embedded with Voyage AI's `voyage-4-lite` at 512 dimensions and stored in
-SQLite. A prompt is embedded too, and cards are ranked by cosine similarity
-in plain JavaScript; with hundreds of places a vector database adds nothing.
-"near X" is read out of the prompt and applied as a 3 km filter, because a
-vector only knows a card mentions a suburb, not where it is.
-
-**Tuning.** My first cut-offs (keep cards scoring at least 0.3) were guesses.
-Scoring real prompts showed `voyage-4-lite`'s similarities are low and
-bunched: "a walk with a view" peaks at 0.21 (Mount Ainslie), while nonsense
-like "xqzv blorfnik" or "tax return help" peaks at 0.11 to 0.16, and every
-prompt has its own baseline ("brunch spot" scores even the worst card at
-0.26). So a prompt gets no cards if its best is under 0.18, and otherwise a
-card must reach 60% of the way from that prompt's median score to its best.
-
-With 702 places that wasn't enough to say "nothing": "Ethiopian food"
-(there's no Ethiopian restaurant among them) came back with Nepalese and
-Greek places, its best only 0.24 above its median, which is where broad
-prompts that do have answers also sit ("cheap date night" 0.16, "free
-things to do" 0.17). What tells them apart is a word no card uses. Over
-111 real prompts and 13 with no answer, a prompt with a word of four
-letters or more that no card contains, and a lift under 0.26 (later 0.32,
-#203) on meaning
-alone, was always one with no answer (Ethiopian, Russian, snorkelling,
-casino, beach volleyball, bingo), and no answerable prompt changed; one
-with an unknown word that lifts well ("ice hockey", 0.35, finds the ice
-rink) still answers.
-
-**Trade-offs.** Card text and prompts go to a third party, and search needs
-a network call; without the key or with Voyage down it falls back to matching
-words, so it degrades rather than breaks. Embeddings are weak at "not" ("not
-too loud" sits near "loud"), and the search is only as good as the reasons
-people write.
-
-## Accounts, by passkey only
-
-**Context.** Group links persist (they're rows in SQLite on the volume), but
-who you are in a group was only a cookie in one browser. On a second device,
-or after clearing cookies, a friend joined again and became a second person,
-with none of their keens. And whoever started a group had no way to look
-after it.
-
-**Decision.** Optional accounts whose only credential is a passkey
-(WebAuthn, via SimpleWebAuthn): no password, no email, no third-party sign-in.
-An account starts from a member already in a group, so joining is still a
-link and a name. Passkeys are discoverable, so signing in needs no username;
-they sync through iCloud Keychain or Google Password Manager, and a QR code
-covers a phone signing in on someone else's laptop. The group's first member
-is its owner, with four tools: rename, remove, merge duplicates, reset the
-invite link. A reset retires the old link instead of changing the group's
-id, so members following an old link are sent to the new one.
-
-**Why not the alternatives.** A magic link by email needs a mail service, a
-key and people's email addresses, and lands in spam. "Sign in with Google"
-needs app registration, client secrets and a consent screen, and makes
-Spots depend on someone else's account.
-
-**Trade-offs.** Passkeys need JavaScript and a device that has them; without
-both the buttons don't appear and everything else still works. Lose every
-device holding the passkey and the account is gone (the groups aren't); a
-second passkey on another device is the only recovery. Real Face ID can't be
-driven from the test suite, so `spec/authenticator.ts` is a software
-passkey that signs exactly as a device does, and the server's real
-verification runs against it.
-
-## Several people voting at once
-
-**Context.** The moment Spots is for is a group in the same room, all voting
-at once. Every keen reaches every open page within a second, and each page
-swaps in the list again, sorted most keen first. So in a burst of votes the
-cards keep moving: a spot jumps up just as someone reaches for the card that
-was there, and their keen lands on a place they didn't mean. On top of that,
-keen was a toggle on whatever the server held: a double-tap, or the same
-person on their phone and their laptop (which passkeys now make normal),
-could cancel their own vote.
-
-**Options.**
-1. *Re-rank live on every vote* (what it did). The ranking is always true,
-   but the list moves under people's fingers exactly when the group is busiest.
-2. *Re-rank live, but animate the moves* and ignore taps for a moment after
-   one. Easier to follow, but cards still move while you're aiming.
-3. *A stable list plus a live "top 3"*. Nothing moves under you, but the full
-   list is never in rank order, which is the thing the group is deciding.
-4. *Hold each person's order, offer the new one.* Counts and who's keen update
-   live, but cards stay where they are until you ask for the new order.
-
-**Decision.** Option 4. While someone is on the page, their list keeps its
-order and only the counts, names and keen buttons change. When the ranking
-underneath has changed, a "New order — show it" bar appears above the list,
-and tapping it re-sorts. While the list is out of rank order its position
-numbers are hidden, since they would be wrong. Opening or reloading the page
-always shows the current ranking. A place someone adds joins the bottom of the list until then.
-A keen button now sends the state it shows ("keen" or "not keen") and the
-server sets exactly that, so repeating it changes nothing.
-
-**Why.** Two parts of "What good means here" pull against each other.
-"Deciding together is quick" wants the ranking live. "Everyone's voice counts
-the same" means a keen has to land where the person meant it, and a vote on
-the wrong card is a voice miscounted. Option 4 keeps the second without losing
-the first: every count is still live within a second, and the ranking is one
-tap away. The person who decides when the list moves is the one looking at it.
-
-**Revisited (October 2026).** Using it, the held order read as a list that
-was wrong until you tapped a bar, and the bar was one more thing on the
-screen. The list is now always the ranking (option 2): a live change
-re-ranks it at once, and each card glides from its old place to its new
-one (a FLIP animation; under reduced motion they just swap), so everyone
-sees what moved and why. A keen tap within about half a second of a move
-is ignored, since it was aimed at whatever card was there before, and the
-keen button still sends the state it shows, so a tap that does land never
-undoes a vote. The New order bar and the held state are gone.
-Sending the shown state fixes the same problem from the other side: the vote
-records what the person saw, not whatever the server held at that moment.
-
-**Trade-offs.** For a while, someone's screen can show a list that isn't in
-rank order. They might read the top card as the favourite when it no longer
-is. The bar is there for exactly this, but it only helps if people notice it.
-Two people in the room can be looking at different orders, so "the second one
-down" can mean different spots. Holding the order means voting stays on the
-page (the keen form posts in the background), so without JavaScript the form
-still works but reloads into the current ranking, as before. Two devices, one
-showing keen and one not, can still disagree for up to a second. Whichever
-tap arrives last wins, but it can no longer undo a vote by accident.
-
-On a wide screen the group's page first made each column a screen tall,
-scrolling on its own, like an app's panes. With a long list that put Our
-list in a small box under the plan. Next the list was as long as it is
-and the page scrolled it, the header and Explore with the map staying put
-beside it; but a scroll outside the columns moved only the left one, and
-their tops came apart. Now the page is the window and never scrolls, and
-each column scrolls on its own, the left one whole (the group's panel, the
-plan and every row together), so the list is never a small box under a
-panel that stays, the tops stay level, and the map is always there for a
-tapped place.
-
-The rows themselves were tidied after. The keen button said "3 I'm keen",
-then "1 Keen!" once tapped, changing width under the finger and squeezing
-names onto two lines; it's now one fixed width saying "3 keen" either way,
-filled with a tick when it's yours, its spoken name the action ("I'm keen
-on Questacon" / "Not keen on Questacon any more"). The leader's bigger
-photo put its name at another x than the rest; now every row has the same
-columns and the leader says so with "Most keen" and a size-up name. And a
-stop of the plan was a bold blue line of its own competing with the
-button; it's now "Parkes · Thu 29, stop 1" in the suburb's grey.
-
-## Deciding when
-
-**Context.** Spots got a group to "where", then left "when" to the group
-chat, which is where plans stall: someone suggests Saturday, half reply,
-nobody says what time. The group needed a time without a poll that half of
-it never answers, and on a phone, since that's where the chat is.
-
-**Options.**
-1. *The owner suggests a few times and everyone votes.* Quick, but the
-   owner guesses, and "none of these" is a dead end.
-2. *Everyone paints when they're free over a week* (When2meet). It finds
-   the overlap, but asks a lot, shows everyone's diary to everyone, and on a
-   phone the painting fights the page's scroll.
-3. *The owner picks a day and everyone marks when they're busy that day;*
-   the app finds when people are free together, and the owner decides.
-
-For marking busy times on a phone I mocked up four ways: a timeline of the
-day, From and To rows, parts of the day (morning, afternoon, evening), and
-a grid of half hours.
-
-**Decision.** Option 3, on a timeline to the minute (at first 5-minute
-steps, but a class out at 10:07 had to round, and rounding can hide a
-window or make one up), and the owner says up front how long it takes
-(2h unless they say). Busy rather than free, since most of a Saturday is
-free: less to mark, and "I'm free all day" is one tap. The day draws the way phone
-calendars do: a swipe scrolls, a tap adds an hour, a hold (400ms) then a
-drag draws, and a stretch has dots to drag and exact times behind a tap.
-Without a script the same sheet is From and To rows. The card lists only
-times at least as long as the plan takes: when everyone is free, longest
-first, then a longer time that most can make. At first there was no
-shortest time, a 15-minute overlap marked in gold; but a time the outing
-doesn't fit in isn't a choice, so now it isn't offered, and when nothing is
-long enough the card says so ("No 2h stretch works for 2 or more"), with
-the longest there is, and the owner can make it shorter. Later a group
-saw only "6 of 7" times for its 4h plan while all seven were free for
-3h 30m: still never offered, but now named above the list ("Everyone's
-free 1–4:30pm, 30 min short"), with "Make it
-3h 30m" for the owner, so the trade between length and everyone is in
-view rather than hidden. Only times when
-at least two are free count. A start the owner picks ends that long after;
-an exact time can still be typed. The starts were first a row of chips
-every half hour inside the chosen window, with "Other…" listing every 5
-minutes; that was a lot to scan and still not to the minute. Now a window
-offers its earliest start as one chip and, beside it, the same time field
-to type or swipe as the sheet's, held between that start and the latest
-that still fits; the ring on the strip and "Set it" follow it as it
-turns. "Other…" kept only its other half, the windows past the best few,
-now behind "N more windows"; an exact time stays, as the only way to a
-time outside every window or a different end, but as "Set exact time" in
-the owner's ··· menu rather than a fold on the card. Then the card itself
-was cut to say each thing once: "Thu 29 Oct · 8am–11pm · 4h" under the
-title became "4h" (the tile has the date), "7 of 8 filled in · Ivy hasn't
-yet" became "Waiting on Ivy", "6 of 7 free · Kai can't" became "Kai
-can't" beside its 6/7, and the "So far" header, the ring's key and "Start
-between …" went, the last kept only for screen readers. The sheet first asked for the hours to
-count as well, a start and an end, but with how long asked that's one
-question too many: the hours fold away under it, 8am to 11pm (so night
-is never "free"), shown in grey with Change. The owner can set a time whenever they like,
-and is nudged once everyone's in. After that, someone changing their times
-tells only the owner, with a time to move to, or Keep.
-
-**Why.** "Deciding together is quick": one day, one sheet, and the overlap
-worked out instead of argued. "Everyone's voice counts the same": each
-person's times weigh the same, and the owner sees who can't make each
-time, so nobody is quietly left out. The group is private, and inside it
-each person's diary is too: the card says how many are free and who can't
-come, never what anyone is doing. Telling only the owner after the time is
-set keeps a settled plan from buzzing the whole group again.
-
-**Trade-offs.** The owner decides alone; the others have their say only
-through their times. Counts can still give someone away in a small group (if
-two have answered and one is busy, the other knows who), so the timeline
-hides the others' strip until two others have answered, but the card's
-counts can't avoid it entirely. A hold to draw is harder to discover than
-painting, so the empty day says how. Moving the plan to another day starts
-everyone's answers again (the old plan is kept, called off); other hours
-or another length keep them. A length set too long hides every time until
-the owner shortens it, so the card says what the longest is. Times are
-Canberra's, so someone away sees Canberra times. The hold and drag needs
-checking on a real iPhone: Safari decides scrolling from the first touch,
-and the drag relies on stopping the page's scroll once a hold has armed.
-To the minute, a finger moves a few minutes a millimetre, so a drag on the
-timeline lands on 5 minutes (counted from the plan's start) and says its
-from–to on itself as it goes; exact minutes are typed in a stretch's exact
-times. A stretch at an odd minute keeps its length when moved.
-
-Later a plan became one outing that can take in several places, in order
-(the National Gallery, then Questacon), with one length for all of it
-rather than one each: the group still settles one time, and the stops
-just say where it goes. They're chosen by tapping, each numbered as
-tapped (without a script, ticked, in the list's order), one to five. A
-stop's place taken off the list drops that stop, the rest moving up,
-rather than calling off a whole outing for one part of it; the last one
-going calls it off. A plan is made once the list has settled, so while
-one is on, its stops stay put: a member can't take one off, even one they
-added (a grey lock sits where the red minus would be); only the owner can, and
-once the plan is called off or its day has gone the usual rules are
-back. There's no "Went" mark after. The stops live in their own table beside the plan,
-which keeps its first place as before, so plans from before read the
-same.
-
-## Making the outing work on the day
-
-**Context.** With the time set, a plan could still fall apart on the day:
-the gallery shuts at five and the group arrives at half past four, or the
-walk up Mount Ainslie is in the rain. Nothing on the card said so.
-
-**Opening hours.** Overture's places, which Find searches first, have no
-hours at all, so the source is OpenStreetMap's `opening_hours` tag. The
-choices were to build the tags into the index (a bulk download of every
-place's hours, stale by the time anyone plans) or to ask the Overpass API
-about each stop of a plan. I ask: by the place's OpenStreetMap id where it
-was shared from OpenStreetMap, otherwise for what's named within 100 m of
-it, matched to the place's name the way Find matches names (the name is
-used here and never sent). No match, or no tag, is "unknown", and unknown
-says nothing. Parsing the tag is the hard part: it has week days, months,
-"PH off", "sunset", comments. I used opening_hours.js (3.15.0, pinned,
-LGPL-3.0, used unmodified) rather than writing a parser for the common
-forms, since it's the one OpenStreetMap's own tools use, and it knows
-Australia's public holidays, the ACT's included, when told the place is
-in the ACT, so "PH off" is right on Canberra Day. It works in the
-process's local time, so a day and its minutes go in and come out as
-wall-clock fields, which keeps it Canberra's time on a UTC server.
-
-What to check against: before the time is set, the first window offered
-at its earliest start, and each window's own row is marked too, so the
-owner sees the problem before picking it; once set, the set time. A
-multi-stop plan doesn't say how long each stop takes, so each gets an
-even share, in order. The share only decides whether to warn; the words
-("closes 5pm") are the place's own hours, true whatever the split.
-
-**Weather.** Open-Meteo: free, no key, a forecast for 16 days. Only a
-stop's coordinates and the date are sent. Only Outdoors stops get one, and
-an Activities stop that OpenStreetMap tags as outside (a golf course, a
-zoo); beyond 16 days there's nothing to show, so nothing is.
-
-**Politeness and speed.** A page must never wait on either service, and a
-live refresh redraws the card often, so the card reads only a cache in
-SQLite. It's filled in the background: when a plan starts or changes, and
-when a card is drawn with something missing or stale. Each service gets
-one request at a time with a pause between, a timeout, and the same
-question is never asked twice at once; hours are kept a week, a forecast
-three hours, and a failure an hour before it's tried again, with whatever
-was known still shown. When an answer comes back, the group's pages hear
-the usual "changed" and redraw.
-
-**Testing it.** The spec mustn't reach either service, so with
-`OUTING_STUB=1` the same requests go to a local stub that answers from a
-table (a museum open 9 to 5, a garden shut on Mondays, a place that times
-out) and logs what it was sent; the spec reads that log to check that no
-member's name, group or plan ever went out.
-
-**Between the stops.** A multi-stop outing lives or dies on the legs. A
-routing service (OSRM's demo server, OpenRouteService) would give real
-times, but the public OSRM server is for light, non-production use and
-OpenRouteService needs a key, and both would be one more thing to call,
-cache and credit for a number the group only needs roughly. So each leg
-is estimated: the straight line, times 1.3 for roads (Canberra's wind
-round the lake and the hills), at 40 km/h with two minutes to park, or on
-foot at 4.8 km/h when the stops are under 1.5 km apart. It's said as an
-estimate ("about 13 min drive · 7.2 km"), and checked against a few legs I
-know (Questacon to the Mount Ainslie lookout comes out at 13 minutes).
-Directions are plain links, which need no key: Apple Maps' unified URLs
-on an Apple device (an iPad's browser says it's a Mac, which also has
-Maps), Google Maps' everywhere else, both from wherever the person is,
-through every stop in order. A link to each stop is there all along; the
-whole route once the time is set, when the order is the plan.
-
-**Near the plan.** Once the plan is set, the next question is lunch near
-Questacon. Explore already holds the places the group trusts, so "Near
-your plan" is a way of ordering it, not a new list: the places nearest
-any stop first, each card saying how far as the crow flies (a card
-saying "400 m" shouldn't pretend to be a walking route), combined with
-the kind chips rather than replacing them, so Food near the plan is two
-taps, or one from the card's "Find food nearby" (coffee, when a stop is
-already somewhere to eat). It's a plain link (`?near`, `?kind`), so it
-works without a script, and the script swaps Explore in place. Without a
-plan on, there's no chip and the address does nothing.
-
-**Trade-offs.** OpenStreetMap's hours are only as good as its mappers;
-plenty of Canberra's places have none, and those say nothing. The first
-person to open a card for a new stop sees it without hours, then the card
-fills in when the answer lands. Trying it against the real services showed
-how late that can be: the public Overpass server queued even a tiny query
-for half a minute, so its timeout is a minute (nobody waits on it), and
-Node's fetch gave each of Overpass's addresses only 250 ms to connect from
-Canberra before giving up on all of them, so the server now gives each
-2.5 s.
-
-## Talking it over
-
-**Context.** Spots settled where and when, and the "why" behind each place
-was one sentence from whoever shared it. Everything else ("is it open
-Mondays?", "the upstairs bit is better", "who's been?") went back to the
-group chat, far from the place it was about.
-
-**Options.**
-1. *A group chat inside Spots.* Familiar, but it competes head-on with the
-   chat the group already has, loses, and drifts away from the list.
-2. *A thread on each place on the list.* Talk sits where the deciding is,
-   and stays short.
-3. *Emoji reactions.* Cheap, but they blur "one person, one keen".
-
-**Decision.** Option 2, named Talk, and only for places on the list (not
-Explore, so there's nothing to talk about that the group hasn't picked).
-A thread is kept by the group and the place, not by the list's row,
-because a row is deleted when a place is taken off, and putting it back
-should bring its thread back too; while it's off, the thread is hidden.
-Only a message's author can delete it, not the owner: the owner looks
-after the group, not what people say in it. Deleted, a message is a
-"Message removed" stub its author can undo for a day, then its words are
-cleared from the database; there's no cron, so the clearing runs when the
-server starts, every hour, and before every thread is read or written.
-The site admin sees how many messages a group has, never what they say.
-The live stream says only which thread changed; the page then asks a
-members-only route for it, and swaps only the thread, never the box
-someone is typing in. People find out on the page (a count on the row,
-blue when it's new, a dot on Our list, "N new" on My groups), never by
-push, since web push needs the site added to an iPhone's home screen,
-which "no app to install" rules out.
-
-On a phone the thread is a sheet over the list, as the plan's are, sized
-to what the keyboard leaves of the screen (Safari doesn't shrink a fixed
-sheet for its keyboard; the visual viewport says how much is left). On a
-wide screen the three columns are the list, Explore and the map; Talk
-takes Explore's column while it's open and the map flies to the place,
-so the list stays to switch threads from and the map says where the
-place is. A sheet in the middle would have covered both.
-
-**Trade-offs.** One more thing to read, and threads can sprawl; the limits
-(500 characters, 10 a minute, 300 a day, 50 shown at a time) keep a thread
-a few lines about a place. Without push, a message waits until someone
-opens Spots. Undo lasts a day, so a regretted message's words are in the
-database for that day. The keyboard handling needs checking on a real
-iPhone: a desktop browser can only fake a short screen.
+Search by meaning needed embeddings, and 256 MB is too little to run a model
+beside the app, so cards and prompts go to Voyage and are ranked by cosine
+in plain JavaScript ([ADR 0002](docs/adr/0002-search-by-meaning.md)).
+Without the key, search falls back to matching words. One early rule,
+"everything works without JavaScript", came from the same stack choice. Once
+every member needed a passkey, and so JavaScript, it only made each new
+piece of UI carry a version nobody would see, and I dropped it
+([`5887429`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/5887429),
+[#116](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/issues/116)).
 
 ## How I worked with the agent
 
-- I chose the idea and the audience; the agent offered options and pushed
-  back on the generic version (a city guide is the "median answer").
-- I set the rules in `CLAUDE.md` from the definition of good in `README.md`.
-- The agent built the first version; I checked it in a browser and against
-  `spec/`.
+I decided what Spots is for and what good means, and the agent wrote most of
+the code. Every change went the same way: one GitHub issue, one branch
+(usually in its own worktree), and a pull request I merged only when I'd
+said so. CI runs the spec on every push and deploys `main` by itself, so
+nothing reaches the live site that hasn't passed. Over the project that came
+to 54 merged pull requests and 304 commits on `main`.
+
+The rules live in `CLAUDE.md`, each one following from the README's
+definition of good, and `spec/` holds the ones a machine can check. For
+search I didn't want one agent grading its own work. Search's 49 labelled
+prompts were labelled by two Sonnet agents working apart from the code, and
+a third, Opus, settled the 132 places only one of them listed, one by one
+([`23d86e3`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/23d86e3)).
+Search was then tuned on one half of the prompts and checked on the other
+half, which it never saw while tuning
+([`de36cc7`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/de36cc7)).
+
+All of that is a lot of process for a small app. Some days the issue,
+branch, review and merge took longer than the change itself.
+
+## Corrections that landed in the harness
+
+By crit 9 every vote reached every page within a second, and every vote
+re-sorted the list, so in a room of people voting a keen could land on the
+wrong place. I wrote down how the list should behave first
+([`d1cb195`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/d1cb195),
+[ADR 0004](docs/adr/0004-voting-at-once.md)), then the fix came with a rule
+in `CLAUDE.md` and a test in `spec/spots.test.ts`
+([`e638eca`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/e638eca)).
+
+The free-time algorithm had a hand-worked test from the day the plan landed.
+When I asked how we knew the algorithm was right, the answer was a random
+check against a minute-by-minute brute force on 3000 schedules. It found
+windows the algorithm missed, where a smaller set of people is free together
+([#211](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/issues/211)).
+The hand-worked test had the same mistake written into its expected answer.
+The fix landed with the check that found it
+([`4631e61`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/4631e61)).
+
+The two-window Chrome test started its clock after the click, so 1217 ms on
+CI counted as "within a second". It now times from before the tap
+([`1ee835c`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/1ee835c)),
+and the README says "about a second", which is what CI measures.
+
+Spots also had no logs. I noticed while writing a crit prompt for someone
+else's app, which couldn't say who had done what, and then found the same
+gap in mine. Now every action writes one line, never what anyone wrote, held
+by `spec/log.test.ts` and a rule in `CLAUDE.md`
+([`28488c9`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/28488c9)).
+
+## Where I stand on the small web
+
+The ideas came before the reading, and the reading gave me words to argue
+for them. I agree with Shirky that software for one group can lean on that
+group: Spots has no ratings because the group's trust in each other's taste
+does the ranking. Sloan's home-cooked app is where I part ways a little.
+Spots is small and not built to grow, but it isn't home-made: it runs on
+Fly, asks Voyage for search and Resend for mail. My line is that outside
+services may do work for the group, never hold anything about it. Voyage
+sees card text and prompts, never names or Talk. Calm technology is the idea
+I followed most closely. Nothing is pushed, and what's new waits as a count
+or a dot. The cost is that people have to open Spots to see it, and I've
+accepted that the group chat they already have does the nudging.
+
+## Looking back
+
+The strongest checks came late. The brute-force check, the timing tests and
+the pressure test all arrived in the last week, after the features they
+check. Next time I would write the check that could prove a feature wrong in
+the same pull request as the feature.

@@ -1065,7 +1065,7 @@ const calendar = `<rect x="3" y="4.5" width="14" height="12.5" rx="2.5" fill="no
     const current = () => exploreUrl();
     // The list is always in rank order: a live refresh re-ranks it, and
     // each card glides from where it was to its new place, so the group
-    // sees what moved (PROCESS.md, "Several people voting at once"). For a
+    // sees what moved (docs/adr/0004-voting-at-once.md). For a
     // moment after a move, a keen tap is ignored: it was aimed at whatever
     // card was there before.
     const still = matchMedia("(prefers-reduced-motion: reduce)");
