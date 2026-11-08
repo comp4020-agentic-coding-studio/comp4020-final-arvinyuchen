@@ -1,60 +1,112 @@
 # Process overview
 
-> ✍️ 提纲（#224）：每节下面的【要写】是给你的提示，【事实】是核对过的英文事实和 commit 链接，可以直接引用。
-> 写完一节就删掉那节的提示。总目标 900–1100 词（标题不算）。旧版的长篇决策已经移到 [`docs/adr/`](docs/adr/)，ADR 不算字数，这里链接过去就行。
-> 课程要求：没有链接的说法不算证据，链接文字必须是 commit 哈希。
+> ✍️ 草稿（#224）：按提纲起草，事实和链接都核对过。请改成你自己的说法，改完删掉这行。
 
 ## From the brief to Spots
 
-> ✍️ 约 120 词。
-> 【要写】最初想做什么，为什么改成 Spots；作业的三条硬性要求（多人、实时、持久）在 Spots 里各变成了什么。
-> 【事实】
-> - First idea: a trip itinerary. The turn: a group's hard part is deciding together, not listing places (reflections/crit-8.md).
-> - First working version, group + join by link + keen + live, in one commit: [`1eddcc8`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/1eddcc8).
+My first idea was a trip itinerary, and it sounded flat: a shared list of
+places and times is what a dozen planning apps already do. Asking where a
+group outing actually goes wrong changed it. The hard part isn't listing
+places, it's a group deciding together (reflections/crit-8.md). That turned
+the brief's three rules into the point of the app: multi-user is the group,
+real-time is everyone voting in the same room, and persistence is the list
+still being there next weekend. The first working version, a group, a join
+link, keen votes and a live list, was one commit, [`1eddcc8`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/1eddcc8).
 
 ## The stack, and what it costs
 
-> ✍️ 约 200 词。
-> 【要写】为什么选 Astro 服务端渲染 + SQLite + SSE + 一台 Fly 机器；为什么搜索用 Voyage 而不是本地模型；每个选择的代价。细节链接 ADR。
-> 【事实】
-> - Decision and reasons: [ADR 0001](docs/adr/0001-stack.md). Every action is a plain HTTP route, which is what `spec/` drives.
-> - SQLite is one file on the Fly volume: persists across restarts and redeploys, no database server.
-> - SSE: one-way is all Spots needs; one process holds the bus, so one machine only.
-> - Cost found later: each change makes every open page read itself again. The pressure test [`7a80019`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/7a80019) ([#214](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/issues/214)): 30 people at once settle in 0.25–0.34 s on a laptop, 60 took 6.3 s, 100 ran out of connections.
-> - Search: 256 MB is too small for an embedding model beside the app, so Voyage embeddings, cosine in plain JS ([ADR 0002](docs/adr/0002-search-by-meaning.md)). Without the key it falls back to matching words.
-> - The "works without JavaScript" rule, kept from the stack choice, was dropped once everyone needed a passkey (and so JavaScript) to sign in: [`5887429`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/5887429) ([#116](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/issues/116)).
+Spots is Astro rendering on the server, SQLite on Fly's volume, and
+server-sent events for the live layer, on the one machine the course gives
+([ADR 0001](docs/adr/0001-stack.md)). Every action is a plain form post,
+which is exactly what `spec/` can drive over HTTP. SQLite is one file, so it
+survives restarts and redeploys with no database server. SSE is one-way,
+which is all Spots needs: a browser acts through forms and only has to hear
+that something changed.
+
+The costs are real. The bus lives in one process, so Spots can only ever run
+on one machine. Each change makes every open page read itself again, which
+is simple but grows with the square of the people in the room. The pressure
+test made that visible ([`7a80019`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/7a80019), [#214](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/issues/214)): 30 people voting at once
+settle in about a third of a second on a laptop, 60 took 6.3 s, and 100 ran
+out of connections. A group of friends is far below that, so I wrote it down
+rather than rebuilt it.
+
+Search by meaning needed embeddings, and 256 MB is too little to run a model
+beside the app, so cards and prompts go to Voyage and are ranked by cosine
+in plain JavaScript ([ADR 0002](docs/adr/0002-search-by-meaning.md)).
+Without the key, search falls back to matching words. One early rule,
+"everything works without JavaScript", came from the same stack choice. Once
+every member needed a passkey, and so JavaScript, it only made each new
+piece of UI carry a version nobody would see, and I dropped it
+([`5887429`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/5887429), [#116](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/issues/116)).
 
 ## How I worked with the agent
 
-> ✍️ 约 200 词。
-> 【要写】你和 agent 怎么分工；工作流程是什么，为什么这样定；代价。
-> 【事实】
-> - One GitHub issue per change, one branch (often its own worktree) per issue; I open a PR and merge only when I say so; CI runs the spec on every push and deploys `main` by itself. 54 PRs merged, about 170 issues and PRs, 304 commits on `main`.
-> - The rules live in `CLAUDE.md`, each derived from the README's definition of good; a change that breaks one fails review or `spec/`.
-> - UI changes are looked at in a browser (phone and desktop) before they ship.
-> - Search's 49 labelled prompts (41 with an answer): two Sonnet agents labelled them apart from the code (mean overlap 0.85), and Opus settled the 132 places only one listed, one by one ([`23d86e3`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/23d86e3)), and search was tuned on one half and checked on the other ([`de36cc7`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/de36cc7)), so the number isn't one it was tuned to.
-> - Cost: many small PRs and a lot of process for a small app.
+I decided what Spots is for and what good means. The agent built most of the
+code. What kept that honest was a fixed loop: one GitHub issue per change,
+one branch for it (usually in its own worktree), and a pull request merged
+only when I said so. CI runs the spec on every push and deploys `main` by
+itself, so nothing reaches the live site that hasn't passed. Over the
+project that came to 54 merged pull requests and 304 commits on `main`.
+
+The rules live in `CLAUDE.md`, each one following from the README's
+definition of good, and `spec/` holds the ones a machine can check. Where a
+judgement mattered I didn't let one agent grade its own work. Search's 49
+labelled prompts were labelled by two Sonnet agents working apart from the
+code, and a third, Opus, settled the 132 places only one of them listed,
+one by one ([`23d86e3`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/23d86e3)). Search was then tuned on one half of the prompts and
+checked on the other, so its score isn't one it was tuned to ([`de36cc7`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/de36cc7)).
+
+The cost is weight. A small app went through a lot of process, and some
+days the loop of issue, branch, review and merge took longer than the
+change itself.
 
 ## Corrections that landed in the harness
 
-> ✍️ 约 300 词。挑三到四个，每个讲清：出了什么错 → 怎么发现的 → 修在 `CLAUDE.md` 还是 `spec/`。
-> 【事实】
-> - **Cards jumping under people's fingers** (crit 9). Several people voting at once re-sorted the list on every screen, so a keen could land on the wrong place. Decided first ([`d1cb195`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/d1cb195), [ADR 0004](docs/adr/0004-voting-at-once.md)), then the rule went into `CLAUDE.md` and a test into `spec/spots.test.ts` with the fix ([`e638eca`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/e638eca)).
-> - **A test that encoded the bug.** A random check of free times against a minute-by-minute brute force, 3000 schedules, found the algorithm missed windows where a smaller set of people is free together ([#211](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/issues/211)). The hand-worked expectation in `free.test.ts` had the bug written into it. Fixed with the check that found it: [`4631e61`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/4631e61).
-> - **A timing test that passed when it shouldn't.** The two-window Chrome test started its clock after the click, so 1217 ms on CI passed as "within a second". Now timed from before the tap: [`1ee835c`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/1ee835c).
-> - **No logs** (crit 10). Writing the riff prompt for another app showed it couldn't say who did what; Spots had the same gap. One line per action, never what anyone wrote, held by `spec/log.test.ts` and a rule in `CLAUDE.md`: [`28488c9`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/28488c9).
-> - **A rule that stopped earning its keep.** "Works without JavaScript" made every new piece of UI carry a version nobody would see: [`5887429`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/5887429).
+The mistakes that mattered were the ones that passed.
+
+**Cards jumping under people's fingers.** By crit 9 every vote reached every
+page within a second, and every vote re-sorted the list, so in a room of
+people voting a keen could land on the wrong place. I wrote down how the
+list should behave first ([`d1cb195`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/d1cb195), [ADR 0004](docs/adr/0004-voting-at-once.md)),
+then the fix came with a rule in `CLAUDE.md` and a test in
+`spec/spots.test.ts` ([`e638eca`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/e638eca)).
+
+**A test that had the bug written into it.** The free-time algorithm had a
+hand-worked test since the plan landed. I asked how we knew the algorithm was
+right, and the answer was a random check against a minute-by-minute brute
+force on 3000 schedules. It found windows the algorithm missed, where a
+smaller set of people is free together ([#211](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/issues/211)). The old expectation had
+the same mistake in it. The fix landed with the check that found it
+([`4631e61`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/4631e61)).
+
+**A timing test that passed when it shouldn't have.** The two-window Chrome
+test started its clock after the click, so 1217 ms on CI counted as "within a
+second". It now times from before the tap ([`1ee835c`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/1ee835c)), and the README
+says "about a second", which is what CI measures.
+
+**No logs.** Writing a crit prompt for someone else's app, I saw it couldn't
+say who had done what, and Spots had the same gap. Now every action writes
+one line, never what anyone wrote, held by `spec/log.test.ts` and a rule in
+`CLAUDE.md` ([`28488c9`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/commit/28488c9)).
 
 ## Where I stand on the small web
 
-> ✍️ 约 150 词。
-> 【要写】README 里说想法先有、文章后来印证；这里讲你的立场：和 Shirky、Sloan、Weiser 哪里一致，哪里你走得不一样，为什么。
-> 【事实】
-> - Situated software (Shirky 2004): Spots serves one group whose trust does the ranking.
-> - Home-cooked app (Sloan 2020): Spots stays small, but it still runs on Fly and calls Voyage, so it isn't purely home-made.
-> - Calm technology (Weiser and Brown 1995): nothing is pushed; what's new waits on the page as a count or a dot.
+The ideas came before the reading, but the reading made me sharper about
+them. I agree with Shirky that software for one group can lean on that
+group: Spots has no ratings because the group's trust in each other's taste
+does the ranking. Sloan's home-cooked app is where I part ways a little.
+Spots is small and not built to grow, but it isn't home-made: it runs on
+Fly, asks Voyage for search and Resend for mail. My line is that outside
+services may do work for the group, never hold anything about it. Voyage
+sees card text and prompts, never names or Talk. Calm technology is the
+idea I followed most closely. Nothing is pushed, and what's new waits as a
+count or a dot. The cost is that people have to open Spots to see it, and
+I've accepted that the group chat they already have does the nudging.
 
 ## Looking back
 
-> ✍️ 约 80 词，可选。
-> 【要写】如果重来，哪些地方会换个做法。
+The strongest checks came late. The brute-force check, the timing tests and
+the pressure test all arrived in the last week, after the features they
+check. Next time I would write the check that could prove a feature wrong
+in the same pull request as the feature.
