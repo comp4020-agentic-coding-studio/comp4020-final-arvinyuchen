@@ -101,8 +101,9 @@ export function parseQuery(query: string, anchors: Anchor[]): ParsedQuery {
   return { rest, near, kind: asked.length === 1 ? asked[0] : null, indoors: BAD_WEATHER.test(rest) };
 }
 
+// (words that say nothing about a place: "when it's raining" has only the rain)
 const STOP = new Set(
-  "a an and any are at be best but by can for from get go good great have i in is it like me my near of on or place places put some somewhere something spot spots that the there this to want we where which with would you".split(" "),
+  "a about after an and any are at be before best but by can could during for from get go good great have how i if in is it it's its just like me my near not of on or our place places put really some somewhere something spot spots that the then there they this to us very want we what when where which while who with would you your".split(" "),
 );
 
 function tokens(text: string): string[] {

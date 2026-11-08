@@ -1,0 +1,1035 @@
+{
+ "cheap dumplings": {
+  "great": [
+   "cbd-dumpling-house",
+   "dickson-dumpling-house"
+  ],
+  "fits": [
+   "canberra-momo-house",
+   "nepalese-momo-house",
+   "druk-family-restaurant",
+   "the-hungry-buddha",
+   "lilong-by-taste-of-shanghai-canberra",
+   "dumpling-social-braddon",
+   "ginseng"
+  ],
+  "note": "No price info on most; momo places counted as fits because dumplings are a part of the menu."
+ },
+ "a good bowl of ramen": {
+  "great": [
+   "ikigai-ramen",
+   "ramen-o",
+   "canteen-by-ramen-daddy",
+   "toli-ramen"
+  ],
+  "fits": [
+   "mugii",
+   "suchis",
+   "raijin-japanese-cuisine",
+   "bento-tei"
+  ],
+  "note": "Places that list ramen among other dishes are fits."
+ },
+ "Vietnamese pho": {
+  "great": [
+   "84-kitchen",
+   "noi-noi-vietnamese-kitchen",
+   "the-q-dining",
+   "chimida-coffee-bar-bistro"
+  ],
+  "fits": [
+   "o-bach",
+   "street-of-asia",
+   "29-cafe-and-eatery"
+  ],
+  "note": "Banh mi shops left out: no pho mentioned."
+ },
+ "vegan or vegetarian dinner": {
+  "great": [
+   "au-lac",
+   "au-lac-gourmet-vegetarian",
+   "chatkazz",
+   "little-lanka"
+  ],
+  "fits": [
+   "my-rainbow-dreams-vegetarian-cafe",
+   "rebel-rebel",
+   "eightysix",
+   "lion-city-restaurant",
+   "grease-monkey",
+   "the-aegean-pantry",
+   "sweet-bones"
+  ],
+  "note": "Dinner not stated for most; vegan cafes are fits."
+ },
+ "Korean BBQ with friends": {
+  "great": [
+   "hancook-korean"
+  ],
+  "fits": [
+   "sikdang",
+   "gisa-sikdang-suyu-gisa-sikdang",
+   "azuma-den",
+   "the-meat-house-buffet"
+  ],
+  "note": "Only HanCook mentions BBQ among Korean places; Meat House is Chinese grill-your-own so fits."
+ },
+ "laksa": {
+  "great": [
+   "dickson-asian-noodle-house",
+   "street-of-asia"
+  ],
+  "fits": [
+   "tak-kee-roast-inn",
+   "o-bach",
+   "two-sisters-street-food"
+  ],
+  "note": ""
+ },
+ "pizza to share with a group": {
+  "great": [
+   "pizzeria-officina",
+   "johnny-gios",
+   "johnny-gios-kingston",
+   "bella-pizza-cbr",
+   "zucchini-bros",
+   "pronto",
+   "hungry-beagle",
+   "little-sutton-bakehouse"
+  ],
+  "fits": [
+   "mama-dough",
+   "vanilla-pod-pizza-pasta-bar",
+   "five-passions",
+   "molto-italian",
+   "black-salt",
+   "frankies",
+   "grease-monkey",
+   "edgar-s-inn",
+   "the-howling-moon",
+   "four-winds-vineyard",
+   "tap-and-toss",
+   "illuka",
+   "mr-pasta",
+   "the-lounge-room-at-kingsborough"
+  ],
+  "note": ""
+ },
+ "somewhere fancy for a birthday dinner": {
+  "great": [
+   "eightysix",
+   "italian-and-sons",
+   "inka",
+   "raku",
+   "raku-japanese-bar-and-restaurant",
+   "mu",
+   "rubicon-restaurant",
+   "ottoman-cuisine",
+   "tusa",
+   "eve",
+   "pilot",
+   "ms-wang",
+   "azuma-den",
+   "hunter-and-barrel",
+   "lunetta-and-lunetta-trattoria",
+   "rakkas"
+  ],
+  "fits": [
+   "terra",
+   "coconine",
+   "andres-osteria",
+   "inari",
+   "romanee",
+   "kivotos",
+   "bar-nova",
+   "the-q-dining",
+   "myanmar-corner",
+   "such-and-such",
+   "7-cutz-steakhouse",
+   "the-lotus-indian",
+   "rosemary-by-eighty-twenty",
+   "molto-italian"
+  ],
+  "note": "Fancy is judged from fine-dining wording; no price data."
+ },
+ "late night food after drinks": {
+  "great": [
+   "kita",
+   "quean-kebabs-and-gyros",
+   "back-lane-bird",
+   "the-mandalay-bus",
+   "bubbas-bbq",
+   "caphs"
+  ],
+  "fits": [
+   "ikigai-ramen",
+   "shahi-mandi-and-biryani",
+   "corella-bar",
+   "sabrina-gelato",
+   "trust-cafe",
+   "oishii-go"
+  ],
+  "note": ""
+ },
+ "dessert or ice cream": {
+  "great": [
+   "gelato-messina",
+   "stripey-sundae",
+   "florence-gelato",
+   "goodberry-s",
+   "goodberrys-frozen-custard",
+   "sabrina-gelato",
+   "mavi-cafe",
+   "moo-moo",
+   "moo-moo-frozen-yoghurt-braddon",
+   "yo-bar",
+   "house-of-desserts",
+   "oishii-go",
+   "lukumades",
+   "cinnascroll",
+   "lorange-patisserie"
+  ],
+  "fits": [
+   "acai-bunny",
+   "bloom-room",
+   "wonderburger",
+   "mookie",
+   "jasper-and-myrtle-chocolates",
+   "ela-cafe",
+   "sweet-business-healthy-living",
+   "knead-patisserie",
+   "bunny-beans-cafe-greenway",
+   "ujin",
+   "ricardos-cafe",
+   "fricken-canberra-centre"
+  ],
+  "note": ""
+ },
+ "yum cha on the weekend": {
+  "great": [
+   "ginseng",
+   "lazy-su",
+   "ginger-and-spice-asian-cuisine"
+  ],
+  "fits": [
+   "cbd-dumpling-house",
+   "dickson-dumpling-house",
+   "lilong-by-taste-of-shanghai-canberra",
+   "dumpling-social-braddon",
+   "akiba"
+  ],
+  "note": ""
+ },
+ "Indian curry": {
+  "great": [
+   "bombay-duck",
+   "bombay-duck-city",
+   "mirchi",
+   "namashkar-restaurant",
+   "chalisa-indian-restaurant",
+   "taj-agra-indian",
+   "punjabi-hut",
+   "dum-dickson",
+   "amber-spice",
+   "the-lotus-indian",
+   "sushants-indian-cuisine"
+  ],
+  "fits": [
+   "chatkazz",
+   "ve-desi-food",
+   "midnight-mocha",
+   "shahi-mandi-and-biryani",
+   "ambis-chai",
+   "canberra-momo-house"
+  ],
+  "note": ""
+ },
+ "a quiet cafe to study in": {
+  "great": [
+   "ona-coffee-house",
+   "pulp-book-cafe"
+  ],
+  "fits": [
+   "smith-s-alternative",
+   "folks-gallery",
+   "cafe-beetroot",
+   "stepping-stone-caf",
+   "the-bean-culture-expresso-bar",
+   "espresso-room"
+  ],
+  "note": "Almost no place says quiet; only remote-work welcome and book-cafe are clear signals."
+ },
+ "brunch with good eggs": {
+  "great": [
+   "june",
+   "cafe-june",
+   "sailor-bistro-and-brew",
+   "good-neighbour",
+   "uni-corner-cafe",
+   "the-cupping-room",
+   "redbrick",
+   "the-knox-made-in-watson",
+   "brew-and-crust",
+   "double-shot-cafe-expresso-bar",
+   "fox-and-bow"
+  ],
+  "fits": [
+   "al-manoosh-lebanese-bakery",
+   "illuka",
+   "grain-de-cafe",
+   "recess",
+   "ginninderry-espresso",
+   "sunday-in-canberra",
+   "on-lonsdale",
+   "54-benjamin",
+   "blossom-cafe",
+   "chatterbox-espresso-bar",
+   "hudsons-of-dickson",
+   "high-road",
+   "tinker-tailor-jamison",
+   "redbrick-coffee-city",
+   "mocan-and-green-grout",
+   "jarochos"
+  ],
+  "note": ""
+ },
+ "specialty coffee roaster": {
+  "great": [
+   "redbrick",
+   "ona-coffee-house",
+   "lonsdale-st-roasters",
+   "barrio-roastery",
+   "the-bean-culture-expresso-bar",
+   "niugini-arabica",
+   "the-pour-house",
+   "redbrick-coffee-city"
+  ],
+  "fits": [
+   "the-cupping-room",
+   "society-coffee-co",
+   "espresso-room",
+   "ginninderry-espresso",
+   "gather-cafe"
+  ],
+  "note": ""
+ },
+ "bakery with great pastries": {
+  "great": [
+   "l-epi-artisan-bakery",
+   "lepi-artisan-bakery-kambah",
+   "lepi-artisan-bakery-chisholm",
+   "le-bon-melange",
+   "bite-and-savor",
+   "silo-bakery",
+   "wildflour",
+   "wildflour-fyshwick",
+   "evoke-bakery-spence",
+   "tinker-tailor-casey",
+   "knead-patisserie",
+   "lorange-patisserie",
+   "three-mills-bakery",
+   "under",
+   "under-bakery-mawson"
+  ],
+  "fits": [
+   "oscars-bakery-cafe",
+   "oscars-bakery-cafe-weetangera",
+   "little-sutton-bakehouse",
+   "bakehouse",
+   "al-manoosh-lebanese-bakery",
+   "ricardos-cafe",
+   "sweet-business-healthy-living",
+   "tinker-tailor-jamison",
+   "our-little-caf",
+   "pulp-book-cafe",
+   "vietnamese-bakery-and-cafe"
+  ],
+  "note": ""
+ },
+ "craft beer brewery": {
+  "great": [
+   "bentspoke-brewing-co",
+   "bentspoke",
+   "cypher-brewing-co",
+   "capital-brewing-co"
+  ],
+  "fits": [
+   "lager-house-by-capital-brewing-co",
+   "dickson-taphouse",
+   "old-canberra-inn",
+   "casey-jones",
+   "wins-creek-meadery",
+   "home-brew-cafe-and-bar",
+   "assembly"
+  ],
+  "note": ""
+ },
+ "cocktail bar for a night out": {
+  "great": [
+   "devil-you-don-t",
+   "mollys",
+   "molly",
+   "hippo-co",
+   "blue-eyes",
+   "highball",
+   "monster",
+   "bar-beirut",
+   "leyla-bar",
+   "ambrosia-lounge",
+   "wakefields"
+  ],
+  "fits": [
+   "the-howling-moon",
+   "the-embassy-cbr",
+   "chichiz-bar",
+   "ambrosia-distillery-and-lounge",
+   "the-dock",
+   "tap-and-toss",
+   "bar-lola"
+  ],
+  "note": ""
+ },
+ "winery for a day trip": {
+  "great": [
+   "clonakilla",
+   "helm-wines",
+   "shaw-estate",
+   "collector-wines",
+   "tallagandra-hill",
+   "mckellar-ridge-wines",
+   "yarrh-wines",
+   "the-vintners-daughter",
+   "pankhurst-wines",
+   "heywood-cellar-door-and-restaurant-nick-oleary",
+   "lerida-estate",
+   "mount-majura-vineyard",
+   "poachers-pantry-smokehouse-and-vineyard",
+   "brindabella-hills-winery",
+   "lark-hill-winery",
+   "lake-george-winery",
+   "norton-road-wines",
+   "gallagher-wines",
+   "eden-road-wines",
+   "murrumbateman-winery",
+   "surveyors-hill-vineyards",
+   "four-winds-vineyard",
+   "wine-hopper-murrumbateman"
+  ],
+  "fits": [
+   "sapling-yard-cellar-door",
+   "gundog-estate-cellar-door",
+   "wine-tasting-and-stargazing-at-mount-majura",
+   "wins-creek-meadery"
+  ],
+  "note": "Urban cellar doors in Kingston/Barton left out: not a day trip."
+ },
+ "a pub with a beer garden": {
+  "great": [
+   "edgar-s-inn",
+   "assembly",
+   "kambah-inn",
+   "capital-brewing-co",
+   "old-canberra-inn"
+  ],
+  "fits": [
+   "duxton",
+   "the-howling-moon",
+   "kingston-hotel",
+   "cypher-brewing-co",
+   "the-dock",
+   "lighthouse"
+  ],
+  "note": ""
+ },
+ "a walk with a view": {
+  "great": [
+   "mt-ainslie",
+   "red-hill-lookout",
+   "booroomba-rocks",
+   "mount-majura-nature-reserve",
+   "mount-taylor-nature-reserve",
+   "mount-painter-nature-reserve",
+   "black-mountain-nature-reserve",
+   "dairy-farmers-hill-lookout",
+   "shepherds-lookout",
+   "isaacs-ridge-nature-reserve",
+   "mount-mugga-mugga-nature-reserve",
+   "urambi-hills-nature-reserve",
+   "square-rock-walk",
+   "mount-tennent",
+   "shanahans-mountain-walk",
+   "mount-gingera-walk",
+   "tuggeranong-hill-nature-reserve",
+   "wanniassa-hills-nature-reserve",
+   "barrer-hill-walks-molonglo-river-reserve",
+   "one-tree-hill-walk",
+   "mount-mcdonald-summit-track",
+   "namarag-reserve",
+   "rob-roy-range-nature-reserve",
+   "mount-pleasant-nature-reserve"
+  ],
+  "fits": [
+   "uriarra-loop",
+   "mcquoids-hill-nature-reserve",
+   "regatta-point-lookout",
+   "canberra-centenary-trail",
+   "mount-franklin-heritage-walk",
+   "granite-tors-walk",
+   "lake-loop",
+   "arboretum",
+   "black-mountain-peninsula",
+   "lake-tuggeranong"
+  ],
+  "note": ""
+ },
+ "swimming in a river": {
+  "great": [
+   "kambah-pool",
+   "casuarina-sands",
+   "cotter-bend",
+   "pine-island",
+   "point-hut-crossing",
+   "tharwa-bridge",
+   "tharwa-sandwash",
+   "angle-crossing"
+  ],
+  "fits": [],
+  "note": "Lake and pool swimming excluded."
+ },
+ "picnic by the lake": {
+  "great": [
+   "john-knight-memorial-park",
+   "acton-park",
+   "bowen-park",
+   "grevillea-park",
+   "henry-rolland-park",
+   "regatta-point-lookout",
+   "yarralumla-bay",
+   "weston-park",
+   "black-mountain-peninsula",
+   "lake-tuggeranong",
+   "boundless-canberra",
+   "national-carillon",
+   "lennox-gardens"
+  ],
+  "fits": [
+   "lake-loop",
+   "lake-ginninderra-foreshore",
+   "commonwealth-park",
+   "canberra-nara-peace-park",
+   "national-rose-gardens",
+   "point-hut-pond",
+   "molonglo-reach",
+   "yerrabi-pond-district-park"
+  ],
+  "note": ""
+ },
+ "mountain bike trails": {
+  "great": [
+   "stromlo-forest-park",
+   "majura-pines",
+   "kowen-forest",
+   "tuggeranong-pines",
+   "bruce-ridge-nature-reserve"
+  ],
+  "fits": [
+   "blue-range-recreation-area",
+   "cycle-city-hire-stromlo-forest-park",
+   "canberra-centenary-trail",
+   "isaacs-ridge-nature-reserve"
+  ],
+  "note": ""
+ },
+ "watching the sunset": {
+  "great": [
+   "the-howling-moon",
+   "the-dock"
+  ],
+  "fits": [
+   "red-hill-lookout",
+   "mt-ainslie",
+   "leyla-bar",
+   "highball",
+   "regatta-point-lookout",
+   "dairy-farmers-hill-lookout",
+   "mount-taylor-nature-reserve",
+   "lunetta-and-lunetta-trattoria"
+  ],
+  "note": "Few places say sunset; hill lookouts are fits from my own sense of Canberra, not from the text."
+ },
+ "a hard hike": {
+  "great": [
+   "mount-gingera-walk",
+   "booroomba-rocks",
+   "mount-tennent",
+   "granite-tors-walk",
+   "mindjagari-track",
+   "brandy-flat-walk"
+  ],
+  "fits": [
+   "square-rock-walk",
+   "one-tree-hill-walk",
+   "tuggeranong-hill-nature-reserve",
+   "canberra-centenary-trail",
+   "mount-mcdonald-summit-track"
+  ],
+  "note": ""
+ },
+ "somewhere to take a dog": {
+  "great": [
+   "casey-dog-park",
+   "belconnen-dog-park",
+   "yarralumla-dog-park",
+   "oconnor-dog-park",
+   "duffy-dog-park-weston-creek",
+   "greenway-dog-park-lake-tuggeranong",
+   "forde-dog-park",
+   "franklin-dog-park",
+   "lanyon-dog-park",
+   "stellas-on-the-lake",
+   "gundog-estate-cellar-door",
+   "capital-brewing-co",
+   "majura-pines",
+   "tuggeranong-pines",
+   "murrays-corner",
+   "uriarra-crossing",
+   "shepherds-lookout",
+   "swamp-creek"
+  ],
+  "fits": [
+   "lava-coffee",
+   "54-benjamin",
+   "grain-de-cafe",
+   "goboat-canberra",
+   "murrumbateman-winery",
+   "point-hut-crossing",
+   "pialligo-redwood-forest",
+   "mount-majura-nature-reserve",
+   "mount-painter-nature-reserve",
+   "mount-pleasant-nature-reserve",
+   "isaacs-ridge-nature-reserve",
+   "mount-mugga-mugga-nature-reserve",
+   "urambi-hills-nature-reserve",
+   "cooleman-ridge-nature-reserve",
+   "farrer-ridge-nature-reserve",
+   "percival-hill-nature-reserve",
+   "gossan-hill-nature-reserve",
+   "aranda-bushland-nature-reserve",
+   "oakey-hill-nature-reserve",
+   "molonglo-gorge-nature-reserve",
+   "acton-park",
+   "grevillea-park",
+   "yarralumla-bay"
+  ],
+  "note": "Dog parks and off-leash places are great; on-leash walks and dog-friendly cafes are fits."
+ },
+ "art gallery": {
+  "great": [
+   "nga",
+   "national-portrait-gallery",
+   "canberra-contemporary",
+   "m16-artspace",
+   "photoaccess",
+   "platform-by-canberra-contemporary",
+   "anu-school-of-art-and-design-gallery",
+   "gallery-of-small-things",
+   "megalo-print-studio-and-gallery"
+  ],
+  "fits": [
+   "canberra-museum-and-gallery",
+   "craft-design-canberra",
+   "belconnen-arts-centre",
+   "tuggeranong-arts-centre",
+   "glassworks",
+   "strathnairn-arts",
+   "gorman-arts-centre",
+   "the-front-cafe-and-gallery",
+   "canberra-city-public-art-walking-trail"
+  ],
+  "note": ""
+ },
+ "museum for a rainy day": {
+  "great": [
+   "nma",
+   "awm",
+   "questacon",
+   "canberra-museum-and-gallery",
+   "museum-of-australian-democracy-at-old-parliament-house"
+  ],
+  "fits": [
+   "national-archives-of-australia",
+   "national-library-of-australia",
+   "national-film-and-sound-archive",
+   "royal-australian-mint",
+   "queanbeyan-museum",
+   "canberra-railway-museum",
+   "national-capital-exhibition",
+   "parliament-house",
+   "nga",
+   "national-portrait-gallery",
+   "calthorpes-house",
+   "glassworks"
+  ],
+  "note": ""
+ },
+ "live music gig": {
+  "great": [
+   "the-baso",
+   "the-pot-belly",
+   "the-george-harcourt-inn",
+   "molly",
+   "shadows-night-club",
+   "harmonie-german-club",
+   "canberra-irish-club",
+   "uc-refectory",
+   "white-eagle-polish-club",
+   "rose-cottage",
+   "fun-time-pony",
+   "gang-gang-cafe-and-bar",
+   "smith-s-alternative",
+   "dissent",
+   "blue-eyes",
+   "assembly"
+  ],
+  "fits": [
+   "hippo-co",
+   "mollys",
+   "tallagandra-hill",
+   "cypher-brewing-co",
+   "kambah-inn",
+   "edgars",
+   "llewellyn-hall",
+   "wesley-music-centre",
+   "national-convention-centre",
+   "the-street-theatre",
+   "tuggeranong-arts-centre",
+   "canberra-theatre-centre",
+   "the-q-queanbeyan-performing-arts-centre",
+   "bar-outro"
+  ],
+  "note": ""
+ },
+ "comedy night": {
+  "great": [
+   "fun-time-pony",
+   "gang-gang-cafe-and-bar",
+   "tuggeranong-arts-centre"
+  ],
+  "fits": [
+   "canberra-theatre-centre",
+   "the-q-queanbeyan-performing-arts-centre",
+   "kingpin"
+  ],
+  "note": "Few places list comedy."
+ },
+ "history of Canberra": {
+  "great": [
+   "canberra-museum-and-gallery",
+   "national-capital-exhibition",
+   "blundells-cottage",
+   "calthorpes-house",
+   "lanyon-homestead"
+  ],
+  "fits": [
+   "museum-of-australian-democracy-at-old-parliament-house",
+   "nma",
+   "national-archives-of-australia",
+   "queanbeyan-museum",
+   "canberra-railway-museum",
+   "government-house",
+   "parliament-house",
+   "awm",
+   "canberra-centenary-trail",
+   "pialligo-redwood-forest",
+   "the-shine-dome"
+  ],
+  "note": ""
+ },
+ "bowling": {
+  "great": [
+   "kingpin",
+   "zone-bowling-belconnen",
+   "iplay-belconnen"
+  ],
+  "fits": [
+   "timezone-woden"
+  ],
+  "note": ""
+ },
+ "escape room": {
+  "great": [
+   "riddle-room",
+   "missing-klues-escape-rooms",
+   "escape-rooms-canberra"
+  ],
+  "fits": [
+   "kingpin",
+   "vr-canberra",
+   "hijinx-hotel"
+  ],
+  "note": ""
+ },
+ "indoor rock climbing": {
+  "great": [
+   "blochaus-bouldering"
+  ],
+  "fits": [
+   "bounce-belconnen",
+   "ninja-parc"
+  ],
+  "note": "Bouldering is the only dedicated climbing place."
+ },
+ "something fun for a big group": {
+  "great": [
+   "kingpin",
+   "riddle-room",
+   "powerkart-raceway",
+   "holey-moley",
+   "hey-show-karaoke",
+   "iplay-belconnen",
+   "first-strike-laser-tag",
+   "zone-3-laser-tag",
+   "hijinx-hotel",
+   "missing-klues-escape-rooms",
+   "escape-rooms-canberra",
+   "maniax-axe-throwing",
+   "timezone-woden",
+   "zone-bowling-belconnen",
+   "axxe",
+   "goboat-canberra"
+  ],
+  "fits": [
+   "vr-canberra",
+   "canberra-racquet-club",
+   "treetops-adventure-canberra",
+   "delta-force-paintball",
+   "bounce-belconnen",
+   "breakr-smash-room",
+   "splash-lab",
+   "pinot-and-picasso-belconnen",
+   "wine-hopper-murrumbateman",
+   "status-golf",
+   "canberra-international-golf-centre",
+   "love-boats-canberra",
+   "flip-out-majura",
+   "ninja-parc",
+   "yarralumla-play-station",
+   "instala-diy-studio",
+   "the-paddle-hub"
+  ],
+  "note": "Broad prompt; group-oriented activities counted great."
+ },
+ "ice skating": {
+  "great": [
+   "phillip-swimming-and-ice-skating-centre"
+  ],
+  "fits": [],
+  "note": ""
+ },
+ "mini golf": {
+  "great": [
+   "holey-moley",
+   "yarralumla-play-station",
+   "canberra-international-golf-centre"
+  ],
+  "fits": [
+   "powerkart-raceway"
+  ],
+  "note": ""
+ },
+ "coffee near Braddon": {
+  "great": [
+   "june",
+   "cafe-june",
+   "sailor-bistro-and-brew",
+   "zero-complex-braddon",
+   "braddon-cafe-and-liquor",
+   "gather-cafe",
+   "on-lonsdale",
+   "the-cupping-room",
+   "espresso-room",
+   "redbrick-coffee-city",
+   "piccolo-by-amici",
+   "green-house-coffee-and-food",
+   "mocan-and-green-grout",
+   "buna"
+  ],
+  "fits": [
+   "the-whale-tea",
+   "ujin",
+   "trust-cafe",
+   "high-road",
+   "hudsons-of-dickson",
+   "folks-gallery",
+   "eightytwenty-dickson",
+   "the-front-cafe-and-gallery",
+   "tilley-devines-cafe",
+   "tasa-coffee-house",
+   "doms-deli-and-bar",
+   "stacks-sandwich-and-coffee-bar",
+   "monster-phin-and-street-bites",
+   "hanoiholic",
+   "smith-s-alternative",
+   "bloom-room"
+  ],
+  "note": "Braddon and Civic cafes great; farther pool cafes fits."
+ },
+ "dinner near Kingston": {
+  "great": [
+   "azuma-den",
+   "molto-italian",
+   "rakkas",
+   "black-salt",
+   "bar-nova",
+   "eve",
+   "rosemary-by-eighty-twenty",
+   "amber-spice",
+   "hecho-en-mexico",
+   "ottoman-cuisine",
+   "tusa",
+   "johnny-gios-kingston",
+   "taiwa-sushi",
+   "the-pacific-food-studio",
+   "the-lotus-indian",
+   "rubicon-restaurant",
+   "illuka",
+   "lunetta-and-lunetta-trattoria",
+   "kita"
+  ],
+  "fits": [
+   "kingston-hotel",
+   "the-dock",
+   "lager-house-by-capital-brewing-co",
+   "wonderburger",
+   "quean-kebabs-and-gyros",
+   "caphs",
+   "zeus-street-greek",
+   "snapper-and-co",
+   "tintino",
+   "leyla-bar",
+   "canteen-by-ramen-daddy",
+   "the-aegean-pantry",
+   "the-lounge-room-at-kingsborough"
+  ],
+  "note": ""
+ },
+ "something indoors when it's raining": {
+  "great": [
+   "kingpin",
+   "riddle-room",
+   "powerkart-raceway",
+   "holey-moley",
+   "timezone-woden",
+   "iplay-belconnen",
+   "zone-3-laser-tag",
+   "missing-klues-escape-rooms",
+   "escape-rooms-canberra",
+   "hijinx-hotel",
+   "flip-out-majura",
+   "bounce-belconnen",
+   "blochaus-bouldering",
+   "ninja-parc",
+   "vr-canberra",
+   "zone-bowling-belconnen",
+   "questacon",
+   "nma",
+   "nga",
+   "awm",
+   "national-library-of-australia",
+   "national-archives-of-australia",
+   "canberra-museum-and-gallery",
+   "museum-of-australian-democracy-at-old-parliament-house",
+   "national-film-and-sound-archive",
+   "dendy-cinemas-canberra",
+   "palace-electric-cinema",
+   "national-portrait-gallery",
+   "royal-australian-mint",
+   "national-capital-exhibition"
+  ],
+  "fits": [
+   "hey-show-karaoke",
+   "maniax-axe-throwing",
+   "axxe",
+   "breakr-smash-room",
+   "splash-lab",
+   "pinot-and-picasso-belconnen",
+   "instala-diy-studio",
+   "status-golf",
+   "p59-golf",
+   "jet-flight-simulator-canberra",
+   "canberra-potters",
+   "australian-dance-party-classes",
+   "funland-canberra",
+   "lets-play-indoor-playground-and-cafe",
+   "little-amigos",
+   "sprouts-corner-indoor-playcentre",
+   "inflatable-world-kambah",
+   "lollipops-playland-and-cafe",
+   "woden-gardenland",
+   "marketquest",
+   "phillip-swimming-and-ice-skating-centre",
+   "gungahlin-leisure-centre",
+   "lakeside-leisure-centre",
+   "erindale-leisure-centre",
+   "stromlo-leisure-centre",
+   "queanbeyan-aquatic-centre",
+   "parliament-house",
+   "high-court-of-australia",
+   "glassworks",
+   "craft-design-canberra",
+   "canberra-theatre-centre",
+   "mill-theatre-at-dairy-road",
+   "act-hub",
+   "llewellyn-hall",
+   "wesley-music-centre",
+   "queanbeyan-museum",
+   "canberra-railway-museum",
+   "calthorpes-house",
+   "belconnen-arts-centre",
+   "tuggeranong-arts-centre",
+   "warehouse-circus",
+   "canberra-reptile-zoo"
+  ],
+  "note": "Broad prompt; explicit indoor venues and big museums are great."
+ },
+ "Ethiopian food": {
+  "great": [],
+  "fits": [],
+  "note": "No matching place."
+ },
+ "beach volleyball": {
+  "great": [],
+  "fits": [],
+  "note": "No matching place."
+ },
+ "casino": {
+  "great": [],
+  "fits": [],
+  "note": "No matching place."
+ },
+ "snorkelling": {
+  "great": [],
+  "fits": [],
+  "note": "No matching place."
+ },
+ "skydiving": {
+  "great": [],
+  "fits": [],
+  "note": "No matching place."
+ },
+ "tax return help": {
+  "great": [],
+  "fits": [],
+  "note": "No matching place."
+ },
+ "Russian restaurant": {
+  "great": [],
+  "fits": [],
+  "note": "No matching place."
+ },
+ "bingo night": {
+  "great": [],
+  "fits": [],
+  "note": "No matching place."
+ }
+}
