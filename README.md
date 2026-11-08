@@ -76,5 +76,5 @@ can be a home-cooked meal"](https://www.robinsloan.com/notes/home-cooked-app/)
 
 - **Passwords or "sign in with":** a passkey is the only way in.
 - **Ratings or a directory:** a place gets in with a reason, shared by someone who genuinely likes it.
-- **A chatbot:** search returns places directory.
+- **A chatbot:** search returns places directly.
 - **Booking or routing:** directions open Apple or Google Maps.
