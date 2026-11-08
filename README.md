@@ -74,7 +74,6 @@ can be a home-cooked meal"](https://www.robinsloan.com/notes/home-cooked-app/)
 ## What I chose not to build
 
 - **Passwords or "sign in with":** a passkey is the only way in.
-- **Ratings or a directory:** a place gets in with a reason.
+- **Ratings or a directory:** a place gets in with a reason, shared by someone who genuinely likes it.
 - **A chatbot:** search returns people's cards, never prose.
-- **Push or a group chat:** the group already has one.
 - **Booking or routing:** directions open Apple or Google Maps.
