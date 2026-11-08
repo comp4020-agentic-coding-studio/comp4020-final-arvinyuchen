@@ -7,7 +7,7 @@ import { forMeaning, keywords, type ParsedQuery } from "./query";
 // database, no Voyage), so the search evaluation (spec/search-eval.test.ts)
 // runs it on fixed vectors; src/lib/search.ts gets the vectors and calls it.
 
-// Tuned on voyage-4-lite with real prompts (see PROCESS.md): its scores are
+// Tuned on voyage-4-lite with real prompts (see docs/adr/0002-search-by-meaning.md): its scores are
 // low and bunched, and each prompt has its own baseline, so a card is judged
 // against the prompt's own spread, from its median card up to its best.
 /** If even the best card scores below this, nothing fits the prompt. */
@@ -18,7 +18,7 @@ const REACH = 0.6;
  * Below this lift (best over median), a prompt with a word no card uses
  * ("Ethiopian food", "snorkelling") is asking for something no place
  * has: its weak best matches are only near it in meaning, so it's answered
- * with nothing. Prompts the places do answer lift well over it (PROCESS.md);
+ * with nothing. Prompts the places do answer lift well over it (docs/adr/0002-search-by-meaning.md);
  * 0.26 became 0.32 on the search evaluation's dev half, for "skydiving"
  * (0.30, trampolines), with "ice hockey" (0.35, the ice rink) still over it.
  */

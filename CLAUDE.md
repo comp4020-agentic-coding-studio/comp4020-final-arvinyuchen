@@ -202,7 +202,7 @@ follow from it; every change has to hold to them.
   glides from its old place to its new one (under reduced motion it just
   swaps), so the group sees what moved. For a moment after a move a keen
   tap is ignored, since it was aimed at the card that was there before
-  (PROCESS.md, "Several people voting at once"). Never jump cards without
+  (`docs/adr/0004-voting-at-once.md`). Never jump cards without
   the glide, and never replay the cards' entrance on a refresh.
 - **A plan is the owner's to decide, from busy times nobody else sees.** The
   owner starts one plan at a time: one outing, to one to five places on Our
