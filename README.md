@@ -62,8 +62,6 @@ Spots is assessed against the characteristics of [ISO/IEC 25010:2023](https://ww
 
 ## What I read
 
-> ✍️ 草稿（约 75 词）：想法先有，文章后来印证。请改成你自己的说法，改完删掉这行。
-
 The ideas came first, and reading afterwards gave three of them names.
 [Clay Shirky's "Situated Software"](http://www.shirky.com/writings/situated_software.html)
 (2004) is software for one group, not everyone: Spots serves one group,
