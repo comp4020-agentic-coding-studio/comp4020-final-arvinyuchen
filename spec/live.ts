@@ -1,10 +1,11 @@
 import type { Jar } from "./authenticator";
 import { baseUrl } from "./browser";
 
-// An open page's stream, as the spec hears it: when each "change" arrived.
+// An open page's stream, as the spec hears it: when each "change" (or,
+// asked, each other kind, such as "talk") arrived.
 // `next(after, ms)` waits for the first change heard after `after`
 // (performance.now()), and says when it came, or throws once `ms` pass.
-export async function listen(jar: Jar, groupId: string) {
+export async function listen(jar: Jar, groupId: string, kind = "change") {
   const controller = new AbortController();
   const res = await fetch(new URL(`/api/events?group=${groupId}`, baseUrl), {
     headers: { cookie: jar.header },
@@ -29,7 +30,7 @@ export async function listen(jar: Jar, groupId: string) {
           const event = buffer.slice(0, end);
           buffer = buffer.slice(end + 2);
           if (event.startsWith(": connected")) connected();
-          if (event.startsWith("event: change")) {
+          if (event.startsWith(`event: ${kind}\n`)) {
             changes.push(performance.now());
             for (const wake of waiting) wake();
           }
