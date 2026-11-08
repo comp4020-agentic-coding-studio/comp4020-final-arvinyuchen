@@ -1,259 +1,90 @@
 # Spots
 
-Spots is a shared list of places for one group of friends: the food spots, fun
-places and things to do you might go to together. Someone starts a group and
-shares the link; everyone joins with their name and a passkey, explores
-places, adds the ones they're keen on, and votes. Votes show up live as people make them, the
-list re-ranks itself as they vote, and it's still there next time the group
-wants to go out.
+> ✍️ 大纲（#202）：每节的【要写】是给你的提示，【素材】是可以直接用或改写的英文事实。
+> 你写完一节就把提示删掉。总目标 400–600 词（标题不算），每节后面写了建议字数。
+> 旧版完整内容在 git 历史里；功能清单移到了 `docs/what-it-does.md`，地图和数据来源移到了 `docs/sources-and-data.md`。
 
-## Who it's for
+Canberra is not boring! Spots helps you and your friends find good places
+you might not have heard of, vote on them to see which ones most of you
+want, and then pin down a time to hang out. It's for one group at a time:
+friends who already trust each other's taste, like a share house, your
+friends from uni, or the group chat that keeps saying "we should go
+somewhere".
 
-One group of friends deciding where to go: a share house, a tutorial group, a
-group chat that keeps saying "we should go somewhere". Not a city guide and not
-strangers' reviews. A group of four to twelve people who already trust each
-other's taste.
+## Try it
+
+1. On the home page, name your group, fill in your name and email, and make
+   a passkey (face, fingerprint or PIN), which is how you sign in from then
+   on. You land on the group's page with its invite link.
+2. Open the link in a second Chrome profile or an incognito window, and join
+   as someone else.
+3. Add a place from Explore and vote "keen" in either window: the other one
+   updates within a second.
+4. In the owner's window, start a plan for a day. In each window, mark when
+   that person is busy, and Spots suggests times long enough for the plan,
+   with the most people free first, then the longest, then the earliest.
 
 ## What good means here
 
-- **Everyone's voice counts the same.** One person, one "keen" per spot. The
-  friend who never speaks up in the group chat can still say what they want,
-  and the list shows it.
-- **Deciding together is quick.** From "where should we go?" to a list the
-  group agrees on in minutes, not a 200-message thread. Votes show up on
-  everyone's screen within a second, so a group in the same room decides
-  together, live.
-- **Settling when is quick too, and nobody's diary is on show.** Once the
-  group has a favourite, whoever started it picks a day; everyone marks only
-  when they're busy that day (free all day is one tap), and the page shows
-  when everyone's free, best first. The others see how many are free when,
-  and who can't make each time, never anyone's busy times. Nobody votes on a
-  time: the owner sets it.
-- **A set plan holds on the day.** A plan falls apart at the door when the
-  gallery shut at five or it poured, so the card says so first, in a few
-  quiet words: whether each stop is open for its part of the outing, and
-  the forecast where it's outside; how far apart the stops are; the way
-  there, one tap into the phone's own maps; and somewhere to eat near
-  them, from the places the group already trusts. It never guesses: hours
-  nobody has recorded say nothing, and a time between stops is "about".
-- **The list is the group's own; the good places are everyone's.** A friend's
-  "best chilli oil in Canberra" beats a star rating from a stranger. Every
-  group explores one shared pool of places, and a place only gets in when
-  someone shares it with a sentence on why it's good, signed with their name.
-  So the pool grows from people's real favourites, not from a directory, while
-  each group's list, members and votes stay theirs alone.
-- **Talking it over stays with the place.** "Is it open Mondays?" belongs
-  next to the place it's about, not 200 messages up a group chat. Each place
-  on the list has its own short thread, for the group only, and you see
-  what's new on the list itself, not by a buzz in your pocket.
-- **You can see where it is.** Picking a place should answer "is that near
-  us?" straight away, so every card can fly the map to its spot.
-- **Ask the way you'd ask a friend.** "Cheap dumplings near Dickson" or "a
-  walk with a view" should find places, and the answer should be places: cards
-  and pins, not a paragraph. Places are matched on meaning, using the reasons
-  people wrote, so the better the reasons, the better the search.
-- **Joining costs almost nothing.** A link, your name and your face or
-  fingerprint: no app to install, no password, no email. The link goes wherever the
-  group already talks: one button, which on a phone opens its own share
-  sheet (Messages, WhatsApp, Instagram, WeChat) and on a computer copies the
-  link. It never goes to a public feed, since anyone who
-  has it can join. Opening the link shows one invite card: the group, who
-  started it, who's in, a line from whoever started it if they wrote one,
-  and one button to join. Under it, the first few places on a small street
-  map. The full list and its votes are for the group.
-- **You're you, on every device, without a password.** Everyone is an
-  account: a name and a passkey (face, fingerprint or PIN), made in the same
-  tap that starts or joins a group. Signed in, joining another group is one
-  button. Nobody can vote as someone else by typing their name, a friend on a
-  second device is still the same person, and all your groups are in one
-  place. One account has one name, and can have several passkeys (an iPhone's
-  and a Windows laptop's), never none. A device without yours is added from
-  one you're signed in on: it shows a code to scan, and the new device makes
-  its own passkey with it. Lose every device and there's no
-  reset: make a new account, join again saying who you were, and the group's
-  owner confirms it's you, so your old keens and places come back. Inside Instagram's or Facebook's own browser, where
-  passkeys don't work, the invite says to open it in Safari or Chrome.
-- **Whoever starts a group can look after it.** Rename it, write a line to
-  the people they invite, take someone out, confirm someone who joined twice is one person,
-  and reset the invite link if it spread too far, without losing anything
-  the group made.
-- **It remembers.** What the group added and voted for stays, across visits,
-  restarts and redeploys, so next weekend starts from the list, not from
-  scratch.
+> ✍️ 表格草稿：按 ISO/IEC 25010:2023 的质量特性分，中列说什么算好，右列说怎么验证。事实和测试都对过了，请改成你自己的说法，改完删掉这行。
 
-## What I looked at
+Spots is assessed against the characteristics of [ISO/IEC 25010:2023](https://www.iso.org/standard/78176.html): quantitatively by the spec on every push (Enforced), and qualitatively by people using it (Judged).
 
-- The final project brief's notes on good: the small web, games for a handful
-  of friends, tools made for one workshop. They pushed me to build for one
-  group, not for everyone.
-- How my own friends decide where to go now: a group chat thread, a poll that
-  half the group never answers, and someone's saved places in a maps app that
-  nobody else can see.
-- Map and review apps: good for finding a place, but built around strangers'
-  ratings and one person's account, not a group deciding together. Google's
-  Places API would bring thousands of restaurants but no judgement about which
-  are good, which is the one thing Spots is for.
-- Finding a real place to share: OpenStreetMap alone missed too many of
-  Canberra's cafés and bars, so Find searches Overture Maps' places first
-  (an open dataset, its Canberra places built into an index once), then
-  OpenStreetMap through Photon, which forgives a half-remembered name
-  ("Lonsdale Street Roasters" finds "Lonsdale St Roasters"). The index only
-  helps someone find a place; Explore still holds only what people shared.
-  OpenFreeMap serves the map tiles. The home page opens
-  on a photo of the city from Mount Ainslie, and as you scroll it turns into
-  a 3D map of the same view: OpenFreeMap's tiles over Mapzen's terrain, with
-  the camera in the photographer's place, so the two line up. The camera
-  climbs away round the city and comes down at a tilt over the whole of it,
-  in the card where the starter places are pinned, and there it keeps
-  turning slowly. Landed, it stays: scrolling back up doesn't fly it back,
-  but the Spots logo does. Without WebGL or with reduced motion, the card holds a
-  drawn map instead, OpenStreetMap too: its lake, reserves, parks, rivers,
-  roads, side streets and suburb names come from one Overpass query, built
-  into the page (and one streets picture beside it) by
-  `scripts/build-hero-map.ts`, so nothing on it is drawn by hand and the site
-  never queries OpenStreetMap for it. Its hills are shaded once from
-  Mapzen's terrain by `scripts/build-hero-relief.ts`. The first starter
-  places were checked against Wikipedia, with photos from Wikimedia Commons
-  credited on each card. The other sixty-seven were picked for breadth, one for
-  each kind of thing a group might search for (a cuisine, a bar, bowling, a
-  river swim, a stage) across the suburbs, after a "mexican food" search
-  found nothing. Then the pool grew to about seven hundred, so a search
-  for almost anything finds something: 330 cafés, restaurants and bars
-  that Toque, the owner's Canberra food app, already knew were open and
-  that an editorial article recommends, and about three hundred
-  activities, walks, wineries and stages from local guides, Parks ACT and
-  VisitCanberra. Each cites the source that recommends it, with its reason
-  in our words from that source (no chains, nothing a directory merely
-  lists), and its picture is an illustration, a dish or what you do
-  there, never the venue, labelled "Illustration" on its card; places of
-  one kind share a few (Toque's DishArt for the dishes). With that many,
-  Explore shows them a page at a time, of the kind you pick, and the map
-  draws every one. Finding a free photo of every café and bar
-  proved hopeless (Commons has few, and a venue's own are its own), so a
-  place a person shares has the photo they upload, if any, kept with its
-  location and every other bit of metadata stripped, and credited to them.
-  One without isn't turned away: its card shows its kind's picture, an
-  illustration drawn for each kind in the starter places' style, named with the kind, so it's never taken
-  for a photo of that place. Both street maps, the group's and the invite's small one, are
-  OpenFreeMap's tiles recoloured to look like Apple Maps, with city parks
-  in green, hairline side streets, hills shaded from Mapzen's open terrain
-  tiles, and buildings that stand up as the group's map flies into a
-  street. All three maps look like one: the same colours and line weights,
-  the tiles' lettering swapped for a few place names in the page's own font,
-  the same white chips for the places on a list (its number, and the name
-  where there's room) and dots for the rest, and the credit folded behind an
-  "i" in the map's corner. One photo of
-  Canberra, from Unsplash and credited in the footer, opens the home page,
-  every invite and a Spots link shared in a chat, so all three look like the
-  same place.
-- Picking a time: Doodle polls a few times someone guessed, and When2meet
-  has everyone paint when they're free on a week's grid, which shows
-  everyone's diary to everyone and fights the page's scroll on a phone.
-  Phone calendars draw an event with a hold, then a drag, so a swipe still
-  scrolls. Spots asks about one day, the owner's, for busy times (most of a
-  Saturday is free, so there's less to mark), on a timeline drawn the
-  calendar way.
-- Whether a stop will be open: Overture's places, which Find searches
-  first, carry no opening hours, so they come from OpenStreetMap's
-  `opening_hours` tag, asked of the Overpass API one place at a time and
-  kept for a week, and read with opening_hours.js, the parser
-  OpenStreetMap's own tools use, which knows the ACT's public holidays.
-  Forecasts come from Open-Meteo, free and keyless; only a place's
-  coordinates and the date are sent.
-- Voyage AI's embeddings turn each card and each search prompt into a
-  vector; cards are ranked by how close they are in meaning (cosine
-  similarity). Only card text and prompts are sent, nothing about a group.
+| Quality                                                 | What good means                                                                                                                                | How it's tested                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Functional suitability**                              | **Getting in:** easy sign-up and sign-in.                                                                                                      | *Enforced:* [`accounts.test.ts`][accounts]. *Judged by me*: a passkey to sign in, and an email only as insurance to recover the account, is my own design.                                                                                                                                                                                                                                                                                            |
+|                                                         | **Sharing:** one button sends the invitation.                                                                                                  | *Enforced:* [`spots.test.ts`][spots].                                                                                                                                                                                                                                                                                                                                                                                                                 |
+|                                                         | **Finding places:** search by a place's name, and by meaning; both fast and accurate.                                                          | *Enforced:* [`search-eval.test.ts`][search-eval]: by name, Success@1 93% on 697 names; by meaning, Success@5 93% and Success@1 88% on 41 labelled prompts. [`speed.test.ts`][speed]: under 600 ms is required; about 240 ms measured locally with Voyage ([#206][206]).                                                                                                                                                                               |
+|                                                         | **Deciding:** one vote per person per place, shown live on every member's open page.                                                           | *Enforced:* [`deciding.test.ts`][deciding]: heard by every other member within a second; six voting at once, or one person on two devices, all counted right. [`two-windows.test.ts`][two-windows]: in Chrome, a phone and a desktop window, a tap in one shows in the other within about a second, with no reload. [`pressure.test.ts`][pressure]: 30 people voting on ten places at once, every open page up to date within a second ([#214][214]). |
+|                                                         | **Setting a time:** you mark only when you're busy; Spots finds the most suitable time slot.                                                   | *Enforced:* [`plans.test.ts`][plans], [`free.test.ts`][free]: differential-tested against a brute-force solution on 3000 random schedules ([#210][210]).                                                                                                                                                                                                                                                                                              |
+|                                                         | **Talk:** a thread per place on the list avoiding swapping between apps.                                                                       | *Enforced:* [`talk.test.ts`][talk].                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **Performance efficiency**                              | Under 300 ms of server time a page, under 550 KB before it works; the 3D map waits until the page is idle.                                     | *Enforced:* [`speed.test.ts`][speed]. *Judged:* the live home page's first byte in 77 ms ([#204][204]).                                                                                                                                                                                                                                                                                                                                               |
+| **Interaction capability**                              | One look: one palette, every map the invite's, phones first, motion only to show where things go.                                              | *Judged:* against [`CLAUDE.md`][claude]'s rules, on seeded groups in every plan state ([`scripts/seed-preview.ts`][seed-preview]), and at crits.                                                                                                                                                                                                                                                                                                      |
+|                                                         | Every button's name says what it does ("I'm keen on Questacon").                                                                               | *Enforced:* [`spots.test.ts`][spots], [`plans.test.ts`][plans]. No full accessibility audit yet.                                                                                                                                                                                                                                                                                                                                                      |
+| **Reliability**                                         | Nothing lost: a lost passkey comes back by email, or the owner merges the old self into the new; a group is archived before it can be deleted. | *Enforced:* [`accounts.test.ts`][accounts], [`admin.test.ts`][admin].                                                                                                                                                                                                                                                                                                                                                                                 |
+| **Security**                                            | Passkeys only; the link previews the group, never its votes; Talk never leaves the group; logs say who did what, never what they wrote.        | *Enforced:* [`accounts.test.ts`][accounts], [`spots.test.ts`][spots], [`talk.test.ts`][talk], [`log.test.ts`][log].                                                                                                                                                                                                                                                                                                                                   |
+| **Compatibility, maintainability, flexibility, safety** | Not argued here.                                                                                                                               | Not tested.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+
+[accounts]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/spec/accounts.test.ts
+[spots]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/spec/spots.test.ts
+[search-eval]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/spec/search-eval.test.ts
+[plans]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/spec/plans.test.ts
+[free]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/spec/free.test.ts
+[talk]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/spec/talk.test.ts
+[speed]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/spec/speed.test.ts
+[claude]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/CLAUDE.md
+[seed-preview]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/scripts/seed-preview.ts
+[admin]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/spec/admin.test.ts
+[log]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/spec/log.test.ts
+[204]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/issues/204
+[206]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/issues/206
+[210]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/issues/210
+[214]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/issues/214
+[deciding]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/spec/deciding.test.ts
+[pressure]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/spec/pressure.test.ts
+[two-windows]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/spec/two-windows.test.ts
+
+## What I read and looked at
+
+> ✍️ 草稿（约 85 词）：请改成你自己的说法，改完删掉这行。
+
+[Clay Shirky's "Situated Software"](http://www.shirky.com/writings/situated_software.html)
+(2004) is why Spots serves one group, not a city: the group's trust in each
+other does the ranking. [Robin Sloan's "An app can be a home-cooked
+meal"](https://www.robinsloan.com/notes/home-cooked-app/) (2020) is why it
+stays small, with nothing built for growth. [Weiser and Brown's "Designing
+Calm Technology"](https://calmtech.com/papers/designing-calm-technology)
+(1995) is why nothing is pushed: what's new waits on the page as a count or
+a dot. I also compared When2meet, which shows everyone's diary, so Spots
+asks only when you're busy, and review apps, which rank places by
+strangers' stars.
 
 ## What I chose not to build
 
-- **Passwords, email sign-up, "sign in with" and profiles.** An account is a
-  passkey and a name, nothing more. I first left accounts out entirely, then
-  made them optional, and found the cost both times: a friend on a second
-  device became a second person, and a name typed into a form proved nothing.
-  So every member is an account now, and a passkey keeps that to one tap.
-  There's no email, so there's no account recovery either: a new device is
-  added from one you're signed in on, and if you lose them all, the group
-  vouches for you (you say who you were, its owner confirms). Passkeys belong to the site that made them, so there's no
-  "sign in with WhatsApp or Instagram" to offer, and I wouldn't want one.
-- **Public reviews and star ratings.** Spots is about what this group thinks.
-- **A directory of every place in Canberra.** A short checked starter list,
-  plus the places people share with a reason. Nothing is imported in bulk.
-- **A chatbot that writes recommendations.** Generated text would say things
-  about places that nobody here vouched for. Search hands back people's own
-  cards, in the words they wrote.
-- **Notifications, calendar invites and a share button for plans.** A plan
-  lives on the group's page: a dot on Our list's tab, a note at the foot of
-  an open page, and the card asking for your times. The group already has a
-  chat for nudging each other.
-- **A group chat, and notifications for Talk.** The group already has a
-  chat, and Spots would lose to it. Talk is one thread per place on the
-  list, so what's said stays next to what's being decided; there's no
-  push, email or share button for it, just a count on the place's row, a
-  dot on Our list and "N new" on My groups. No editing, reactions, photos,
-  @mentions or typing dots either: it's for a few lines about a place.
-- **Booking, and routing of my own.** The map shows where a place is;
-  booking a table is for the apps that already do it well, and so is
-  turn-by-turn: the plan's Directions hand the stops, in order, to Apple
-  Maps or Google Maps, and the time between stops is only an estimate,
-  said as one.
+> ✍️ 草稿（约 45 词）：请改成你自己的说法，改完删掉这行。
 
-## Where it is now
-
-Start a group, join by link, and explore the shared places on cards and a map:
-click a card and the map flies to it. Add a place to your group's list, or
-share a new one by looking it up on OpenStreetMap and saying why it's good; it
-appears in every group's Explore. Vote "keen" and the count changes live in
-every open page, and the list re-ranks itself, each card gliding to its new
-place. Our list's Edit takes a place off again: yours until someone else is
-keen on it or while it's in the plan on now (a grey lock where the red minus would be), any for the owner, with Undo; put back, it starts from no keens.
-The group's page is in tabs (Our list, Explore, Share a place, and
-Settings for whoever started it), and the invite folds behind one button:
-inside, one button shares the link (the phone's share sheet) or copies it (a
-computer), and under it Show QR code (for the phones round the table) and,
-for the owner, the note for the people they invite. Whoever joined since
-you last looked is named at the top of the group's column ("Zoe joined
-Saturday crew") until you dismiss it, since nothing is pushed. On a wide screen the
-page is the window, the three side by side: Our list with the group's panel,
-Explore's cards and the map each scroll on their own, their tops level. Search Explore by describing what you're after: the answer is
-the matching cards, best first, and the map frames their pins. Everyone signs
-in with a passkey, is themselves on any device, and sees all their groups in
-one place; your account page renames you everywhere and adds or removes
-passkeys. The person who started a
-group can rename it, write a note for the people they invite, remove or merge
-members, and reset its invite link. They can also plan a day out: one place
-from the list or a few in order (an outing with stops, "National Gallery →
-Questacon"), a day, and how long it all takes (the hours it counts, 8am to
-11pm, fold away under that and can be changed). Everyone marks when they're busy on that day's
-hours, to the minute (tap for an hour, hold and drag to draw in 5-minute
-steps, type exact minutes; without a script, rows of From and To), and the plan's card shows when everyone's
-free for that long, longest first, as counts and who can't make it (or
-says plainly that no stretch is that long). When every time that long
-leaves someone out but everyone's free for less, it says so too
-("Everyone's free 1–4:30pm, 30 min short"), and the owner can make the plan
-that long in one tap. The owner sets the
-time: a window's earliest start in one tap, or any later start that still
-fits, typed or swiped to the minute (or an exact time of their own, from the plan's ··· menu); it shows under the group's name as Next up and on the place's row in
-the list, and if someone's times change after that, only the owner hears,
-with a time to move to. The card also looks after the day itself: a stop
-that won't be open for its part of the outing says so in a few words at
-the card's foot ("Questacon closes 5pm", "Closed Mondays"), and so does a
-window whose time it wouldn't fit; an outdoor stop shows the day's forecast
-("24° · 10% rain") once the day is within the next 16. Unknown hours say
-nothing. With several stops, the card lists them in order with the leg
-between each ("about 13 min drive · 7.2 km", or a walk when it's short),
-and each stop has a link to directions; once the time is set, Directions
-opens the whole route, in Apple Maps on an iPhone or a Mac and Google
-Maps elsewhere. And while a plan is on, Explore has a "Near your plan"
-chip: the places nearest its stops first, each saying how far ("400 m
-from Questacon"), with the kind chips still choosing what kind; the
-plan's card goes straight there with "Find food nearby".
-Every place on the list has its Talk: a speech
-bubble on its row, with how many have been said (blue and bold when some
-are new to you), opens the place's thread, a sheet over the list on a
-phone, and on a wide screen Explore's column, with the map flown to the
-place. Only the group sees it. Messages arrive live, and any one takes a
-quick reaction (👍 ❤️ 😂 😮 🎉, one each) shown under it. Your own has a
-small bin (on hover, or after a long press) to delete it, with Undo; it
-leaves "Message removed", and a day later its words are gone for good. Without a script it's a link and
-plain forms. Next: saying who's coming once the time is set, and Talk on
-the plan itself.
+- **Passwords or "sign in with":** a passkey is the only way in.
+- **Ratings or a directory:** a place gets in with a reason.
+- **A chatbot:** search returns people's cards, never prose.
+- **Push or a group chat:** the group already has one.
+- **Booking or routing:** directions open Apple or Google Maps.
