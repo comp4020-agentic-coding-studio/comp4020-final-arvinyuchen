@@ -60,24 +60,20 @@ Spots is assessed against the characteristics of [ISO/IEC 25010:2023](https://ww
 [pressure]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/spec/pressure.test.ts
 [two-windows]: https://github.com/comp4020-agentic-coding-studio/comp4020-final-arvinyuchen/blob/main/spec/two-windows.test.ts
 
-## What I read and looked at
+## What I read
 
-> ✍️ 草稿（约 85 词）：请改成你自己的说法，改完删掉这行。
+> ✍️ 草稿（约 75 词）：想法先有，文章后来印证。请改成你自己的说法，改完删掉这行。
 
+The ideas came first, and reading afterwards gave three of them names.
 [Clay Shirky's "Situated Software"](http://www.shirky.com/writings/situated_software.html)
-(2004) is why Spots serves one group, not a city: the group's trust in each
-other does the ranking. [Robin Sloan's "An app can be a home-cooked
-meal"](https://www.robinsloan.com/notes/home-cooked-app/) (2020) is why it
-stays small, with nothing built for growth. [Weiser and Brown's "Designing
-Calm Technology"](https://calmtech.com/papers/designing-calm-technology)
-(1995) is why nothing is pushed: what's new waits on the page as a count or
-a dot. I also compared When2meet, which shows everyone's diary, so Spots
-asks only when you're busy, and review apps, which rank places by
-strangers' stars.
+(2004) is software for one group, not everyone: Spots serves one group,
+whose trust in each other's taste does the ranking. [Robin Sloan's "An app
+can be a home-cooked meal"](https://www.robinsloan.com/notes/home-cooked-app/)
+(2020) names why it's fine for it to stay small. [Weiser and Brown's
+"Designing Calm Technology"](https://calmtech.com/papers/designing-calm-technology)
+(1995) names why nothing is pushed: what's new waits on the page.
 
 ## What I chose not to build
-
-> ✍️ 草稿（约 45 词）：请改成你自己的说法，改完删掉这行。
 
 - **Passwords or "sign in with":** a passkey is the only way in.
 - **Ratings or a directory:** a place gets in with a reason.
