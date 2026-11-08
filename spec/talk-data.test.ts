@@ -117,15 +117,8 @@ describe("Talk's data", () => {
     expect(talk.unreadByGroup(c.ben.accountId!).get(c.group.id)).toBeUndefined();
   });
 
-  it("moves a merged member's messages and reading over, keeps a removed member's words, and goes with a deleted group", () => {
+  it("keeps a removed member's words, and goes with a deleted group", () => {
     const c = crew();
-    const old = db.joinGroup(c.group.id, account("Ben again"));
-    talk.sendMessage(c.group, c.ana, c.place, "hi", "h1");
-    talk.sendMessage(c.group, old, c.place, "from my old account", "o1");
-    const said = lastId();
-    db.mergeMembers(c.group, old.id, c.ben.id);
-    expect(talk.deleteMessage(c.group, c.ben, said)).toBe(c.place);
-    expect(talk.talkCounts(c.group.id, c.ben).get(c.place)?.unread).toBe(0);
     // removed: what they said stays, under their name
     const cy = db.joinGroup(c.group.id, account("Cy"));
     talk.sendMessage(c.group, cy, c.place, "Cy was here", "c1");

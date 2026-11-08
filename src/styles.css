@@ -2831,11 +2831,6 @@ html:not(.in-app) .no-passkey__app {
   margin-top: 1rem;
 }
 
-/* The same person twice, for the owner: its two answers at the row's end. */
-.same__acts form {
-  margin: 0;
-}
-
 .notice--ok {
   background: color-mix(in srgb, var(--outdoors) 14%, white);
 }
@@ -3198,22 +3193,6 @@ h3.lists__head {
 
   .my-group > .row__end {
     grid-area: end;
-  }
-
-  /* (the same person twice: its answers under its words, from where
-     they start) */
-  .same .row {
-    flex-wrap: wrap;
-    row-gap: 0.5rem;
-  }
-
-  .same .row__body {
-    flex: 1 1 0;
-  }
-
-  .same__acts {
-    flex-basis: 100%;
-    padding-left: 3.35rem;
   }
 }
 
@@ -9233,73 +9212,6 @@ dialog.sheet[open]:not(:modal) {
   text-align: center;
 }
 
-/* Back after losing every device: closed, one quiet line; open, the
-   people they could have been, one to tap. */
-.welcome__again summary {
-  color: var(--accent-ink);
-  font-size: 0.88rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.welcome__again fieldset {
-  margin: 0.6rem 0 0;
-  padding: 0;
-  border: 0;
-}
-
-.welcome__again legend {
-  margin-bottom: 0.45rem;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.welcome__was {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-bottom: 0.5rem;
-}
-
-.welcome__was-one {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0.75rem 0.3rem 0.3rem;
-  border-radius: 999px;
-  background: var(--fill);
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.welcome__was-one input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* (a face of its own, inside the chip: not the overlapping, ringed faces
-   of a row of them) */
-.welcome__was-one .face {
-  width: 1.6rem;
-  height: 1.6rem;
-  margin-left: 0;
-  border: 0;
-  font-size: 0.75rem;
-}
-
-.welcome__was-one:has(input:checked) {
-  background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1.5px var(--accent);
-  color: var(--accent-ink);
-}
-
-.welcome__was-one:has(input:focus-visible) {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
 /* Who joined since you last looked (#120): a slim notice at the top of the
    group's column, like the system's own, until it's dismissed. */
 .joined {
@@ -9320,16 +9232,6 @@ dialog.sheet[open]:not(:modal) {
   height: 0.5rem;
   border-radius: 50%;
   background: #34c759;
-}
-
-/* (something for you to answer, or waiting on someone's answer) */
-.joined__dot--ask {
-  background: var(--accent);
-}
-
-a.joined {
-  color: inherit;
-  text-decoration: none;
 }
 
 .joined + .joined {

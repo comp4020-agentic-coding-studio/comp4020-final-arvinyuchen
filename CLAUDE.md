@@ -142,13 +142,10 @@ follow from it; every change has to hold to them.
   the link's origin is `APP_ORIGIN` (fly.toml), never the request's host.
   Mail goes through Resend (`src/lib/mail.ts`, `RESEND_API_KEY` and
   `MAIL_FROM` as Fly secrets); without a key, or with `OUTING_STUB`, it's
-  kept and logged, and the spec reads it from `/api/mail-log`. The fallback
-  stays the owner's merge: someone with no email left makes a new account
-  and joins again by the link, saying who they were (the join form's "Been
-  in this group before?", anyone but the owner); the owner is asked "Same
-  person?" in Settings, as for two members with one name, and Same person
-  merges the old member into the new one, Not them stops asking
-  (`mergeAsks` in `src/lib/db.ts`). Never add a way in that isn't a
+  kept and logged, and the spec reads it from `/api/mail-log`. It's the
+  only way back: someone with no email left makes a new account and joins
+  again as someone new (the owner's merge was taken out, #222; members
+  merged before it stay as they were). Never add a way in that isn't a
   passkey: the email only ever brings a link that lets a device make one,
   and is never shown to anyone, admin included.
 - **The invite goes person to person.** Whoever holds the link can join, so
@@ -172,7 +169,7 @@ follow from it; every change has to hold to them.
   (`src/pages/api/passkeys/`), its sessions store only a hash of their token,
   and `me()` in `src/lib/me.ts` is the one place that decides who someone is
   in a group: the signed-in account's member there, and nothing else.
-- **The owner's tools keep what the group made.** Removing or merging a member
+- **The owner's tools keep what the group made.** Removing a member
   marks them, never deletes them: what they added keeps their name. Only a
   removed member's keens go. Resetting the invite link retires the old one;
   members who follow it land on the new one, nobody new gets in.
