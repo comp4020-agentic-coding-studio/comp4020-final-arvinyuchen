@@ -1,13 +1,12 @@
 import type { APIRoute } from "astro";
-import { getGroup, keepApart, mergeMembers, removeMember, renameGroup, resetLink, setNote, NOTE_MAX } from "../../../../lib/db";
+import { getGroup, removeMember, renameGroup, resetLink, setNote, NOTE_MAX } from "../../../../lib/db";
 import { changed } from "../../../../lib/events";
 import { clean, me } from "../../../../lib/me";
 import * as log from "../../../../lib/log";
 
 // The owner's tools: rename the group, write a note to the people they
-// invite, take someone out, fold a duplicate into the person they really
-// are (or say two aren't one), and reset the invite link. Only the
-// owner gets past the first check; everything else just goes back.
+// invite, take someone out, and reset the invite link. Only the owner
+// gets past the first check; everything else just goes back.
 export const POST: APIRoute = async ({ params, cookies, request, redirect }) => {
   const group = getGroup(params.id ?? "");
   if (!group) return redirect("/", 303);
@@ -41,17 +40,6 @@ export const POST: APIRoute = async ({ params, cookies, request, redirect }) => 
     if (done) log.act("member-remove", { ...by, member: Number(form.get("member")) });
     if (done) changed(group.id);
     return back(group.link, done ? "removed" : "none");
-  }
-  if (action === "merge") {
-    const done = mergeMembers(group, Number(form.get("member")), Number(form.get("into")));
-    if (done) log.act("member-merge", { ...by, member: Number(form.get("member")), into: Number(form.get("into")) });
-    if (done) changed(group.id);
-    return back(group.link, done ? "merged" : "none");
-  }
-  if (action === "keep") {
-    const done = keepApart(group, Number(form.get("member")), Number(form.get("into")));
-    if (done) log.act("member-keep-apart", { ...by, member: Number(form.get("member")), from: Number(form.get("into")) });
-    return back(group.link, done ? "kept" : "none");
   }
   if (action === "reset") {
     const link = resetLink(group.id);
