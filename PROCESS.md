@@ -1,7 +1,5 @@
 # Process overview
 
-> ✍️ 草稿（#224）：按提纲起草，事实和链接都核对过。请改成你自己的说法，改完删掉这行。
-
 ## From the brief to Spots
 
 My first idea was a trip itinerary, and it sounded flat: a shared list of
